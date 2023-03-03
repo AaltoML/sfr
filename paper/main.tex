@@ -1,11 +1,28 @@
 \documentclass{article}
 
-\title{INSERT AWESOME TITLE}
+%\title{Investigatin Uncertainty Quantification in Model-based Reinforcement Learning}
+\title{Model-based Reinforcement Learning with Fast Posterior Updates}
 \author{%
   Aidan ~Scannell \\
   Aalto University\\
-  Finnish Center for Artificial Intelligence \\
-  \texttt{aidan.scannell@aalto.fi} \\
+  %Finnish Center for Artificial Intelligence \\
+  \texttt{aidan.scannell@aalto.fi}
+  \And
+  Paul ~Chang \\
+  Aalto University\\
+  \texttt{paul.chang@aalto.fi}
+  \And
+  Ella ~Tamir \\
+  Aalto University\\
+  \texttt{ella.tamir@aalto.fi}
+  \And
+  Arno ~Solin \\
+  Aalto University\\
+  \texttt{arno.solin@aalto.fi}
+  \And
+  Joni ~Pajarinen \\
+  Aalto University\\
+  \texttt{joni.pajarinen@aalto.fi}
   % examples of more authors
   % \And
   % Coauthor \\
@@ -30,10 +47,13 @@
 % Bibliography
 \usepackage[maxcitenames=1, maxbibnames=4, doi=false, isbn=false, eprint=true, backend=bibtex, hyperref=true, url=false, style=authoryear-comp]{biblatex}
 \addbibresource{zotero-library.bib}
+% \addbibresource{paper/zotero-library.bib}
 
 % Our packages
 \usepackage{todonotes}
 \usepackage[colorlinks=true,linkcolor=blue,allcolors=blue]{hyperref}
+\usepackage{amsmath}
+\usepackage{bm}
 
 \usepackage{tikz,pgfplots}
 \usepackage{subcaption}
@@ -51,8 +71,142 @@
 
 \maketitle
 
+\begin{abstract}
+  %Reinforcement learning (RL) agents typically perform learning after an episode and do not utilise the information gained during an episode.
+  Reinforcement learning (RL) agents typically perform learning after an episode and do not utilise the information gained during an episode.
+  We present a Bayesian model-based RL algorithm which incorporates this information by updating its dynamic model's posterior during an episode.
+  We prove that for stationary dynamic model priors, our method achieves sublinear regret, i.e. it will converge to the optimal policy.
+  Importantly, our dynamic model (and it's converge guarantees) scales to high dimensional problems via neural networks with stationary priors.
+  We demonstrate that our fast posterior updates lead to improved sample efficiency in environments with action penalties, a notoriously difficult
+  challenge for model-based RL algorithms.
+
+  % Model-based reinforcement learning (RL) typically learns
+\end{abstract}
+
 \section{Introduction} \label{sec:intro}
 
+\section{Problem Statement and Background} \label{sec:problem-statement}
+We consider environments with states \(s \in \mathcal{S}\), actions \(a \in \mathcal{A}\) and transition dynamics \(f: \mathcal{S} \times \mathcal{A} \rightarrow \mathcal{S}\) subject to
+iid noise \(\epsilon_{t}\), given by,
+\begin{align}
+s_{t+1} = f(s_{t}, a_{t}) + \epsilon_{t}.
+\end{align}
+
+\textbf{Reinforcement learning RL}
+The goal of reinforcement learning is to find a policy \(\pi \in \Pi\) that maximises the sum of discounted
+rewards in expecation under the transition noise (aleatoric uncertainty),
+\begin{align} \label{eq-model-free-objective}
+\pi^{*} = \arg \max_{\pi \in \Pi} J(f, \pi) = \arg \max_{\pi \in \Pi} \mathbb{E}_{\bm\epsilon_{0:\infty}} \left[ \sum_{t=0}^{\infty} \gamma^{t} r(s_{t},a_{t}) \right].
+\end{align}
+
+\textbf{Model-based RL}
+In Bayesian model-based RL, we obtain the posterior over the dynamics \(p(f\mid\mathcal{D})\) after performing (approximate) Bayesian
+inference given a state transition data set \(\mathcal{D} = \{\{(s_{t},a_{t}), s_{t+1}\}^{T_{i}}_{t=1}\}_{i=0}^{N}\).
+In this work we are interested in how we can use \(p(f \mid \mathcal{D})\) to alleviate some of the issues in model-based RL,
+for example, model bias and the exploration-exploitation trade-off.
+
+\textbf{Greedy exploitation}
+Given the posterior dynamics \(p(f \mid \mathcal{D})\),
+a common approach is to simply take the expecation over both the aleatoric and epistemic uncertainty,
+\begin{align} \label{eq-greedy}
+\pi_{\text{greedy}} = \arg \max_{\pi} \mathbb{E}_{f \sim p(f \mid \mathcal{D})} \left[ J(f, \pi) \right],
+\end{align}
+This approach has been widely adopted, for example, in PILCO, PETS, GP-MPC
+
+\cite{deisenrothPILCO2011,chuaDeepReinforcementLearning2018,kamtheDataEfficient2018}.
+This approach helps to alleviate model bias as the posterior ``knows what the model does not know''.
+This is because the predictive posterior \(p(f(s_{t},a_{t}) \mid (s_{t},a_{t}),  \mathcal{D} )\) will be (or should be) uncertain when making
+predictions far away from the training data.
+The expectation considers all possible dynamics models which prevents the policy optimisation from
+exploiting innacuracies in the model.
+This approach has no guarantees for exploration in the general case.
+However, under specific dynamics and reward structures (e.g. PILCO) this objective can achieve sublinear regret.
+\todo{need to double check sublinear regret statement. And give a reference}
+
+
+\textbf{Hallucinated upper confidence RL}
+A more theoretically grounded exploration strategy is UCRL \autocite{jakschNearoptimal2010}, which optimises joinly over
+policies and models inside the set
+\(\mathcal{M} = \{ f \mid | f(s,a) - \mu_{i}(s, a) | \leq \beta_{i} \Sigma_{i}(s, a) \quad \forall s, a \in \mathcal{S} \times \mathcal{A} \}\), representing all statistically plausible
+models under the posterior \(p(f(s,a) \mid \mathcal{D}_{0:i} \cup (s,a)) = \mathcal{N}(f(s,a) \mid \mu_{i}(s,a), \Sigma_{i}(s,a))\) at episode \(i\).
+This strategy is given by,
+\begin{align}
+\pi_{\text{UCRL}} = \arg \max_{\pi} \max_{f \in \mathcal{M}} J(f, \pi).
+\end{align}
+This strategy optimises an optimistic policy over the set of plausible dynamics models.
+However, the joint optimisation is intractable in general.
+\cite{curiEfficient2020} introduced a tractable approximation which retains some of the theoretical guarantees whilst
+being applicable with deep model-based RL.
+They introduce a function \(\eta: \mathcal{S} \times \mathcal{A} \rightarrow [-1, 1]^{p}\) which acts as a hallucinated control input.
+The strategy is given by,
+\begin{align} \label{eq-hucrl}
+\pi_{\text{UCRL}} = \arg \max_{\pi} \max_{\eta(\cdot) \in [-1,1]} J(f, \pi) \quad \text{s.t.} \quad f = \mu_{i}(s_{t}, a_{t}) + \beta \Sigma_{i}(s_{t}, a_{t}) \eta(s_{t},a_{t}).
+\end{align}
+Intuitively, \(\eta(s,a) \in [-1,1]\) enables the optimisation to select any dynamics model
+\(f\) within \(\pm \beta \Sigma_{i}(s_{t}, a_{t})\) of the posterior mean \(\mu_{i}(s_{t}, a_{t})\).
+
+\textbf{MPC vs policy learning}
+It is worth noting that the strategies in \cref{eq-hucrl,eq-greedy} can be used with both model predictive control (MPC)
+techniques, such as the cross entoropy method (CEM), and model-free RL techniques, such as soft actor-critic (SAC).
+
+
+\section{Model-based RL with Fast Bayesian Updates}
+The strategy in \cref{eq-hucrl} does not update the dynamics model during an episode.
+A better approach would be to update the posterior at every time step during an episode, for example,
+\begin{align} \label{eq-objective-with-online-updates}
+\pi_{\text{online}} = \arg \max_{\pi} \mathbb{E}_{\bm\epsilon_{0:\infty}} \left[ \sum_{t=0}^{K-1}
+\mathbb{E}_{\underbrace{f \sim p(f \mid \mathcal{D} \cup \{(s_{j}, a_{j}), s_{j+1}\}_{j=0}^{t-1})}_{\text{updated posterior}}} \left[ \gamma^{t} r(s_{t}, a_{t}) \mid s_{0}=s \right] \right] +
+\gamma^{K} Q(s_{K},a_{K})
+\end{align}
+We can do this with GPs becuase they are non parameteric but doing it with BNNs is harder. But Me and Paul think we can do it.
+
+The idea is then to compare all of the ideas in the previous paper with and without updating the dynamics during an episode.
+
+
+
+\section{Experiments}
+Environments
+\begin{itemize}
+  \item Compare updated posterior with non updated posterior
+  \begin{itemize}
+  \item Compare for different strategies of making decisions under dynamic model's uncertainty:
+    \begin{itemize}
+      \item \textbf{Greedy exploitation} \(\pi_{\text{greedy}}\)
+      \item \textbf{Hallucinated-UCRL} \(\pi_{\text{HUCRL}}\)
+      \item \textbf{Thompson sampling} \(\pi_{\text{TS}}\)
+    \end{itemize}
+  \end{itemize}
+  \item Compare impact of stationary vs non-stationary priors
+  \begin{itemize}
+    \item First do this with GP
+    \item Then try to do with Laplace BNN
+  \end{itemize}
+\end{itemize}
+
+\section{Conclusion} \label{sec:conclusion}
+
+
+\section*{Broader Impact}
+
+\section*{Acknowledgements}
+Aidan Scannell is funded by the Finnish Center for Artificial Intelligence.
+
+% \section*{References}
+\small
+\printbibliography
+\normalsize
+% TODO make bibliography small a better way
+
+References follow the acknowledgments. Use unnumbered first-level heading for
+the references. Any choice of citation style is acceptable as long as you are
+consistent. It is permissible to reduce the font size to \verb+small+ (9 point)
+when listing the references.
+Note that the Reference section does not count towards the page limit.
+\medskip
+
+
+
+\section{Template stuff}
 \subsection{Generate TikZ Figures from Python}
 We can generate figures in \texttt{.tex} format directly from Python:
 \begin{verbatim}
@@ -103,23 +257,6 @@ with open("table.tex", 'w') as file:
 
 \subsection{Biblatex}
 Rember when using biblatex to use 'parencite' for \parencite{kamtheDataEfficient2018} and when using natbib to use 'citep'.
-
-
-\section*{Acknowledgements}
-Based on Arno Solin's python/TikZ setup.
-
-% \section*{References}
-\small
-\printbibliography
-\normalsize
-% TODO make bibliography small a better way
-
-References follow the acknowledgments. Use unnumbered first-level heading for
-the references. Any choice of citation style is acceptable as long as you are
-consistent. It is permissible to reduce the font size to \verb+small+ (9 point)
-when listing the references.
-Note that the Reference section does not count towards the page limit.
-\medskip
 
 
 

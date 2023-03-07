@@ -12,3 +12,20 @@ pyright
 isort
 pyflakes
 pytest
+
+
+torch
+# functorch  # needed for vmap
+# gymnasium
+# imageio
+mujoco
+torchtyping
+pytorch_lightning
+# laplace-torch
+gpytorch
+# torchrl
+./src/third_party/rl-0.0.4b
+# ./src/third_party/rl
+
+dm_control
+opencv-python

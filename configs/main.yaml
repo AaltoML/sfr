@@ -1,26 +1,66 @@
 defaults:
-  - model: default
-
+  # - model: laplace
+  - model: svgp
+  # - task: cartpole_swingup
+  - env: cartpole_swingup
+  - planner: mppi
+  # - model: probabilistic_ensemble
   # Use slurm on cluster or local?
-  # TODO Edit hydra/launcher/slurm.yaml with slurm configuration
-  # TODO Uncomment this for running on cluster
+  - override hydra/launcher: submitit_local
+  # - override hydra/launcher: local
   # - override hydra/launcher: slurm
-
   # Disable logging by Hydra
   - override hydra/job_logging: none
   - override hydra/hydra_logging: none
   - _self_
 
+# task: cartpole_swingup
 random_seed: 42
+name: "gp"
+device: "cpu"
+
+init_env_steps: 1000
+
+frame_stack: 1
+action_repeat: 1
+
+# observation_dim: ???
+# action_dim: ???
+observation_dim: 5
+action_dim: 1
+# action_dim:
+#   _target_: ${env.action_spec().shape}
+input_dim: 6
+output_dim: 6
+# output_dim: ${observation_dim}
+# batch_shape:
+#   _target_: torch.Size
+#   args:
+#     - ${output_dim}
+
+num_episodes: 200
+max_steps_per_episode: 200
+save_video: true
+save_train_video: true
+
+# training:
+#   batch_size: 64
+#   max_epochs: 1000
+#   num_workers: 8
+
+# initial_dataset:
+#   num_episodes: 20
+replay_buffer_capacity: 100000
+buffer_scratch_dir: "/tmp/"
 
 wandb:
-  group: "INSERT-GROUP-NAME" # TODO update this (can be used to auto plot confidence interval over seeds)
-  entity: "INSERT-ENTITY" # TODO update this
-  project: "INSERT-PROJECT-NAME" # TODO update this
+  group: ${env.env_name}-${env.task_name}
+  entity: "aidanscannell"
+  project: "bayesian-model-based-rl-with-fast-updates"
   use_wandb: True
-  run_name: "INSERT-NAME/${random_seed}" # TODO make this better
+  run_name: ${env.env_name}-${random_seed}-${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   tags:
-    - "random_seed=${random_seed}" # TODO add more tags
+    - "random_seed=${random_seed}"
 
 hydra:
   job:

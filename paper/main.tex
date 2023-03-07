@@ -74,8 +74,7 @@
 \begin{abstract}
   %Reinforcement learning (RL) agents typically perform learning after an episode and do not utilise the information gained during an episode.
   Reinforcement learning (RL) agents typically perform learning after an episode and do not utilise the information gained during an episode.
-  We present a Bayesian model-based RL algorithm which incorporates this information by updating its dynamic model's posterior during an episode.
-  We prove that for stationary dynamic model priors, our method achieves sublinear regret, i.e. it will converge to the optimal policy.
+  We present a Bayesian model-based RL algorithm which incorporates this information by updating a dynamic model's posterior during an episode.
   Importantly, our dynamic model (and it's converge guarantees) scales to high dimensional problems via neural networks with stationary priors.
   We demonstrate that our fast posterior updates lead to improved sample efficiency in environments with action penalties, a notoriously difficult
   challenge for model-based RL algorithms.

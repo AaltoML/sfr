@@ -1,0 +1,13 @@
+_target_: planners.MPPI
+# action_spec: ???
+horizon: 5
+num_samples: 512
+mixture_coef: 0.05
+num_iterations: 6
+num_topk: 64
+temperature: 0.5
+momentum: 0.1
+gamma: 0.99
+device: ${device}
+eval_mode: false
+t0: true

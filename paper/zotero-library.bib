@@ -34,6 +34,18 @@
   file = {/Users/scannea1/Zotero/storage/PAPUN7FY/9780387967905.html}
 }
 
+@inproceedings{adamDualParameterizationSparse2021,
+  title = {Dual {{Parameterization}} of {{Sparse Variational Gaussian Processes}}},
+  booktitle = {Advances in {{Neural Information Processing Systems}}},
+  author = {ADAM, Vincent and Chang, Paul and Khan, Mohammad Emtiyaz E and Solin, Arno},
+  year = {2021},
+  volume = {34},
+  pages = {11474--11486},
+  publisher = {{Curran Associates, Inc.}},
+  abstract = {Sparse variational Gaussian process (SVGP) methods are a common choice for non-conjugate Gaussian process inference because of their computational benefits. In this paper, we improve their computational efficiency by using a dual parameterization where each data example is assigned dual parameters, similarly to site parameters used in expectation propagation. Our dual parameterization speeds-up inference using natural gradient descent, and provides a tighter evidence lower bound for hyperparameter learning. The approach has the same memory cost as the current SVGP methods, but it is faster and more accurate.},
+  file = {/Users/scannea1/Library/Mobile Documents/com~apple~CloudDocs/zotero/ADAM et al-2021 Dual Parameterization of Sparse Variational Gaussian Processes/ADAM et al_2021_Dual Parameterization of Sparse Variational Gaussian Processes.pdf}
+}
+
 @article{almubarakSafety2021,
   title = {Safety {{Embedded Differential Dynamic Programming}} Using {{Discrete Barrier States}}},
   author = {Almubarak, Hassan and Stachowicz, Kyle and Sadegh, Nader and Theodorou, Evangelos A.},
@@ -595,6 +607,23 @@
   file = {/Users/scannea1/Zotero/storage/VAALLD2J/9780817634902.html}
 }
 
+@inproceedings{changFantasizingDualGPs2022,
+  title = {Fantasizing with {{Dual GPs}} in {{Bayesian Optimization}} and {{Active Learning}}},
+  booktitle = {{{NeurIPS Workshop}} on {{Gaussian Processes}}, {{Spatiotemporal Modeling}}, and {{Decision-making Systems}}},
+  author = {Chang, Paul E. and Verma, Prakhar and John, S. T. and Picheny, Victor and Moss, Henry and Solin, Arno},
+  year = {2022},
+  month = nov,
+  eprint = {2211.01053},
+  eprinttype = {arxiv},
+  primaryclass = {cs, stat},
+  publisher = {{arXiv}},
+  doi = {10.48550/arXiv.2211.01053},
+  abstract = {Gaussian processes (GPs) are the main surrogate functions used for sequential modelling such as Bayesian Optimization and Active Learning. Their drawbacks are poor scaling with data and the need to run an optimization loop when using a non-Gaussian likelihood. In this paper, we focus on `fantasizing' batch acquisition functions that need the ability to condition on new fantasized data computationally efficiently. By using a sparse Dual GP parameterization, we gain linear scaling with batch size as well as one-step updates for non-Gaussian likelihoods, thus extending sparse models to greedy batch fantasizing acquisition functions.},
+  archiveprefix = {arXiv},
+  keywords = {Computer Science - Machine Learning,Statistics - Machine Learning},
+  file = {/Users/scannea1/Library/Mobile Documents/com~apple~CloudDocs/zotero/Chang et al-2022 Fantasizing with Dual GPs in Bayesian Optimization and Active Learning/Chang et al_2022_Fantasizing with Dual GPs in Bayesian Optimization and Active Learning.pdf;/Users/scannea1/Zotero/storage/RKY854SE/2211.html}
+}
+
 @inproceedings{chengEndtoEnd2019,
   title = {End-to-{{End Safe Reinforcement Learning}} through {{Barrier Functions}} for {{Safety-Critical Continuous Control Tasks}}},
   booktitle = {{{AAAI}}},
@@ -995,6 +1024,15 @@
   abstract = {A Chebyshev pseudospectral method is presented in this paper for directly solving a generic optimal control problem with state and control constraints. This method employs Nth degree Lagrange polynomial approximations for the state and control variables with the values of these variables at the Chebyshev-Gauss-Lobatto (CGL) points as the expansion coefficients. This process yields a nonlinear programming problem (NLP) with the state and control values at the CGL points as unknown NLP parameters. Numerical examples demonstrate this method yields more accurate results than those obtained from the traditional collocation methods.},
   keywords = {CGL points,Chebyshev approximation,Chebyshev pseudospectral method,Chebyshev-Gauss-Lobatto points,control constraints,Cost function,Differential equations,direct trajectory optimization,Gaussian processes,high-degree Lagrange polynomial approximations,Lagrangian functions,Mathematics,Nonlinear equations,nonlinear programming,nonlinear programming problem,optimal control,Optimal control,optimal control problem,Optimization methods,path planning,Polynomials,spectral analysis,state constraints,unknown NLP parameters},
   file = {/Users/scannea1/Zotero/storage/9RXR2VPM/Fahroo and Ross - 2000 - Direct trajectory optimization by a Chebyshev pseu.pdf;/Users/scannea1/Zotero/storage/CQN2YN69/876945.html}
+}
+
+@misc{FCAIteammeetingpresentationfeb2023,
+  title = {{{FCAI-team-meeting-presentation-feb-2023}}},
+  journal = {Google Docs},
+  abstract = {Long-term decision-making and transfer between tasks 1 February 2023 Presenter: Aidan Scannell},
+  howpublished = {https://docs.google.com/presentation/d/1rAVTavGanmXZ8Z2QTUhaO6iNeo6A8aerbhHZY6iBqsI/edit?ouid=100959914931771490491\&usp=slides\_home\&ths=true\&usp=embed\_facebook},
+  langid = {english},
+  file = {/Users/scannea1/Zotero/storage/3X78LYBM/edit.html}
 }
 
 @book{ferberGames1958,
@@ -2533,6 +2571,18 @@
   abstract = {For decades, robots have been essential allies alongside humans in controlled industrial environments like heavy manufacturing facilities. However, without the guidance of a trusted human operator to shepherd a robot safely through a wide range of conditions, they have been barred from the complex, ever changing environments that we live in from day to day. Safe learning control has emerged as a promising way to start bridging algorithms based on first principles to complex real-world scenarios by using data to adapt, and improve performance over time. Safe learning methods rely on a good estimate of the robot dynamics and of the bounds on modelling error in order to be effective. Current methods focus on either a single adaptive model, or a fixed, known set of models for the robot dynamics. This limits them to static or slowly changing environments. This paper presents a method using Gaussian Processes in a Dirichlet Process mixture model to learn an increasing number of non-linear models for the robot dynamics. We show that this approach enables a robot to re-use past experience from an arbitrary number of previously visited operating conditions, and to automatically learn a new model when a new and distinct operating condition is encountered. This approach improves the robustness of existing Gaussian Process-based models to large changes in dynamics that do not have to be specified ahead of time.},
   keywords = {Aerodynamics,controlled industrial environment,Data models,Dirichlet process mixture model,Gaussian processes,Heuristic algorithms,human operator,learning (artificial intelligence),mixture models,mixture of Gaussian process experts,multimodal model learning,robot dynamics,Robots,Safety,System dynamics},
   file = {/Users/scannea1/Zotero/storage/6XLZFBSE/McKinnon and Schoellig - 2017 - Learning multimodal models for robot dynamics onli.pdf;/Users/scannea1/Zotero/storage/9JHYDX6T/7989041.html;/Users/scannea1/Zotero/storage/Y27Y938R/7989041.html}
+}
+
+@inproceedings{mendoncaDiscoveringAchievingGoals2021,
+  title = {Discovering and {{Achieving Goals}} via {{World Models}}},
+  booktitle = {Advances in {{Neural Information Processing Systems}}},
+  author = {Mendonca, Russell and Rybkin, Oleh and Daniilidis, Kostas and Hafner, Danijar and Pathak, Deepak},
+  year = {2021},
+  volume = {34},
+  pages = {24379--24391},
+  publisher = {{Curran Associates, Inc.}},
+  abstract = {How can artificial agents learn to solve many diverse tasks in complex visual environments without any supervision? We decompose this question into two challenges: discovering new goals and learning to reliably achieve them. Our proposed agent, Latent Explorer Achiever (LEXA), addresses both challenges by learning a world model from image inputs and using it to train an explorer and an achiever policy via imagined rollouts. Unlike prior methods that explore by reaching previously visited states, the explorer plans to discover unseen surprising states through foresight, which are then used as diverse targets for the achiever to practice. After the unsupervised phase, LEXA solves tasks specified as goal images zero-shot without any additional learning. LEXA substantially outperforms previous approaches to unsupervised goal reaching, both on prior benchmarks and on a new challenging benchmark with 40 test tasks spanning across four robotic manipulation and locomotion domains. LEXA further achieves goals that require interacting with multiple objects in sequence. Project page: https://orybkin.github.io/lexa/},
+  file = {/Users/scannea1/Library/Mobile Documents/com~apple~CloudDocs/zotero/Mendonca et al-2021 Discovering and Achieving Goals via World Models/Mendonca et al_2021_Discovering and Achieving Goals via World Models.pdf}
 }
 
 @inproceedings{milamNew2000,

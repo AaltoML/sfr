@@ -9,7 +9,7 @@ PYTHON = $(VENV)/bin/python3
 PIP = $(VENV)/bin/pip
 
 ${FILENAME}.pdf: media
-	cd paper && latexmk -pdf -interaction=nonstopmode -auxdir=${AUX_DIR} -outdir=${AUX_DIR} ${FILENAME}.tex
+	cd paper && latexmk
 	cd paper && mv ${AUX_DIR}/${FILENAME}.pdf ${FILENAME}.pdf
 
 paper: ${FILENAME}.pdf

@@ -56,6 +56,7 @@
 \usepackage{bm}
 \usepackage{algpseudocode}
 \usepackage{algorithm}
+\usepackage{derivative}
 
 \usepackage{tikz,pgfplots}
 \usepackage{subcaption}
@@ -83,6 +84,7 @@
 \newcommand{\action}{\ensuremath{\mathbf{a}}}
 \newcommand{\noise}{\ensuremath{\bm\epsilon}}
 \newcommand{\discount}{\ensuremath{\gamma}}
+\newcommand{\inducingInput}{\ensuremath{\mathbf{Z}}}
 \newcommand{\inducingVariable}{\ensuremath{\mathbf{u}}}
 \newcommand{\dataset}{\ensuremath{\mathcal{D}}}
 \newcommand{\dualParam}[1]{\ensuremath{\bm{\lambda}_{#1}}}
@@ -112,12 +114,12 @@
 
 
 % Parameters
-\newcommand{\transitionParams}{\ensuremath{\phi}}
+\newcommand{\transitionParams}{\ensuremath{\bm\phi}}
 \newcommand{\valueFnParams}{\ensuremath{\psi}}
 \newcommand{\policyParams}{\ensuremath{\theta}}
 
 % Networks
-\newcommand{\transition}{\ensuremath{\mathbf{d}_{\transitionParams}}}
+\newcommand{\transitionFnWithParams}{\ensuremath{\transitionFn_{\transitionParams}}}
 \newcommand{\valueFn}{\ensuremath{\mathbf{Q}}}
 \newcommand{\stateValueFn}{\ensuremath{\mathbf{V}}}
 % \newcommand{\valueFn}{\ensuremath{\mathbf{Q}_{\valueFnParams}}}
@@ -162,7 +164,7 @@ Issues with uncertainty in model-based RL:
     \item Agent drives exploration into region of high epistemic uncertainty because it thinks it could have high return.
     \item In reality, the dynamic model is innacurate and the agent spends the majority of an episode exploiting this innacuracy.
     \item What if the agent could update it's model during an episode and realise it's pointless to explore in this region
-    \item We show that this can reduce model exploration and in turn, improve sample efficiency.
+    \item We show that this can reduce model exploitation and in turn, improve sample efficiency.
   \end{itemize}
 \end{itemize}
 
@@ -188,7 +190,7 @@ where $\gamma \in [0, 1]$
 In Bayesian model-based RL, we obtain the posterior over the dynamics \(p(f\mid\mathcal{D})\) after performing (approximate) Bayesian
 inference given a state transition data set \(\mathcal{D} = \{\{(s_{t},a_{t}), s_{t+1}\}^{T_{i}}_{t=1}\}_{i=0}^{N}\).
 \cref{alg-mbrl} shows the typical model-based RL loop.
-Importantly, the dynamics are usually only updated after an episode.
+Importantly, the dynamics are usually only updated after an episode $i$.
 
 \begin{algorithm}[!t]
 \caption{Model-based RL}\label{alg-mbrl}
@@ -198,7 +200,7 @@ Importantly, the dynamics are usually only updated after an episode.
     \State Reset the system to $\state_{0}$ and reset trajectory buffers $\bm\tau_{t} = \emptyset \ \forall t$
     \For{$t  \in \{1, 2, \ldots, \text{num steps} \}$}
       % \State Collect  $\tau_{0:t} = \tau_{0:t-1} \cup (\state_{j}, \action_{j}, \state_{j+1}, r_{j+1})$
-      \State Use \cref{eq-greedy}/\cref{eq-posterior-sampling}/\cref{eq-hucrl} to collect data $\bm\tau_{t} = \bm\tau_{t-1} \cup (\state_{t}, \policy_{i}(\state_{t}), \transitionFn(\state_{t}, \policy_{i}(\state_{t})), r_{t+1})$
+      \State Use \cref{eq-greedy}/\cref{eq-posterior-sampling}/\cref{eq-ucrl} to collect data $\bm\tau_{t} = \bm\tau_{t-1} \cup (\state_{t}, \policy_{i}(\state_{t}), \transitionFn(\state_{t}, \policy_{i}(\state_{t})), r_{t+1})$
       % \State Execute policy $\policy_{i}(\state_{t})$ in environment and update trajectory $\tau_{i+1} = \{\state_{j}, \action_{j}, \state_{j+1}, r_{j+1}) \}_{j=0}^{t}$
     \EndFor
     \State Update data set $\dataset_{0:i} = \dataset_{0:i-1} \cup \tau$
@@ -285,7 +287,7 @@ policies and models inside the set
 \(\mathcal{M} = \{ f \mid | f(s,a) - \mu_{i}(s, a) | \leq \beta_{i} \Sigma_{i}(s, a) \quad \forall s, a \in \mathcal{S} \times \mathcal{A} \}\), representing all statistically plausible
 models under the posterior \(p(f(s,a) \mid \mathcal{D}_{0:i} \cup (s,a)) = \mathcal{N}(f(s,a) \mid \mu_{i}(s,a), \Sigma_{i}(s,a))\) at episode \(i\).
 This strategy is given by,
-\begin{align}
+\begin{align} \label{eq-ucrl}
 \policy_{i+1}^{\text{UCRL}} = \arg \max_{\policy \in \policyDomain} \max_{\transitionFn \in \mathcal{M}} J(\transitionFn, \policy).
 \end{align}
 This strategy optimises an optimistic policy over the set of plausible dynamics models.
@@ -293,7 +295,7 @@ Although this joint optimisation is intractable in general,
 \cite{curiEfficient2020} proposed a practical alternative which is detailed in \cref{sec-hucrl}.
 
 \textbf{MPC vs policy learning}
-It is worth noting that the strategies in \cref{eq-greedy,eq-posterior-sampling,eq-hucrl} can be used with both model predictive control (MPC)
+It is worth noting that the strategies in \cref{eq-greedy,eq-posterior-sampling,eq-ucrl} can be used with both model predictive control (MPC)
 techniques, such as the cross entoropy method (CEM), and model-free RL techniques, such as soft actor-critic (SAC).
 
 
@@ -336,11 +338,11 @@ A better approach would be to update the posterior at every time step during an 
 \begin{subequations}
 \begin{align} \label{eq-fast-update-mpc}
   \policy_{i+1}^{\text{greedy}}(\state) &= \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}}
-\E_{p(\transitionFn \mid \dataset_{0:i})} \left[J^{\Horizon}(\policy, \transitionFn) \right] + \stateValueFn(\state_{\Horizon+1}) \\
+\E_{p(\transitionFn \mid \dataset_{0:i})} \left[J^{\Horizon}(\action_{0:\Horizon}, \transitionFn) \right] + \stateValueFn(\state_{\Horizon+1}) \\
   \policy_{i+1}^{\text{PS}}(\state) &= \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}}
-J^{\Horizon}(\policy, \transitionFn) + \stateValueFn(\state_{\Horizon+1}) \quad \text{s.t. } \transitionFn \sim p(\transitionFn \mid \dataset_{0:i} \cup \bm\tau_{t}) \\
-  \policy_{i+1}^{\text{UCRL}}(\state) &= \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}}
-J^{\Horizon}(\policy, \transitionFn) + \stateValueFn(\state_{\Horizon+1}) \\
+J^{\Horizon}(\action_{0:\Horizon}, \transitionFn) + \stateValueFn(\state_{\Horizon+1}) \quad \text{s.t. } \transitionFn \sim p(\transitionFn \mid \dataset_{0:i} \cup \bm\tau_{t}) \\
+  \policy_{i+1}^{\text{UCRL}}(\state) &= \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}} \max_{\transitionFn \in \mathcal{M}}
+J^{\Horizon}(\action_{0:\Horizon}, \transitionFn) + \stateValueFn(\state_{\Horizon+1}) \quad \text{s.t. } \mathcal{M} = \{\transitionFn(\state_{t},\action_{t}) - \mu_{i,t}(\state_{t},\action_{t}) \leq \beta_{i,t} \Sigma_{i,t}(\state_{t}, \action_{t})\} \\
   \stateValueFn(\state) &= \mathbb{E} \left[ \sum_{t=0}^{\infty}     \discount^{t} \rewardFn(\state_{t},\action_{t}) \mid \state_{0}=\state \right] \label{eq-value-fn}
 \end{align}
 \end{subequations}
@@ -365,12 +367,12 @@ J^{\Horizon}(\policy, \transitionFn) + \stateValueFn(\state_{\Horizon+1}) \\
 Sparse GP predictive posterior is given by,
 \begin{align} \label{eq-svgp-predictive-posterior}
   q_{\inducingVariable}(\transitionFn(\state_{t}, \action_{t})) = \mathcal{N}
-  \left( \transitionFn(\state_{t}, \action_{t}) \mid \mathbf{A} \mathbf{m}^{*}, \mathbf{A}\mathbf{K}_{\mathbf{z}\mathbf{z}}^{-1} \mathbf{A}^{T} + \mathbf{A} \mathbf{V}^{*} \mathbf{A}^{T} \right)
+  \left( \transitionFn(\state_{t}, \action_{t}) \mid \mathbf{A} \mathbf{m}^{*}, \mathbf{A}\mathbf{K}_{\inducingInput\inducingInput}^{-1} \mathbf{A}^{T} + \mathbf{A} \mathbf{V}^{*} \mathbf{A}^{T} \right)
 \end{align}
-where $\mathbf{A} = \mathbf{K}_{\mathbf{X}\mathbf{Z}} \mathbf{K}^{-1}_{\mathbf{z}\mathbf{z}}$.
+where $\mathbf{A} = \mathbf{K}_{\mathbf{X}\inducingInput} \mathbf{K}^{-1}_{\inducingInput\inducingInput}$.
 \cite{adamDualParameterizationSparse2021} showed that optimal variational parameters are given by,
 \begin{align} \label{eq-dual-params}
-\mathbf{m}^{*} = \mathbf{V}^{*}\dualParam{1}^{*} \quad \mathbf{V}^{*} = [\mathbf{K}_{\mathbf{z}\mathbf{z}}^{-1} + \dualParam{2}^{*}]
+\mathbf{m}^{*} = \mathbf{V}^{*}\dualParam{1}^{*} \quad \mathbf{V}^{*} = [\mathbf{K}_{\inducingInput\inducingInput}^{-1} + \dualParam{2}^{*}]
 \end{align}
 Importantly, \cite{changFantasizingDualGPs2022} show that in the dual space,
 conditioning on new observations reduces to suming the dual variables from the previous time
@@ -385,7 +387,7 @@ complexity $\mathcal{O}(\numInducing^{2})$.
 This is a significant improvement to naive GP conditioning, which has complexity $\mathcal{O}((\numDataNew + \numDataOld)^{3})$
 and sparse GP conditioning, which has complexity $\mathcal{O}((\numDataNew + \numDataOld)\numInducing^{2})$.
 \todo{double check these complexities are right and cite them/show equaitons}
-It is worth highlighting that the complexity of Paul et als update does not increase during an episode,
+It is worth highlighting that the complexity of \cite{changFantasizingDualGPs2022} update does not increase during an episode.
 
 % \begin{align} \label{eq-dual-update-svgp}
 %  \dualParam{1}^{\text{new}} &\leftarrow \dualParam{1}^{\text{old}} +
@@ -404,13 +406,70 @@ It is worth highlighting that the complexity of Paul et als update does not incr
 
 
 \subsection{BNN to SVGP}
-\begin{itemize}
-  \item Write up Laplace BNN to SVGP
-  \item Extend fast updates to SVGP
-\end{itemize}
+In this section we extend these fast updates to environment's with high dimensional state spaces and large data sets.
+% Our method draws on the connection between BNNs and GPs and formulates a function space SVGP posterior given
+Our method uses a BNN dynamic model and draws on the connection between BNNs and GPs
+\parencite{khanApproximate2019} to formulate a function space SVGP posterior,
+where we can apply the fast updates from \cref{eq-dual-update-svgp}.
+At a high-level, we first use Laplace's approximation to obtain a weight space posterior for our BNN.
+We then linearise our BNN around the optimal parameters and interpret it as a GP.
+Finally, we formulate a lower rank approximation of this GP posterior (i.e. a SVGP posterior) using inducing variables.
+% formulates a function space SVGP posterior by drawing on the connection between BNNs and GPs.
+
+% We first show how to
+% i.e. we show these fast updates when using a BNN dynamic model
+
+
+\textbf{Model learning}
+We paraterise our single-step dynamic model $\transitionFnWithParams : \stateDomain \times \actionDomain \rightarrow \stateDomain$
+as an $L\text{-layer}$ NN with weights $\transitionParams$.
+Given the state transition data set $\dataset_{0:i} = \{(\state_{n}, \action_{n}), \state_{n+1}\}_{n=0}^{N_{i}}$ at episode $i$,
+we train the weights $\transitionParams$ to minimize the (regularized) empirical risk,
+\begin{align}
+  \transitionParams^{*}_{i} = \arg \min_{\transitionParams \in \R^{D}} \mathcal{L}(\dataset_{0:i};\transitionParams) = \arg \min_{\transitionParams \in \R^{D}} \left(
+  R(\transitionParams) + \sum_{n=0}^{N-1} l(\transitionFnWithParams(\state_{n}, \action_{n}), \state_{n+1}; \transitionParams) \right)
+\end{align}
+In practice, it is common to use the mean squared error (MSE) loss
+$l(\cdot,\cdot;\transitionParams) = \|\transitionFnWithParams(\state_{n}, \action_{n}) - \state_{n+1} \|^{2}_{2}$
+and to use the weight decay regularizer $R(\transitionParams)=\frac{1}{2}\gamma^{-2}\|\transitionParams\|^{2}_{2}$.
+However, the practioner is free to choose any loss and regularizer. \todo{I think?}
+
+\textbf{Laplace approximation}
+The Laplace approximation \todo{add citation of original paper} constructs a Gaussian approximation of the weight-space posterior $p(\transitionParams_{i} \mid \dataset_{0:i})$
+by using a second-order Taylor expansion of $\mathcal{L}$ around $\transitionParams^{*}_{i}$.
+The posterior approximation is given by,
+\begin{align} \label{eq-laplace-approx-weight-space}
+  p(\transitionParams_{i} \mid \dataset_{0:i}) \approx \mathcal{N} \left( \transitionParams_{i} \mid \transitionParams^{*}_{i} , \bm\Sigma_{\transitionParams^{*}_{i}} \right)
+  \quad \text{with} \quad \bm\Sigma_{\transitionParams_{i}} =
+ - \nabla_{\transitionParams \transitionParams}^{2} \mathcal{L} ( \dataset_{0:i} ; \transitionParams)|_{\transitionParams=\transitionParams^{*}_{i}}
+\end{align}
+That is, it sets the posterior precision to the hessian of the loss at the optimal parameters $\transitionParams^{*}_{i}$.
+It is worth noting that computing the hessian of the loss can be computationally intractable for large networks.
+Many approximations exist and can be used alongsied our method. We refer the reader to \cite{daxbergerLaplace2021} for more details.
+See \cref{sec-laplace-approximation} for further details on the Laplace approximation.
+% \begin{align}
+% \Sigma_{\transitionParams_{i}}^{-1} = - \nabla_{\transitionParams \transitionParams}^{2} \log p(\transitionParams \mid \dataset_{0:i})|_{\transitionParams=\transitionParams^{*}_{i}}
+%   + \frac{1}{\sigma^{2}_{0}} \mathbf{I}
+% \end{align}
+
+\textbf{Weight space to function space}
+% Note that the posterior in \cref{eq-laplace-approx-weight-space} is in weight space.
+We can represent the weight space posterior in \cref{eq-laplace-approx-weight-space} in
+function space by linearising the BNN and interpreting it as a GP.
+\begin{align} \label{eq-laplace-approx-function-space}
+  \transitionFn_{\transitionParams_{i}^{*}}(\cdot) &\sim \mathcal{N} \left( \mu_{\transitionParams_{i}^{*}}(\cdot), K_{\transitionParams_{i}^{*}}(\cdot, \cdot') \right) \quad
+  \mu_{\transitionParams_{i}^{*}}(\cdot) &= \transitionFn_{\transitionParams^{*}_{i}}(\cdot) \quad
+  K_{\transitionParams_{i}^{*}}(\cdot, \cdot') &= \mathbf{J}_{\transitionParams^{*}_{i}}(\cdot) \bm\Sigma_{\transitionParams^{*}_{i}} \mathbf{J}_{\transitionParams^{*}_{i}}(\cdot')^{T}
+\end{align}
+where the Jacobian is given by $\mathbf{J}_{\transitionParams^{*}_{i}}(\cdot) = \odv{\transitionFnWithParams(\cdot)}{\transitionParams}_{\transitionParams=\transitionParams_{i}^{*}}$.
+
+\begin{align} \label{eq-laplace-approx-jacobian}
+\mathbf{J}_{\transitionParams^{*}_{i}}(\cdot) = \odv{\transitionFnWithParams(\cdot)}{\transitionParams}_{\transitionParams=\transitionParams_{i}^{*}}
+\end{align}
+
 
 \begin{assumption} \label{assumption-ntk-linearisation}
-  Something about NTK being a linearisation around $\theta^{MAP}$ but each update moves away from $\theta^{MAP}$
+  Something about NTK being a linearisation around $\theta^{*}_{i}$ but each update moves away from $\theta^{*}_{i}$
 \end{assumption}
 
 \subsection{Efficiently Sampling Functions for Posterior Sampling}
@@ -427,6 +486,7 @@ Environments
     \item Update depends on number of inducing points?
     \item What experiments can we show for this? Wall clock time vs planning horizon with different numbers of inducing points?
   \end{itemize}
+  \item Is linearising NN mean and using fast updates during episode better than keeping non-linearised mean and not updating?
   \item How does number of inducing points affect performance?
   \begin{itemize}
     \item More inducing points means better approximation but larger computational complexity.
@@ -498,6 +558,7 @@ The strategy is given by,
 Intuitively, \(\eta(\state,\action) \in [-1,1]\) enables the optimisation to select any dynamics model
 \(\transitionFn\) within \(\pm \beta \Sigma_{i}(\state_{t}, \action_{t})\) of the posterior mean \(\mu_{i}(\state_{t}, \action_{t})\).
 
+\section{Laplace Approximation} \label{sec-laplace-approximation}
 
 
 \section{Template stuff}

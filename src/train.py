@@ -1,9 +1,11 @@
+#!/usr/bin/env python3
 import hydra
 from omegaconf import DictConfig, OmegaConf
 
 
 @hydra.main(version_base="1.3", config_path="../configs", config_name="main")
 def train_on_cluster(cfg: DictConfig):
+    """import here so hydra's --multirun works with slurm"""
     import logging
     import random
     from functools import partial
@@ -26,8 +28,6 @@ def train_on_cluster(cfg: DictConfig):
     import wandb
     from dm_env import specs
     from models import GaussianModelBaseEnv
-
-    # from models.gp.svgp import SVGPTransitionModel
     from pytorch_lightning import Trainer
     from pytorch_lightning.loggers import WandbLogger
     from setuptools.dist import Optional
@@ -180,7 +180,8 @@ def train_on_cluster(cfg: DictConfig):
         # )
         # base_env = make_env(cfg)
         env = make_transformed_env(make_env(cfg))
-        env.append_transform(VideoRecorder(logger=logger, tag="video"))
+        # env = make_transformed_env(make_env(cfg, from_pixels=True, pixels_only=False))
+        # env.append_transform(VideoRecorder(logger=logger, tag="video"))
         # print("recorder")
         # print(recorder)
         # recorder.transform.insert(0, CatTensors(["pixels"], "pixels_save", del_keys=False))
@@ -191,6 +192,13 @@ def train_on_cluster(cfg: DictConfig):
         # recorder.transform[2].init_stats(3)
         # env.transform[2].load_state_dict(transform_state_dict)
         # env.transform[2].load_state_dict(transform_state_dict)
+
+        # try:
+        #     obs_keys.remove("pixels")
+        # except:
+        #     print("pixels not in obs")
+        # print("obs_keys after {}".format(obs_keys))
+
         env.transform.load_state_dict(transform_state_dict)
         recorder = Recorder(
             record_frames=1000,
@@ -214,7 +222,12 @@ def train_on_cluster(cfg: DictConfig):
         proof_env.close()
         return transform_state_dict
 
-    def make_env(cfg: DictConfig, seed: int = None):
+    def make_env(
+        cfg: DictConfig,
+        seed: int = None,
+        from_pixels: bool = False,
+        pixels_only: bool = False,
+    ):
         if seed is not None:
             return hydra.utils.instantiate(
                 cfg.env,
@@ -280,14 +293,14 @@ def train_on_cluster(cfg: DictConfig):
 
         transform_state_dict = get_env_stats(cfg, seed=cfg.random_seed)
         # TODO should this use different seed?
-        recorder = make_recorder(
-            cfg,
-            actor_model_explore=planner,
-            transform_state_dict=transform_state_dict,
-            logger=logger,
-            record_interval=10,
-            seed=42,
-        )
+        # recorder = make_recorder(
+        #     cfg,
+        #     actor_model_explore=planner,
+        #     transform_state_dict=transform_state_dict,
+        #     logger=logger,
+        #     record_interval=10,
+        #     seed=42,
+        # )
 
         frames_per_batch = 50
         total_frames = 50000 // cfg.env.frame_skip
@@ -360,24 +373,31 @@ def train_on_cluster(cfg: DictConfig):
             # replay_buffer.extend(tensordict)
             print("replay_buffer")
             print(replay_buffer)
-            # if i == 0:
-            #     # Set inducing variables to data
-            #     samples = replay_buffer.sample(len(replay_buffer))
-            #     state = samples["state_vector"]
-            #     state_action_input = torch.concat([state, samples["action"]], -1)
-            #     print("state_action_input.shape")
-            #     print(state_action_input.shape)
-            #     print("cfg.model.num_inducing")
-            #     print(cfg.model.num_inducing)
-            #     Z = torch.nn.parameter.Parameter(
-            #         state_action_input[: cfg.model.num_inducing, :]
-            #     )
-            #     print("Z.shape")
-            #     print(Z.shape)
-            #     # # data = (state_action_input, state_diff)
-            #     # dynamic_model.gp_module.gp.variational_strategy.base_variational_strategy.inducing_points = (
-            #     #     Z
-            #     # )
+            if i == 0:
+                # Set inducing variables to data
+                samples = replay_buffer.sample(len(replay_buffer))
+                state = samples["state_vector"]
+                state_action_input = torch.concat([state, samples["action"]], -1)
+                print("state_action_input.shape")
+                print(state_action_input.shape)
+                print("cfg.model.num_inducing")
+                print(cfg.model.transition_model.num_inducing)
+                print(cfg.model.reward_model.num_inducing)
+                Z = torch.nn.parameter.Parameter(
+                    state_action_input[: cfg.model.transition_model.num_inducing, :]
+                )
+                print("Z.shape {}".format(Z.shape))
+                # # data = (state_action_input, state_diff)
+                dynamic_model.transition_model.gp.variational_strategy.base_variational_strategy.inducing_points = (
+                    Z
+                )
+
+                # TODO uniformaly sample Z from X
+                Z = torch.nn.parameter.Parameter(
+                    state[: cfg.model.reward_model.num_inducing, :]
+                )
+                print("Z2.shape {}".format(Z.shape))
+                dynamic_model.reward_model.gp.variational_strategy.inducing_points = Z
 
             # logger.info("Training dynamic model")
             print("Training dynamic model")
@@ -423,38 +443,59 @@ def train_on_cluster(cfg: DictConfig):
             print("type(nn.Linear(5, 1))")
             print(type(nn.Linear(5, 1)))
             print(type(FakeReward()))
-            env = make_transformed_env(make_env(cfg=cfg))
-            model_env = GaussianModelBaseEnv(
-                transition_model=dynamic_model.transition_model,
-                # reward_model=dynamic_model.transition_model,
-                # reward_model=nn.Linear(5, 1),
-                # reward_model=dynamic_model.reward_model,
-                reward_model=FakeReward(),
-                # reward_model=TensorDictModule(
-                #     FakeReward(),
-                #     # fake_reward,
-                #     in_keys=["state_vector", "state_vector_var", "noise_var"],
-                #     out_keys=["expected_reward"],
-                # ),
-                state_size=5,
-                action_size=1,
-                device=device,
-                # dtype=None,
-                # batch_size: int = None,
-            )
-            planner = CEMPlanner(
-                model_env,
-                planning_horizon=5,
-                optim_steps=11,
-                num_candidates=7,
-                top_k=3,
-                reward_key="reward",
-                # reward_key="expected_reward",
-                action_key="action",
-            )
-            tensordict = env.rollout(max_steps=350, policy=planner)
-            print("CEM")
-            print(tensordict)
+            if i == 0:
+                env = make_transformed_env(make_env(cfg=cfg))
+                model_env = GaussianModelBaseEnv(
+                    transition_model=dynamic_model.transition_model,
+                    # reward_model=dynamic_model.transition_model,
+                    # reward_model=nn.Linear(5, 1),
+                    # reward_model=dynamic_model.reward_model,
+                    reward_model=FakeReward(),
+                    # reward_model=TensorDictModule(
+                    #     FakeReward(),
+                    #     # fake_reward,
+                    #     in_keys=["state_vector", "state_vector_var", "noise_var"],
+                    #     out_keys=["expected_reward"],
+                    # ),
+                    state_size=5,
+                    action_size=1,
+                    device=device,
+                    # dtype=None,
+                    # batch_size: int = None,
+                )
+                print("making planner")
+                planner = CEMPlanner(
+                    model_env,
+                    planning_horizon=5,
+                    optim_steps=11,
+                    num_candidates=7,
+                    top_k=3,
+                    reward_key="reward",
+                    # reward_key="expected_reward",
+                    action_key="action",
+                )
+                print("MADE planner")
+
+                collector = SyncDataCollector(
+                    # create_env_fn=partial(make_transformed_env, train_env),
+                    create_env_fn=partial(make_transformed_env, make_env(cfg=cfg)),
+                    policy=planner,
+                    total_frames=total_frames,
+                    # max_frames_per_traj=50,
+                    frames_per_batch=frames_per_batch,
+                    # init_random_frames=-1,
+                    init_random_frames=500,
+                    reset_at_each_iter=False,
+                    split_trajs=True,
+                    device=device,
+                    storing_device=device,
+                    # device="cpu",
+                    # storing_device="cpu",
+                )
+            # # tensordict = env.rollout(max_steps=350, policy=planner)
+            # tensordict = env.rollout(max_steps=10, policy=planner)
+            # print("CEM")
+            # print(tensordict)
 
             rewards.append(
                 (
@@ -464,8 +505,20 @@ def train_on_cluster(cfg: DictConfig):
                     / cfg.env.frame_skip,
                 )
             )
+            print("rewards[-1][1]")
+            print(rewards[-1][1])
+            print(rewards)
             logger.log_scalar(name="reward", value=rewards[-1][1], step=i)
 
+            # if i == 0:
+            #     recorder = make_recorder(
+            #         cfg,
+            #         actor_model_explore=planner,
+            #         transform_state_dict=transform_state_dict,
+            #         logger=logger,
+            #         record_interval=10,
+            #         seed=42,
+            #     )
             # td_record = recorder(None)
 
             # if td_record is not None:

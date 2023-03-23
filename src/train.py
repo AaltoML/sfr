@@ -373,6 +373,7 @@ def train_on_cluster(cfg: DictConfig):
             # replay_buffer.extend(tensordict)
             print("replay_buffer")
             print(replay_buffer)
+
             if i == 0:
                 # Set inducing variables to data
                 samples = replay_buffer.sample(len(replay_buffer))
@@ -383,21 +384,31 @@ def train_on_cluster(cfg: DictConfig):
                 print("cfg.model.num_inducing")
                 print(cfg.model.transition_model.num_inducing)
                 print(cfg.model.reward_model.num_inducing)
-                Z = torch.nn.parameter.Parameter(
-                    state_action_input[: cfg.model.transition_model.num_inducing, :]
+                num_data = state_action_input.shape[0]
+
+                num_inducing = cfg.model.transition_model.num_inducing + i * 10
+                idx = np.random.choice(
+                    range(num_data), size=num_inducing, replace=False
                 )
+                Z = torch.nn.parameter.Parameter(state_action_input[idx, :])
                 print("Z.shape {}".format(Z.shape))
-                # # data = (state_action_input, state_diff)
                 dynamic_model.transition_model.gp.variational_strategy.base_variational_strategy.inducing_points = (
                     Z
                 )
-
-                # TODO uniformaly sample Z from X
-                Z = torch.nn.parameter.Parameter(
-                    state[: cfg.model.reward_model.num_inducing, :]
+                num_inducing = cfg.model.reward_model.num_inducing + i * 10
+                idx = np.random.choice(
+                    range(num_data), size=num_inducing, replace=False
                 )
+                Z = torch.nn.parameter.Parameter(state[idx, :])
                 print("Z2.shape {}".format(Z.shape))
                 dynamic_model.reward_model.gp.variational_strategy.inducing_points = Z
+
+                # # TODO uniformaly sample Z from X
+                # Z = torch.nn.parameter.Parameter(
+                #     state[: cfg.model.reward_model.num_inducing, :]
+                # )
+                # print("Z2.shape {}".format(Z.shape))
+                # dynamic_model.reward_model.gp.variational_strategy.inducing_points = Z
 
             # logger.info("Training dynamic model")
             print("Training dynamic model")

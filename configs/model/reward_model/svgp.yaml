@@ -1,0 +1,12 @@
+_target_: models.reward.gp.GPRewardModel
+# likelihood: gpytorch.likelihoods.Likelihood = None
+# mean_module: gpytorch.means.Mean = None
+# covar_module:
+#   _target_: gpytorch.kernels.Kernel
+# TODO implement kernel with ARD
+num_inducing: 16
+learning_rate: 0.1
+# num_iterations: 1000
+num_iterations: 500
+num_workers: 1
+learn_inducing_locations: True

@@ -34,33 +34,34 @@ class TransitionModel:
         action: Action,
     ) -> Tuple[StateMean, StateVar, NoiseVar]:
         """Returns next state mean/var and noise var"""
-        print("inside transition model call")
-        print("state_mean: {}".format(state_mean.shape))
-        print("state_var: {}".format(state_var))
-        print("noise_var: {}".format(noise_var))
-        print("action : {}".format(action.shape))
+        # print("inside transition model call")
+        # print("state_mean: {}".format(state_mean.shape))
+        # print("state_var: {}".format(state_var))
+        # print("noise_var: {}".format(noise_var))
+        # print("action : {}".format(action.shape))
         assert state_mean.shape[0] == action.shape[0]
         # assert state_var.shape[0] == action.shape[0]
         assert state_mean.ndim == action.ndim
-        if state_var is None:
-            print("state_var is none")
-            state = state_mean
-        else:
-            state_dist = td.Normal(loc=state_mean, scale=torch.sqrt(state_var))
-            state = state_dist.sample([1])[0, ...]  # TODO use more than one sample?
-            print("state sample you: {}".format(state.shape))
+        # if state_var is None:
+        #     print("state_var is none")
+        #     state = state_mean
+        # else:
+        #     state_dist = td.Normal(loc=state_mean, scale=torch.sqrt(state_var))
+        #     state = state_dist.sample([1])[0, ...]  # TODO use more than one sample?
+        #     print("state sample you: {}".format(state.shape))
+        state = state_mean
 
         # assert state_mean.shape[0] == state_var.shape[0]
         state_action_input = torch.concat([state, action], -1)
-        print("state_action_input {}".format(state_action_input.shape))
+        # print("state_action_input {}".format(state_action_input.shape))
         delta_state_mean, delta_state_var, noise_var = self.forward(state_action_input)
-        print("delta_state_mean {}".format(delta_state_mean.shape))
-        print("delta_state_var {}".format(delta_state_var.shape))
-        print("noise_var {}".format(noise_var.shape))
+        # print("delta_state_mean {}".format(delta_state_mean.shape))
+        # print("delta_state_var {}".format(delta_state_var.shape))
+        # print("noise_var {}".format(noise_var.shape))
         next_state_mean = state + delta_state_mean
-        print("next_state_mean {}".format(next_state_mean.shape))
+        # print("next_state_mean {}".format(next_state_mean.shape))
         next_state_var = delta_state_var
-        print("next_state_var {}".format(next_state_var.shape))
+        # print("next_state_var {}".format(next_state_var.shape))
         return next_state_mean, next_state_var, noise_var
 
     def forward(

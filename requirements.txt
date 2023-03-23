@@ -22,7 +22,8 @@ lightning
 # laplace-torch
 gpytorch
 
-./src/third_party/rl-0.1.0
+# torchrl
+# ./src/third_party/rl-0.1.0
 dm_control # deepmind control suite
 opencv-python
 moviepy # rendering

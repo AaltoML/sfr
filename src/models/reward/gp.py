@@ -77,21 +77,23 @@ class GPRewardModel(RewardModel):
         # self, state_mean: StateMean, state_var: StateVar, num_samples: int = 5
     ) -> TensorType["one"]:
         """Returns expected reward"""
-        # print("inside reward_model.call()")
-        num_samples = [3]
-        state_dist = td.Normal(loc=state_mean, scale=torch.sqrt(state_var))
-        # print("state_dist {}".format(state_dist))
-        state_samples = state_dist.sample(num_samples)
-        # print("state_samples {}".format(state_samples.shape))
-        # reward_samples = torch.vmap(self.forward, randomness="same")(state_samples)
-        reward_samples = []
-        for state_sample in state_samples:
-            reward_samples.append(self.forward(state_sample))
-        reward_samples = torch.stack(reward_samples, 0)
-        # reward_samples = self.forward(state_samples)
-        # print("reward_samples {}".format(reward_samples.shape))
-        expected_reward = torch.mean(reward_samples, 0)
-        return expected_reward
+        # # print("inside reward_model.call()")
+        # num_samples = [3]
+        # state_dist = td.Normal(loc=state_mean, scale=torch.sqrt(state_var))
+        # # print("state_dist {}".format(state_dist))
+        # state_samples = state_dist.sample(num_samples)
+        # # print("state_samples {}".format(state_samples.shape))
+        # # reward_samples = torch.vmap(self.forward, randomness="same")(state_samples)
+        # reward_samples = []
+        # for state_sample in state_samples:
+        #     reward_samples.append(self.forward(state_sample))
+        # reward_samples = torch.stack(reward_samples, 0)
+        # # reward_samples = self.forward(state_samples)
+        # # print("reward_samples {}".format(reward_samples.shape))
+        # expected_reward = torch.mean(reward_samples, 0)
+        # return expected_reward
+        # TODO take expectation here?
+        return self.forward(state_mean)
 
     def forward(self, state: State):
         """Returns reward"""

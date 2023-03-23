@@ -7,10 +7,12 @@ covar_module:
   _target_: gpytorch.kernels.ScaleKernel
   base_kernel:
     _target_: gpytorch.kernels.RBFKernel
-    ard_num_dims: ${input_dim}
+    ard_num_dims: ${state_dim}
 num_inducing: 128
 learning_rate: 0.1
 # num_iterations: 1000
-num_iterations: 500
+num_iterations: 5000
+# num_iterations: 5
+# num_iterations: 500
 num_workers: 1
 learn_inducing_locations: True

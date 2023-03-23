@@ -1,0 +1,8 @@
+_target_: torchrl.modules.CEMPlanner
+env: ${model}
+planning_horizon: 10
+optim_steps: 11
+num_candidates: 7
+top_k: 3
+reward_key: 'expected_reward'
+action_key: 'action'

@@ -66,6 +66,25 @@ import torch
 print("Hello world")
 ```
 
+## Running experiments on Triton (Aalto's cluster)
+Clone the repo with:
+``` shell
+git clone https://github.com/aidanscannell/bayesian-model-based-rl-with-fast-posterior-updates.git ~/python-projects/bayesian-model-based-rl-with-fast-posterior-updates
+```
+Create a virtual environment and install dependencies with:
+``` shell
+ml py-virtualenv
+make .venv/bin/activate
+```
+Run multiple experiments in parallel whilst using hydra's sweep:
+``` shell
+python train.py --multirun +experiments=moderl ++training.random_seed=42,1,69,22,4
+```
+Copy wandb results from triton with:
+``` shell
+rsync -avz -e  "ssh" scannea1@triton.aalto.fi:/home/scannea1/python-projects/moderl/experiments/wandb ./wandb
+```
+
 ## Reproducing experiments
 Note that [src/train.py](src/train.py) uses [Weights and Biases](https://wandb.ai/site) for tracking experiments.
 All experiments use the base hydra config in [configs/main.yaml](configs/main.yaml).

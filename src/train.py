@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 import gpytorch
 import hydra
+import imageio
 import numpy as np
 import omegaconf
 import pytorch_lightning as pl
@@ -20,7 +21,8 @@ import torchrl
 import tqdm
 import wandb
 from dm_env import specs
-from models.gp.svgp import SVGPDynamicModel
+
+# from models.gp.svgp import SVGPTransitionModel
 from omegaconf import DictConfig, OmegaConf
 from pytorch_lightning import Trainer
 from pytorch_lightning.loggers import WandbLogger
@@ -39,13 +41,21 @@ from torchrl.data.replay_buffers.samplers import (
 from torchrl.data.replay_buffers.storages import LazyMemmapStorage, LazyTensorStorage
 from torchrl.envs import CatTensors, DoubleToFloat
 from torchrl.envs.libs.gym import GymEnv
-from torchrl.envs.transforms import RewardScaling, TransformedEnv
+from torchrl.envs.transforms import ObservationNorm, RewardScaling, TransformedEnv
+from torchrl.modules import CEMPlanner
+from torchrl.record import VideoRecorder
+from torchrl.record.loggers.wandb import WandbLogger
 from torchrl.trainers import Recorder
 from utils import set_seed_everywhere
+from models import GaussianModelBaseEnv
 
 
 def make_replay_buffer(
-    buffer_size: int, device, buffer_scratch_dir: str = "/tmp/", prefetch: int = 3
+    buffer_size: int,
+    device,
+    buffer_scratch_dir: str = "/tmp/",
+    batch_size: int = 64,
+    prefetch: int = 3,
 ):
     sampler = RandomSampler()
     replay_buffer = TensorDictReplayBuffer(
@@ -55,6 +65,7 @@ def make_replay_buffer(
         #     scratch_dir=buffer_scratch_dir,
         #     device=device,
         # ),
+        batch_size=batch_size,
         sampler=sampler,
         pin_memory=False,
         prefetch=prefetch,
@@ -62,15 +73,8 @@ def make_replay_buffer(
     return replay_buffer
 
 
-def make_transformed_env(env, reward_scaling=1.0):
+def make_transformed_env(env, reward_scaling=1.0, init_env_steps: int = 1000):
     """Apply transforms to the env (such as reward scaling and state normalization)."""
-
-    env = TransformedEnv(env)
-
-    # we append transforms one by one, although we might as well create the
-    # transformed environment using the `env = TransformedEnv(base_env, transforms)`
-    # syntax.
-    env.append_transform(RewardScaling(loc=0.0, scale=reward_scaling))
 
     double_to_float_list = []
     double_to_float_inv_list = []
@@ -78,33 +82,84 @@ def make_transformed_env(env, reward_scaling=1.0):
         logger.info("env is dm_env so making double precision")
         # if env_library is torchrl.envs.libs.dm_control.DMControlEnv:
         # DMControl requires double-precision
-        double_to_float_list += [
-            "reward",
-            "action",
-        ]
+        double_to_float_list += ["reward", "action"]
         double_to_float_inv_list += ["action"]
 
-    # We concatenate all states into a single "observation_vector"
-    # even if there is a single tensor, it'll be renamed in "observation_vector".
+    # out_key = "state_vector"
+    out_key = "state_vector"
+    obs_keys = list(env.observation_spec.keys())
+    print("obs_keys {}".format(obs_keys))
+    # try:
+    #     obs_keys.remove("pixels")
+    # except:
+    #     print("pixels not in obs")
+    # print("obs_keys after {}".format(obs_keys))
+
+    double_to_float_list.append(out_key)
+    # obs_action_keys = obs_keys + ["action"]
+    # print("obs_action_keys")
+    # print(obs_action_keys)
+    # print(obs_diff_keys)
+    env = TransformedEnv(
+        env,
+        torchrl.envs.transforms.Compose(
+            RewardScaling(loc=0.0, scale=reward_scaling),
+            CatTensors(in_keys=obs_keys, out_key=out_key),
+            ObservationNorm(in_keys=[out_key]),
+            DoubleToFloat(
+                in_keys=double_to_float_list, in_keys_inv=double_to_float_inv_list
+            ),
+            # CatTensors(in_keys=obs_keys + ["action"], out_key="obs_action_vector"),
+        ),
+    )
+    print("original env")
+    print(env)
+
+    env.transform[2].init_stats(init_env_steps)
+    # try:
+    #     env.transform.insert(0, CatTensors(["pixels"], "pixels_save", del_keys=False))
+    #     print(env)
+    #     print("removed pixels")
+    # except:
+    #     print("No pixels to remove")
+    # print("env.observation_spec.keys()")
+    # print(env.observation_spec.keys())
+
+    # we append transforms one by one, although we might as well create the
+    # transformed environment using the `env = TransformedEnv(base_env, transforms)`
+    # syntax.
+    # env.append_transform(RewardScaling(loc=0.0, scale=reward_scaling))
+
+    # We concatenate all states into a single "state_vector"
+    # even if there is a single tensor, it'll be renamed in "state_vector".
     # This facilitates the downstream operations as we know the name of the
     # output tensor.
     # In some environments (not half-cheetah), there may be more than one
     # observation vector: in this case this code snippet will concatenate them
     # all.
-    out_key = "observation_vector"
-    obs_keys = list(env.observation_spec.keys())
-    env.append_transform(CatTensors(in_keys=obs_keys, out_key=out_key))
+    # out_key = "state_vector"
+    # obs_keys = list(env.observation_spec.keys())
+    # print("obs_keys")
+    # print(obs_keys)
+    # try:
+    #     obs_keys.remove("pixels")
+    # except:
+    #     print("pixels not in obs")
+    # print(obs_keys)
+    # env.append_transform(CatTensors(in_keys=obs_keys, out_key=out_key))
 
     # we normalize the states, but for now let's just instantiate a stateless
     # version of the transform
     # env.append_transform(ObservationNorm(in_keys=[out_key], standard_normal=True))
+    # env.append_transform(ObservationNorm(in_keys=[out_key]))
 
-    double_to_float_list.append(out_key)
-    env.append_transform(
-        DoubleToFloat(
-            in_keys=double_to_float_list, in_keys_inv=double_to_float_inv_list
-        )
-    )
+    # double_to_float_list.append(out_key)
+    # env.append_transform(
+    #     DoubleToFloat(
+    #         in_keys=double_to_float_list, in_keys_inv=double_to_float_inv_list
+    #     )
+    # )
+    # env.transform[0].init_stats(num_iter=1000, reduce_dim=0, cat_dim=0)
 
     return env
 
@@ -113,50 +168,65 @@ def make_recorder(
     cfg: DictConfig,
     actor_model_explore,
     transform_state_dict,
+    logger,
     record_interval=10,
     seed=42,
 ):
-    base_env = hydra.utils.instantiate(cfg.env, random=seed)
-    recorder = make_transformed_env(base_env)
-    print("recorder")
-    print(recorder)
+    # base_env = hydra.utils.instantiate(
+    #     cfg.env, random=seed, from_pixels=True, pixels_only=False
+    # )
+    # base_env = make_env(cfg)
+    env = make_transformed_env(make_env(cfg))
+    env.append_transform(VideoRecorder(logger=logger, tag="video"))
+    # print("recorder")
+    # print(recorder)
+    # recorder.transform.insert(0, CatTensors(["pixels"], "pixels_save", del_keys=False))
+    # recorder.append_transform(CatTensors(["pixels"], "pixels_save", del_keys=False))
+    print("recorder env")
+    print(env)
     # TODO is it OK to comment this out
     # recorder.transform[2].init_stats(3)
-    # recorder.transform[2].load_state_dict(transform_state_dict)
-    recorder_obj = Recorder(
+    # env.transform[2].load_state_dict(transform_state_dict)
+    # env.transform[2].load_state_dict(transform_state_dict)
+    env.transform.load_state_dict(transform_state_dict)
+    recorder = Recorder(
         record_frames=1000,
         frame_skip=cfg.env.frame_skip,
         policy_exploration=actor_model_explore,
-        recorder=recorder,
+        recorder=env,
+        # logger=logger,
         exploration_mode="mean",
         record_interval=record_interval,
     )
-    return recorder_obj
+    return recorder
 
 
-def get_env_stats(cfg, init_env_steps=1000, seed=42):
+def get_env_stats(cfg, seed: Optional[int] = None):
     """Gets the stats of an environment."""
-    proof_env = make_transformed_env(hydra.utils.instantiate(cfg.env, random=seed))
-    print("proof_env")
-    print(proof_env)
-    # proof_env.set_seed(seed)
-    # t = proof_env.transform[0]
-    # t = proof_env.transform[-1]
-    # t.init_stats(init_env_steps)
-    # transform_state_dict = t.state_dict()
+    if seed is not None:
+        proof_env = make_transformed_env(make_env(cfg, seed=seed))
+    else:
+        proof_env = make_transformed_env(make_env(cfg))
+    print("proof_env {}".format(proof_env))
     transform_state_dict = proof_env.state_dict()
     proof_env.close()
     return transform_state_dict
 
 
-def make_env(cfg: DictConfig):
-    return hydra.utils.instantiate(cfg.env)
+def make_env(cfg: DictConfig, seed: int = None):
+    if seed is not None:
+        return hydra.utils.instantiate(
+            cfg.env,
+            random=seed
+            # cfg.env, from_pixels=True, pixels_only=False, random=seed
+        )
+    else:
+        return hydra.utils.instantiate(cfg.env)
+        # return hydra.utils.instantiate(cfg.env, from_pixels=True, pixels_only=False)
 
 
 @hydra.main(version_base="1.3", config_path="../configs", config_name="main")
 def train(cfg: DictConfig):
-    # work_dir = Path.cwd()
-    # timer = utils.Timer()
     try:  # Make experiment reproducible
         set_seed_everywhere(cfg.random_seed)
     except:
@@ -169,166 +239,106 @@ def train(cfg: DictConfig):
     torch.backends.cudnn.determinstic = True
     torch.backends.cudnn.benchmark = False
 
-    # Fetching the device that will be used throughout this notebook
     device = (
         torch.device("cpu") if not torch.cuda.is_available() else torch.device("cuda:0")
     )
 
-    if cfg.wandb.use_wandb:
-        # Initialise WandB
-        run = wandb.init(
+    if cfg.wandb.use_wandb:  # Initialise WandB
+        logger = WandbLogger(
+            exp_name=cfg.wandb.run_name,
+            # offline=False,
+            # save_dir=None,
+            # id=cfg.wandb.id,
             project=cfg.wandb.project,
             group=cfg.wandb.group,
             tags=cfg.wandb.tags,
-            name=cfg.wandb.run_name,
             config=omegaconf.OmegaConf.to_container(
                 cfg, resolve=True, throw_on_missing=True
             ),
         )
 
-    # Configure environment
-    # train_env = make_env(cfg.env, device=device)
-    train_env = hydra.utils.instantiate(cfg.env)
-    train_env = make_transformed_env(train_env)
-    # train_env.set_seed(cfg.random_seed)
-    print("train_env")
-    print(train_env)
-    # cfg.action_dim = train_env.action_spec.shape
-    # print("cfg.action_dim")
-    # print(cfg.action_dim)
-    # cfg.observation_dim = train_env.observation_spec
-    # print(cfg.observation_dim)
-    # train_env = dmc.make(
-    #     cfg.env_name, cfg.task_name, cfg.frame_stack, cfg.action_repeat, cfg.random_seed
-    # )
-    # if torch.has_cuda and torch.cuda.device_count():
-    #     train_env.to("cuda:0")
-    #     train_env.reset()
-
     dynamic_model = hydra.utils.instantiate(cfg.model)
-    # dynamic_model.gp_module = torch.compile(dynamic_model.gp_module)
-    print("dynamic_model")
-    print(dynamic_model)
-    print(type(dynamic_model))
-    planner = hydra.utils.instantiate(
-        cfg.planner, model=dynamic_model, proof_env=make_transformed_env(make_env(cfg))
-    )
-    # proof_env = make_env(cfg)
-    # print("proof_env")
-    # print(proof_env)
-    # planner = hydra.utils.instantiate(cfg.planner, proof_env=proof_env)
-    print("planner")
-    print(planner)
-    # dynamic_model_module = TensorDictModule(
-    #     dynamic_model,
-    #     in_keys=["observation_vector", "action"],
-    #     out_keys=[("next", "observation_vector")],
-    # )
+    print("Dynamic model {}".format(dynamic_model))
 
     # Configure agent
-    # agent = hydra.utils.instantiate(cfg.agent, env=env)
-    # agent = hydra.utils.instantiate(cfg.agent)
-    # policy = hydra.utils.instantiate(cfg.policy)
+    planner = hydra.utils.instantiate(cfg.planner, env=dynamic_model)
+    print("Planner: {}".format(planner))
+    random_policy = torchrl.collectors.collectors.RandomPolicy(
+        make_transformed_env(make_env(cfg)).action_spec
+    )
 
-    # Collect initial data set
-    # replay_buffer = rollout_agent_and_populate_replay_buffer(
-    #     env=train_env,
-    #     policy=RandomPolicy(action_spec=train_env.action_spec),
-    #     replay_buffer=ReplayBuffer(capacity=cfg.initial_dataset.replay_buffer_capacity),
-    #     num_episodes=cfg.initial_dataset.num_episodes,
-    # )
-    # replay_buffer = ReplayBuffer(capacity=cfg.initial_dataset.replay_buffer_capacity)
-
-    print("device={}".format(device))
+    # Create replay buffer
     replay_buffer = make_replay_buffer(
         buffer_size=cfg.replay_buffer_capacity,
         device=device,
         buffer_scratch_dir=cfg.buffer_scratch_dir,
+        batch_size=cfg.batch_size,
         prefetch=3,
     )
-    logger = torchrl.record.loggers.WandbLogger(exp_name=cfg.wandb.run_name)
 
-    # Create replay buffer
-
-    # policy = RandomPolicy(action_spec=train_env.action_spec)
-    print("train_env.action_spec")
-    print(train_env.action_spec)
-    policy = planner
-    # policy = torchrl.collectors.collectors.RandomPolicy(train_env.action_spec)
-    # policy_module = TensorDictModule(
-    #     policy, in_keys=["observation"], out_keys=["action"]
-    # )
-
-    # recorder = torchrl.record.VideoRecorder(logger)
-    transform_state_dict = get_env_stats(
-        cfg, init_env_steps=cfg.init_env_steps, seed=cfg.random_seed + 1
-    )
+    transform_state_dict = get_env_stats(cfg, seed=cfg.random_seed)
     # TODO should this use different seed?
     recorder = make_recorder(
         cfg,
-        # actor_model_explore=policy_module,
-        actor_model_explore=policy,
+        actor_model_explore=planner,
         transform_state_dict=transform_state_dict,
+        logger=logger,
         record_interval=10,
         seed=42,
     )
-    # recorder = torchrl.record.VideoRecorder(logger)
-    # if cfg.save_video:
-    #     video_recorder = VideoRecorder(work_dir)
-    # if cfg.save_train_video:
-    #     train_video_recorder = TrainVideoRecorder(work_dir)
-    # torchrl.record.VideoRecorder(logger, tag, in_keys, skip: int = 2)
 
     frames_per_batch = 50
     total_frames = 50000 // cfg.env.frame_skip
     frames_per_batch = 1000 // cfg.env.frame_skip
     collector = SyncDataCollector(
+        # create_env_fn=partial(make_transformed_env, train_env),
         create_env_fn=partial(make_transformed_env, make_env(cfg=cfg)),
-        policy=policy,
+        # policy=planner,
+        policy=random_policy,
         total_frames=total_frames,
         # max_frames_per_traj=50,
         frames_per_batch=frames_per_batch,
-        init_random_frames=-1,
+        # init_random_frames=-1,
+        init_random_frames=500,
         reset_at_each_iter=False,
         split_trajs=True,
-        device="cpu",
-        storing_device="cpu",
+        device=device,
+        storing_device=device,
+        # device="cpu",
+        # storing_device="cpu",
     )
-    # collector = SyncDataCollector(
-    #     create_env_fn=partial(make_env, cfg=cfg),
-    #     # train_env,
-    #     policy=policy_module,
-    #     frames_per_batch=frames_per_batch,
-    #     total_frames=total_frames,
-    #     split_trajs=True,
-    #     device=device,
-    # )
+
+    # # logger.info("Training dynamic model")
+    # print("Training dynamic model")
+    # dynamic_model.train(replay_buffer)
+    # print("DONE TRAINING MODEL")
+    # # logger.info("DONE TRAINING MODEL")
 
     norm_factor_training = 1  # TODO set this correctly
     rewards, rewards_eval = [], []
     collected_frames = 0
-    pbar = tqdm.tqdm(total=total_frames)
+    # pbar = tqdm.tqdm(total=total_frames)
     r0 = None
     for i, tensordict in enumerate(collector):
-        print("i={}".format(i))
-        # print(tensordict)
+        print("Episode: {}".format(i))
+        print("tensordict: {}".format(tensordict))
         # print(tensordict["next"])
 
-        # state_diff = tensordict.get("observation_vector") - tensordict.get(
-        #     ("next", "observation_vector")
+        # state_diff = tensordict.get("state_vector") - tensordict.get(
+        #     ("next", "state_vector")
         # )
         # print("state_diff: {}".format(state_diff))
-        # print(tensordict.get("observation_vector"))
-        # print(tensordict.get(("next", "observation_vector")))
+        # print(tensordict.get("state_vector"))
+        # print(tensordict.get(("next", "state_vector")))
         # print(
-        #     tensordict.get("observation_vector")[1:]
-        #     == tensordict.get(("next", "observation_vector"))[:-1]
+        #     tensordict.get("state_vector")[1:]
+        #     == tensordict.get(("next", "state_vector"))[:-1]
         # ).all()
 
-        # print(tensordict["observation_vector"])
+        # print(tensordict["state_vector"])
         if r0 is None:
             r0 = tensordict["reward"].mean().item()
-        pbar.update(tensordict.numel())
+        # pbar.update(tensordict.numel())
 
         # extend the replay buffer with the new data
         if ("collector", "mask") in tensordict.keys(True):
@@ -340,29 +350,109 @@ def train(cfg: DictConfig):
             # print("Not here")
             tensordict = tensordict.view(-1)
             current_frames = tensordict.numel()
+        print("current_frames")
+        print(current_frames)
         collected_frames += current_frames
+        print(current_frames)
         replay_buffer.extend(tensordict.cpu())
-        if i == 0:
-            # Set inducing variables to data
-            samples = replay_buffer.sample(len(replay_buffer))
-            state = samples["observation_vector"]
-            state_action_input = torch.concat([state, samples["action"]], -1)
-            print("state_action_input.shape")
-            print(state_action_input.shape)
-            # Z = torch.nn.parameter.Parameter(state_action_input[:128, :])
-            # print(Z.shape)
-            # # data = (state_action_input, state_diff)
-            # dynamic_model.gp_module.gp.variational_strategy.base_variational_strategy.inducing_points = (
-            #     Z
-            # )
-            # print("Z")
-            # print(Z)
+        # replay_buffer.extend(tensordict)
+        print("replay_buffer")
+        print(replay_buffer)
+        # if i == 0:
+        #     # Set inducing variables to data
+        #     samples = replay_buffer.sample(len(replay_buffer))
+        #     state = samples["state_vector"]
+        #     state_action_input = torch.concat([state, samples["action"]], -1)
+        #     print("state_action_input.shape")
+        #     print(state_action_input.shape)
+        #     print("cfg.model.num_inducing")
+        #     print(cfg.model.num_inducing)
+        #     Z = torch.nn.parameter.Parameter(
+        #         state_action_input[: cfg.model.num_inducing, :]
+        #     )
+        #     print("Z.shape")
+        #     print(Z.shape)
+        #     # # data = (state_action_input, state_diff)
+        #     # dynamic_model.gp_module.gp.variational_strategy.base_variational_strategy.inducing_points = (
+        #     #     Z
+        #     # )
 
         # logger.info("Training dynamic model")
         print("Training dynamic model")
-        dynamic_model.train(replay_buffer)
+        # dynamic_model.train(replay_buffer)
+        dynamic_model.transition_model.train(replay_buffer)
+        dynamic_model.reward_model.train(replay_buffer)
         print("DONE TRAINING MODEL")
+
         # logger.info("DONE TRAINING MODEL")
+        import torch.nn.functional as F
+
+        class FakeReward(nn.Module):
+            def __init__(self):
+                super().__init__()
+                # self.conv1 = nn.Conv2d(1, 20, 5)
+                # self.conv2 = nn.Conv2d(20, 20, 5)
+                self.conv1 = nn.Linear(5, 1)
+                self.conv2 = nn.Linear(5, 1)
+                self.conv3 = nn.Linear(5, 1)
+
+            def forward(self, a, b, c):
+                # print("a {}".format(a))
+                # print("b {}".format(b))
+                # print("c {}".format(c))
+                # x = F.relu(self.conv1(a))
+                # y = F.relu(self.conv1(b))
+                y = dynamic_model.reward_model(a, b, c)
+                # print("y {}".format(y.shape))
+                return y
+
+        # class FakeReward(nn.Module):
+        #     def __init__(self):
+        #         super().__init__()
+
+        #     # def forward(self, a, b, c):
+        #     def __call__(self, a):
+        #         return torch.sum(a * b * c)
+
+        #     def forward(self, x):
+        #         """Returns change in state"""
+        #         return 1
+
+        print("type(nn.Linear(5, 1))")
+        print(type(nn.Linear(5, 1)))
+        print(type(FakeReward()))
+        env = make_transformed_env(make_env(cfg=cfg))
+        model_env = GaussianModelBaseEnv(
+            transition_model=dynamic_model.transition_model,
+            # reward_model=dynamic_model.transition_model,
+            # reward_model=nn.Linear(5, 1),
+            # reward_model=dynamic_model.reward_model,
+            reward_model=FakeReward(),
+            # reward_model=TensorDictModule(
+            #     FakeReward(),
+            #     # fake_reward,
+            #     in_keys=["state_vector", "state_vector_var", "noise_var"],
+            #     out_keys=["expected_reward"],
+            # ),
+            state_size=5,
+            action_size=1,
+            device=device,
+            # dtype=None,
+            # batch_size: int = None,
+        )
+        planner = CEMPlanner(
+            model_env,
+            planning_horizon=5,
+            optim_steps=11,
+            num_candidates=7,
+            top_k=3,
+            reward_key="reward",
+            # reward_key="expected_reward",
+            action_key="action",
+        )
+        tensordict = env.rollout(max_steps=350, policy=planner)
+        print("CEM")
+        print(tensordict)
 
         rewards.append(
             (
@@ -372,20 +462,29 @@ def train(cfg: DictConfig):
                 / cfg.env.frame_skip,
             )
         )
-        td_record = recorder(None)
-        if td_record is not None:
-            rewards_eval.append((i, td_record["r_evaluation"].item()))
-        if len(rewards_eval):
-            pbar.set_description(
-                f"reward: {rewards[-1][1]: 4.4f} (r0 = {r0: 4.4f}) | reward eval: reward: {rewards_eval[-1][1]: 4.4f}"
-            )
-            wandb.log(
-                {
-                    # "reward": {rewards[-1][1]: 4.4f} (r0 = {r0: 4.4f}),
-                    "reward": rewards[-1][1],
-                    "reward_eval": rewards_eval[-1][1],
-                }
-            )
+        logger.log_scalar(name="reward", value=rewards[-1][1], step=i)
+
+        # td_record = recorder(None)
+
+        # if td_record is not None:
+        #     rewards_eval.append((i, td_record["r_evaluation"].item()))
+        # if len(rewards_eval):
+        #     pbar.set_description(
+        #         f"reward: {rewards[-1][1]: 4.4f} (r0 = {r0: 4.4f}) | reward eval: reward: {rewards_eval[-1][1]: 4.4f}"
+        #     )
+        #     logger.log_scalar(name="reward", value=rewards[-1][1], step=i)
+        #     logger.log_scalar(name="reward_eval", value=rewards_eval[-1][1], step=i)
+        #     # wandb.log(
+        #     #     {
+        #     #         "gameplays": wandb.Video(
+        #     #             mp4,
+        #     #             caption="episode: " + str(i - 10),
+        #     #             fps=4,
+        #     #             format="gif",
+        #     #         ),
+        #     #         "step": i,
+        #     #     }
+        #     # )
 
     # global_step = 0
     # for episode in range(cfg.num_episodes):

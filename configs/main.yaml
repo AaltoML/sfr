@@ -1,14 +1,16 @@
 defaults:
   # - model: laplace
-  - model: svgp
+  # - model: svgp
+  - model: world_model
   # - task: cartpole_swingup
   - env: cartpole_swingup
-  - planner: mppi
+  # - planner: mppi
+  - planner: cem
   # - model: probabilistic_ensemble
   # Use slurm on cluster or local?
-  # - override hydra/launcher: submitit_local
+  - override hydra/launcher: submitit_local
   # - override hydra/launcher: local
-  - override hydra/launcher: slurm
+  # - override hydra/launcher: slurm
   # Disable logging by Hydra
   - override hydra/job_logging: none
   - override hydra/hydra_logging: none
@@ -26,7 +28,7 @@ action_repeat: 1
 
 # observation_dim: ???
 # action_dim: ???
-observation_dim: 5
+state_dim: 5
 action_dim: 1
 # action_dim:
 #   _target_: ${env.action_spec().shape}
@@ -52,6 +54,7 @@ save_train_video: true
 #   num_episodes: 20
 replay_buffer_capacity: 100000
 buffer_scratch_dir: "/tmp/"
+batch_size: 64
 
 wandb:
   group: ${env.env_name}-${env.task_name}

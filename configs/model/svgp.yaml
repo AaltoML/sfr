@@ -1,4 +1,4 @@
-_target_: models.gp.SVGPDynamicModel
+_target_: models.gp.SVGPTransitionModel
 _convert_: all
 likelihood:
   _target_: gpytorch.likelihoods.MultitaskGaussianLikelihood
@@ -18,28 +18,28 @@ covar_module:
 num_inducing: 128
 # learning_rate: 0.05
 learning_rate: 0.1
-batch_size: 64
-trainer:
-  _target_: pytorch_lightning.Trainer
-  check_val_every_n_epoch: 1
-  logger:
-    _target_: pytorch_lightning.loggers.WandbLogger
-    project: ${wandb.project}
-    log_model: "all"
-  callbacks:
-    - _target_: pytorch_lightning.callbacks.EarlyStopping
-      monitor: "model_loss"
-      # monitor: "val_loss"
-      mode: "min"
-      min_delta: 0.00
-      # patience: 1
-      # patience: 50
-      patience: 20
-      # patience: 4
-      verbose: True
-      # verbose: False
-  # max_epochs: 1
-  max_epochs: 1000
+# batch_size: 64
+# trainer:
+#   _target_: pytorch_lightning.Trainer
+#   check_val_every_n_epoch: 1
+#   logger:
+#     _target_: pytorch_lightning.loggers.WandbLogger
+#     project: ${wandb.project}
+#     log_model: "all"
+#   callbacks:
+#     - _target_: pytorch_lightning.callbacks.EarlyStopping
+#       monitor: "model_loss"
+#       # monitor: "val_loss"
+#       mode: "min"
+#       min_delta: 0.00
+#       # patience: 1
+#       # patience: 50
+#       patience: 20
+#       # patience: 4
+#       verbose: True
+#       # verbose: False
+#   # max_epochs: 1
+#   max_epochs: 1000
 delta_state: True
 num_workers: 1 # TODO what should I set this to?
 # num_workers: 8

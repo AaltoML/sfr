@@ -15,7 +15,7 @@ from torchrl.data import ReplayBuffer
 from pytorch_lightning import Trainer
 from torch.utils.data import DataLoader, TensorDataset
 
-from .models import DynamicModel
+from .models import TransitionModel
 
 
 class GPModule(pl.LightningModule):
@@ -51,7 +51,7 @@ class GPModule(pl.LightningModule):
         raise NotImplementedError
 
 
-# class BaseGPDynamicsModel(DynamicModel):
+# class BaseGPTransitionsModel(TransitionModel):
 #     # TODO implement delta_state properly
 #     def __init__(
 #         self,
@@ -60,7 +60,7 @@ class GPModule(pl.LightningModule):
 #         delta_state: bool = True,
 #         num_workers: int = 1,
 #     ):
-#         super(BaseGPDynamicsModel, self).__init__()
+#         super(BaseGPTransitionsModel, self).__init__()
 #         self.gp_module = gp_module
 #         if trainer is None:
 #             self.trainer = Trainer()

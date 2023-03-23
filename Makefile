@@ -4,7 +4,8 @@ FILENAME=main
 PAPER_DIR=paper
 AUX_DIR=.aux
 
-VENV = .venv
+# VENV = .venv
+VENV = .direnv
 PYTHON = $(VENV)/bin/python3
 PIP = $(VENV)/bin/pip
 
@@ -22,6 +23,8 @@ run: $(VENV)/bin/activate
 	$(PYTHON) src/train.py
 
 $(VENV)/bin/activate: requirements.txt
+	# python3 -m venv $(VENV)
+	# echo "layout python" >> .envrc
 	python3 -m venv $(VENV)
 	$(PIP) install -r requirements.txt
 

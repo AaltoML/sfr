@@ -14,10 +14,10 @@ from custom_types import (
     Prediction,
     # ReplayBuffer_to_dynamics_TensorDataset,
 )
-from models import DynamicModel
+from models import TransitionModel
 
 
-class GPDynamicModel(DynamicModel):
+class GPTransitionModel(TransitionModel):
     # TODO implement delta_state properly
     def __init__(
         self,
@@ -30,7 +30,7 @@ class GPDynamicModel(DynamicModel):
         delta_state: bool = True,
         num_workers: int = 1,
     ):
-        super(GPDynamicModel, self).__init__()
+        super(GPTransitionModel, self).__init__()
         # self.gp_module = gp_module
         self.gp_module = ExactGPModule(
             likelihood=likelihood,

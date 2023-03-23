@@ -67,10 +67,15 @@ class MPPI:
         state = start_state
         # print("state.shape")
         # print(state.shape)
+        # print("actions.shape")
+        # print(actions.shape)
+        # print(actions[0].shape)
         # actions = actions[:, 0 : -self.state_dim]
         for t in range(horizon):
             # state, reward = self.model(state, actions[t])
             prediction = self.model(state, actions[t])
+            # print("prediction")
+            # print(prediction)
             reward = prediction.reward_dist.mean
             # print("reward at {}".format(t))
             # print(reward.shape)
@@ -113,8 +118,9 @@ class MPPI:
             # TODO implement prev_mean
             mean[:-1] = self._prev_mean[1:]
 
-        # Iterate CEM
+        # Iterate MPPI
         for i in range(self.num_iterations):
+            logger.info("MPPI iteration: {}".format(i))
             actions = torch.clamp(
                 mean.unsqueeze(1)
                 + std.unsqueeze(1)

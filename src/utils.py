@@ -37,18 +37,20 @@ def make_data_loader(
     replay_buffer: ReplayBuffer, batch_size: int = 64, num_workers: int = 1
 ):
     samples = replay_buffer.sample(len(replay_buffer))
-    print("samples")
-    print(samples)
+    # print("samples")
+    # print(samples)
     state = samples["observation_vector"]
     action = samples["action"]
     reward = samples["reward"]
-    print(reward.shape)
+    # print(reward.shape)
     state_action_input = torch.concat([state, action], -1)
     next_state = samples["next"]["observation_vector"]
     state_diff = next_state - state
-    state_diff_reward = torch.concat([state_diff, reward], -1)
+    # state_diff_reward = torch.concat([state_diff, reward], -1)
+    next_state_reward = torch.concat([next_state, reward], -1)
     # data = (state_action_input, state_diff)
-    data = (state_action_input, state_diff_reward)
+    # data = (state_action_input, state_diff_reward)
+    data = (state_action_input, next_state_reward)
     data = TensorDataset(*data)
     train_loader = DataLoader(
         data,

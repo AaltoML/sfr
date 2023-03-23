@@ -1,2 +1,2 @@
 # #!/usr/bin/env python3
-from .base import DynamicModel
+from .base import TransitionModel, GaussianModelBaseEnv

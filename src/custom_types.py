@@ -20,6 +20,14 @@ Prediction = Any
 
 ActionTrajectory = TensorType["horizon", "action_dim"]
 
+StateMean = Any
+StateVar = Any
+NoiseVar = Any
+
+DeltaStateMean = Any
+DeltaStateVar = Any
+NoiseVar = Any
+
 
 class Prediction(NamedTuple):
     latent_dist: td.Distribution  # p(f_{\theta}(s, a) \mid (s, a), \mathcal{D})

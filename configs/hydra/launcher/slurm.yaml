@@ -13,7 +13,7 @@ comment: null
 exclude: null
 cpus_per_gpu: null
 gpus_per_task: null
-mem_per_cpu: 1000 # 1000MB of memory
+mem_per_cpu: 10000 # 1000MB of memory
 signal_delay_s: 600
 max_num_timeout: 20
 additional_parameters: {}

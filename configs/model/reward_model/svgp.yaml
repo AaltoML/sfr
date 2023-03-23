@@ -1,10 +1,14 @@
 _target_: models.reward.gp.GPRewardModel
-# likelihood: gpytorch.likelihoods.Likelihood = None
-# mean_module: gpytorch.means.Mean = None
-# covar_module:
-#   _target_: gpytorch.kernels.Kernel
-# TODO implement kernel with ARD
-num_inducing: 16
+likelihood:
+  _target_: gpytorch.likelihoods.GaussianLikelihood
+mean_module:
+  _target_: gpytorch.means.ConstantMean
+covar_module:
+  _target_: gpytorch.kernels.ScaleKernel
+  base_kernel:
+    _target_: gpytorch.kernels.RBFKernel
+    ard_num_dims: ${input_dim}
+num_inducing: 128
 learning_rate: 0.1
 # num_iterations: 1000
 num_iterations: 500

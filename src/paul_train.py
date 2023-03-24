@@ -3,6 +3,40 @@ import hydra
 from omegaconf import DictConfig, OmegaConf
 
 
+def train(transition_model, data):
+    X, Y = data
+    num_data = X.shape[0]
+    transition_model.gp.train()
+    transition_model.likelihood.train()
+
+    optimizer = torch.optim.Adam(
+        [
+            {"params": transition_model.gp.parameters()},
+            {"params": transition_model.likelihood.parameters()},
+        ],
+        lr=transition_model.learning_rate,
+    )
+
+    # Our loss object. We're using the VariationalELBO
+    mll = gpytorch.mlls.VariationalELBO(
+        transition_model.likelihood, transition_model.gp, num_data=num_data
+    )
+    logger.info("Data set size: {}".format(num_data))
+
+    for i in range(transition_model.num_iterations):
+        optimizer.zero_grad()
+
+        latent = transition_model.gp(x)
+        loss = -mll(latent, y)
+        logger.info("Transition model iteration {}, Loss: {}".format(i, loss))
+        loss.backward()
+        optimizer.step()
+        wandb.log({"model loss": loss})
+
+    transition_model.gp.eval()
+    transition_model.likelihood.eval()
+
+
 @hydra.main(version_base="1.3", config_path="../configs", config_name="main")
 def train_on_cluster(cfg: DictConfig):
     """import here so hydra's --multirun works with slurm"""
@@ -204,135 +238,92 @@ def train_on_cluster(cfg: DictConfig):
         dynamic_model_new = hydra.utils.instantiate(cfg.model)
         print("Dynamic model {}".format(dynamic_model))
 
-        # Configure agent
-        planner = hydra.utils.instantiate(cfg.planner, env=dynamic_model)
-        print("Planner: {}".format(planner))
-        random_policy = torchrl.collectors.collectors.RandomPolicy(
-            make_transformed_env(make_env(cfg)).action_spec
+        input_dim = cfg.state_dim + cfg.action_dim
+        output_dim = cfg.state_dim
+        X = torch.linspace(0, 10, 1000)
+        Y = torch.sin(X) + 3 * torch.cos(X)
+        data_old = (X, Y)
+
+        num_inducing = cfg.model.transition_model.num_inducing
+        samples = replay_buffer.sample(batch_size=num_inducing)
+        state = samples["state_vector"]
+        Z = torch.concat([state, samples["action"]], -1)
+        Zs = []
+        for _ in range(cfg.state_dim):
+            Zs.append(torch.clone(Z))
+        Z = torch.nn.parameter.Parameter(torch.stack(Zs, 0))
+        print("Z.shape {}".format(Z.shape))
+        print(
+            "Zold: {}".format(
+                dynamic_model.transition_model.gp.variational_strategy.base_variational_strategy.inducing_points.shape
+            )
         )
-
-        import torch.nn.functional as F
-
-        class FakeReward(nn.Module):
-            def __init__(self):
-                super().__init__()
-                self.conv1 = nn.Linear(5, 1)
-                self.conv2 = nn.Linear(5, 1)
-                self.conv3 = nn.Linear(5, 1)
-
-            def forward(self, a, b, c):
-                y = dynamic_model.reward_model(a, b, c)
-                return y
-
-        env = make_transformed_env(make_env(cfg=cfg))
-        model_env = GaussianModelBaseEnv(
-            transition_model=dynamic_model.transition_model,
-            reward_model=FakeReward(),
-            state_size=5,
-            action_size=1,
-            device=device,
+        dynamic_model.transition_model.gp.variational_strategy.base_variational_strategy.inducing_points = (
+            Z
         )
-        print("making planner")
-        planner = CEMPlanner(
-            model_env,
-            planning_horizon=2,
-            optim_steps=5,
-            # optim_steps=11,
-            num_candidates=5,
-            top_k=3,
-            reward_key="reward",
-            # reward_key="expected_reward",
-            action_key="action",
-        )
-        print("MADE planner")
-
-        # Create replay buffer
-        replay_buffer = make_replay_buffer(
-            buffer_size=cfg.replay_buffer_capacity,
-            device=device,
-            buffer_scratch_dir=cfg.buffer_scratch_dir,
-            # batch_size=cfg.batch_size,
-            # prefetch=3,
-        )
-        replay_buffer_new = make_replay_buffer(
-            buffer_size=cfg.replay_buffer_capacity,
-            device=device,
-            buffer_scratch_dir="/tmp/new"
-            # batch_size=cfg.batch_size,
-            # prefetch=3,
-        )
-        replay_buffer_new_and_old = make_replay_buffer(
-            buffer_size=cfg.replay_buffer_capacity,
-            device=device,
-            buffer_scratch_dir="/tmp/new_old"
-            # batch_size=cfg.batch_size,
-            # prefetch=3,
-        )
-
-        transform_state_dict = get_env_stats(cfg, seed=cfg.random_seed)
-
-        # frames_per_batch = 50
-        total_frames = 50000 // cfg.env.frame_skip
-        frames_per_batch = 1000 // cfg.env.frame_skip
-        collector = SyncDataCollector(
-            # create_env_fn=partial(make_transformed_env, train_env),
-            create_env_fn=partial(make_transformed_env, make_env(cfg=cfg)),
-            policy=planner,
-            # policy=random_policy,
-            total_frames=total_frames,
-            # max_frames_per_traj=50,
-            frames_per_batch=frames_per_batch,
-            init_random_frames=-1,
-            # init_random_frames=500,
-            reset_at_each_iter=False,
-            # split_trajs=True,
-            split_trajs=False,
-            device=device,
-            storing_device=device,
-            # device="cpu",
-            # storing_device="cpu",
-        )
-
-        norm_factor_training = 1  # TODO set this correctly
-        rewards, rewards_eval = [], []
-        collected_frames = 0
-        r0 = None
-        for i, tensordict in enumerate(collector):
-            print("Episode: {}".format(i))
-            print("tensordict: {}".format(tensordict))
-
-            if ("collector", "mask") in tensordict.keys(True):
-                current_frames = tensordict["collector", "mask"].sum()
-                tensordict = tensordict[tensordict.get(("collector", "mask"))]
-            else:
-                tensordict = tensordict.view(-1)
-                current_frames = tensordict.numel()
-            collected_frames += current_frames
-            if i == 0:
-                print("making Dold")
-                replay_buffer.extend(tensordict.cpu())
-            if i == 1:
-                print("making Dnew")
-                replay_buffer_new.extend(tensordict.cpu())
-            replay_buffer_new_and_old.extend(tensordict.cpu())
-            print("making Dold+Dnew")
-            if i == 2:
-                break
 
         # logger.info("Training dynamic model")
         print("Training dynamic model on Dold")
-        dynamic_model.transition_model.batch_size = len(replay_buffer)
-        dynamic_model.transition_model.train(replay_buffer)
+        # dynamic_model.transition_model.batch_size = len(replay_buffer)
+        # for param in dynamic_model.transition_model.gp.mean_module.parameters():
+        #     param.requires_grad = False
+        # for param in dynamic_model.transition_model.gp.covar_module.parameters():
+        #     param.requires_grad = False
+        # for param in dynamic_model.transition_model.likelihood.parameters():
+        #     param.requires_grad = False
+        print(
+            "dynamic_model.transition_model.gp.variational_strategy.base_variational_strategy.inducing_points"
+        )
+        print(
+            dynamic_model.transition_model.gp.variational_strategy.base_variational_strategy.inducing_points.requires_grad
+        )
+        # dynamic_model.transition_model.train(replay_buffer)
 
+        # dynamic_model_new.transition_model = dynamic_model.transition_model.make_copy()
+        # # likelihood = deepcopy(dynamic_model.transition_model.likelihood)
+        # # mean_module = deepcopy(dynamic_model.transition_model.gp.mean_module)
+        # # covar_module = deepcopy(dynamic_model.transition_model.gp.covar_module)
+        # for param in dynamic_model.transition_model.gp.mean_module.parameters():
+        #     param.requires_grad = False
+        # for param in dynamic_model.transition_model.gp.covar_module.parameters():
+        #     param.requires_grad = False
+        # for param in dynamic_model.transition_model.likelihood.parameters():
+        #     param.requires_grad = False
         print("Training dynamic model on Dold+Dnew")
-        dynamic_model_new.transition_model.batch_size = len(replay_buffer_new_and_old)
-        dynamic_model_new.transition_model.train(replay_buffer_new_and_old)
+        # dynamic_model_new.transition_model = SVGPTransitionModel(
+        #     likelihood=likelihood,
+        #     mean_module=mean_module,
+        #     covar_module=covar_module,
+        #     num_inducing=cfg.model.transition_model.num_inducing,
+        #     learning_rate=dynamic_model.transition_model.learning_rate,
+        #     num_iterations=dynamic_model.transition_model.num_iterations,
+        #     delta_state=dynamic_model.transition_model.delta_state,
+        #     num_workers=dynamic_model.transition_model.num_workers,
+        #     # learn_inducing_locations=dynamic_model.transition_model.learn_inducing_locations,
+        #     learn_inducing_locations=cfg.model.transition_model.learn_inducing_locations,
+        # )
+        # dynamic_model_new.transition_model.gp.variational_strategy.base_variational_strategy.inducing_points = deepcopy(
+        #     dynamic_model.transition_model.gp.variational_strategy.base_variational_strategy.inducing_points
+        # )
+        # dynamic_model_new.transition_model.gp.variational_strategy.base_variational_strategy.inducing_points.requires_grad = (
+        #     False
+        # )
+        # print(
+        #     "dynamic_model_new.transition_model.gp.variational_strategy.base_variational_strategy.inducing_points"
+        # )
+        # print(
+        #     dynamic_model_new.transition_model.gp.variational_strategy.base_variational_strategy.inducing_points.requires_grad
+        # )
+        dynamic_model_new.transition_model.batch_size = len(replay_buffer_new)
+        dynamic_model_new.transition_model.train(replay_buffer_new)
+        # dynamic_model_new.transition_model.batch_size = len(replay_buffer_new_and_old)
+        # dynamic_model_new.transition_model.train(replay_buffer_new_and_old)
 
         print("Fast update on Dold with Dnew")
         # dynamic_model.transition_model.batch_size = len(replay_buffer_new)
         samples = replay_buffer_new.sample(batch_size=len(replay_buffer_new))
         X = torch.concat([samples["state_vector"], samples["action"]], -1)
-        Y = samples["state_vector"] - samples["next"]["state_vector"]
+        Y = samples["next"]["state_vector"] - samples["state_vector"]
         dynamic_model.transition_model.forward(Xtest, data_new=(X, Y))
 
         # dynamic_model.transition_model.train(replay_buffer_new)

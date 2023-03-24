@@ -17,7 +17,8 @@ covar_module:
     - ${state_dim}
 num_inducing: 128
 batch_size: 64
-num_iterations: 5000
+# num_iterations: 5000
+num_iterations: 2000
 # num_iterations: 5
 learning_rate: 0.01
 delta_state: True

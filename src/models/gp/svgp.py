@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import logging
+from copy import deepcopy
 from typing import Optional
 
 
@@ -247,6 +248,12 @@ class SVGPTransitionModel(TransitionModel):
                 covar_module=deepcopy(self.gp.covar_module),
                 learning_rate=deepcopy(self.learning_rate),
                 # TODO add other arguments
+                num_inducing=self.gp.num_inducing,
+                batch_size=self.batch_size,
+                num_iterations=self.num_iterations,
+                delta_state=self.delta_state,
+                # num_workers: int = 1,
+                learn_inducing_locations=self.gp.learn_inducing_locations,
             )
             #             new_model.mean_module = deepcopy(self.mean_module)
             #             new_model.likelihood = deepcopy(self.likelihood)
@@ -312,6 +319,19 @@ class SVGPTransitionModel(TransitionModel):
             loss.backward()
             optimizer.step()
             wandb.log({"model loss": loss})
+            # print("self.gp.covar_module.lengthscale")
+            # print(self.gp.covar_module)
+            # print(self.gp.covar_module.base_kernel.lengthscale)
+            # print(self.gp.covar_module.base_kernel.lengthscale.shape)
+            # for i, param in enumerate(self.gp.covar_module.base_kernel.lengthscale):
+            #     print("i {}".format(i))
+            #     print("param {}".format(param.shape))
+            #     for j, param_ in enumerate(param[0, :]):
+            #         print("param_ {}".format(param_))
+            #         print("j {}".format(j))
+            #         print(type(param_))
+            #         wandb.log({"lengthscale " + str(i) + str(j): float(param_)})
+            # # wandb.log({"sigma_f": self.gp.covar_module.base_kernel.variance})
 
         self.gp.eval()
         self.likelihood.eval()
@@ -327,6 +347,8 @@ class IndependentMultitaskGPModel(gpytorch.models.ApproximateGP):
         num_inducing: int = 16,
         learn_inducing_locations: bool = True,
     ):
+        self.num_inducing = num_inducing
+        self.learn_inducing_locations = learn_inducing_locations
         # TODO initialise inducing points from data
         inducing_points = torch.rand(out_size, num_inducing, in_size)
         # inducing_points = torch.rand(out_size, num_inducing, 1)

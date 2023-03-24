@@ -134,11 +134,18 @@
   % Reinforcement learning (RL) agents typically do not utilise the information previously gained during an episode.
   % as they perform learning offline, i.e. after an episode.
   % Reinforcement learning (RL) agents typically perform learning after an episode, ignoring the potential information gain whilst collecting data.
+  % Reinforcement learning (RL) agents typically perform learning offline and do not utilise the information gained during an episode.
+  % We present a Bayesian model-based RL algorithm which incorporates this information by updating a dynamic model's posterior during an episode.
+  % Our method leverages the fast posterior updates available in the dual parameterisation of sparse variational Gaussian processes.
+  % Importantly, our algorithm scales to 1) environment's with high dimensional state-spaces as it is built upon the connection between Bayesian neural networks (BNNs) and
+  % Gaussian processes (GPs) and 2) long episodes, as the complexity of our updates is independent of episode length.
+  % We demonstrate that our fast posterior updates improve sample efficiency in environments with action penalties, a notoriously difficult
+  % challenge for model-based RL algorithms.
   Reinforcement learning (RL) agents typically perform learning offline and do not utilise the information gained during an episode.
   We present a Bayesian model-based RL algorithm which incorporates this information by updating a dynamic model's posterior during an episode.
-  Our method leverages the fast posterior updates available in the dual parameterisation of sparse variational Gaussian processes.
-  Importantly, our algorithm scales to 1) environment's with high dimensional state-spaces as it is built upon the connection between Bayesian neural networks (BNNs) and
-  Gaussian processes (GPs) and 2) long episodes, as the complexity of our updates is independent of episode length.
+  Typically training a neural network dynamic model is not feasible and nonparameteric methods such as Gaussian processes scale poorly with data.
+  Importantly, our algorithm scales to 1) environment's with high dimensional state-spaces, 2) large data sets and 3) long episodes,
+  as the complexity of our updates is independent of episode length.
   We demonstrate that our fast posterior updates improve sample efficiency in environments with action penalties, a notoriously difficult
   challenge for model-based RL algorithms.
 \end{abstract}

@@ -38,7 +38,7 @@ class SVGPTransitionModel(TransitionModel):
         covar_module: gpytorch.kernels.Kernel = None,
         num_inducing: int = 16,
         learning_rate: float = 0.1,
-        # batch_size: int = 16,
+        batch_size: int = 16,
         # trainer: Optional[Trainer] = None,
         num_iterations: int = 1000,
         delta_state: bool = True,
@@ -50,6 +50,7 @@ class SVGPTransitionModel(TransitionModel):
         out_size = covar_module.batch_shape[0]
 
         self.learning_rate = learning_rate
+        self.batch_size = batch_size
         self.num_iterations = num_iterations
         self.delta_state = delta_state
         self.num_workers = num_workers
@@ -114,7 +115,8 @@ class SVGPTransitionModel(TransitionModel):
 
         for i in range(self.num_iterations):
             # print("Iteration {}".format(i))
-            sample = replay_buffer.sample()
+            # sample = replay_buffer.sample()
+            sample = replay_buffer.sample(batch_size=self.batch_size)
             obs = sample["state_vector"]
             x = torch.concat([obs, sample["action"]], -1)  # obs_action_input
             # print("obs_action_input: {}".format(x.shape))
@@ -127,7 +129,7 @@ class SVGPTransitionModel(TransitionModel):
             # latent = self.gp(x, data_new=data_new)
             latent = self.gp(x)
             loss = -mll(latent, y)
-            logger.info("Iteration {}, Loss: {}".format(i, loss))
+            logger.info("Transition model iteration {}, Loss: {}".format(i, loss))
             loss.backward()
             optimizer.step()
             wandb.log({"model loss": loss})

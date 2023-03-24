@@ -37,6 +37,7 @@ class GPRewardModel(RewardModel):
         covar_module: gpytorch.kernels.Kernel = None,
         num_inducing: int = 16,
         learning_rate: float = 0.1,
+        batch_size: int = 16,
         num_iterations: int = 1000,
         num_workers: int = 1,
         learn_inducing_locations: bool = True,
@@ -45,6 +46,7 @@ class GPRewardModel(RewardModel):
         in_size = 5
 
         self.learning_rate = learning_rate
+        self.batch_size = batch_size
         self.num_iterations = num_iterations
         self.num_workers = num_workers
 
@@ -136,7 +138,7 @@ class GPRewardModel(RewardModel):
 
         print("wa")
         for i in range(self.num_iterations):
-            sample = replay_buffer.sample()
+            sample = replay_buffer.sample(batch_size=self.batch_size)
             x = sample["next"]["state_vector"]
             # print("x {}".format(x.shape))
             y = sample["reward"][..., 0]

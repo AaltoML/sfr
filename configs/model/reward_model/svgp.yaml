@@ -16,4 +16,4 @@ num_iterations: 5000
 # num_iterations: 5
 # num_iterations: 500
 num_workers: 1
-learn_inducing_locations: True
+learn_inducing_locations: False

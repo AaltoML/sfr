@@ -9,7 +9,8 @@ mean_module:
 covar_module:
   _target_: gpytorch.kernels.ScaleKernel
   base_kernel:
-    _target_: gpytorch.kernels.RBFKernel
+    _target_: gpytorch.kernels.MaternKernel
+    nu: 2.5
     ard_num_dims: ${input_dim}
     batch_shape:
       - ${state_dim}
@@ -17,9 +18,12 @@ covar_module:
     - ${state_dim}
 num_inducing: 128
 batch_size: 64
-# num_iterations: 5000
-num_iterations: 2000
+num_iterations: 5000
+# num_iterations: 3000
 # num_iterations: 5
 learning_rate: 0.01
+# learning_rate: 0.005
 delta_state: True
 num_workers: 1 # TODO what should I set this to?
+learn_inducing_locations: True
+# learn_inducing_locations: False

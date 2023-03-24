@@ -9,7 +9,8 @@ covar_module:
     _target_: gpytorch.kernels.RBFKernel
     ard_num_dims: ${state_dim}
 num_inducing: 128
-learning_rate: 0.1
+batch_size: 64
+learning_rate: 0.01
 # num_iterations: 1000
 num_iterations: 5000
 # num_iterations: 5

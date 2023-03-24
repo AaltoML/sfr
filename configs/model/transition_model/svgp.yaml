@@ -16,8 +16,9 @@ covar_module:
   batch_shape:
     - ${state_dim}
 num_inducing: 128
+batch_size: 64
 num_iterations: 5000
 # num_iterations: 5
-learning_rate: 0.1
+learning_rate: 0.01
 delta_state: True
 num_workers: 1 # TODO what should I set this to?

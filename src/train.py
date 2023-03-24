@@ -8,6 +8,7 @@ def train_on_cluster(cfg: DictConfig):
     """import here so hydra's --multirun works with slurm"""
     import logging
     import random
+    from copy import deepcopy
     from functools import partial
     from pathlib import Path
     from typing import List, Optional
@@ -28,6 +29,8 @@ def train_on_cluster(cfg: DictConfig):
     import wandb
     from dm_env import specs
     from models import GaussianModelBaseEnv
+    from models.gp import SVGPTransitionModel
+    from models.reward.gp import GPRewardModel
     from pytorch_lightning import Trainer
     from pytorch_lightning.loggers import WandbLogger
     from setuptools.dist import Optional
@@ -60,7 +63,7 @@ def train_on_cluster(cfg: DictConfig):
         device,
         buffer_scratch_dir: str = "/tmp/",
         batch_size: int = 64,
-        prefetch: int = 3,
+        # prefetch: int = 3,
     ):
         sampler = RandomSampler()
         replay_buffer = TensorDictReplayBuffer(
@@ -73,7 +76,7 @@ def train_on_cluster(cfg: DictConfig):
             batch_size=batch_size,
             sampler=sampler,
             pin_memory=False,
-            prefetch=prefetch,
+            # prefetch=prefetch,
         )
         return replay_buffer
 
@@ -282,13 +285,67 @@ def train_on_cluster(cfg: DictConfig):
             make_transformed_env(make_env(cfg)).action_spec
         )
 
+        import torch.nn.functional as F
+
+        class FakeReward(nn.Module):
+            def __init__(self):
+                super().__init__()
+                # self.conv1 = nn.Conv2d(1, 20, 5)
+                # self.conv2 = nn.Conv2d(20, 20, 5)
+                self.conv1 = nn.Linear(5, 1)
+                self.conv2 = nn.Linear(5, 1)
+                self.conv3 = nn.Linear(5, 1)
+
+            def forward(self, a, b, c):
+                # print("a {}".format(a))
+                # print("b {}".format(b))
+                # print("c {}".format(c))
+                # x = F.relu(self.conv1(a))
+                # y = F.relu(self.conv1(b))
+                y = dynamic_model.reward_model(a, b, c)
+                # print("y {}".format(y.shape))
+                return y
+
+        env = make_transformed_env(make_env(cfg=cfg))
+        model_env = GaussianModelBaseEnv(
+            transition_model=dynamic_model.transition_model,
+            # reward_model=dynamic_model.transition_model,
+            # reward_model=nn.Linear(5, 1),
+            # reward_model=dynamic_model.reward_model,
+            reward_model=FakeReward(),
+            # reward_model=TensorDictModule(
+            #     FakeReward(),
+            #     # fake_reward,
+            #     in_keys=["state_vector", "state_vector_var", "noise_var"],
+            #     out_keys=["expected_reward"],
+            # ),
+            state_size=5,
+            action_size=1,
+            device=device,
+            # dtype=None,
+            # batch_size: int = None,
+        )
+        print("making planner")
+        planner = CEMPlanner(
+            model_env,
+            planning_horizon=2,
+            optim_steps=5,
+            # optim_steps=11,
+            num_candidates=5,
+            top_k=3,
+            reward_key="reward",
+            # reward_key="expected_reward",
+            action_key="action",
+        )
+        print("MADE planner")
+
         # Create replay buffer
         replay_buffer = make_replay_buffer(
             buffer_size=cfg.replay_buffer_capacity,
             device=device,
             buffer_scratch_dir=cfg.buffer_scratch_dir,
-            batch_size=cfg.batch_size,
-            prefetch=3,
+            # batch_size=cfg.batch_size,
+            # prefetch=3,
         )
 
         transform_state_dict = get_env_stats(cfg, seed=cfg.random_seed)
@@ -302,21 +359,22 @@ def train_on_cluster(cfg: DictConfig):
         #     seed=42,
         # )
 
-        frames_per_batch = 50
+        # frames_per_batch = 50
         total_frames = 50000 // cfg.env.frame_skip
         frames_per_batch = 1000 // cfg.env.frame_skip
         collector = SyncDataCollector(
             # create_env_fn=partial(make_transformed_env, train_env),
             create_env_fn=partial(make_transformed_env, make_env(cfg=cfg)),
-            # policy=planner,
-            policy=random_policy,
+            policy=planner,
+            # policy=random_policy,
             total_frames=total_frames,
             # max_frames_per_traj=50,
             frames_per_batch=frames_per_batch,
             # init_random_frames=-1,
             init_random_frames=500,
             reset_at_each_iter=False,
-            split_trajs=True,
+            # split_trajs=True,
+            split_trajs=False,
             device=device,
             storing_device=device,
             # device="cpu",
@@ -374,41 +432,77 @@ def train_on_cluster(cfg: DictConfig):
             print("replay_buffer")
             print(replay_buffer)
 
-            if i == 0:
-                # Set inducing variables to data
-                samples = replay_buffer.sample(len(replay_buffer))
-                state = samples["state_vector"]
-                state_action_input = torch.concat([state, samples["action"]], -1)
-                print("state_action_input.shape")
-                print(state_action_input.shape)
-                print("cfg.model.num_inducing")
-                print(cfg.model.transition_model.num_inducing)
-                print(cfg.model.reward_model.num_inducing)
-                num_data = state_action_input.shape[0]
+            num_new_inducing_points_per_episode = 0
+            dynamic_model.transition_model = SVGPTransitionModel(
+                likelihood=deepcopy(dynamic_model.transition_model.likelihood),
+                mean_module=deepcopy(dynamic_model.transition_model.gp.mean_module),
+                covar_module=deepcopy(dynamic_model.transition_model.gp.covar_module),
+                num_inducing=cfg.model.transition_model.num_inducing
+                + i * num_new_inducing_points_per_episode,
+                learning_rate=dynamic_model.transition_model.learning_rate,
+                num_iterations=dynamic_model.transition_model.num_iterations,
+                delta_state=dynamic_model.transition_model.delta_state,
+                num_workers=dynamic_model.transition_model.num_workers,
+                # learn_inducing_locations=dynamic_model.transition_model.learn_inducing_locations,
+            )
+            dynamic_model.reward_model = GPRewardModel(
+                likelihood=dynamic_model.reward_model.likelihood,
+                mean_module=dynamic_model.reward_model.gp.mean_module,
+                covar_module=dynamic_model.reward_model.gp.covar_module,
+                num_inducing=cfg.model.reward_model.num_inducing
+                + i * num_new_inducing_points_per_episode,
+                learning_rate=dynamic_model.reward_model.learning_rate,
+                num_iterations=dynamic_model.reward_model.num_iterations,
+                num_workers=dynamic_model.reward_model.num_workers,
+                # learn_inducing_locations=dynamic_model.transition_model.learn_inducing_locations,
+            )
+            # print("dynamic_model.transition_model.covar_module")
+            # print(dynamic_model.transition_model.gp.covar_module)
+            # print("covyyy params")
+            # for param in dynamic_model.transition_model.gp.covar_module.parameters():
+            #     print(param)
+            # print(dynamic_model.transition_model.likelihood)
+            # print("likkyyy params")
+            # for param in dynamic_model.transition_model.likelihood.parameters():
+            #     print(param)
 
-                num_inducing = cfg.model.transition_model.num_inducing + i * 10
-                idx = np.random.choice(
-                    range(num_data), size=num_inducing, replace=False
+            # if i == 0:
+            # Set inducing variables to data
+            num_inducing = (
+                cfg.model.transition_model.num_inducing
+                + i * num_new_inducing_points_per_episode
+            )
+            samples = replay_buffer.sample(batch_size=num_inducing)
+            state = samples["state_vector"]
+            Z = torch.concat([state, samples["action"]], -1)
+            num_data = len(replay_buffer)
+            Zs = []
+            for _ in range(cfg.state_dim):
+                Zs.append(torch.clone(Z))
+            Z = torch.nn.parameter.Parameter(torch.stack(Zs, 0))
+            print("Z.shape {}".format(Z.shape))
+            print(
+                "Zold: {}".format(
+                    dynamic_model.transition_model.gp.variational_strategy.base_variational_strategy.inducing_points.shape
                 )
-                Z = torch.nn.parameter.Parameter(state_action_input[idx, :])
-                print("Z.shape {}".format(Z.shape))
-                dynamic_model.transition_model.gp.variational_strategy.base_variational_strategy.inducing_points = (
-                    Z
-                )
-                num_inducing = cfg.model.reward_model.num_inducing + i * 10
-                idx = np.random.choice(
-                    range(num_data), size=num_inducing, replace=False
-                )
-                Z = torch.nn.parameter.Parameter(state[idx, :])
-                print("Z2.shape {}".format(Z.shape))
-                dynamic_model.reward_model.gp.variational_strategy.inducing_points = Z
+            )
+            dynamic_model.transition_model.gp.variational_strategy.base_variational_strategy.inducing_points = (
+                Z
+            )
 
-                # # TODO uniformaly sample Z from X
-                # Z = torch.nn.parameter.Parameter(
-                #     state[: cfg.model.reward_model.num_inducing, :]
-                # )
-                # print("Z2.shape {}".format(Z.shape))
-                # dynamic_model.reward_model.gp.variational_strategy.inducing_points = Z
+            num_inducing = (
+                cfg.model.reward_model.num_inducing
+                + i * num_new_inducing_points_per_episode
+            )
+            samples = replay_buffer.sample(batch_size=num_inducing)
+            Z = torch.nn.parameter.Parameter(samples["state_vector"])
+            print("Z2.shape {}".format(Z.shape))
+            print(
+                "Z2old: {}".format(
+                    dynamic_model.reward_model.gp.variational_strategy.inducing_points.shape
+                )
+            )
+            dynamic_model.reward_model.gp.variational_strategy.inducing_points = Z
 
             # logger.info("Training dynamic model")
             print("Training dynamic model")
@@ -416,93 +510,8 @@ def train_on_cluster(cfg: DictConfig):
             dynamic_model.transition_model.train(replay_buffer)
             dynamic_model.reward_model.train(replay_buffer)
             print("DONE TRAINING MODEL")
-
             # logger.info("DONE TRAINING MODEL")
-            import torch.nn.functional as F
 
-            class FakeReward(nn.Module):
-                def __init__(self):
-                    super().__init__()
-                    # self.conv1 = nn.Conv2d(1, 20, 5)
-                    # self.conv2 = nn.Conv2d(20, 20, 5)
-                    self.conv1 = nn.Linear(5, 1)
-                    self.conv2 = nn.Linear(5, 1)
-                    self.conv3 = nn.Linear(5, 1)
-
-                def forward(self, a, b, c):
-                    # print("a {}".format(a))
-                    # print("b {}".format(b))
-                    # print("c {}".format(c))
-                    # x = F.relu(self.conv1(a))
-                    # y = F.relu(self.conv1(b))
-                    y = dynamic_model.reward_model(a, b, c)
-                    # print("y {}".format(y.shape))
-                    return y
-
-            # class FakeReward(nn.Module):
-            #     def __init__(self):
-            #         super().__init__()
-
-            #     # def forward(self, a, b, c):
-            #     def __call__(self, a):
-            #         return torch.sum(a * b * c)
-
-            #     def forward(self, x):
-            #         """Returns change in state"""
-            #         return 1
-
-            print("type(nn.Linear(5, 1))")
-            print(type(nn.Linear(5, 1)))
-            print(type(FakeReward()))
-            if i == 0:
-                env = make_transformed_env(make_env(cfg=cfg))
-                model_env = GaussianModelBaseEnv(
-                    transition_model=dynamic_model.transition_model,
-                    # reward_model=dynamic_model.transition_model,
-                    # reward_model=nn.Linear(5, 1),
-                    # reward_model=dynamic_model.reward_model,
-                    reward_model=FakeReward(),
-                    # reward_model=TensorDictModule(
-                    #     FakeReward(),
-                    #     # fake_reward,
-                    #     in_keys=["state_vector", "state_vector_var", "noise_var"],
-                    #     out_keys=["expected_reward"],
-                    # ),
-                    state_size=5,
-                    action_size=1,
-                    device=device,
-                    # dtype=None,
-                    # batch_size: int = None,
-                )
-                print("making planner")
-                planner = CEMPlanner(
-                    model_env,
-                    planning_horizon=5,
-                    optim_steps=11,
-                    num_candidates=7,
-                    top_k=3,
-                    reward_key="reward",
-                    # reward_key="expected_reward",
-                    action_key="action",
-                )
-                print("MADE planner")
-
-                collector = SyncDataCollector(
-                    # create_env_fn=partial(make_transformed_env, train_env),
-                    create_env_fn=partial(make_transformed_env, make_env(cfg=cfg)),
-                    policy=planner,
-                    total_frames=total_frames,
-                    # max_frames_per_traj=50,
-                    frames_per_batch=frames_per_batch,
-                    # init_random_frames=-1,
-                    init_random_frames=500,
-                    reset_at_each_iter=False,
-                    split_trajs=True,
-                    device=device,
-                    storing_device=device,
-                    # device="cpu",
-                    # storing_device="cpu",
-                )
             # # tensordict = env.rollout(max_steps=350, policy=planner)
             # tensordict = env.rollout(max_steps=10, policy=planner)
             # print("CEM")
@@ -520,6 +529,7 @@ def train_on_cluster(cfg: DictConfig):
             print(rewards[-1][1])
             print(rewards)
             logger.log_scalar(name="reward", value=rewards[-1][1], step=i)
+            print("logged reward")
 
             # if i == 0:
             #     recorder = make_recorder(

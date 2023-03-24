@@ -4,8 +4,8 @@ FILENAME=main
 PAPER_DIR=paper
 AUX_DIR=.aux
 
-# VENV = .venv
-VENV = .direnv
+VENV = .venv
+# VENV = .direnv
 PYTHON = $(VENV)/bin/python3
 PIP = $(VENV)/bin/pip
 

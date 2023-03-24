@@ -1,0 +1,24 @@
+
+\section{Assumptions}\label{sec:assumptions}
+This section is a draft, possibly contains mistakes
+Assumptions on the model required for deriving regret bounds, in the spirit of \cite{curiCombining2021}. \cref{ass:lipschitz-f} and \cref{ass:lipschitz-gp} are copied from \cite{curiCombining2021}, whereas \cref{ass:calibrated} has been modified to accommodate the mean and variance changing during the episode.
+\begin{assumption}\label{ass:lipschitz-f}
+The true underlying function $f$ is $L_f$-Lipschitz and the elements of the noise vector $w_n$ are $\sigma$-sub-Gaussian.
+\end{assumption}
+\begin{assumption}[Well-calibrated]\label{ass:calibrated}
+Assume that for any $\delta >0$ $\exists$ a set of sequences $\{\beta_{t, i}\}_{t>0, i=0}^{episode_length}$ such that the model mean and variance functions $\mu_{t, i}$, $\sigma_{t, i}$ satisfy for all $(s, a) \in \mathcal{S} \times \mathcal{A}$ the upper bound
+\begin{equation}\label{eq:calibrated}
+\text{Pr}(\| f(s, a) - \mu_{t, i}(s, a) \| \leq \beta_{t, i}\sigma_{t, i}) \geq 1 - \delta
+\end{equation}
+\end{assumption}
+
+\begin{assumption}\label{ass:lipschitz-gp}
+The mean and variance functions are lipschitz
+\end{assumption}
+\section{Proof of regret bounds}
+This section is a draft, possibly contains mistakes
+Plan for the proof:
+\begin{itemize}
+\item Following Appendix D in \cite{curiCombining2021}, derive a regret bound for the case where the model $\mu_t$ and $\sigma_t$ can be updated within the episode, if assumptions in \cref{sec:assumptions} are satisfied.
+\item Show that sparse GPs satisfy \cref{ass:calibrated}
+\end{itemize}

@@ -1,7 +1,12 @@
 #!/usr/bin/env python3
+import logging
 from typing import Any, Callable, NamedTuple, Optional, Tuple
 
-import pytorch_lightning as pl
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+# import pytorch_lightning as pl
 import torch
 import torch.distributions as td
 import torch.nn as nn
@@ -24,7 +29,10 @@ from torchrl.modules import SafeModule, WorldModelWrapper
 from torchtyping import TensorType
 
 
-class TransitionModel:
+class TransitionModel(nn.Module):
+    def __init(self):
+        super().__init__()
+
     def __call__(
         # self, state: State, action: Action
         self,
@@ -73,8 +81,11 @@ class TransitionModel:
     def train(self, replay_buffer: ReplayBuffer):
         raise NotImplementedError
 
+    def build_loss(self, num_data: int):
+        raise NotImplementedError
 
-class RewardModel:
+
+class RewardModel(nn.Module):
     def __call__(
         self,
         state_mean: StateMean,
@@ -101,6 +112,9 @@ class RewardModel:
     def train(self, replay_buffer: ReplayBuffer):
         raise NotImplementedError
 
+    def build_loss(self, num_data: int):
+        raise NotImplementedError
+
 
 class GaussianModelBaseEnv(ModelBasedEnvBase):
     def __init__(
@@ -109,6 +123,8 @@ class GaussianModelBaseEnv(ModelBasedEnvBase):
         reward_model: RewardModel,
         state_size: int,
         action_size: int,
+        learning_rate: float = 0.01,
+        num_iterations: int = 5000,
         device: str = "cpu",
         dtype=None,
         batch_size: int = None,
@@ -145,6 +161,8 @@ class GaussianModelBaseEnv(ModelBasedEnvBase):
             action=UnboundedContinuousTensorSpec((action_size)),
         )
         self.reward_spec = UnboundedContinuousTensorSpec((1,))
+        self.learning_rate = learning_rate
+        self.num_iterations = num_iterations
 
     def _reset(self, tensordict: TensorDict) -> TensorDict:
         print("inside reset yo")
@@ -155,6 +173,39 @@ class GaussianModelBaseEnv(ModelBasedEnvBase):
         tensordict = tensordict.update({"state_vector_mean": torch.zeros(1)})
         print(tensordict)
         return tensordict
+
+    def train(self, replay_buffer: ReplayBuffer):
+        optimizer = torch.optim.Adam(
+            [
+                {"params": self.transition_model.parameters()},
+                {"params": self.reward_model.parameters()},
+            ],
+            lr=self.learning_rate,
+        )
+
+        num_data = len(replay_buffer)
+        self.transition_model.build_loss(num_data=num_data)
+        self.reward_model.build_loss(num_data=num_data)
+        logger.info("Data set size: {}".format(num_data))
+
+        for i in range(self.num_iterations):
+            print("batch_size: {}".format(self.batch_size))
+            sample = replay_buffer.sample(batch_size=[self.batch_size])
+            batch = (
+                torch.concat([sample["state_vector"], sample["action"]], -1),
+                sample["next"]["state_vector"] - sample["state_vector"],
+            )
+            model_loss = self.transition_model(data=batch)
+            wandb.log({"Model loss": model_loss})
+
+            batch = (sample["next"]["state_vector"], sample["reward"][..., 0])
+            reward_loss = self.reward_model(data=batch)
+            wandb.log({"Reward loss": loss})
+            logger.info(
+                "Model training iteration {} | Transition loss: {} | Reward loss: {}".format(
+                    i, model_loss, reward_loss
+                )
+            )
 
 
 # class transitionmodel(safemodule):

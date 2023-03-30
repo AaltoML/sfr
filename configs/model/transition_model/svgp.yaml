@@ -1,4 +1,5 @@
-_target_: models.gp.SVGPTransitionModel
+# _target_: models.gp.SVGPTransitionModel
+_target_: models.transition.SVGPTransitionModel
 _convert_: all
 likelihood:
   _target_: gpytorch.likelihoods.MultitaskGaussianLikelihood

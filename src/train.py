@@ -21,7 +21,8 @@ def train_on_cluster(cfg: DictConfig):
     import imageio
     import numpy as np
     import omegaconf
-    import pytorch_lightning as pl
+
+    # import pytorch_lightning as pl
     import torch
     import torch.nn as nn
     import torchrl
@@ -29,8 +30,10 @@ def train_on_cluster(cfg: DictConfig):
     import wandb
     from dm_env import specs
     from models import GaussianModelBaseEnv
-    from models.gp import SVGPTransitionModel
     from models.reward.gp import GPRewardModel
+
+    # from models.gp import SVGPTransitionModel
+    from models.transition import SVGPTransitionModel
     from pytorch_lightning import Trainer
     from pytorch_lightning.loggers import WandbLogger
     from setuptools.dist import Optional
@@ -395,18 +398,6 @@ def train_on_cluster(cfg: DictConfig):
         for i, tensordict in enumerate(collector):
             print("Episode: {}".format(i))
             print("tensordict: {}".format(tensordict))
-            # print(tensordict["next"])
-
-            # state_diff = tensordict.get("state_vector") - tensordict.get(
-            #     ("next", "state_vector")
-            # )
-            # print("state_diff: {}".format(state_diff))
-            # print(tensordict.get("state_vector"))
-            # print(tensordict.get(("next", "state_vector")))
-            # print(
-            #     tensordict.get("state_vector")[1:]
-            #     == tensordict.get(("next", "state_vector"))[:-1]
-            # ).all()
 
             # print(tensordict["state_vector"])
             if r0 is None:
@@ -432,83 +423,89 @@ def train_on_cluster(cfg: DictConfig):
             print("replay_buffer")
             print(replay_buffer)
 
-            num_new_inducing_points_per_episode = 0
-            dynamic_model.transition_model = SVGPTransitionModel(
-                likelihood=deepcopy(dynamic_model.transition_model.likelihood),
-                mean_module=deepcopy(dynamic_model.transition_model.gp.mean_module),
-                covar_module=deepcopy(dynamic_model.transition_model.gp.covar_module),
-                num_inducing=cfg.model.transition_model.num_inducing
-                + i * num_new_inducing_points_per_episode,
-                learning_rate=dynamic_model.transition_model.learning_rate,
-                num_iterations=dynamic_model.transition_model.num_iterations,
-                delta_state=dynamic_model.transition_model.delta_state,
-                num_workers=dynamic_model.transition_model.num_workers,
-                # learn_inducing_locations=dynamic_model.transition_model.learn_inducing_locations,
-            )
-            dynamic_model.reward_model = GPRewardModel(
-                likelihood=dynamic_model.reward_model.likelihood,
-                mean_module=dynamic_model.reward_model.gp.mean_module,
-                covar_module=dynamic_model.reward_model.gp.covar_module,
-                num_inducing=cfg.model.reward_model.num_inducing
-                + i * num_new_inducing_points_per_episode,
-                learning_rate=dynamic_model.reward_model.learning_rate,
-                num_iterations=dynamic_model.reward_model.num_iterations,
-                num_workers=dynamic_model.reward_model.num_workers,
-                # learn_inducing_locations=dynamic_model.transition_model.learn_inducing_locations,
-            )
-            # print("dynamic_model.transition_model.covar_module")
-            # print(dynamic_model.transition_model.gp.covar_module)
-            # print("covyyy params")
-            # for param in dynamic_model.transition_model.gp.covar_module.parameters():
-            #     print(param)
-            # print(dynamic_model.transition_model.likelihood)
-            # print("likkyyy params")
-            # for param in dynamic_model.transition_model.likelihood.parameters():
-            #     print(param)
-
             # if i == 0:
-            # Set inducing variables to data
-            num_inducing = (
-                cfg.model.transition_model.num_inducing
-                + i * num_new_inducing_points_per_episode
-            )
-            samples = replay_buffer.sample(batch_size=num_inducing)
-            state = samples["state_vector"]
-            Z = torch.concat([state, samples["action"]], -1)
-            num_data = len(replay_buffer)
-            Zs = []
-            for _ in range(cfg.state_dim):
-                Zs.append(torch.clone(Z))
-            Z = torch.nn.parameter.Parameter(torch.stack(Zs, 0))
-            print("Z.shape {}".format(Z.shape))
-            print(
-                "Zold: {}".format(
-                    dynamic_model.transition_model.gp.variational_strategy.base_variational_strategy.inducing_points.shape
-                )
-            )
-            dynamic_model.transition_model.gp.variational_strategy.base_variational_strategy.inducing_points = (
-                Z
-            )
+            #     # num_new_inducing_points_per_episode = 0
+            #     # dynamic_model.transition_model = SVGPTransitionModel(
+            #     #     likelihood=deepcopy(dynamic_model.transition_model.likelihood),
+            #     #     mean_module=deepcopy(dynamic_model.transition_model.gp.mean_module),
+            #     #     covar_module=deepcopy(
+            #     #         dynamic_model.transition_model.gp.covar_module
+            #     #     ),
+            #     #     num_inducing=cfg.model.transition_model.num_inducing
+            #     #     + i * num_new_inducing_points_per_episode,
+            #     #     learning_rate=dynamic_model.transition_model.learning_rate,
+            #     #     num_iterations=dynamic_model.transition_model.num_iterations,
+            #     #     delta_state=dynamic_model.transition_model.delta_state,
+            #     #     num_workers=dynamic_model.transition_model.num_workers,
+            #     #     # learn_inducing_locations=dynamic_model.transition_model.learn_inducing_locations,
+            #     # )
+            #     #
+            #     dynamic_model.reward_model = GPRewardModel(
+            #         likelihood=dynamic_model.reward_model.likelihood,
+            #         mean_module=dynamic_model.reward_model.gp.mean_module,
+            #         covar_module=dynamic_model.reward_model.gp.covar_module,
+            #         num_inducing=cfg.model.reward_model.num_inducing
+            #         + i * num_new_inducing_points_per_episode,
+            #         learning_rate=dynamic_model.reward_model.learning_rate,
+            #         num_iterations=dynamic_model.reward_model.num_iterations,
+            #         num_workers=dynamic_model.reward_model.num_workers,
+            #         # learn_inducing_locations=dynamic_model.transition_model.learn_inducing_locations,
+            #     )
+            #     # print("dynamic_model.transition_model.covar_module")
+            #     # print(dynamic_model.transition_model.gp.covar_module)
+            #     # print("covyyy params")
+            #     # for param in dynamic_model.transition_model.gp.covar_module.parameters():
+            #     #     print(param)
+            #     # print(dynamic_model.transition_model.likelihood)
+            #     # print("likkyyy params")
+            #     # for param in dynamic_model.transition_model.likelihood.parameters():
+            #     #     print(param)
 
-            num_inducing = (
-                cfg.model.reward_model.num_inducing
-                + i * num_new_inducing_points_per_episode
-            )
-            samples = replay_buffer.sample(batch_size=num_inducing)
-            Z = torch.nn.parameter.Parameter(samples["state_vector"])
-            print("Z2.shape {}".format(Z.shape))
-            print(
-                "Z2old: {}".format(
-                    dynamic_model.reward_model.gp.variational_strategy.inducing_points.shape
-                )
-            )
-            dynamic_model.reward_model.gp.variational_strategy.inducing_points = Z
+            #     # if i == 0:
+            #     # Set inducing variables to data
+            #     num_inducing = (
+            #         cfg.model.transition_model.num_inducing
+            #         + i * num_new_inducing_points_per_episode
+            #     )
+            #     samples = replay_buffer.sample(batch_size=num_inducing)
+            #     Z = torch.concat([samples["state_vector"], samples["action"]], -1)
+            #     Zs = torch.stack([torch.clone(Z) for _ in range(cfg.state_dim)], 0)
+            #     Z = torch.nn.parameter.Parameter(Zs)
+            #     print("Z.shape {}".format(Z.shape))
+            #     print(
+            #         "Zold: {}".format(
+            #             dynamic_model.transition_model.gp.variational_strategy.base_variational_strategy.inducing_points.shape
+            #         )
+            #     )
+            #     dynamic_model.transition_model.gp.variational_strategy.base_variational_strategy.inducing_points = (
+            #         Z
+            #     )
+
+            #     num_inducing = (
+            #         cfg.model.reward_model.num_inducing
+            #         + i * num_new_inducing_points_per_episode
+            #     )
+            #     samples = replay_buffer.sample(batch_size=num_inducing)
+            #     Z = torch.nn.parameter.Parameter(samples["state_vector"])
+            #     print("Z2.shape {}".format(Z.shape))
+            #     print(
+            #         "Z2old: {}".format(
+            #             dynamic_model.reward_model.gp.variational_strategy.inducing_points.shape
+            #         )
+            #     )
+            #     dynamic_model.reward_model.gp.variational_strategy.inducing_points = Z
 
             # logger.info("Training dynamic model")
             print("Training dynamic model")
             # dynamic_model.train(replay_buffer)
-            dynamic_model.transition_model.train(replay_buffer)
-            dynamic_model.reward_model.train(replay_buffer)
+            print("num data: {}".format(len(replay_buffer)))
+            # if i > 0:
+            #     dynamic_model.transition_model.batch_size = len(replay_buffer)
+            #     dynamic_model.transition_model.train(replay_buffer)
+            # dynamic_model.reward_model.batch_size = len(replay_buffer)
+            # dynamic_model.reward_model.train(replay_buffer)
+            dynamic_model.batch_size = [len(replay_buffer)]
+            dynamic_model.train(replay_buffer)
             print("DONE TRAINING MODEL")
             # logger.info("DONE TRAINING MODEL")
 

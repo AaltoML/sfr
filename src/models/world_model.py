@@ -14,102 +14,98 @@ from torchrl.modules import (
 from torchrl.objectives.value import TDLambdaEstimate
 
 
-class MyMBEnv(ModelBasedEnvBase):
-    def __init__(self, world_model, device="cpu", dtype=None, batch_size=None):
-        super().__init__(world_model, device=device, dtype=dtype, batch_size=batch_size)
+class GaussianModelBaseEnv(ModelBasedEnvBase):
+    def __init__(
+        self,
+        transition_model: TransitionModel,
+        reward_model: RewardModel,
+        state_size: int,
+        action_size: int,
+        learning_rate: float = 0.01,
+        num_iterations: int = 5000,
+        device: str = "cpu",
+        dtype=None,
+        batch_size: int = None,
+    ):
+        world_model = WorldModelWrapper(
+            transition_model=TensorDictModule(
+                transition_model,
+                in_keys=["state_vector", "state_vector_var", "noise_var", "action"],
+                out_keys=["state_vector", "state_vector_var", "noise_var"],
+            ),
+            reward_model=TensorDictModule(
+                reward_model,
+                in_keys=["state_vector", "state_vector_var", "noise_var"],
+                # in_keys=["state_vector"],
+                # in_keys=["state_vector"],
+                out_keys=["reward"],
+                # out_keys=["expected_reward"],
+            ),
+        )
+        super(GaussianModelBaseEnv, self).__init__(
+            world_model=world_model, device=device, dtype=dtype, batch_size=batch_size
+        )
+        self.transition_model = transition_model
+        self.reward_model = reward_model
         self.observation_spec = CompositeSpec(
-            observation_vector_mean=UnboundedContinuousTensorSpec((obs_size)),
-            observation_vector_var=UnboundedContinuousTensorSpec((obs_size)),
+            state_vector=UnboundedContinuousTensorSpec((state_size)),
+            state_vector_var=UnboundedContinuousTensorSpec((state_size)),
+            noise_var=UnboundedContinuousTensorSpec((state_size)),
         )
         self.input_spec = CompositeSpec(
-            observation_vector_mean=UnboundedContinuousTensorSpec((obs_size)),
-            ebservation_vector_var=UnboundedContinuousTensorSpec((obs_size)),
+            state_vector=UnboundedContinuousTensorSpec((state_size)),
+            state_vector_var=UnboundedContinuousTensorSpec((state_size)),
+            noise_var=UnboundedContinuousTensorSpec((state_size)),
             action=UnboundedContinuousTensorSpec((action_size)),
         )
         self.reward_spec = UnboundedContinuousTensorSpec((1,))
+        self.learning_rate = learning_rate
+        self.num_iterations = num_iterations
 
     def _reset(self, tensordict: TensorDict) -> TensorDict:
+        print("inside reset yo")
+        print(tensordict)
         tensordict = TensorDict({}, batch_size=self.batch_size, device=self.device)
         tensordict = tensordict.update(self.input_spec.rand())
         tensordict = tensordict.update(self.observation_spec.rand())
+        tensordict = tensordict.update({"state_vector_mean": torch.zeros(1)})
+        print(tensordict)
         return tensordict
 
+    def train(self, replay_buffer: ReplayBuffer):
+        transition_data = (
+            torch.concat([sample["state_vector"], sample["action"]], -1),
+            sample["next"]["state_vector"] - sample["state_vector"],
+        )
 
-model = MLP(
-    out_features=obs_size,
-    activation_class=nn.ReLU,
-    activate_last_layer=True,
-    depth=0,
-)
+        optimizer = torch.optim.Adam(
+            [
+                {"params": self.transition_model.parameters()},
+                {"params": self.reward_model.parameters()},
+            ],
+            lr=self.learning_rate,
+        )
 
+        num_data = len(replay_buffer)
+        self.transition_model.build_loss(num_data=num_data)
+        self.reward_model.build_loss(num_data=num_data)
+        logger.info("Data set size: {}".format(num_data))
 
-def transition_model(td: TensorDict) -> TensorDict:
-    """Expectation over state dist (transition noise of MDP)"""
-    obs_dist = td.Normal(
-        loc=td["observation_vector_mean"], scale=td["observation_vector_stddev"]
-    )
-    obs_samples = obs_dist.sample(num_samples)
-    print("obs_samples {}".format(obs_samples.shape))
-    action_broadcast = torch.broadcast_to(
-        torch.unsqueeze(td["action"], dim=0), obs_samples.shape
-    )
-    print("action_broadcast {}".format(action_broadcast.shape))
-    next_obs = model(obs_samples, action_broadcast)
-    td = TensorDict({"next_observation_vector_mean": next_obs})
-    td = TensorDict({"next_observation_vector_var": next_obs})
-    return td
+        for i in range(self.num_iterations):
+            print("batch_size: {}".format(self.batch_size))
+            sample = replay_buffer.sample(batch_size=[self.batch_size])
+            batch = (
+                torch.concat([sample["state_vector"], sample["action"]], -1),
+                sample["next"]["state_vector"] - sample["state_vector"],
+            )
+            model_loss = self.transition_model(data=batch)
+            wandb.log({"Model loss": model_loss})
 
-
-obs_size = 5
-action_size = 1
-
-world_model = WorldModelWrapper(
-    transition_model=TensorDictModule(
-        # MLP(
-        #     out_features=obs_size * 2,
-        #     activation_class=nn.ReLU,
-        #     activate_last_layer=True,
-        #     depth=0,
-        # ),
-        transition_model,
-        in_keys=["observation_vector_mean", "observation_vector_var", "action"],
-        out_keys=["observation_vector_mean", "observation_vector_var"],
-    ),
-    reward_model=TensorDictModule(
-        nn.Linear(obs_size, 1),
-        in_keys=["observation_vector_mean", "observation_vector_var"],
-        out_keys=["expected_reward"],
-    ),
-)
-print(world_model)
-
-env = MyMBEnv(world_model)
-tensordict = env.rollout(max_steps=10)
-print(tensordict)
-
-# value_net = nn.Linear(obs_size, 1)
-# value_net = ValueOperator(value_net, in_keys=["observation_vector"])
-# adv = TDLambdaEstimate(0.99, 0.95, value_net)
-# Build a planner and use it as actor
-# planner = MPPIPlanner(
-#     env,
-#     adv,
-#     temperature=1.0,
-#     planning_horizon=10,
-#     optim_steps=11,
-#     num_candidates=7,
-#     top_k=3,
-# )
-# print("MPPI")
-planner = CEMPlanner(
-    env,
-    planning_horizon=5,
-    optim_steps=11,
-    num_candidates=7,
-    top_k=3,
-    reward_key="expected_reward",
-    action_key="action",
-)
-tensordict = env.rollout(max_steps=500, policy=planner)
-print("CEM")
-print(tensordict)
+            batch = (sample["next"]["state_vector"], sample["reward"][..., 0])
+            reward_loss = self.reward_model(data=batch)
+            wandb.log({"Reward loss": loss})
+            logger.info(
+                "Model training iteration {} | Transition loss: {} | Reward loss: {}".format(
+                    i, model_loss, reward_loss
+                )
+            )

@@ -42,6 +42,7 @@ class GPRewardModel(RewardModel):
         num_workers: int = 1,
         learn_inducing_locations: bool = True,
     ):
+        super().__init__()
         # TODO set in_size somewhere else
         in_size = 5
 
@@ -120,41 +121,48 @@ class GPRewardModel(RewardModel):
         return latent.mean
         # return latent.mean, latent.variance, noise_var
 
-    def train(self, replay_buffer: ReplayBuffer):
-        num_data = len(replay_buffer)
+    # def train(self, replay_buffer: ReplayBuffer):
+    #     num_data = len(replay_buffer)
+    #     self.gp.train()
+    #     self.likelihood.train()
+
+    #     optimizer = torch.optim.Adam(
+    #         [
+    #             {"params": self.gp.parameters()},
+    #             {"params": self.likelihood.parameters()},
+    #         ],
+    #         lr=self.learning_rate,
+    #     )
+
+    #     mll = gpytorch.mlls.VariationalELBO(self.likelihood, self.gp, num_data=num_data)
+    #     logger.info("Data set size: {}".format(num_data))
+
+    #     print("wa")
+    #     for i in range(self.num_iterations):
+    #         sample = replay_buffer.sample(batch_size=self.batch_size)
+    #         x = sample["next"]["state_vector"]
+    #         # print("x {}".format(x.shape))
+    #         y = sample["reward"][..., 0]
+    #         # print("y {}".format(y.shape))
+    #         optimizer.zero_grad()
+    #         latent = self.gp(x)
+    #         # print("latent {}".format(latent))
+    #         loss = -mll(latent, y)
+    #         # print("loss {}".format(loss.shape))
+    #         logger.info("Reward iteration {}, Loss: {}".format(i, loss))
+    #         loss.backward()
+    #         optimizer.step()
+    #         wandb.log({"Reward loss": loss})
+
+    #     self.gp.eval()
+    #     self.likelihood.eval()
+
+    def build_loss(self, num_data: int):
         self.gp.train()
         self.likelihood.train()
-
-        optimizer = torch.optim.Adam(
-            [
-                {"params": self.gp.parameters()},
-                {"params": self.likelihood.parameters()},
-            ],
-            lr=self.learning_rate,
+        return gpytorch.mlls.VariationalELBO(
+            self.likelihood, self.gp, num_data=num_data
         )
-
-        mll = gpytorch.mlls.VariationalELBO(self.likelihood, self.gp, num_data=num_data)
-        logger.info("Data set size: {}".format(num_data))
-
-        print("wa")
-        for i in range(self.num_iterations):
-            sample = replay_buffer.sample(batch_size=self.batch_size)
-            x = sample["next"]["state_vector"]
-            # print("x {}".format(x.shape))
-            y = sample["reward"][..., 0]
-            # print("y {}".format(y.shape))
-            optimizer.zero_grad()
-            latent = self.gp(x)
-            # print("latent {}".format(latent))
-            loss = -mll(latent, y)
-            # print("loss {}".format(loss.shape))
-            logger.info("Reward iteration {}, Loss: {}".format(i, loss))
-            loss.backward()
-            optimizer.step()
-            wandb.log({"Reward loss": loss})
-
-        self.gp.eval()
-        self.likelihood.eval()
 
 
 class GPModel(gpytorch.models.ApproximateGP):

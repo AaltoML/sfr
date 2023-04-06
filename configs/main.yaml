@@ -2,10 +2,11 @@ defaults:
   # - model: laplace
   # - model: svgp
   - model: world_model
+  - model_new: world_model
   # - task: cartpole_swingup
   - env: cartpole_swingup
-  # - planner: mppi
-  - planner: cem
+  - planner: mppi
+  # - planner: cem
   # - model: probabilistic_ensemble
   # Use slurm on cluster or local?
   - override hydra/launcher: submitit_local

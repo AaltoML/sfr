@@ -1,13 +1,48 @@
-_target_: planners.MPPI
+_target_: torchrl.modules.MPPIPlanner
+env: ${model}
+advantage_module:
+  _target_: torchrl.objectives.value.advantages.TDLambdaEstimate
+  gamma: 0.99
+  lmbda: 0.95
+  value_network:
+    _target_: torchrl.modules.tensordict_module.actors.ValueOperator
+    module:
+      _target_: torch.nn.Linear
+      in_features: ${state_dim}
+      out_features: 1
+    in_keys:
+      - "state_vector"
+temperature: 1.0
+planning_horizon: 2
+optim_steps: 5
+num_candidates: 3
+top_k: 3
+reward_key: 'reward'
+action_key: 'action'
+
+# _target_: planners.MPPI
 # action_spec: ???
-horizon: 5
-num_samples: 512
-mixture_coef: 0.05
-num_iterations: 6
-num_topk: 64
-temperature: 0.5
-momentum: 0.1
-gamma: 0.99
-device: ${device}
-eval_mode: false
-t0: true
+# horizon: 5
+# num_samples: 512
+# mixture_coef: 0.05
+# num_iterations: 6
+# num_topk: 64
+# temperature: 0.5
+# momentum: 0.1
+# gamma: 0.99
+# device: ${device}
+# eval_mode: false
+# t0: true
+# advantage:
+#   _target_: torchrl.objectives.value.TDLambdaEstimator
+#   gamma: 0.99
+#   lmbda: 0.95
+#   value_network:
+#     _target_: torchrl.modules.ValueOperator
+#     value_net:
+#       module:
+#         _target_: torch.nn.Linear
+#         in_features: ${state_dim}
+#         out_features: 1
+#     in_keys:
+#       - "state_vector"

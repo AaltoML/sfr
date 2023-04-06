@@ -10,13 +10,35 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 import numpy as np
-import pytorch_lightning as pl
+
+# import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 from dm_control import suite
 from setuptools.dist import Optional
 from torch.utils.data import DataLoader, TensorDataset
 from torchrl.data import ReplayBuffer
+
+
+class EarlyStopper:
+    def __init__(self, patience: int = 1, min_delta: float = 0.0):
+        self.patience = patience
+        self.min_delta = min_delta
+        self.reset()
+
+    def __call__(self, validation_loss):
+        if validation_loss < self.min_validation_loss:
+            self.min_validation_loss = validation_loss
+            self.counter = 0
+        elif validation_loss > (self.min_validation_loss + self.min_delta):
+            self.counter += 1
+            if self.counter >= self.patience:
+                return True
+        return False
+
+    def reset(self):
+        self.counter = 0
+        self.min_validation_loss = np.inf
 
 
 def set_seed_everywhere(random_seed):
@@ -30,7 +52,7 @@ def set_seed_everywhere(random_seed):
     # torch.backends.cudnn.benchmark = False
     np.random.seed(random_seed)
     random.seed(random_seed)
-    pl.seed_everything(random_seed)
+    # pl.seed_everything(random_seed)
 
 
 def make_data_loader(

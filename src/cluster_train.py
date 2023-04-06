@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import hydra
+from omegaconf import DictConfig
 
 
 @hydra.main(version_base="1.3", config_path="../configs", config_name="main")

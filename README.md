@@ -74,6 +74,7 @@ git clone https://github.com/aidanscannell/bayesian-model-based-rl-with-fast-pos
 Create a virtual environment and install dependencies with:
 ``` shell
 ml py-virtualenv
+ml python/3.8.7
 make .venv/bin/activate
 ```
 Run multiple experiments in parallel whilst using hydra's sweep:

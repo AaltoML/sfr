@@ -22,8 +22,8 @@ lightning
 # laplace-torch
 gpytorch
 
-# torchrl
-./src/third_party/rl-0.1.0
+torchrl # using this on triton
+# ./src/third_party/rl-0.1.0 3 # using this locally
 dm_control # deepmind control suite
 opencv-python
 moviepy # rendering

@@ -24,8 +24,9 @@ import wandb
 from dm_env import specs
 from models import GaussianModelBaseEnv
 from omegaconf import DictConfig, OmegaConf
-from pytorch_lightning import Trainer
-from pytorch_lightning.loggers import WandbLogger
+
+# from pytorch_lightning import Trainer
+# from pytorch_lightning.loggers import WandbLogger
 from setuptools.dist import Optional
 from tensordict.nn import TensorDictModule
 from tensordict.nn.distributions import NormalParamExtractor
@@ -126,7 +127,9 @@ def make_transformed_env(
     return env
 
 
-def eval(cfg: DictConfig, policies: dict, transform_state_dict, seed: int = 42):
+def eval(
+    cfg: DictConfig, policies: dict, step: int, transform_state_dict, seed: int = 42
+):
     env = make_transformed_env(
         cfg=cfg,
         reward_scaling=1.0,
@@ -140,11 +143,13 @@ def eval(cfg: DictConfig, policies: dict, transform_state_dict, seed: int = 42):
             max_steps=200, policy=policies[name], auto_reset=True
         ).cpu()
         pixels = np.transpose(eval_rollout["pixels_save"].numpy(), [0, 3, 1, 2])
-        wandb.log({name + " video": wandb.Video(pixels, fps=15, format="mp4")})
+        wandb.log(
+            {name + " video": wandb.Video(pixels, fps=15, format="mp4")}, step=step
+        )
         eval_reward = eval_rollout["reward"].numpy()
         print("eval_reward {}".format(eval_reward.mean()))
         eval_reward = eval_reward.mean()
-        wandb.log({name + " reward": eval_reward})
+        wandb.log({name + " reward": eval_reward}, step=step)
     del env
 
 
@@ -195,11 +200,11 @@ def train(cfg: DictConfig):
     print("World model {}".format(world_model))
 
     total_frames = 500000 // cfg.env.frame_skip
-    frames_per_batch = 500 // cfg.env.frame_skip
+    frames_per_batch = 1000 // cfg.env.frame_skip
 
     max_grad_norm = 1.0
-    # num_cells = 256
-    num_cells = 64
+    num_cells = 256
+    # num_cells = 64
     sub_batch_size = 64  # cardinality of the sub-samples gathered from data in the
     # sub_batch_size = 25  # cardinality of the sub-samples gathered from data in the
     clip_epsilon = 0.2
@@ -286,7 +291,8 @@ def train(cfg: DictConfig):
     )
     print("loss_module {}".format(loss_module))
 
-    lr = 5e-4
+    # lr = 5e-4
+    lr = 1e-4
     weight_decay = 0.0
     # optim = torch.optim.Adam(loss_module.parameters(), lr)
     # optimizer = torch.optim.Adam(

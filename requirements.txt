@@ -13,14 +13,14 @@ isort
 pyflakes
 pytest
 
-torch
+torch==2.0.0
 # functorch  # needed for vmap
 # gymnasium
 mujoco
 torchtyping
-lightning
+# lightning
 # laplace-torch
-gpytorch
+gpytorch==1.9.1
 
 torchrl # using this on triton
 # ./src/third_party/rl-0.1.0 3 # using this locally

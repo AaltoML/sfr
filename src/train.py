@@ -449,7 +449,7 @@ def train(cfg: DictConfig):
 
         print("Training advantage network")
         # we now have a batch of data to work with. Let's learn something from it.
-        num_epochs = 3000
+        num_epochs = 7000
         early_stop.reset()
         early_stop_flag = False
         for epoch in range(num_epochs):

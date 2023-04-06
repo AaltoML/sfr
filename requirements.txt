@@ -13,9 +13,9 @@ torchtyping==0.1.4
 # laplace-torch
 gpytorch==1.9.1
 
-# git+https://github.com/pytorch/rl==
+git+https://github.com/pytorch/rl
 # torchrl==0.1.0  # using this on triton
-./src/third_party/rl-0.1.0 # using this locally
+# ./src/third_party/rl-0.1.0 # using this locally
 dm_control==1.0.11 # deepmind control suite
 opencv-python==4.7.0.72
 moviepy==1.0.3 # rendering

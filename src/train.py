@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import logging
 import random
+import time
 from copy import deepcopy
 from functools import partial
 from pathlib import Path
@@ -9,6 +10,7 @@ from typing import List, Optional
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
 
 import gpytorch
 import hydra
@@ -455,9 +457,11 @@ def train(cfg: DictConfig):
 
         print("Training advantage network")
         # we now have a batch of data to work with. Let's learn something from it.
-        num_epochs = 7000
+        # num_epochs = 7000
+        num_epochs = 500
         early_stop.reset()
         early_stop_flag = False
+        start = time.time()
         for epoch in range(num_epochs):
             advantage_module(tensordict)
             data_view = tensordict.reshape(-1)
@@ -474,11 +478,11 @@ def train(cfg: DictConfig):
                     + loss_vals["loss_entropy"]
                 )
                 wandb.log({"ppo_loss": loss_value}, step=j)
-                print(
-                    "PPO: Epoch {} | Batch {} | Loss {}".format(
-                        epoch, batch_idx, loss_value
-                    )
-                )
+                # print(
+                #     "PPO: Epoch {} | Batch {} | Loss {}".format(
+                #         epoch, batch_idx, loss_value
+                #     )
+                # )
 
                 # Optimization: backward, grad clipping and optim step
                 loss_value.backward()
@@ -488,13 +492,15 @@ def train(cfg: DictConfig):
                 optim.step()
                 optim.zero_grad()
                 j += 1
-            #     if early_stop(loss_value):
-            #         print("PPO loss early stop criteria met, exiting training loop")
-            #         early_stop_flag = True
-            #         break
-            # print("PPO: Epoch {}".format(epoch))
-            # if early_stop_flag:
-            #     break
+        end = time.time()
+        print("Time: {}".format(end - start))
+        #     if early_stop(loss_value):
+        #         print("PPO loss early stop criteria met, exiting training loop")
+        #         early_stop_flag = True
+        #         break
+        # print("PPO: Epoch {}".format(epoch))
+        # if early_stop_flag:
+        #     break
 
         # step the learning rate schedule
         scheduler.step()

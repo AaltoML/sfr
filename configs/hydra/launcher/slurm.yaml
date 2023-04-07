@@ -22,8 +22,8 @@ _target_: hydra_plugins.hydra_submitit_launcher.submitit_launcher.SlurmLauncher
 
 
 timeout_min: 720
-cpus_per_task: 1
-# cpus_per_task: 6
+# cpus_per_task: 1
+cpus_per_task: 6
 gpus_per_node: 0
 tasks_per_node: 1
 # tasks_per_node: 6

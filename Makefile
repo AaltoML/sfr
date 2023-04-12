@@ -22,11 +22,13 @@ all: run paper
 run: $(VENV)/bin/activate
 	$(PYTHON) src/train.py
 
-$(VENV)/bin/activate: requirements.txt
-	# python3 -m venv $(VENV)
-	# echo "layout python" >> .envrc
+$(VENV)/bin/activate: setup.py
 	python3 -m venv $(VENV)
-	$(PIP) install -r requirements.txt
+	$(PIP) install -e ".[experiments, dev]"
+
+# $(VENV)/bin/activate: requirements.txt
+# 	python3 -m venv $(VENV)
+# 	$(PIP) install -r requirements.txt
 
 figures: $(VENV)/bin/activate
 	$(PYTHON) src/figures.py --save_dir="./${PAPER_DIR}/figs"

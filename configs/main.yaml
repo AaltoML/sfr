@@ -4,7 +4,10 @@ defaults:
   - model: world_model
   - model_new: world_model
   # - task: cartpole_swingup
-  - env: cartpole_swingup
+  # - env: cartpole_swingup
+  - env: cartpole_balance
+  # - env: Pendulum-v1
+  # - env: CartPole-v1
   - planner: mppi
   # - planner: cem
   # - model: probabilistic_ensemble
@@ -30,12 +33,15 @@ action_repeat: 1
 
 # observation_dim: ???
 # action_dim: ???
-state_dim: 5
+state_dim: 5 # dm_control
+# state_dim: 4 # gym
 action_dim: 1
 # action_dim:
 #   _target_: ${env.action_spec().shape}
-input_dim: 6
-output_dim: 6
+# input_dim: 5 # gym
+# output_dim: 5 # gym
+input_dim: 6 # dm_control
+output_dim: 6 # dm_control
 # output_dim: ${observation_dim}
 # batch_shape:
 #   _target_: torch.Size
@@ -62,6 +68,7 @@ batch_size: 64
 
 wandb:
   group: ${env.env_name}-${env.task_name}
+  # group: ${env.env_name}
   entity: "aidanscannell"
   project: "bayesian-model-based-rl-with-fast-updates"
   use_wandb: True

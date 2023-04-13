@@ -44,6 +44,7 @@ from torchrl.data.replay_buffers.samplers import (
 )
 from torchrl.data.replay_buffers.storages import LazyMemmapStorage, LazyTensorStorage
 from torchrl.envs import CatTensors, DoubleToFloat
+from torchrl.envs.libs.dm_control import DMControlEnv
 from torchrl.envs.libs.gym import GymEnv
 from torchrl.envs.transforms import ObservationNorm, RewardScaling, TransformedEnv
 from torchrl.envs.utils import step_mdp
@@ -59,6 +60,59 @@ from torchrl.record import VideoRecorder
 from torchrl.record.loggers.wandb import WandbLogger
 from torchrl.trainers import Recorder
 from utils import EarlyStopper, set_seed_everywhere
+
+
+class Actor(nn.Module):
+    def __init__(self, state_dim, mlp_dims, action_shape):
+        super().__init__()
+        # self.trunk = nn.Sequential(
+        #     nn.Linear(latent_dim, mlp_dims[0]), nn.LayerNorm(mlp_dims[0]), nn.Tanh()
+        # )
+        self._actor = net.mlp(mlp_dims[0], mlp_dims[1:], action_shape[0])
+        self.apply(net.orthogonal_init)
+
+    def forward(self, state, std):
+        # feature = self.trunk(state)
+        mu = self._actor(state)
+        mu = torch.tanh(mu)
+        std = torch.ones_like(mu) * std
+        return h.TruncatedNormal(mu, std)
+
+
+class Critic(nn.Module):
+    def __init__(self, state_dim, mlp_dims, action_shape):
+        super().__init__()
+        # self.trunk = nn.Sequential(
+        #     nn.Linear(latent_dim + action_shape[0], mlp_dims[0]),
+        #     nn.LayerNorm(mlp_dims[0]),
+        #     nn.Tanh(),
+        # )
+        self._critic1 = net.mlp(mlp_dims[0], mlp_dims[1:], 1)
+        self._critic2 = net.mlp(mlp_dims[0], mlp_dims[1:], 1)
+        self.apply(net.orthogonal_init)
+
+    def forward(self, state, action):
+        state_action_input = torch.cat([state, action], dim=-1)
+        return self._critic1(state_action_input), self._critic2(state_action_input)
+
+
+class Mss:
+    def __init__(self, device):
+        self.device = torch.device(device)
+
+        self.model = model.to(self.device)
+        self.actor = Actor(state_dim, mlp_dims, action_shape).to(self.device)
+
+        self.critic = Critic(
+            state_dim=state_dim, mlp_dims=mlp_dims, action_shape=action_shape
+        ).to(self.device)
+        self.critic_target = Critic(
+            state_dim=state_dim, mlp_dims=mlp_dims, action_shape=action_shape
+        ).to(self.device)
+
+        # init optimizer
+        self.actor_optim = torch.optim.Adam(self.actor.parameters(), lr=lr)
+        self.critic_optim = torch.optim.Adam(self.critic.parameters(), lr=lr)
 
 
 def make_replay_buffer(
@@ -95,11 +149,15 @@ def make_transformed_env(
     """Apply transforms to the env (such as reward scaling and state normalization)."""
 
     env = hydra.utils.instantiate(
-        cfg.env, from_pixels=from_pixels, pixels_only=pixels_only, random=seed
+        cfg.env,
+        from_pixels=from_pixels,
+        pixels_only=pixels_only,
+        # random=seed
     )
 
     double_to_float_list, double_to_float_inv_list = [], []
-    if isinstance(env, torchrl.envs.libs.dm_control.DMControlEnv):
+    if isinstance(env, DMControlEnv):
+        # if isinstance(env, torchrl.envs.libs.dm_control.DMControlEnv):
         print("env is dm_env so making double precision")
         # if env_library is torchrl.envs.libs.dm_control.DMControlEnv:
         # DMControl requires double-precision
@@ -129,36 +187,26 @@ def make_transformed_env(
     return env
 
 
-def eval(
-    cfg: DictConfig, policies: dict, step: int, transform_state_dict, seed: int = 42
-):
-    env = make_transformed_env(
-        cfg=cfg,
-        reward_scaling=1.0,
-        init_env_steps=1000,
-        from_pixels=True,
-        pixels_only=False,
+def eval_policy(logger: WandbLogger, name: str, policy, env, step: int, fps: int = 15):
+    env.reset()
+    eval_rollout = env.rollout(max_steps=200, policy=policy, auto_reset=True).cpu()
+    logger.log_scalar(
+        name=name + " reward",
+        value=eval_rollout["reward"].numpy().mean(),
+        step=step,
     )
-    env.transform.insert(0, CatTensors(["pixels"], "pixels_save", del_keys=False))
-    for name in policies.keys():
-        eval_rollout = env.rollout(
-            max_steps=200, policy=policies[name], auto_reset=True
-        ).cpu()
-        pixels = np.transpose(eval_rollout["pixels_save"].numpy(), [0, 3, 1, 2])
-        wandb.log(
-            {name + " video": wandb.Video(pixels, fps=15, format="mp4")}, step=step
-        )
-        eval_reward = eval_rollout["reward"].numpy()
-        print("eval_reward {}".format(eval_reward.mean()))
-        eval_reward = eval_reward.mean()
-        wandb.log({name + " reward": eval_reward}, step=step)
-    del env
+    logger.log_video(
+        name=name + " video",
+        video=eval_rollout["pixels_save"].permute(0, 3, 1, 2)[None, ...],
+        fps=fps,
+        step=step,
+    )
 
 
 def get_env_stats(cfg, seed: Optional[int] = 42):
     """Gets the stats of an environment."""
     proof_env = make_transformed_env(cfg, seed=seed)
-    print("proof_env {}".format(proof_env))
+    # print("proof_env {}".format(proof_env))
     transform_state_dict = proof_env.state_dict()
     proof_env.close()
     return transform_state_dict
@@ -263,18 +311,32 @@ def train(cfg: DictConfig):
         nn.LazyLinear(1, device=device),
     )
 
-    value_module = ValueOperator(
-        module=value_net,
-        in_keys=["state_vector"],
-    )
+    value_module = ValueOperator(module=value_net, in_keys=["state_vector"])
     print("Running policy:", policy_module(env.reset()))
     print("Running value:", value_module(env.reset()))
 
     gamma = 0.99
     lmbda = 0.95
+    lr = 5e-4
+    # lr = 1e-4
+    weight_decay = 0.0
+    num_epochs = 7000
+    # num_epochs = 500
+    # patience = 500
+    patience = 1000
+    min_delta = 0.0
+    # min_delta = 0.2
+
     advantage_module = GAE(
         gamma=gamma, lmbda=lmbda, value_network=value_module, average_gae=True
     )
+
+    # from torchrl.objectives import DQNLoss, ValueEstimators
+
+    # # loss_module = DQNLoss(actor)
+    # loss_module = DQNLoss(value_network=value_module)
+    # kwargs = {"gamma": 0.9, "lmbda": 0.9}
+    # loss_module.make_value_estimator(ValueEstimators.TDLambda, **kwargs)
 
     loss_module = torchrl.objectives.ClipPPOLoss(
         actor=policy_module,
@@ -291,11 +353,13 @@ def train(cfg: DictConfig):
         gamma=0.99,
         loss_critic_type="smooth_l1",
     )
+
+    # # Get model
+    # actor, actor_explore = make_model(test_env)
+    # loss_module, target_net_updater = get_loss_module(actor, gamma)
+    # target_net_updater.init_()
     print("loss_module {}".format(loss_module))
 
-    # lr = 5e-4
-    lr = 1e-4
-    weight_decay = 0.0
     # optim = torch.optim.Adam(loss_module.parameters(), lr)
     # optimizer = torch.optim.Adam(
     #     planner.advantage_module.parameters(),
@@ -303,12 +367,7 @@ def train(cfg: DictConfig):
     #     weight_decay=weight_decay
     #     # planner.advantage_module.parameters(), lr=lr, weight_decay=weight_decay
     # )
-    optim = torch.optim.Adam(loss_module.parameters(), lr)
-    scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-        optim, total_frames // frames_per_batch, 0.0
-    )
-    patience = 1000
-    min_delta = 0.2
+
     early_stop = EarlyStopper(patience=patience, min_delta=min_delta)
 
     # Configure agent
@@ -316,13 +375,22 @@ def train(cfg: DictConfig):
         cfg.planner, env=world_model, advantage_module=advantage_module
     )
     print("Planner: {}".format(planner))
-    random_policy = torchrl.collectors.collectors.RandomPolicy(
-        make_transformed_env(cfg).action_spec
-    )
     print(
         "planner.advantage_module.value_network  {}".format(
             planner.advantage_module.value_network
         )
+    )
+
+    planner = ProbabilisticActor(
+        module=TensorDictModule(
+            planner,
+            in_keys=["state_vector"],
+            out_keys=["loc", "scale"],
+        ),
+        spec=env.action_spec,
+        in_keys=["loc", "scale"],
+        distribution_class=TanhNormal,
+        # return_log_prob=True,
     )
 
     # from torchrl.objectives.value import TDLambdaEstimator
@@ -396,13 +464,16 @@ def train(cfg: DictConfig):
     collector = SyncDataCollector(
         # create_env_fn=partial(make_transformed_env, train_env),
         create_env_fn=partial(make_transformed_env, cfg=cfg),
-        # policy=planner,
-        policy=policy_module,
-        # policy=random_policy,
+        policy=planner,
+        # policy=policy_module,
+        # policy=torchrl.collectors.collectors.RandomPolicy(
+        #     make_transformed_env(cfg).action_spec
+        # ),
         total_frames=total_frames,
         # max_frames_per_traj=50,
         frames_per_batch=frames_per_batch,
         # init_random_frames=-1,
+        # init_random_frames=500,
         init_random_frames=500,
         reset_at_each_iter=False,
         # split_trajs=True,
@@ -413,54 +484,46 @@ def train(cfg: DictConfig):
         # storing_device="cpu",
     )
 
-    # # logger.info("Training dynamic model")
-    # print("Training dynamic model")
-    # dynamic_model.train(replay_buffer)
-    # print("DONE TRAINING MODEL")
-    # # logger.info("DONE TRAINING MODEL")
+    # Make env for logging reward/video for policy
+    eval_env = make_transformed_env(
+        cfg=cfg,
+        reward_scaling=1.0,
+        init_env_steps=1000,
+        from_pixels=True,
+        pixels_only=False,
+    )
+    eval_env.transform.insert(0, CatTensors(["pixels"], "pixels_save", del_keys=False))
 
     norm_factor_training = 1  # TODO set this correctly
     rewards, rewards_eval = [], []
     collected_frames = 0
-    # pbar = tqdm.tqdm(total=total_frames)
-    r0 = None
 
     j = 0
     for i, tensordict in enumerate(collector):
         print("Episode: {}".format(i))
         print("tensordict: {}".format(tensordict))
 
-        # print(tensordict["state_vector"])
-        if r0 is None:
-            r0 = tensordict["reward"].mean().item()
-        # pbar.update(tensordict.numel())
-
         # extend the replay buffer with the new data
         if ("collector", "mask") in tensordict.keys(True):
             # if multi-step, a mask is present to help filter padded values
-            # print("here")
             current_frames = tensordict["collector", "mask"].sum()
             tensordict = tensordict[tensordict.get(("collector", "mask"))]
         else:
-            # print("Not here")
             tensordict = tensordict.view(-1)
             current_frames = tensordict.numel()
-        print("current_frames")
-        print(current_frames)
         collected_frames += current_frames
-        print("collected_frames")
-        print(collected_frames)
         replay_buffer_model.extend(tensordict.cpu())
         # replay_buffer.extend(tensordict)
-        print("replay_buffer")
-        print(replay_buffer)
+        print("replay_buffer {}".format(replay_buffer))
 
         print("Training advantage network")
         # we now have a batch of data to work with. Let's learn something from it.
-        # num_epochs = 7000
-        num_epochs = 500
         early_stop.reset()
         early_stop_flag = False
+        optim = torch.optim.Adam(loss_module.parameters(), lr)
+        scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
+            optim, total_frames // frames_per_batch, 0.0
+        )
         start = time.time()
         for epoch in range(num_epochs):
             advantage_module(tensordict)
@@ -478,11 +541,6 @@ def train(cfg: DictConfig):
                     + loss_vals["loss_entropy"]
                 )
                 wandb.log({"ppo_loss": loss_value}, step=j)
-                # print(
-                #     "PPO: Epoch {} | Batch {} | Loss {}".format(
-                #         epoch, batch_idx, loss_value
-                #     )
-                # )
 
                 # Optimization: backward, grad clipping and optim step
                 loss_value.backward()
@@ -492,15 +550,17 @@ def train(cfg: DictConfig):
                 optim.step()
                 optim.zero_grad()
                 j += 1
+                if early_stop(loss_value):
+                    print("PPO loss early stop criteria met, exiting training loop")
+                    early_stop_flag = True
+                    break
+            if epoch % 10 == 0:
+                print("PPO: Epoch {} | Loss {}".format(epoch, loss_value))
+            if early_stop_flag:
+                break
+        print("PPO: Epoch {}".format(epoch))
         end = time.time()
         print("Time: {}".format(end - start))
-        #     if early_stop(loss_value):
-        #         print("PPO loss early stop criteria met, exiting training loop")
-        #         early_stop_flag = True
-        #         break
-        # print("PPO: Epoch {}".format(epoch))
-        # if early_stop_flag:
-        #     break
 
         # step the learning rate schedule
         scheduler.step()
@@ -510,72 +570,17 @@ def train(cfg: DictConfig):
         print("Training world model")
         print("num data: {}".format(len(replay_buffer_model)))
         print("Training transition model")
-        world_model.transition_model.train(replay_buffer_model)
+        # world_model.transition_model.train(replay_buffer_model)
         print("Training reward model")
-        world_model.reward_model.train(replay_buffer_model)
+        # world_model.reward_model.train(replay_buffer_model)
         print("DONE TRAINING WORLD MODEL")
         # logger.info("DONE TRAINING MODEL")
 
-        # # tensordict = env.rollout(max_steps=350, policy=planner)
-        # tensordict_policy = env.rollout(
-        #     max_steps=frames_per_batch, policy=policy_module
-        # )
-
-        # print("tensordict['reward'].shape")
-        # print(tensordict["reward"].shape)
-        # print("tensordict_policy['reward'].shape")
-        # print(tensordict_policy["reward"].shape)
-        # print(tensordict_policy["reward"].mean())
-        # print(tensordict_policy["reward"].mean().item())
-        # logger.log_scalar(
-        #     name="Policy reward",
-        #     value=tensordict_policy["reward"].mean().item(),
-        #     step=i,
-        # )
-        # print("CEM")
-        # print(tensordict)
-
-        # rewards.append(
-        #     (
-        #         i,
-        #         tensordict["reward"].mean().item()
-        #         / norm_factor_training
-        #         / cfg.env.frame_skip,
-        #     )
-        # )
-        # print("rewards[-1][1]")
-        # print(rewards[-1][1])
-        # print(rewards)
-        # logger.log_scalar(name="reward", value=rewards[-1][1], step=i)
-        # print("logged reward")
-
-        eval(
-            cfg,
-            policies={"planner": planner, "ppo": policy_module},
-            transform_state_dict=transform_state_dict,
-            seed=cfg.random_seed + 42,
+        # Log rewards/videos in eval env
+        eval_policy(logger=logger, name="planner", policy=planner, env=eval_env, step=i)
+        eval_policy(
+            logger=logger, name="policy", policy=policy_module, env=eval_env, step=i
         )
-        # td_record = recorder(None)
-
-        # if td_record is not None:
-        # rewards_eval.append((i, td_record["r_evaluation"].item()))
-        # if len(rewards_eval):
-        #     pbar.set_description(
-        #         f"reward: {rewards[-1][1]: 4.4f} (r0 = {r0: 4.4f}) | reward eval: reward: {rewards_eval[-1][1]: 4.4f}"
-        #     )
-        # logger.log_scalar(name="reward", value=rewards[-1][1], step=i)
-        # logger.log_scalar(name="reward_eval", value=rewards_eval[-1][1], step=i)
-        # wandb.log(
-        #     {
-        #         "gameplays": wandb.Video(
-        #             mp4,
-        #             caption="episode: " + str(i - 10),
-        #             fps=4,
-        #             format="gif",
-        #         ),
-        #         "step": i,
-        #     }
-        # )
 
 
 if __name__ == "__main__":

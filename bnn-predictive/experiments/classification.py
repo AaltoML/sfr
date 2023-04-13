@@ -52,7 +52,7 @@ def evaluate(p, y, likelihood, name, data):
 
 
 def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, seed,
-              n_layers=2, n_units=50, activation='tanh', n_samples=1000):
+              n_layers=2, n_units=50, activation='tanh', n_samples=1000, refine=True):
     """Full inference (training and prediction)
     storing all relevant quantities and returning a state dictionary.
     if sigma_noise is None, we have classification.
@@ -134,6 +134,9 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
     res.update(evaluate(fs_valid, y_valid, lh, 'nnd', 'valid'))
 
     # REFINEMENT
+    if not refine:
+        return res
+
     # Full Laplace
     m, S_chol, S_chold, losses = laplace_refine(model, X_train, y_train, likelihood, prior_prec)
     res['losses_lap'] = losses
@@ -216,6 +219,7 @@ if __name__ == '__main__':
     parser.add_argument('--root_dir', help='Root directory', default='../')
     parser.add_argument('--name', help='name result file', default='', type=str)
     parser.add_argument('--n_samples', help='number predictive samples', type=int, default=1000)
+    parser.add_argument('--refine', help='on/off switch for posterior refinement', type=bool)
     args = parser.parse_args()
     dataset = args.dataset
     double = args.double
@@ -229,6 +233,7 @@ if __name__ == '__main__':
     n_samples = args.n_samples
     name = args.name
     root_dir = args.root_dir
+    refine = args.refine
 
     data_dir = os.path.join(root_dir, 'data')
     res_dir = os.path.join(root_dir, 'experiments', 'results')
@@ -251,4 +256,4 @@ if __name__ == '__main__':
 
     deltas = np.logspace(logd_min, logd_max, n_deltas)
     main(ds_train, ds_test, ds_valid, deltas, device, dataset, name, seed, res_dir, n_epochs=n_epochs,
-         lr=lr, n_layers=n_layers, n_units=n_units, activation=activation, n_samples=n_samples)
+         lr=lr, n_layers=n_layers, n_units=n_units, activation=activation, n_samples=n_samples, refine=refine)

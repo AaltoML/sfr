@@ -1,0 +1,17 @@
+#!/bin/bash
+#SBATCH --array=1-10
+#SBATCH --time=0-3:50:00    # 10 hours
+#SBATCH --output=/scratch/work/%u/bnn-svgp/logs/uci_classification_%A_%a.out
+#SBATCH --partition=gpu
+#SBATCH --gres=gpu:a100:1
+#SBATCH --cpus-per-task=10
+#SBATCH --mem-per-cpu=8000
+
+module load miniconda
+source activate bnn-env-3
+
+SEEDS=(5 711 1 75 359 17 420 129 666 69 36)
+SEED=${SEEDS[$SLURM_ARRAY_TASK_ID]}
+logmin=-1
+dataset='satellite'
+srun python -u experiments/classification.py -d ${dataset} --root_dir . --seed ${SEED} --n_layers 2 --activation tanh --logd_min ${logmin}

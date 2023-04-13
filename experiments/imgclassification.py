@@ -6,6 +6,7 @@ from torch.optim import Adam
 from torch.optim.lr_scheduler import LambdaLR
 from torchvision.datasets import VisionDataset
 from tqdm import tqdm
+import os
 
 from preds.models import CIFAR10Net, CIFAR100Net, MLPS
 from preds.datasets import MNIST, FMNIST, CIFAR10
@@ -30,16 +31,16 @@ class QuickDS(VisionDataset):
         return len(self.D)
 
 
-def get_dataset(dataset, double, device=None):
+def get_dataset(dataset, double, dir, device=None):
     if dataset == 'MNIST':
-        ds_train = MNIST(train=True, double=double)
-        ds_test = MNIST(train=False, double=double)
+        ds_train = MNIST(train=True, double=double, root=dir)
+        ds_test = MNIST(train=False, double=double, root=dir)
     elif dataset == 'FMNIST':
-        ds_train = FMNIST(train=True, double=double)
-        ds_test = FMNIST(train=False, double=double)
+        ds_train = FMNIST(train=True, double=double, root=dir)
+        ds_test = FMNIST(train=False, double=double, root=dir)
     elif dataset == 'CIFAR10':
-        ds_train = CIFAR10(train=True, double=double)
-        ds_test = CIFAR10(train=False, double=double)
+        ds_train = CIFAR10(train=True, double=double, root=dir)
+        ds_test = CIFAR10(train=False, double=double, root=dir)
     else:
         raise ValueError('Invalid dataset argument')
     if device is not None:
@@ -74,7 +75,7 @@ def evaluate(model, data_loader, criterion, device):
     return loss / len(data_loader.dataset), acc / len(data_loader.dataset)
 
 
-def main(ds_train, ds_test, model_name, seed, n_epochs, batch_size, lr, deltas, device, fname):
+def main(ds_train, ds_test, model_name, seed, n_epochs, batch_size, lr, deltas, device, fname, res_dir):
     train_loader = DataLoader(ds_train, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(ds_test, batch_size=batch_size, shuffle=False)
     for delta in deltas:
@@ -109,7 +110,7 @@ def main(ds_train, ds_test, model_name, seed, n_epochs, batch_size, lr, deltas, 
 
         state = {'model': model.state_dict(), 'optimizer': optim.state_dict(),
                  'losses': losses, 'metrics': metrics, 'delta': delta}
-        torch.save(state, fname.format(delta=delta))
+        torch.save(state, os.path.join(res_dir, fname.format(delta=delta)))
 
 
 if __name__ == '__main__':
@@ -127,6 +128,7 @@ if __name__ == '__main__':
     parser.add_argument('--logd_min', help='min log delta', default=-2.0, type=float)
     parser.add_argument('--logd_max', help='max log delta', default=3.0, type=float)
     parser.add_argument('--double', help='double precision', action='store_true')
+    parser.add_argument('--root_dir', help='Root directory', default='../')
     args = parser.parse_args()
     dataset = args.dataset
     double = args.double
@@ -137,17 +139,26 @@ if __name__ == '__main__':
     batch_size = args.batch_size
     n_deltas = args.n_deltas
     logd_min, logd_max = args.logd_min, args.logd_max
+    root_dir = args.root_dir
+
+    data_dir = os.path.join(root_dir, 'data')
+    res_dir = os.path.join(root_dir, 'experiments', 'results', dataset)
+
+    print(f'Writing results to {res_dir}')
+    print(f'Reading data from {data_dir}')
+    print(f'Dataset: {dataset}')
+    print(f'Seed: {seed}')
 
     if double:
         torch.set_default_dtype(torch.double)
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
-    ds_train, ds_test = get_dataset(dataset, double, device)
+    ds_train, ds_test = get_dataset(dataset, double, data_dir, device=device)
 
     # naming convention: dataset_model_seed_delta
     fname = 'models/' + '_'.join([dataset, model_name, str(seed)]) + '_{delta:.1e}.pt'
     deltas = np.logspace(logd_min, logd_max, n_deltas)
     deltas = np.insert(deltas, 0, 0)  # add unregularized network
 
-    main(ds_train, ds_test, model_name, seed, n_epochs, batch_size, lr, deltas, device, fname)
+    main(ds_train, ds_test, model_name, seed, n_epochs, batch_size, lr, deltas, device, fname, res_dir)

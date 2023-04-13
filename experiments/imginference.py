@@ -99,17 +99,17 @@ def get_quick_loader(loader, device='cuda'):
 
 
 def main(dataset_name, ds_train, ds_test, model_name, rerun, batch_size, seed,
-         delta_min=1e-7, delta_max=1e7):
+         delta_min=1e-7, delta_max=1e7, res_dir='experiments/results'):
     lh = CategoricalLh()
 
     eligible_files = list()
     deltas = list()
-    for file in os.listdir('models'):
+    for file in os.listdir(os.path.join(res_dir,'models')):
         # strip off filename ending using indexing
         ds, m, s, delta = file[:-3].split('_')
         if ds == dataset_name and m == model_name and seed == int(s) and \
                 (float(delta) >= delta_min) and (float(delta) <= delta_max):
-            eligible_files.append('models/' + file)
+            eligible_files.append(os.path.join(res_dir, 'models/' + file))
             deltas.append(float(delta))
     # start with smallest delta and continue
     ixlist = np.argsort(deltas)
@@ -395,13 +395,22 @@ if __name__ == '__main__':
     parser.add_argument('--delta_min', type=float, default=1e-7)
     parser.add_argument('--delta_max', type=float, default=1e7)
     parser.add_argument('--loginfo', action='store_true', help='log info')
+    parser.add_argument('--root_dir', help='Root directory', default='../')
     args = parser.parse_args()
     dataset = args.dataset
     model_name = args.model
     rerun = args.rerun
+    root_dir = args.root_dir
+    data_dir = os.path.join(root_dir, 'data')
+    res_dir = os.path.join(root_dir, 'experiments', 'results', dataset)
+
+    print(f'Writing results to {res_dir}')
+    print(f'Reading data from {data_dir}')
+    print(f'Dataset: {dataset}')
+    print(f'Seed: {seed}')
 
     logging.basicConfig(level=logging.INFO if args.loginfo else logging.WARNING)
-    ds_train, ds_test = get_dataset(dataset, False)
+    ds_train, ds_test = get_dataset(dataset, False, data_dir)
     if args.gp:
         # does inference and OOD at once!
         logging.info(f'Run GP inference with {dataset} using {model_name}')
@@ -415,4 +424,4 @@ if __name__ == '__main__':
     else:
         logging.info(f'Run inference with {dataset} using {model_name}')
         main(dataset, ds_train, ds_test, model_name, rerun, args.batch_size, args.seed,
-             args.delta_min, args.delta_max)
+             args.delta_min, args.delta_max, res_dir)

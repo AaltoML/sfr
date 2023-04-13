@@ -234,6 +234,8 @@ if __name__ == '__main__':
     res_dir = os.path.join(root_dir, 'experiments', 'results')
     print(f'Writing results to {res_dir}')
     print(f'Reading data from {data_dir}')
+    print(f'Dataset: {dataset}')
+    print(f'Seed: {seed}')
 
     if double:
         torch.set_default_dtype(torch.double)

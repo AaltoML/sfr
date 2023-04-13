@@ -5,11 +5,8 @@
 #   random: ${random_seed}
 # visualize_reward: false
 
-_target_: torchrl.envs.libs.dm_control.DMControlEnv
+_target_: src.utils.env.make_env
 env_name: "cartpole"
 task_name: "swingup"
-random: ${random_seed}
-device: ${device}
-frame_skip: 2
-from_pixels: False
-pixels_only: False
+seed: ${random_seed}
+action_repeat: 2

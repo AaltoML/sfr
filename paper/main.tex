@@ -34,9 +34,11 @@
   % \texttt{email} \\
 }
 
+% Pass options to natbib
+\PassOptionsToPackage{numbers, compress}{natbib}
 
 % NeurIPS packages
-\usepackage[preprint,nonatbib]{neurips_2022}
+\usepackage[preprint]{neurips_2022}
 \usepackage[utf8]{inputenc} % allow utf-8 input
 \usepackage[T1]{fontenc}    % use 8-bit T1 fonts
 %\usepackage{hyperref}       % hyperlinks
@@ -51,6 +53,9 @@
 %\usepackage[maxcitenames=1, maxbibnames=4, doi=false, isbn=false, eprint=true, backend=bibtex, hyperref=true, url=false, style=authoryear-comp]{biblatex}
 %\addbibresource{zotero-library.bib}
 % \addbibresource{paper/zotero-library.bib}
+
+% Let's use good old bibtex instead
+
 
 % Our packages
 \usepackage{todonotes}
@@ -222,7 +227,7 @@
 % In this section we extend these fast updates to environment's with high dimensional state spaces and large data sets.
 % % Our method draws on the connection between BNNs and GPs and formulates a function space SVGP posterior given
 % Our method uses a BNN dynamic model and draws on the connection between BNNs and GPs
-% \parencite{khanApproximate2019} to formulate a function space SVGP posterior,
+% \citep{khanApproximate2019} to formulate a function space SVGP posterior,
 % where we can apply the fast updates from \cref{eq-dual-update-svgp}.
 % At a high-level, we first use Laplace's approximation to obtain a weight space posterior for our BNN.
 % We then linearise our BNN around the optimal parameters and interpret it as a GP.
@@ -277,7 +282,7 @@ $\mathbf{u} = f(\mathbf{Z}; \transitionParams) \in \R^{M \times C}$, known as in
 \todo{cite sparse gp papers}
 Instead of collapsing the inducing variables like \cite{titsiasVariational2009}, they can be treated variationally
 $p(\mathbf{u} \mid \mathbf{y}) \approx q(\mathbf{u}) = \mathcal{N}\left( \mathbf{u} \mid \mathbf{m}, \mathbf{V} \right)$, where $\mathbf{m}$ and $\mathbf{V}$ are variational parameters
-which need to be optimised \parencite{hensmanGaussian2013}.
+which need to be optimised \citep{hensmanGaussian2013}.
 The sparse variational GP (SVGP) predictive posterior is then given by,
 \begin{align}
 \label{eq-dual-svgp-predictive-posterior}
@@ -327,13 +332,13 @@ The GP prior is then given by,
   k(\cdot, \cdot')
   = \frac{1}{\gamma^{2}} \mathbf{J}(\cdot) \mathbf{J}(\cdot')^{T},
 \end{align}
-where the kernel is the neural tangent kernel (NTK) \parencite{immerImprovingPredictionsBayesian2021},
+where the kernel is the neural tangent kernel (NTK) \citep{immerImprovingPredictionsBayesian2021},
 \todo{what mean function shoudl this use???}
 \todo{NTK times some factor??}
 with Jacobian given by $\mathbf{J}(\cdot) = \odv{\transitionFn(\cdot; \transitionParams)}{\transitionParams}_{\transitionParams=\transitionParams^{*}}$.
 % The kernel in \cref{eq-laplace-approx-function-space} is the neural tangent kernel (NTK)
 % $k(\mathbf{x}, \mathbf{x}') = \sigma_{0}^{2} J_{\transitionParams^{*}}(\mathbf{x}) J_{\transitionParams^{*}}(\mathbf{x}')^{T}$
-% \parencite{immerImprovingPredictionsBayesian2021}
+% \citep{immerImprovingPredictionsBayesian2021}
 % to formulate the GP posterior $p(f(\mathbf{X} ;\transitionParams_{0:i}) \mid \dataset_{0:i})$.
 Given this GP prior, we can use \cref{eq-gp-predictive-posterior} to obtain our GP posterior by conditioning on the data.
 % Given our GP prior, we can use the properties of multivariate normals to obtain our GP posterior by conditioning on the data.
@@ -377,7 +382,7 @@ Importantly, we can calculate the natural parameters $(\bm\alpha, \bm\beta)$ in 
 \bm\alpha_{n} &=  \nabla_{\meanParam{1}} \mathbb{E}_{q_{\inducingVariable}(f(\mathbf{x}_{n}))} \left[ \log p(\mathbf{y}_{n} \mid f(\mathbf{x}_{n}) ) \right] \\
 \bm\beta_{n} &=  \nabla_{\meanParam{1}} \mathbb{E}_{q_{\inducingVariable}(f(\mathbf{x}_{n}))} \left[ \log p(\mathbf{y}_{n} \mid f(\mathbf{x}_{n}) ) \right].
 \end{align}
-This simplifies SVGP inference \parencite{hensmanGaussian2013} as it no longer requires the variational parameters $(\mathbf{m}, \mathbf{V})$ to be optimised.
+This simplifies SVGP inference \citep{hensmanGaussian2013} as it no longer requires the variational parameters $(\mathbf{m}, \mathbf{V})$ to be optimised.
 
 % Importantly, \cite{changFantasizingDualGPs2022} show that in the dual space,
 % conditioning on new observations reduces to suming the dual variables from the previous time
@@ -726,7 +731,7 @@ However, under specific dynamics and reward structures (e.g. PILCO) this objecti
 \end{align}
 
 \textbf{Hallucinated upper confidence RL}
-A more theoretically grounded exploration strategy is UCRL \autocite{jakschNearoptimal2010}, which optimises joinly over
+A more theoretically grounded exploration strategy is UCRL \citep{jakschNearoptimal2010}, which optimises joinly over
 policies and models inside the set
 \(\mathcal{M} = \{ f \mid | f(s,a) - \mu_{i}(s, a) | \leq \beta_{i} \Sigma_{i}(s, a) \quad \forall s, a \in \mathcal{S} \times \mathcal{A} \}\), representing all statistically plausible
 models under the posterior \(p(f(s,a) \mid \mathcal{D}_{0:i} \cup (s,a)) = \mathcal{N}(f(s,a) \mid \mu_{i}(s,a), \Sigma_{i}(s,a))\) at episode \(i\).
@@ -782,7 +787,7 @@ for example, model bias and the exploration-exploitation trade-off.
 In this section we extend these fast updates to environment's with high dimensional state spaces and large data sets.
 % Our method draws on the connection between BNNs and GPs and formulates a function space SVGP posterior given
 Our method uses a BNN dynamic model and draws on the connection between BNNs and GPs
-\parencite{khanApproximate2019} to formulate a function space SVGP posterior,
+\citep{khanApproximate2019} to formulate a function space SVGP posterior,
 where we can apply the fast updates from \cref{eq-dual-update-svgp}.
 At a high-level, we first use Laplace's approximation to obtain a weight space posterior for our BNN.
 We then linearise our BNN around the optimal parameters and interpret it as a GP.
@@ -919,7 +924,7 @@ with open("table.tex", 'w') as file:
 \end{table}
 
 \subsection{Biblatex}
-Rember when using biblatex to use 'parencite' for \parencite{kamtheDataEfficient2018} and when using natbib to use 'citep'.
+Rember when using biblatex to use 'parencite' for \citep{kamtheDataEfficient2018} and when using natbib to use 'citep'.
 
 %\bibliography{biblio.bib}
 \end{document}

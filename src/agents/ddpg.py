@@ -187,9 +187,6 @@ def update_q(
             )
 
         q1, q2 = critic(state, action)
-        print("td_target.shape")
-        print(td_target.shape)
-        # td_target = td_target[0, ...]
         q_loss = torch.mean(util.mse(q1, td_target) + util.mse(q2, td_target))
 
         optim.zero_grad(set_to_none=True)

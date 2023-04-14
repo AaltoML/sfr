@@ -100,7 +100,7 @@ def train(cfg: DictConfig):
     for episode_idx in range(cfg.num_train_episodes):
         # Collect trajectory
         time_step = env.reset()
-        episode_step, episode_reward = 0, 0
+        episode_reward = 0
         while not time_step.last():
             if episode_idx < cfg.init_random_episodes:
                 action = np.random.uniform(-1, 1, env.action_spec().shape).astype(
@@ -133,7 +133,6 @@ def train(cfg: DictConfig):
             replay_buffer.add(time_step_td)
 
             global_step += 1
-            episode_step += 1
 
         # Train agent
         # for _ in range(cfg.episode_length // cfg.update_every_steps):

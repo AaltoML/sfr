@@ -16,6 +16,7 @@ class MPPI:
         self,
         model: models.DynamicModel,
         proof_env: torchrl.envs.EnvBase,
+        advantage_module: nn.Module,
         horizon: int,
         num_samples: int,
         mixture_coef: float,

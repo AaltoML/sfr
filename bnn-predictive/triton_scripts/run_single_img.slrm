@@ -1,0 +1,17 @@
+#!/bin/bash
+#SBATCH --array=1-5
+#SBATCH --time=0-10:00:00    # 10 hours
+#SBATCH --output=/scratch/work/%u/bnn-svgp/logs/uci_classification_%A_%a.out
+#SBATCH --mail-type=END
+#SBATCH --mem-per-cpu=16000   # 16000MB of memory
+
+module load miniconda
+source activate bnn-env-3
+
+SEEDS=(117 68 187 27 51)
+SEED=${SEEDS[$SLURM_ARRAY_TASK_ID]}
+##SEED=117
+dataset='MNIST'
+model='MLP'
+srun python -u experiments/imgclassification.py -d ${dataset} -m ${model} --root_dir . --seed ${SEED}
+srun python -u experiments/imginference.py -d ${dataset} -m ${model} --root_dir . --seed ${seed} --loginfo

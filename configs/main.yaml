@@ -3,8 +3,10 @@ defaults:
   # - model: svgp
   - model: world_model
   - model_new: world_model
-  # - task: cartpole_swingup
   - env: cartpole_swingup
+  # - env: cartpole_balance
+  # - env: Pendulum-v1
+  # - env: CartPole-v1
   - planner: mppi
   # - planner: cem
   # - model: probabilistic_ensemble
@@ -17,51 +19,30 @@ defaults:
   - override hydra/hydra_logging: none
   - _self_
 
-# task: cartpole_swingup
+state_dim: ???
+action_dim: ???
+input_dim: ???
+output_dim: ???
+
 random_seed: 42
 name: "svgp"
-device: "cpu"
-# device: "gpu"
+device: ???
 
-init_env_steps: 1000
+init_random_episodes: 10
+num_train_episodes: 2000
+episode_length: 1000
+update_every_steps: 2
 
-frame_stack: 1
-action_repeat: 1
+eval_episode_freq: 2
 
-# observation_dim: ???
-# action_dim: ???
-state_dim: 5
-action_dim: 1
-# action_dim:
-#   _target_: ${env.action_spec().shape}
-input_dim: 6
-output_dim: 6
-# output_dim: ${observation_dim}
-# batch_shape:
-#   _target_: torch.Size
-#   args:
-#     - ${output_dim}
-
-# frames_per_batch: 50
-# total_frames: 50000
-num_episodes: 2000
-max_steps_per_episode: 200
-save_video: true
-save_train_video: true
-
-# training:
-#   batch_size: 64
-#   max_epochs: 1000
-#   num_workers: 8
-
-# initial_dataset:
-#   num_episodes: 20
 replay_buffer_capacity: 100000
+save_buffer: false
 buffer_scratch_dir: "/tmp/"
-batch_size: 64
+batch_size: 512
 
 wandb:
   group: ${env.env_name}-${env.task_name}
+  # group: ${env.env_name}
   entity: "aidanscannell"
   project: "bayesian-model-based-rl-with-fast-updates"
   use_wandb: True

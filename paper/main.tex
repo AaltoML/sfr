@@ -38,7 +38,7 @@
 \PassOptionsToPackage{numbers, compress}{natbib}
 
 % NeurIPS packages
-\usepackage[preprint]{neurips_2022}
+\usepackage[]{neurips_2023}
 \usepackage[utf8]{inputenc} % allow utf-8 input
 \usepackage[T1]{fontenc}    % use 8-bit T1 fonts
 %\usepackage{hyperref}       % hyperlinks
@@ -180,8 +180,9 @@
   % challenge for model-based RL algorithms.
 \end{abstract}
 
-\section{Introduction} \label{sec:intro}
-
+\section{Introduction}
+\label{sec:intro}
+%
 
 
 \begin{itemize}
@@ -219,6 +220,24 @@
 % We then show how we can obtain a function-space posterior, (i.e. a GP posterior)
 % by linearising the neural network around the weights Maximum a Posteriori (MAP) estimate.
 % % We then show that by linearising the neural network we can obtain a function-space posterior, i.e. a GP posterior.
+
+\begin{figure}[t!]
+  \setlength{\figurewidth}{.48\textwidth}
+  \setlength{\figureheight}{.5\figurewidth}
+  \begin{subfigure}{.48\textwidth}
+    \centering
+    \tikz\node[fill=black!10,minimum width=\figurewidth,minimum height=\figureheight,rounded corners=5pt]{};
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}{.48\textwidth}
+    \centering
+    \tikz\node[fill=black!10,minimum width=\figurewidth,minimum height=\figureheight,rounded corners=5pt]{};
+  \end{subfigure}
+  \caption{Teaser figure goes here.}
+  \label{fig:teaser}  
+\end{figure}
+
+
 
 \section{Background} \label{sec:background}
 
@@ -368,7 +387,7 @@ In the next section, we show how we can directly obtain an SVGP posterior (i.e. 
 % It is also worth noting that the NTK may be highly non stationary and is dependent on the NN architecture, for example, the activation functions.
 
 
-\section{Method}
+\section{Methods}
 In the next section we show how we can obtain a SVGP directly from 1) a trained NN and 2) a BNN posterior.
 
 We follow \cite{csatoSparseOnlineGaussian2002} and express our GP posterior in the dual parameter space.

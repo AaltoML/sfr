@@ -3,7 +3,7 @@
 %\title{Investigatin Uncertainty Quantification in Model-based Reinforcement Learning}
 % \title{Model-based Reinforcement Learning with Fast Posterior Updates}
 %\title{Sequential Decision-Making under Uncertainty with Big Data}
-\title{Neural Sparse Gaussian Process: For Updated Exploration}
+\title{Neural Sparse Gaussian Process: For Online Exploration}
 
 \author{%
   Aidan ~Scannell \\
@@ -142,47 +142,25 @@
 \maketitle
 
 \begin{abstract}
-  % Reinforcement learning (RL) agents typically do not utilise the information previously gained during an episode.
-  % as they perform learning offline, i.e. after an episode.
-  % Reinforcement learning (RL) agents typically perform learning after an episode, ignoring the potential information gain whilst collecting data.
-  % Reinforcement learning (RL) agents typically perform learning offline and do not utilise the information gained during an episode.
-  % We present a Bayesian model-based RL algorithm which incorporates this information by updating a dynamic model's posterior during an episode.
-  % Our method leverages the fast posterior updates available in the dual parameterisation of sparse variational Gaussian processes.
-  % Importantly, our algorithm scales to 1) environment's with high dimensional state-spaces as it is built upon the connection between Bayesian neural networks (BNNs) and
-  % Gaussian processes (GPs) and 2) long episodes, as the complexity of our updates is independent of episode length.
-  % We demonstrate that our fast posterior updates improve sample efficiency in environments with action penalties, a notoriously difficult
-  % challenge for model-based RL algorithms.
-  %
-  % Reinforcement learning (RL) agents typically perform learning offline and do not utilise the information gained during an episode.
-  % We present a Bayesian model-based RL algorithm which incorporates this information by updating a dynamic model's posterior during an episode.
-  % Typically training a neural network dynamic model is not feasible and nonparameteric methods such as Gaussian processes scale poorly with data.
-  % Importantly, our algorithm scales to 1) environment's with high dimensional state-spaces, 2) large data sets and 3) long episodes,
-  % as the complexity of our updates is independent of episode length.
-  % We demonstrate that our fast posterior updates improve sample efficiency in environments with action penalties, a notoriously difficult
-  % challenge for model-based RL algorithms.
-  %
-  %Models that can process new information quickly
-  
- % Fast adaptation of 
+
  Building systems that adapt to new information is essential to deploy methods in real-world applications. While gradient-based training is symbiotic to modern deep learning, it is rigid regarding adding further information, usually involving retraining from scratch. In a functional view, we can view data as the parameters of our model instead of the weights, which we call the dual parameterization of a model. Using the formulation we can assimilate data without gradient-based retraining in dual parameterization. Our proposed method allows for deployment in any sequential decision-making process. We show its effectiveness in model-based reinforcement learning using updated information for more efficient exploration.
-  
-  %Deep neural networks
 
-%  Obtain SVGP posterior on trained deep neural network (NN) without optimising any variational parameters.
-
-  %Dual formulation enables fast updates for 1) model-based RL 2) pathwise, function-space conditioning.
-  % Reinforcement learning (RL) agents typically perform learning offline and do not utilise the information gained during an episode.
-  % We present a Bayesian model-based RL algorithm which incorporates this information by updating a dynamic model's posterior during an episode.
-  % Typically training a neural network dynamic model is not feasible and nonparameteric methods such as Gaussian processes scale poorly with data.
-  % Importantly, our algorithm scales to 1) environment's with high dimensional state-spaces, 2) large data sets and 3) long episodes,
-  % as the complexity of our updates is independent of episode length.
-  % We demonstrate that our fast posterior updates improve sample efficiency in environments with action penalties, a notoriously difficult
-  % challenge for model-based RL algorithms.
 \end{abstract}
 
-\section{Introduction}
-\label{sec:intro}
-%
+
+\section{Introduction} \label{sec:intro}
+
+%Explain uncertainty in sequential decision making but need for neural networks.
+Sequential decision making requires uncertainty estimates for effective exploration. For this reason Gaussian processes (GPs) are a common surrogate model for Bayesian optimization \citep{garnett_bayesoptbook_2022} and in model-based reinforcement learning \citep{deisenroth2011pilco}. Yet many problems lie in high dimensional input space for example images are where GPs lack the ability to learn representations. However, uncertainty is still essential to ensure effective exploration for sequential algorithms \todo{cite here}. Many approaches 
+
+%Need for adaptive learning methods + failures with current methods
+
+%Dual formulation in GPs space solves this
+
+%Talk about planning and exploration in RL.
+
+%List the contributions.
+
 
 
 \begin{itemize}
@@ -214,12 +192,6 @@
   \end{itemize}
 \end{itemize}
 
-% \section{Background} \label{sec:background}
-% In this section, we recap how to fit a GP posterior to a trained deep neural network (DNN).
-% We start by obtaining a posterior over the weights of a trained neural network via the Laplace approximation.
-% We then show how we can obtain a function-space posterior, (i.e. a GP posterior)
-% by linearising the neural network around the weights Maximum a Posteriori (MAP) estimate.
-% % We then show that by linearising the neural network we can obtain a function-space posterior, i.e. a GP posterior.
 
 \begin{figure}[t!]
   \setlength{\figurewidth}{.48\textwidth}
@@ -240,18 +212,7 @@
 
 
 \section{Background} \label{sec:background}
-
-\cite{hernandez2016scalable}
-% \section{dual SVGP}
-% In this section we extend these fast updates to environment's with high dimensional state spaces and large data sets.
-% % Our method draws on the connection between BNNs and GPs and formulates a function space SVGP posterior given
-% Our method uses a BNN dynamic model and draws on the connection between BNNs and GPs
-% \citep{khanApproximate2019} to formulate a function space SVGP posterior,
-% where we can apply the fast updates from \cref{eq-dual-update-svgp}.
-% At a high-level, we first use Laplace's approximation to obtain a weight space posterior for our BNN.
-% We then linearise our BNN around the optimal parameters and interpret it as a GP.
-% Finally, we formulate a lower rank approximation of this GP posterior (i.e. a SVGP posterior) using inducing variables.
-% % formulates a function space SVGP posterior by drawing on the connection between BNNs and GPs.
+Sequential decision making requires uncertainty estimates for effective exploration. 
 
 
 In this section, we recap how can obtain a GP posterior from a trained deep neural network (DNN).

@@ -16,7 +16,7 @@ htmlcov
 .auctex-auto
 paper/main.pdf
 *superseded
-.bbl
-.gz
-.fls
-.blg
+*.bbl
+*.gz
+*.fls
+*.blg

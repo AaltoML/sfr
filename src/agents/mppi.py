@@ -7,15 +7,13 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 import numpy as np
-import src.agents.utils as util
+import src
 import torch
-import wandb
-from custom_types import State
 from src.models import RewardModel, TransitionModel
-from torch.utils.data import DataLoader
+from torchrl.data import ReplayBuffer
 
 from .agent import Agent
-from .ddpg import Actor, Critic, update_actor, update_q
+from .ddpg import Actor, Critic
 
 
 def init(
@@ -25,10 +23,10 @@ def init(
     action_dim: int,
     mlp_dims: List[int] = [512, 512],
     learning_rate: float = 3e-4,
-    num_iterations: int = 100,
+    num_iterations: int = 100,  # for training DDPG
     # std_schedule: str = "linear(1.0, 0.1, 50)",
     std_clip: float = 0.3,
-    nstep: int = 1,
+    # nstep: int = 1,
     gamma: float = 0.99,
     tau: float = 0.005,
     horizon: int = 5,
@@ -59,74 +57,46 @@ def init(
         optim_critic=optim_critic,
         num_iterations=num_iterations,
         std_clip=std_clip,
-        nstep=nstep,
+        nstep=1,
         gamma=gamma,
         tau=tau,
-        horizon=horizon,
-        num_samples=num_samples,
-        mixture_coef=mixture_coef,
-        num_topk=num_topk,
-        temperature=temperature,
-        momentum=momentum,
         device=device,
     )
+    # std = torch.Tensor([0.5], device=device)
+    std = 0.5
 
-    # def train_fn(data_loader: DataLoader):
-    def train_fn(replay_iter) -> dict:
-        std = 0.1
-        info = {"std": std}
-        # data_iter = iter(data_loader)
-        # for batch in data_loader:
-        for i in range(num_iterations):
-            # i = epoch * num_iterations + batch_idx
-            # for i, batch in enumerate(data_loader):
-            # std = linear_schedule(std_schedule, i)  # linearly udpate std
-            # info = {"std": std}
-            std = 0.1
-            info = {"std": std}
+    estimate_value = src.agents.objectives.greedy(
+        actor=actor,
+        critic=critic,
+        transition_model=transition_model,
+        reward_model=reward_model,
+        horizon=horizon,
+        std=std,
+        std_clip=std_clip,
+        gamma=gamma,
+    )
 
-            # std_schedule, (num_iterations - 10) * episode_idx + i
+    def train_fn(replay_buffer: ReplayBuffer) -> dict:
+        # TODO these could be run in parallel. How to do that?
+        logger.info("Starting training DDPG...")
+        info = ddpg_agent.train(replay_buffer)
+        logger.info("Finished training DDPG")
 
-            batch = next(replay_iter)
-            state, action, reward, discount, next_state = util.to_torch(
-                batch, device, dtype=torch.float32
-            )
-            # swap the batch and horizon dimension -> [H, B, _shape]
-            action, reward, discount, next_state = (
-                torch.swapaxes(action, 0, 1),
-                torch.swapaxes(reward, 0, 1),
-                torch.swapaxes(discount, 0, 1),
-                torch.swapaxes(next_state, 0, 1),
-            )
+        logger.info("Starting training transition model...")
+        info.update(transition_model.train(replay_buffer))
+        logger.info("Finished training transition model")
 
-            # form n-step samples
-            _reward, _discount = 0, 1
-            for t in range(nstep):
-                _reward += _discount * reward[t]
-                _discount *= gamma
-
-            info.update(
-                update_q_fn(state, action[0], _reward, _discount, next_state, std)
-            )
-            info.update(update_actor_fn(state, std))
-
-            # Update target network
-            util.soft_update_params(critic, critic_target, tau=tau)
-            # if i % 10 == 0:
-            #     print(
-            #         "DDPG: Iteration {} | Q Loss {} | Actor Loss {}".format(
-            #             i, info["q_loss"], info["actor_loss"]
-            #         )
-            #     )
-            # if early_stop(loss_value):
-            #     print("SAC loss early stop criteria met, exiting training loop")
-            #     break
-            wandb.log(info)
+        logger.info("Starting training reward model...")
+        info.update(reward_model.train(replay_buffer))
+        logger.info("Finished training reward model")
 
         return info
 
+    _prev_mean = torch.zeros(horizon, action_dim, device=device)
+
     @torch.no_grad()
     def select_action_fn(state, eval_mode: bool = False, t0=True):
+        global _prev_mean
         if isinstance(state, np.ndarray):
             state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
 
@@ -141,23 +111,27 @@ def init(
 
         # Initialize state and parameters
         state = state.repeat(num_samples + num_pi_trajs, 1)
-        mean = torch.zeros(horizon, action_dim, device=device)
-        std = 2 * torch.ones(horizon, action_dim, device=device)
+        action_mean = torch.zeros(horizon, action_dim, device=device)
+        action_std = 2 * torch.ones(horizon, action_dim, device=device)
         # TODO implememnt prev_mean
         # if not t0 and hasattr(self, "_prev_mean"):
-        #     mean[:-1] = self._prev_mean[1:]
+        if not t0:
+            action_mean[:-1] = _prev_mean[1:]
 
         # Iterate CEM
-        for i in range(num_iterations):
-            logger.info("MPPI iteration: {}".format(i))
+        # for i in range(num_iterations):
+        for i in range(5):
+            # logger.info("MPPI iteration: {}".format(i))
             actions = torch.clamp(
-                mean.unsqueeze(1)
-                + std.unsqueeze(1)
+                action_mean.unsqueeze(1)
+                + action_std.unsqueeze(1)
                 * torch.randn(
                     horizon,
                     num_samples,
                     action_dim,
-                    device=std.device,
+                    device=device,
+                    # TODO what device should this be on?
+                    # device=std.device,
                 ),
                 -1,
                 1,
@@ -166,7 +140,7 @@ def init(
                 actions = torch.cat([actions, pi_actions], dim=1)
 
             # Compute elite actions
-            value = estimate_value(state, actions, horizon).nan_to_num_(0)
+            value = estimate_value(state, actions).nan_to_num_(0)
             elite_idxs = torch.topk(value.squeeze(1), num_topk, dim=0).indices
             elite_value, elite_actions = value[elite_idxs], actions[:, elite_idxs]
 
@@ -184,45 +158,22 @@ def init(
                 )
                 / (score.sum(0) + 1e-9)
             )
-            _std = _std.clamp_(0.1, 2)
-            mean, std = (momentum * mean + (1 - momentum) * _mean, _std)
+            action_mean = momentum * action_mean + (1 - momentum) * _mean
+            action_std = _std.clamp_(0.1, 2)
 
         # Outputs
         score = score.squeeze(1).cpu().numpy()
         actions = elite_actions[:, np.random.choice(np.arange(score.shape[0]), p=score)]
-        # self._prev_mean = mean TODO implement prev_mean
-        mean, std = actions[0], _std[0]
-        action = mean
-        if not eval_mode:
-            action += std * torch.randn(action_dim, device=std.device)
-        return action
+        _prev_mean = action_mean  # TODO implement prev_mean
+        mean, std = actions[0], action_std[0]
+        if eval_mode:
+            return mean
+        else:
+            return mean + std * torch.randn(
+                action_dim,
+                device=device,
+                # TODO what device should this be on?
+                # device=std.device,
+            )
 
     return Agent(select_action=select_action_fn, train=train_fn)
-
-
-def estimate_value(
-    state: State,
-    actions,
-    actor: Actor,
-    critic: Critic,
-    transition_model,
-    reward_model,
-    horizon: int,
-    gamma: float,
-    std: float,
-    std_clip: float,
-):
-    """Estimate value of a trajectory starting at state and executing given actions."""
-    G, discount = 0, 1
-    print("state.shape {}".format(state.shape))
-    print("actions.shape {}".format(actions.shape))
-    for t in range(horizon):
-        transition = transition_model(state, actions[t])
-        reward = reward_model(state, actions[t])
-        print("reward at t={}: ".format(t, reward))
-        # print("state")
-        # print(state.shape)
-        G += discount * reward
-        discount *= gamma
-    G += discount * torch.min(*critic(state, actor(state, std).sample(clip=std_clip)))
-    return G

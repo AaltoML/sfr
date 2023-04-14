@@ -2,7 +2,7 @@
 
 %\title{Investigatin Uncertainty Quantification in Model-based Reinforcement Learning}
 % \title{Model-based Reinforcement Learning with Fast Posterior Updates}
-\title{Converting a Neural Network to a Sparse GP}
+\title{Neural Sparse Gaussian Process: For Updated Exploration}
 \author{%
   Aidan ~Scannell \\
   Aalto University\\
@@ -154,14 +154,16 @@
   % We demonstrate that our fast posterior updates improve sample efficiency in environments with action penalties, a notoriously difficult
   % challenge for model-based RL algorithms.
   %
-  Fast adaptation of 
+  %Models that can process new information quickly
   
+ % Fast adaptation of 
+ Building systems that adapt to new information is essential to deploy methods in real-world applications. While gradient-based training is symbiotic to modern deep learning, it is rigid regarding adding further information, usually involving retraining from scratch. In a functional view, we can view data as the parameters of our model instead of the weights, which we call the dual parameterization of a model. Using the formulation we can assimilate data without gradient-based retraining in dual parameterization. Our proposed method allows for deployment in any sequential decision-making process. We show its effectiveness in model-based reinforcement learning using updated information for more efficient exploration.
   
-  Deep neural networks
+  %Deep neural networks
 
-  Obtain SVGP posterior on trained deep neural network (NN) without optimising any variational parameters.
+%  Obtain SVGP posterior on trained deep neural network (NN) without optimising any variational parameters.
 
-  Dual formulation enables fast updates for 1) model-based RL 2) pathwise, function-space conditioning.
+  %Dual formulation enables fast updates for 1) model-based RL 2) pathwise, function-space conditioning.
   % Reinforcement learning (RL) agents typically perform learning offline and do not utilise the information gained during an episode.
   % We present a Bayesian model-based RL algorithm which incorporates this information by updating a dynamic model's posterior during an episode.
   % Typically training a neural network dynamic model is not feasible and nonparameteric methods such as Gaussian processes scale poorly with data.
@@ -172,6 +174,8 @@
 \end{abstract}
 
 \section{Introduction} \label{sec:intro}
+
+
 
 \begin{itemize}
   \item DNNs scale to high-dimensional and large data sets but 1) no UQ and 2) cannot be updated quickly
@@ -898,5 +902,5 @@ with open("table.tex", 'w') as file:
 \subsection{Biblatex}
 Rember when using biblatex to use 'parencite' for \parencite{kamtheDataEfficient2018} and when using natbib to use 'citep'.
 
-
+%\bibliography{biblio.bib}
 \end{document}

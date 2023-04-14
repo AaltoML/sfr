@@ -2,5 +2,5 @@
 from .buffer import make_replay_loader, ReplayBufferStorage
 from .env import make_env
 from .eval import evaluate
-from .utils import EarlyStopper, set_seed_everywhere
+from .utils import EarlyStopper, set_seed_everywhere, to_torch
 from .video import VideoRecorder

@@ -1,87 +1,18 @@
 #!/usr/bin/env python3
 import logging
-from typing import Any, Callable, NamedTuple, Optional, Tuple
+from typing import Optional
 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-from utils import EarlyStopper
 import gpytorch
 import torch
 import torch.distributions as td
-import torch.nn as nn
-import torch.optim as optim
 import wandb
-from custom_types import (
-    Action,
-    DeltaStateMean,
-    DeltaStateVar,
-    NoiseVar,
-    Prediction,
-    State,
-    StateMean,
-    StateVar,
-)
-from models.base import RewardModel
-from torch.utils.data import DataLoader, TensorDataset
-from torchrl.data import ReplayBuffer
-from torchrl.modules import SafeModule, WorldModelWrapper
-from torchtyping import TensorType
-
-
-# class Model:
-#     train_fn: Callable
-#     predict: Callable
-
-
-# def build_svgp_world_model(
-#     state_size: int,
-#     action_size: int,
-#     inducing_points,
-#     mean_module: gpytorch.means.Mean,
-#     covar_module: gpytorch.kernels.Kernel,
-#     likelihood: gpytorch.likelihoods.Likelihood,
-#     learn_inducing_locations: bool = True,
-# ):
-#     return GaussianModelBaseEnv(
-#         transition_model=transition_model,
-#         reward_model=reward_model,
-#         state_size=state_size,
-#         action_size=action_size,
-#         learning_rate=learning_rate,
-#         num_iterations=num_iterations,
-#         device=device,
-#         dtype=dtype,
-#         batch_size=batch_size,
-#     )
-
-
-# def build_svgp_(
-#     out_size: int,
-#     inducing_points,
-#     mean_module: gpytorch.means.Mean,
-#     covar_module: gpytorch.kernels.Kernel,
-#     likelihood: gpytorch.likelihoods.Likelihood,
-#     learn_inducing_locations: bool = True,
-# ):
-#     svgp = SVGP(
-#         out_size=out_size,
-#         inducing_points=inducing_points,
-#         mean_module=mean_module,
-#         covar_module=covar_module,
-#         learn_inducing_locations=learn_inducing_locations,
-#     )
-#     predict_fn = predict(svgp=svgp, likelihood=likelihood)
-#     train_fn = train(
-#         svgp=svgp,
-#         likelihood=likelihood,
-#         learning_rate=learning_rate,
-#         num_data=num_data,
-#         wandb_loss_name=wandb_loss_name,
-#     )
-
-#     return train, predict
+from custom_types import Prediction
+from torch.utils.data import DataLoader
+from utils import EarlyStopper
 
 
 class SVGP(gpytorch.models.ApproximateGP):

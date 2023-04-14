@@ -1,0 +1,21 @@
+_target_: src.agents.mppi.init
+_convert_: all
+transition_model: ${transition_model}
+reward_model: ${reward_model}
+state_dim: ${state_dim}
+action_dim: ${action_dim}
+mlp_dims: [512, 512]
+learning_rate: 3e-4
+num_iterations: 100
+# std_schedule: "linear(1.0, 0.1, 50)"
+std_clip: 0.3
+nstep: 1 # TODO always 1 to make it work with SVGP training?
+gamma: 0.99
+tau: 0.005
+horizon: 5
+num_samples: 512
+mixture_coef: 0.05
+num_topk: 64
+temperature: 0.5
+momentum: 0.1
+device: ${device}

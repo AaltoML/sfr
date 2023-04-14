@@ -1,13 +1,16 @@
 defaults:
   # - model: laplace
   # - model: svgp
-  - model: world_model
-  - model_new: world_model
+  - reward_model: svgp
+  - transition_model: svgp
+  # - model: world_model
+  # - model_new: world_model
+  - agent: ddpg
   - env: cartpole_swingup
   # - env: cartpole_balance
   # - env: Pendulum-v1
   # - env: CartPole-v1
-  - planner: mppi
+  # - planner: mppi
   # - planner: cem
   # - model: probabilistic_ensemble
   # Use slurm on cluster or local?
@@ -23,10 +26,10 @@ state_dim: ???
 action_dim: ???
 input_dim: ???
 output_dim: ???
-
-random_seed: 42
-name: "svgp"
 device: ???
+
+name: "svgp"
+random_seed: 42
 
 init_random_episodes: 10
 num_train_episodes: 2000
@@ -34,6 +37,7 @@ episode_length: 1000
 update_every_steps: 2
 
 eval_episode_freq: 2
+save_video: true
 
 replay_buffer_capacity: 100000
 save_buffer: false

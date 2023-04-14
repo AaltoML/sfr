@@ -154,6 +154,9 @@
   % We demonstrate that our fast posterior updates improve sample efficiency in environments with action penalties, a notoriously difficult
   % challenge for model-based RL algorithms.
   %
+  Fast adaptation of 
+  
+  
   Deep neural networks
 
   Obtain SVGP posterior on trained deep neural network (NN) without optimising any variational parameters.
@@ -286,7 +289,7 @@ the goal of (supervised) deep learning, is to train the weights $\transitionPara
 $f : \inputDomain \rightarrow \outputDomain$ to minimize the (regularized) empirical risk,
 \begin{align} \label{eq-empirical-risk}
   \transitionParams^{*} = \arg \min_{\transitionParams \in \R^{D}} \mathcal{L}(\dataset;\transitionParams) = \arg \min_{\transitionParams \in \R^{D}} \left(
-  R(\transitionParams) + \sum_{n=0}^{N-1} l(f(\mathbf{x}_{n} ; \transitionParams), \mathbf{y}_{n}) \right).
+  \sum_{n=0}^{N-1} l(f(\mathbf{x}_{n} ; \transitionParams), \mathbf{y}_{n}) + R(\transitionParams)  \right).
 \end{align}
 In practice, it is common to use the mean squared error (MSE) loss
 $l(f(\mathbf{x}_{n} ; \transitionParams),\mathbf{y}_{n}) = \|f(\mathbf{x}_{n} ; \transitionParams) - \mathbf{y}_{n} \|^{2}_{2}$

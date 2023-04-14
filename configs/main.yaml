@@ -5,7 +5,8 @@ defaults:
   - transition_model: svgp
   # - model: world_model
   # - model_new: world_model
-  - agent: ddpg
+  # - agent: ddpg
+  - agent: mppi
   - env: cartpole_swingup
   # - env: cartpole_balance
   # - env: Pendulum-v1

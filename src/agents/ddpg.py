@@ -25,13 +25,9 @@ class Actor(nn.Module):
         self.apply(util.orthogonal_init)
 
     def forward(self, state: State, std):
-        print("o")
         mu = self._actor(state)
-        print("mu {}".format(mu))
         mu = torch.tanh(mu)
-        print("mu {}".format(mu))
         std = torch.ones_like(mu) * std
-        print("std {}".format(mu))
         return util.TruncatedNormal(mu, std)
 
 
@@ -124,16 +120,12 @@ def init_from_actor_critic(
 
             # std_schedule, (num_iterations - 10) * episode_idx + i
 
-            print("sampling from replay buffer")
             samples = replay_buffer.sample()
             state = samples["state"]  # [B, state_dim]
             action = samples["action"]  # [B, action_dim]
             reward = samples["reward"][..., None]  # needs to be [B, 1]
             next_state = samples["next_state"][None, ...]  # [1, B, state_dim]
-            print("state.device")
-            print(state.device)
 
-            print("before q update")
             info.update(
                 update_q_fn(
                     state=state,
@@ -144,11 +136,9 @@ def init_from_actor_critic(
                     std=std,
                 )
             )
-            print("before actor update")
             info.update(update_actor_fn(state=state, std=std))
 
             # Update target network
-            print("before soft update")
             util.soft_update_params(critic, critic_target, tau=tau)
             # if i % 10 == 0:
             #     print(
@@ -165,14 +155,9 @@ def init_from_actor_critic(
 
     @torch.no_grad()
     def select_action_fn(state: State, eval_mode: EvalMode = False, t0: T0 = None):
-        print("inside select action")
         if isinstance(state, np.ndarray):
             state = torch.from_numpy(state).to(device).float()
-            # state = torch.Tensor(state, device=device)
-        print(state.device)
-        print(state.dtype)
         dist = actor.forward(state, std=0.0)
-        print("dist {}".format(dist))
         if eval_mode:
             action = dist.mean
         else:

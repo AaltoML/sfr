@@ -29,6 +29,13 @@ def init(
 ) -> TransitionModel:
     from models.svgp import predict, train
 
+    print("is svgp on gpu")
+    # svgp.to(device)
+    print(svgp.is_cuda)
+    print("is likelihood on gpu")
+    # likelihood.to(device)
+    print(likelihood.is_cuda)
+
     assert (
         len(svgp.variational_strategy.base_variational_strategy.inducing_points.shape)
         == 3

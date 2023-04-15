@@ -26,6 +26,13 @@ def init(
     early_stopper: EarlyStopper = None,
     device: str = "cuda",
 ) -> RewardModel:
+    print("is svgp on gpu")
+    # svgp.to(device)
+    print(svgp.is_cuda)
+    print("is likelihood on gpu")
+    # likelihood.to(device)
+    print(likelihood.is_cuda)
+
     assert len(svgp.variational_strategy.inducing_points.shape) == 2
     num_inducing, input_dim = svgp.variational_strategy.inducing_points.shape
     from models.svgp import predict, train

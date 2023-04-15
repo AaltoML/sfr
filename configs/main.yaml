@@ -30,6 +30,7 @@ output_dim: ???
 device: ???
 
 name: "svgp"
+alg_name: "mppi"
 random_seed: 42
 
 init_random_episodes: 10
@@ -54,7 +55,7 @@ wandb:
   entity: "aidanscannell"
   project: "bayesian-model-based-rl-with-fast-updates"
   use_wandb: True
-  run_name: ${env.env_name}-${random_seed}-${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
+  run_name: ${env.env_name}-${env.task_name}-${alg_name}-${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   tags:
     - "random_seed=${random_seed}"
 

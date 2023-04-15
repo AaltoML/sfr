@@ -14,8 +14,8 @@ std_clip: 0.3
 gamma: 0.99
 tau: 0.005
 # MPPI config
-# horizon: 5
-horizon: 1
+horizon: 5
+# horizon: 1
 # num_samples: 512
 # num_samples: 256
 num_samples: 16

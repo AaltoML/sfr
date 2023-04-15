@@ -30,9 +30,10 @@ def init(
     from models.svgp import predict, train
 
     print("trans device {}".format(device))
-    svgp.cuda()
     print("after svgp cuda")
-    likelihood.cuda()
+    if "cuda" in device:
+        svgp.cuda()
+        likelihood.cuda()
     # print("is svgp on gpu")
     # # svgp.to(device)
     # print(svgp.is_cuda)

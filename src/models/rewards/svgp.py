@@ -26,10 +26,11 @@ def init(
     early_stopper: EarlyStopper = None,
     device: str = "cuda",
 ) -> RewardModel:
-    print("device={}".format(device))
-    # if device is torch.Device("cuda"):
-    svgp.cuda()
-    likelihood.cuda()
+    print("trans device {}".format(device))
+    print("after svgp cuda")
+    if "cuda" in device:
+        svgp.cuda()
+        likelihood.cuda()
     # print("is svgp on gpu")
     # # svgp.to(device)
     # print(svgp.is_cuda)

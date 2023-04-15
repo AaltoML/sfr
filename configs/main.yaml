@@ -38,7 +38,8 @@ episode_length: 1000
 update_every_steps: 2
 
 eval_episode_freq: 2
-save_video: true
+# save_video: true
+save_video: false
 
 replay_buffer_capacity: 100000
 save_buffer: false

@@ -92,9 +92,9 @@ def train(cfg: DictConfig):
         # prefetch=prefetch,
     )
 
-    transition_model = hydra.utils.instantiate(cfg.transition_model)
-    reward_model = hydra.utils.instantiate(cfg.reward_model)
-    agent = hydra.utils.instantiate(cfg.agent)
+    transition_model = hydra.utils.instantiate(cfg.transition_model).to(cfg.device)
+    reward_model = hydra.utils.instantiate(cfg.reward_model).to(cfg.device)
+    agent = hydra.utils.instantiate(cfg.agent).to(cfg.device)
 
     global_step = 0
     for episode_idx in range(cfg.num_train_episodes):

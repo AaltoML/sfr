@@ -5,9 +5,13 @@ svgp:
   inducing_points:
     _target_: torch.rand
     size:
-      - ${state_dim}
+      # - ${state_dim}
+      - 1
       - 500 # num_inducing
       - ${input_dim}
+      # - ${state_dim}
+      # - 500 # num_inducing
+      # - ${input_dim}
   mean_module:
     _target_: gpytorch.means.ConstantMean
     batch_shape: ${state_dim}

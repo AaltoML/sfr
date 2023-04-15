@@ -23,12 +23,13 @@ class SVGP(gpytorch.models.ApproximateGP):
         covar_module: gpytorch.kernels.Kernel,
         learn_inducing_locations: bool = True,
     ):
+        self.learn_inducing_locations = learn_inducing_locations
         if isinstance(covar_module, gpytorch.kernels.MultitaskKernel):
             out_size = covar_module.num_tasks
             print("out_size: {}".format(out_size))
             print("inducing_points {}".format(inducing_points.shape))
             assert inducing_points.ndim == 3
-            assert inducing_points.shape[0] == out_size
+            assert inducing_points.shape[0] == out_size or inducing_points.shape[0] == 1
         elif (
             isinstance(covar_module, gpytorch.kernels.Kernel)
             and len(covar_module.batch_shape) > 0
@@ -37,7 +38,7 @@ class SVGP(gpytorch.models.ApproximateGP):
             print("out_size: {}".format(out_size))
             print("inducing_points {}".format(inducing_points.shape))
             assert inducing_points.ndim == 3
-            assert inducing_points.shape[0] == out_size
+            assert inducing_points.shape[0] == out_size or inducing_points.shape[0] == 1
             num_inducing = inducing_points.shape[-2]
         elif isinstance(covar_module, gpytorch.kernels.Kernel):
             out_size = 1

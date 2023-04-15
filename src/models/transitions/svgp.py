@@ -54,6 +54,8 @@ def init(
 
     def predict_fn(state: State, action: Action) -> StatePrediction:
         state_action_input = torch.concat([state, action], -1)
+        svgp.eval()
+        likelihood.eval()
         delta_state_mean, delta_state_var, noise_var = svgp_predict_fn(
             state_action_input
         )
@@ -71,12 +73,15 @@ def init(
         state_action_inputs = torch.concat([state, action], -1)
         state_diff = next_state - state
 
+        svgp.train()
+        likelihood.train()
+
         num_data = len(replay_buffer)
         print("num_data: {}".format(num_data))
         train_loader = DataLoader(
             TensorDataset(state_action_inputs, state_diff),
-            # batch_size=batch_size,
-            batch_size=num_data,
+            batch_size=batch_size,
+            # batch_size=num_data,
             shuffle=True,
             # num_workers=num_workers
         )
@@ -105,9 +110,27 @@ def init(
                 svgp.variational_strategy.base_variational_strategy.inducing_points.shape
             )
         )
-        svgp.variational_strategy.base_variational_strategy.inducing_points = Z
+        # svgp.variational_strategy.base_variational_strategy.inducing_points = Z
 
         # TODO reset m and V
+        # variational_distribution = gpytorch.variational.CholeskyVariationalDistribution(
+        #     num_inducing_points=num_inducing,
+        #     batch_shape=torch.Size([output_dim]),
+        # )
+        # variational_strategy = (
+        #     gpytorch.variational.IndependentMultitaskVariationalStrategy(
+        #         gpytorch.variational.VariationalStrategy(
+        #             svgp, Z, variational_distribution, learn_inducing_locations=True
+        #         ),
+        #         num_tasks=output_dim,
+        #     )
+        # )
+        # svgp_new = SVGP(
+        #     inducing_points=Z,
+        #     mean_module=svgp.mean_module,
+        #     covar_module=svgp.covar_module,
+        #     learn_inducing_locations=svgp.learn_inducing_locations,
+        # )
 
         return train(
             svgp=svgp,

@@ -46,6 +46,8 @@ def init(
 
     def predict_fn(state: State, action: Action) -> RewardPrediction:
         state_action_input = torch.concat([state, action], -1)
+        svgp.eval()
+        likelihood.eval()
         reward_mean, reward_var, noise_var = svgp_predict_fn(state_action_input)
         return RewardPrediction(
             reward_mean=reward_mean, reward_var=reward_var, noise_var=noise_var
@@ -58,13 +60,16 @@ def init(
         reward = samples["reward"]
         state_action_inputs = torch.concat([state, action], -1)
 
+        svgp.train()
+        likelihood.train()
+
         num_data = len(replay_buffer)
         print("num_data: {}".format(num_data))
         # TODO should this predict from next state to reward or state-action to reward
         train_loader = DataLoader(
             TensorDataset(state_action_inputs, reward),
-            batch_size=num_data,
-            # batch_size=batch_size,
+            # batch_size=num_data,
+            batch_size=batch_size,
             shuffle=True,
             # num_workers=num_workers,
         )

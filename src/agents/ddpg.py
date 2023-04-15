@@ -6,13 +6,14 @@ from typing import List
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+import numpy as np
 import src.agents.utils as util
 import src.utils as utils
 import torch
 import torch.nn as nn
-from torchrl.data.replay_buffers import ReplayBuffer
 import wandb
 from custom_types import Action, EvalMode, State, T0
+from torchrl.data.replay_buffers import ReplayBuffer
 
 from .agent import Agent
 
@@ -161,8 +162,9 @@ def init_from_actor_critic(
     @torch.no_grad()
     def select_action_fn(state: State, eval_mode: EvalMode = False, t0: T0 = None):
         print("inside select action")
-        if not isinstance(state, torch.Tensor):
-            state = torch.Tensor(state, device=device)
+        if isinstance(state, np.ndarray):
+            state = torch.from_numpy(state).to(device)
+            # state = torch.Tensor(state, device=device)
         print(state.device)
         dist = actor.forward(state, std=0)
         if eval_mode:

@@ -167,7 +167,7 @@ def init_from_actor_critic(
     def select_action_fn(state: State, eval_mode: EvalMode = False, t0: T0 = None):
         print("inside select action")
         if isinstance(state, np.ndarray):
-            state = torch.from_numpy(state).to(device)
+            state = torch.from_numpy(state).to(device).float()
             # state = torch.Tensor(state, device=device)
         print(state.device)
         print(state.dtype)

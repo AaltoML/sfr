@@ -38,6 +38,7 @@ def train(cfg: DictConfig):
     torch.backends.cudnn.benchmark = False
 
     cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
+    print("Using device: {}".format(cfg.device))
     cfg.episode_length = cfg.episode_length // cfg.env.action_repeat
     num_train_steps = cfg.num_train_episodes * cfg.episode_length
 
@@ -93,11 +94,15 @@ def train(cfg: DictConfig):
     )
 
     transition_model = hydra.utils.instantiate(cfg.transition_model)
+    print("Made transition model")
     reward_model = hydra.utils.instantiate(cfg.reward_model)
+    print("Made reward model")
     agent = hydra.utils.instantiate(cfg.agent)
+    print("Made agent")
 
     global_step = 0
     for episode_idx in range(cfg.num_train_episodes):
+        print("Episode {}".format(episode_idx))
         # Collect trajectory
         time_step = env.reset()
         episode_reward = 0
@@ -106,13 +111,16 @@ def train(cfg: DictConfig):
                 action = np.random.uniform(-1, 1, env.action_spec().shape).astype(
                     dtype=env.action_spec().dtype
                 )
-            else:
-                action = agent.select_action(
-                    time_step.observation, eval_mode=False, t0=time_step.first
-                )
-                action = action.cpu().numpy()
+            # else:
+            #     action = agent.select_action(
+            #         time_step.observation, eval_mode=False, t0=time_step.first
+            #     )
+            #     action = action.cpu().numpy()
+            action = np.random.uniform(-1, 1, env.action_spec().shape).astype(
+                dtype=env.action_spec().dtype
+            )
 
-            # Create TensorDict for state transition to store inreplay buffer
+            # Create TensorDict for state transition to store in replay buffer
             time_step_td = TensorDict(
                 {"state": time_step["observation"]}, batch_size=[], device=cfg.device
             )

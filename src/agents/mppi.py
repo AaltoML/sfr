@@ -95,10 +95,14 @@ def init(
     _prev_mean = torch.zeros(horizon, action_dim, device=device)
 
     @torch.no_grad()
-    def select_action_fn(state, eval_mode: bool = False, t0=True):
+    def select_action_fn(state: State, eval_mode: bool = False, t0=True):
+        # if isinstance(state, np.ndarray):
+        #     state = torch.from_numpy(state).to(device).float()
+        print("state: {}".format(state))
         global _prev_mean
         if isinstance(state, np.ndarray):
             state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+        print("state: {}".format(state))
 
         # sample policy trajectories
         num_pi_trajs = int(mixture_coef) * num_samples
@@ -120,6 +124,7 @@ def init(
 
         # Iterate CEM
         # for i in range(num_iterations):
+        print("before loop")
         for i in range(5):
             # logger.info("MPPI iteration: {}".format(i))
             actions = torch.clamp(
@@ -161,6 +166,7 @@ def init(
             action_mean = momentum * action_mean + (1 - momentum) * _mean
             action_std = _std.clamp_(0.1, 2)
 
+        print("after loop")
         # Outputs
         score = score.squeeze(1).cpu().numpy()
         actions = elite_actions[:, np.random.choice(np.arange(score.shape[0]), p=score)]

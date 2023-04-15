@@ -1,0 +1,26 @@
+_target_: src.models.transitions.mlp.init
+_convert_: all
+network:
+  _target_: torch.nn.Sequential
+  _args_:
+    - _target_: torch.nn.Linear
+      in_features: ${input_dim}
+      out_features: 512
+    - _target_: torch.nn.ReLU
+    - _target_: torch.nn.Linear
+      in_features: 512
+      out_features: 512
+    - _target_: torch.nn.ReLU
+    - _target_: torch.nn.Linear
+      in_features: 512
+      out_features: ${output_dim}
+learning_rate: 1e-3
+num_iterations: 1000
+batch_size: 64
+# num_workers: 1 # TODO what should I set this to?
+wandb_loss_name: "transition/loss"
+early_stopper:
+  _target_: utils.EarlyStopper
+  patience: 50
+  min_delta: 0
+device: ${device} # TODO should this always be cpu??

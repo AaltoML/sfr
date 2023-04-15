@@ -29,8 +29,7 @@ input_dim: ???
 output_dim: ???
 device: ???
 
-name: "svgp"
-alg_name: "mppi"
+alg_name: "mppi-svgp"
 random_seed: 42
 
 init_random_episodes: 10

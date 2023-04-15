@@ -1,0 +1,6 @@
+# @package _global_
+defaults:
+  - override /transition_model: mlp
+  - override /reward_model: mlp
+
+alg_name: "mppi-mlp"

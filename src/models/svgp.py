@@ -244,9 +244,7 @@ def train(
     def train_(data_loader: DataLoader, num_epochs: int):
         for epoch in range(num_epochs):
             for batch_idx, batch in enumerate(data_loader):
-                x, y = batch
                 optimizer.zero_grad()
-                latent = svgp(x)
                 loss = loss_fn_(batch)
                 loss.backward()
                 optimizer.step()
@@ -255,26 +253,26 @@ def train(
                     # wandb.log({wandb_loss_name + ": sigma_n": likelihood.variance})
                     # print("svgp.covar_module.base_kernel.lengthscale.shape")
                     # print(svgp.covar_module.base_kernel.lengthscale.shape)
-                    if len(svgp.covar_module.base_kernel.lengthscale.shape) == 2:
-                        wandb.log(
-                            {
-                                wandb_loss_name
-                                + ": l_00": svgp.covar_module.base_kernel.lengthscale[
-                                    0, 0
-                                ]
-                            }
-                        )
-                    elif len(svgp.covar_module.base_kernel.lengthscale.shape) == 3:
-                        # print("svgp.covar_module.base_kernel.lengthscale.shape")
-                        # print(svgp.covar_module.base_kernel.lengthscale.shape)
-                        wandb.log(
-                            {
-                                wandb_loss_name
-                                + ": l_00": svgp.covar_module.base_kernel.lengthscale[
-                                    0, 0, 0
-                                ]
-                            }
-                        )
+                    # if len(svgp.covar_module.base_kernel.lengthscale.shape) == 2:
+                    #     wandb.log(
+                    #         {
+                    #             wandb_loss_name
+                    #             + ": l_00": svgp.covar_module.base_kernel.lengthscale[
+                    #                 0, 0
+                    #             ]
+                    #         }
+                    #     )
+                    # elif len(svgp.covar_module.base_kernel.lengthscale.shape) == 3:
+                    #     # print("svgp.covar_module.base_kernel.lengthscale.shape")
+                    #     # print(svgp.covar_module.base_kernel.lengthscale.shape)
+                    #     wandb.log(
+                    #         {
+                    #             wandb_loss_name
+                    #             + ": l_00": svgp.covar_module.base_kernel.lengthscale[
+                    #                 0, 0, 0
+                    #             ]
+                    #         }
+                    #     )
                 # for i, param in enumerate(svgp.covar_module.base_kernel.lengthscale):
                 #     print("i {}".format(i))
                 #     print("param {}".format(param.shape))

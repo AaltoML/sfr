@@ -5,8 +5,8 @@ defaults:
   - transition_model: svgp
   # - model: world_model
   # - model_new: world_model
-  - agent: ddpg
-  # - agent: mppi
+  # - agent: ddpg
+  - agent: mppi
   - env: cartpole_swingup
   # - env: cartpole_balance
   # - env: Pendulum-v1
@@ -34,7 +34,8 @@ random_seed: 42
 
 init_random_episodes: 10
 num_train_episodes: 2000
-episode_length: 1000
+# episode_length: 1000
+episode_length: 100
 update_every_steps: 2
 
 eval_episode_freq: 2

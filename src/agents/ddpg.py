@@ -166,7 +166,9 @@ def init_from_actor_critic(
             state = torch.from_numpy(state).to(device)
             # state = torch.Tensor(state, device=device)
         print(state.device)
+        print(state.dtype)
         dist = actor.forward(state, std=0)
+        print("dist {}".format(dist))
         if eval_mode:
             action = dist.mean
         else:

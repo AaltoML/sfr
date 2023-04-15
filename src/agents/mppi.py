@@ -84,11 +84,13 @@ def init(
         logger.info("Finished training DDPG")
 
         logger.info("Starting training transition model...")
-        info.update(transition_model.train(replay_buffer))
+        transition_model.train(replay_buffer)
+        # info.update(transition_model.train(replay_buffer))
         logger.info("Finished training transition model")
 
         logger.info("Starting training reward model...")
-        info.update(reward_model.train(replay_buffer))
+        reward_model.train(replay_buffer)
+        # info.update(reward_model.train(replay_buffer))
         logger.info("Finished training reward model")
 
         return info

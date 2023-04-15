@@ -17,6 +17,7 @@ def evaluate(
     episode_rewards = []
 
     for i in range(num_episodes):
+        print("Eval episode {}/{}".format(i, num_episodes))
         episode_reward = 0
         time_step = env.reset()
         if video:

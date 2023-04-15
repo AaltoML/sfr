@@ -166,7 +166,8 @@ def train(cfg: DictConfig):
                 agent,
                 episode_idx=episode_idx,
                 # num_episode=cfg.eval_episode_freq,
-                num_episodes=10,
+                num_episodes=1,
+                # num_episodes=10,
                 video=video_recorder,
             )
             print("after G")

@@ -25,9 +25,13 @@ class Actor(nn.Module):
         self.apply(util.orthogonal_init)
 
     def forward(self, state: State, std):
+        print("o")
         mu = self._actor(state)
+        print("mu {}".format(mu))
         mu = torch.tanh(mu)
+        print("mu {}".format(mu))
         std = torch.ones_like(mu) * std
+        print("std {}".format(mu))
         return util.TruncatedNormal(mu, std)
 
 
@@ -167,7 +171,7 @@ def init_from_actor_critic(
             # state = torch.Tensor(state, device=device)
         print(state.device)
         print(state.dtype)
-        dist = actor.forward(state, std=0)
+        dist = actor.forward(state, std=0.0)
         print("dist {}".format(dist))
         if eval_mode:
             action = dist.mean

@@ -62,6 +62,7 @@ def init(
     critic_target = Critic(
         state_dim=state_dim, mlp_dims=mlp_dims, action_dim=action_dim
     ).to(device)
+    print("Critic on device: {}".format(device))
 
     # Init optimizer
     optim_actor = torch.optim.Adam(actor.parameters(), lr=learning_rate)
@@ -118,12 +119,16 @@ def init_from_actor_critic(
 
             # std_schedule, (num_iterations - 10) * episode_idx + i
 
+            print("sampling from replay buffer")
             samples = replay_buffer.sample()
             state = samples["state"]  # [B, state_dim]
             action = samples["action"]  # [B, action_dim]
             reward = samples["reward"][..., None]  # needs to be [B, 1]
             next_state = samples["next_state"][None, ...]  # [1, B, state_dim]
+            print("state.device")
+            print(state.device)
 
+            print("before q update")
             info.update(
                 update_q_fn(
                     state=state,
@@ -134,9 +139,11 @@ def init_from_actor_critic(
                     std=std,
                 )
             )
+            print("before actor update")
             info.update(update_actor_fn(state=state, std=std))
 
             # Update target network
+            print("before soft update")
             util.soft_update_params(critic, critic_target, tau=tau)
             # if i % 10 == 0:
             #     print(

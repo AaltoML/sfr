@@ -160,6 +160,7 @@ def train(cfg: DictConfig):
         # Log rewards/videos in eval env
         if episode_idx % cfg.eval_episode_freq == 0:
             # print("Evaluating {}".format(episode_idx))
+            print("before G")
             Gs = utils.evaluate(
                 eval_env,
                 agent,
@@ -168,6 +169,7 @@ def train(cfg: DictConfig):
                 num_episodes=10,
                 video=video_recorder,
             )
+            print("after G")
             # print("DONE EVALUATING")
             episode_reward = np.mean(Gs)
             env_step = global_step * cfg.env.action_repeat

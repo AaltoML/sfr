@@ -56,8 +56,8 @@ def train(cfg: DictConfig):
     work_dir = (
         Path().cwd()
         / "logs"
-        # / cfg.algo_name
-        / cfg.name
+        / cfg.alg_name
+        # / cfg.name
         / cfg.env.env_name
         / cfg.env.task_name
         / str(cfg.random_seed)
@@ -97,10 +97,10 @@ def train(cfg: DictConfig):
     )
     print("Made replay buffer")
 
-    transition_model = hydra.utils.instantiate(cfg.transition_model)
-    print("Made transition model")
-    reward_model = hydra.utils.instantiate(cfg.reward_model)
-    print("Made reward model")
+    # transition_model = hydra.utils.instantiate(cfg.transition_model)
+    # print("Made transition model")
+    # reward_model = hydra.utils.instantiate(cfg.reward_model)
+    # print("Made reward model")
     agent = hydra.utils.instantiate(cfg.agent)
     print("Made agent")
 
@@ -110,6 +110,7 @@ def train(cfg: DictConfig):
         # Collect trajectory
         time_step = env.reset()
         episode_reward = 0
+        t = 0
         while not time_step.last():
             if episode_idx < cfg.init_random_episodes:
                 action = np.random.uniform(-1, 1, env.action_spec().shape).astype(
@@ -146,8 +147,9 @@ def train(cfg: DictConfig):
 
             global_step += 1
             episode_reward += time_step["reward"]
+            t += 1
 
-        logger.info("Finished collecting data")
+        logger.info("Finished collecting {} time steps".format(t))
 
         # Log training metrics
         env_step = global_step * cfg.env.action_repeat

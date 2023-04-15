@@ -7,7 +7,7 @@ action_dim: ${action_dim}
 # DDPG config
 mlp_dims: [512, 512]
 learning_rate: 3e-4
-num_iterations: 100
+num_iterations: 500
 # std_schedule: "linear(1.0, 0.1, 50)"
 std_clip: 0.3
 # nstep: 1 # TODO always 1 to make it work with SVGP training?
@@ -16,12 +16,12 @@ tau: 0.005
 # MPPI config
 horizon: 5
 # horizon: 1
-# num_samples: 512
+num_samples: 512
 # num_samples: 256
-num_samples: 16
+# num_samples: 16
 mixture_coef: 0.05
-# num_topk: 64
-num_topk: 4
+num_topk: 64
+# num_topk: 4
 temperature: 0.5
 momentum: 0.1
 # General config

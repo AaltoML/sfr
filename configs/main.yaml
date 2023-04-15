@@ -55,9 +55,11 @@ wandb:
   entity: "aidanscannell"
   project: "bayesian-model-based-rl-with-fast-updates"
   use_wandb: True
-  run_name: ${env.env_name}-${env.task_name}-${alg_name}-${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
+  run_name: ${alg_name}-${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   tags:
     - "random_seed=${random_seed}"
+    - "env=${env.env_name}-${env.task_name}"
+    - "alg=${alg_name}"
 
 hydra:
   job:

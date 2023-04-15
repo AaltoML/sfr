@@ -161,27 +161,27 @@ def train(cfg: DictConfig):
         if episode_idx % cfg.eval_episode_freq == 0:
             # print("Evaluating {}".format(episode_idx))
             print("before G")
-            Gs = utils.evaluate(
-                eval_env,
-                agent,
-                episode_idx=episode_idx,
-                # num_episode=cfg.eval_episode_freq,
-                num_episodes=10,
-                video=video_recorder,
-            )
-            print("after G")
-            # print("DONE EVALUATING")
-            episode_reward = np.mean(Gs)
+            # Gs = utils.evaluate(
+            #     eval_env,
+            #     agent,
+            #     episode_idx=episode_idx,
+            #     # num_episode=cfg.eval_episode_freq,
+            #     num_episodes=10,
+            #     video=video_recorder,
+            # )
+            # print("after G")
+            # # print("DONE EVALUATING")
+            # episode_reward = np.mean(Gs)
             env_step = global_step * cfg.env.action_repeat
             eval_metrics = {
                 "episode": episode_idx,
                 "step": global_step,
                 "env_step": env_step,
                 # "time": time.time() - start_time,
-                "episode_reward": episode_reward,
+                # "episode_reward": episode_reward,
                 # "eval_total_time": timer.total_time(),
             }
-            logger.info("Episode: {} | Reward: {}".format(episode_idx, episode_reward))
+            # logger.info("Episode: {} | Reward: {}".format(episode_idx, episode_reward))
             if cfg.wandb.use_wandb:
                 wandb.log({"eval/": eval_metrics}, step=env_step)
 

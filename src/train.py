@@ -74,10 +74,13 @@ def train(cfg: DictConfig):
             # monitor_gym=True,
         )
 
+    print("Making recorder")
     video_recorder = utils.VideoRecorder(work_dir) if cfg.save_video else None
+    print("Made recorder")
 
     # Create replay buffer
     num_workers = 4
+    print("Making replay buffer")
     replay_buffer = torchrl.data.TensorDictReplayBuffer(
         storage=torchrl.data.replay_buffers.LazyTensorStorage(
             int(num_train_steps) // max(1, num_workers), device=cfg.device
@@ -92,6 +95,7 @@ def train(cfg: DictConfig):
         pin_memory=False,
         # prefetch=prefetch,
     )
+    print("Made replay buffer")
 
     transition_model = hydra.utils.instantiate(cfg.transition_model)
     print("Made transition model")

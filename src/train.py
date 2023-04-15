@@ -115,14 +115,14 @@ def train(cfg: DictConfig):
                 action = np.random.uniform(-1, 1, env.action_spec().shape).astype(
                     dtype=env.action_spec().dtype
                 )
-            # else:
-            #     action = agent.select_action(
-            #         time_step.observation, eval_mode=False, t0=time_step.first
-            #     )
-            #     action = action.cpu().numpy()
-            action = np.random.uniform(-1, 1, env.action_spec().shape).astype(
-                dtype=env.action_spec().dtype
-            )
+            else:
+                action = agent.select_action(
+                    time_step.observation, eval_mode=False, t0=time_step.first
+                )
+                action = action.cpu().numpy()
+            # action = np.random.uniform(-1, 1, env.action_spec().shape).astype(
+            #     dtype=env.action_spec().dtype
+            # )
 
             # Create TensorDict for state transition to store in replay buffer
             time_step_td = TensorDict(

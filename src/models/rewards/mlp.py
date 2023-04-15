@@ -49,7 +49,7 @@ def init(
             )
 
             pred = network(state_action_inputs)
-            loss = loss_fn(pred, samples["rewards"])
+            loss = loss_fn(pred, samples["reward"])
 
             optimizer.zero_grad()
             loss.backward()

@@ -24,7 +24,8 @@ batch_size: 64
 # num_epochs: 2000
 num_epochs: 300
 # num_workers: 1 # TODO what should I set this to?
-wandb_loss_name: "Reward model loss"
+# wandb_loss_name: "Reward model loss"
+wandb_loss_name: "reward/loss"
 early_stopper:
   _target_: utils.EarlyStopper
   patience: 20

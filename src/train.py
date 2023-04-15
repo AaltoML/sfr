@@ -106,7 +106,7 @@ def train(cfg: DictConfig):
 
     global_step = 0
     for episode_idx in range(cfg.num_train_episodes):
-        print("Episode {}".format(episode_idx))
+        logger.info("Episode {} | Collecting data".format(episode_idx))
         # Collect trajectory
         time_step = env.reset()
         episode_reward = 0
@@ -146,6 +146,8 @@ def train(cfg: DictConfig):
 
             global_step += 1
             episode_reward += time_step["reward"]
+
+        logger.info("Finished collecting data")
 
         # Log training metrics
         env_step = global_step * cfg.env.action_repeat

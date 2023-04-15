@@ -70,7 +70,7 @@ def train(cfg: DictConfig):
             config=omegaconf.OmegaConf.to_container(
                 cfg, resolve=True, throw_on_missing=True
             ),
-            monitor_gym=True,
+            # monitor_gym=True,
         )
 
     video_recorder = utils.VideoRecorder(work_dir) if cfg.save_video else None

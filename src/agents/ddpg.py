@@ -160,7 +160,9 @@ def init_from_actor_critic(
 
     @torch.no_grad()
     def select_action_fn(state: State, eval_mode: EvalMode = False, t0: T0 = None):
-        state = torch.Tensor(state)
+        print("inside select action")
+        print(state.device)
+        # state = torch.Tensor(state)
         dist = actor.forward(state, std=0)
         if eval_mode:
             action = dist.mean

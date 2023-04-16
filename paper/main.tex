@@ -3,7 +3,7 @@
 %\title{Investigatin Uncertainty Quantification in Model-based Reinforcement Learning}
 % \title{Model-based Reinforcement Learning with Fast Posterior Updates}
 %\title{Sequential Decision-Making under Uncertainty with Big Data}
-\title{Neural Sparse Gaussian Process: For Online Exploration}
+\title{Neural Network to Sparse Gaussian Process: For Online Exploration}
 
 \author{%
   Aidan ~Scannell \\
@@ -143,7 +143,7 @@
 
 \begin{abstract}
 
- Building systems that adapt to new information is essential to deploy methods in real-world applications. While gradient-based training is symbiotic to modern deep learning, it is rigid regarding adding further information, usually involving retraining from scratch. In a functional view, we can view data as the parameters of our model instead of the weights, which we call the dual parameterization of a model. Using the formulation we can assimilate data without gradient-based retraining in dual parameterization. Our proposed method allows for deployment in any sequential decision-making process. We show its effectiveness in model-based reinforcement learning using updated information for more efficient exploration.
+Building systems that adapt to new information and express uncertainty is essential to deploy methods in real-world applications e.g. healthcare, autonomous vehicles. While gradient-based training is symbiotic to modern deep learning, it is rigid regarding adding further information, usually involving retraining from scratch. In a functional view, we can view data as the parameters of our model instead of the weights, which we call the dual parameterization of a model. Using the formulation we can assimilate data without gradient-based retraining. Our proposed method allows for deployment in any sequential decision-making process. We show its effectiveness in model-based reinforcement learning using updated information for more efficient exploration.
 
 \end{abstract}
 
@@ -151,46 +151,26 @@
 \section{Introduction} \label{sec:intro}
 
 %Explain uncertainty in sequential decision making but need for neural networks.
-Sequential decision making requires uncertainty estimates for effective exploration. For this reason Gaussian processes (GPs) are a common surrogate model for Bayesian optimization \citep{garnett_bayesoptbook_2022} and in model-based reinforcement learning \citep{deisenroth2011pilco}. Yet many problems lie in high dimensional input space for example images are where GPs lack the ability to learn representations. However, uncertainty is still essential to ensure effective exploration for sequential algorithms \todo{cite here}. Many approaches 
+Sequential decision-making requires uncertainty estimates for effective exploration \citep{srinivas2009gaussian}. For this reason, Gaussian processes (GPs) are a standard surrogate model for Bayesian optimization \citep{garnett_bayesoptbook_2022} and in model-based reinforcement learning \citep{deisenroth2011pilco}. Yet many problems lie in high dimensional input space; for example, images are where GPs cannot learn representations. However, uncertainty is still essential to ensure effective exploration for sequential algorithms \todo{cite here}. Successful approaches have attempted to blend neural networks with uncertainty estimates around predictions, allowing for sophisticated exploration strategies.  [ensembles of NN and citations]
+
+% Intoduce the laplace GNN 
 
 %Need for adaptive learning methods + failures with current methods
+Whether using a Gaussian process or a neural network it is often the case that the surrogate model obtains new information which it wants to incorporate in to its 
+
+%Need uncertainty and adaptive methods
 
 %Dual formulation in GPs space solves this
 
 %Talk about planning and exploration in RL.
 
 %List the contributions.
-
-
-
+The contributions of the paper our is as follows:
 \begin{itemize}
-  \item DNNs scale to high-dimensional and large data sets but 1) no UQ and 2) cannot be updated quickly
-  \begin{itemize}
-    \item In many domains we want to make decisions under a learned model's uncertainty, e.g. in healthcare, robotics, autonomous vehicles. (safey, sample efficiency (cost/time))
-    \item In continual learning (e.g. online learning/RL) we need to update model quicker than retraining NN with SGD.
-    \item Poorly calibrated model uncertainty
-  \end{itemize}
+\item We show how to take a trained neural network and convert it to a dual sparse GP. We are able to do this without retraining the GP. Our sparse GP uses the variational formulation, and thus gives better uncertainty estimates than other no variational sparse approaches used previously.
+\item Our sparse GP now gives us a compact representation of our parameters in the function space. We can therefore take advantage of the dual parameters formulation for fast conditioning of new data in to our posterior. Crucially this allows for fast adaptation of models that our used in sequential decision making. We show how this is effective in the planning stage of model-based reinforcement exploration.
 \end{itemize}
 
-\begin{itemize}
-  \item BNNs give UQ over high-dimensional parameter space,
-  \begin{itemize}
-    \item Exact inference intractable
-    \item Sampling in parameter space vs Sampling in function space
-  \end{itemize}
-\end{itemize}
-
-\begin{itemize}
-  \item BNN to dual SVGP
-  \begin{itemize}
-    \item Keep in spirit of Laplace approx and fit SVGP with no more optimisation
-    \item Now we can update posterior without retraining, which is fast (good for model-based RL and TS BO?)
-    \item Now we can sample in function space with pathwise conditioning (because we have SVGP).
-    \begin{itemize}
-      \item Our pathwise conditioning will be better as we can use dual update
-    \end{itemize}
-  \end{itemize}
-\end{itemize}
 
 
 \begin{figure}[t!]

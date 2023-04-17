@@ -8,7 +8,6 @@ logger = logging.getLogger(__name__)
 
 import numpy as np
 import src.agents.utils as util
-import src.utils as utils
 import torch
 import torch.nn as nn
 import wandb
@@ -48,7 +47,7 @@ def init(
     action_dim: int,
     mlp_dims: List[int] = [512, 512],
     learning_rate: float = 3e-4,
-    num_iterations: int = 100,
+    max_ddpg_iterations: int = 100,  # for training DDPG
     std_schedule: str = "linear(1.0, 0.1, 50)",
     std_clip: float = 0.3,
     nstep: int = 3,
@@ -74,7 +73,7 @@ def init(
         critic_target=critic_target,
         optim_actor=optim_actor,
         optim_critic=optim_critic,
-        num_iterations=num_iterations,
+        max_ddpg_iterations=max_ddpg_iterations,
         std_schedule=std_schedule,
         std_clip=std_clip,
         nstep=nstep,
@@ -90,7 +89,7 @@ def init_from_actor_critic(
     critic_target: Critic,
     optim_actor,
     optim_critic,
-    num_iterations: int = 100,
+    max_ddpg_iterations: int = 100,  # for training DDPG
     std_schedule: str = "linear(1.0, 0.1, 50)",
     std_clip: float = 0.3,
     nstep: int = 3,
@@ -112,11 +111,11 @@ def init_from_actor_critic(
     def train_fn(replay_buffer: ReplayBuffer) -> dict:
         std = 0.1
         info = {"std": std}
-        for i in range(num_iterations):
+        for i in range(max_ddpg_iterations):
             # std = linear_schedule(std_schedule, i)  # linearly udpate std
             # info = {"std": std}
-            std = 0.1
-            info = {"std": std}
+            # std = 0.1
+            # info = {"std": std}
 
             # std_schedule, (num_iterations - 10) * episode_idx + i
 

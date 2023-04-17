@@ -22,6 +22,7 @@ class SVGP(gpytorch.models.ApproximateGP):
         mean_module: gpytorch.means.Mean,
         covar_module: gpytorch.kernels.Kernel,
         learn_inducing_locations: bool = True,
+        jitter: float = 0.0,
     ):
         self.learn_inducing_locations = learn_inducing_locations
         if isinstance(covar_module, gpytorch.kernels.MultitaskKernel):
@@ -192,7 +193,8 @@ def predict(svgp: SVGP, likelihood: gpytorch.likelihoods.Likelihood):
                     Kuu,
                     lambda_1_new,
                     lambda_2_new,
-                    jitter=getattr(self, "tsvgp_jitter", 0.0),
+                    jitter=jitter,
+                    # jitter=getattr(self, "tsvgp_jitter", 0.0),
                 )
                 new_mean = new_mean.squeeze(-1)
                 new_cov_root = new_cov.cholesky()

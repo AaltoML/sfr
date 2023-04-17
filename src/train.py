@@ -8,7 +8,6 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-from tensordict import TensorDict
 import hydra
 import numpy as np
 import omegaconf
@@ -16,8 +15,9 @@ import torch
 import torchrl
 import utils
 import wandb
-from dm_env import specs
+from dm_env import specs, StepType
 from omegaconf import DictConfig, OmegaConf
+from tensordict import TensorDict
 
 # from src.utils.buffer import ReplayBuffer
 from utils import EarlyStopper, set_seed_everywhere
@@ -104,6 +104,9 @@ def train(cfg: DictConfig):
     agent = hydra.utils.instantiate(cfg.agent)
     print("Made agent")
 
+    # elapsed_time, total_time = timer.reset()
+    start_time = time.time()
+    last_time = start_time
     global_step = 0
     for episode_idx in range(cfg.num_train_episodes):
         logger.info("Episode {} | Collecting data".format(episode_idx))
@@ -118,7 +121,9 @@ def train(cfg: DictConfig):
                 )
             else:
                 action = agent.select_action(
-                    time_step.observation, eval_mode=False, t0=time_step.first
+                    time_step.observation,
+                    eval_mode=False,
+                    t0=time_step.step_type == StepType.FIRST,
                 )
                 action = action.cpu().numpy()
             # action = np.random.uniform(-1, 1, env.action_spec().shape).astype(
@@ -153,13 +158,17 @@ def train(cfg: DictConfig):
 
         # Log training metrics
         env_step = global_step * cfg.env.action_repeat
+
+        elapsed_time = time.time() - last_time
+        total_time = time.time() - start_time
+        last_time = time.time()
         train_metrics = {
             "episode": episode_idx,
             "step": global_step,
             "env_step": env_step,
-            # "time": time.time() - start_time,
+            "episode_time": elapsed_time,
+            "total_time": total_time,
             "episode_reward": np.mean(episode_reward),
-            # "eval_total_time": timer.total_time(),
         }
         logger.info(
             "TRAINING | Episode: {} | Reward: {}".format(episode_idx, episode_reward)
@@ -189,22 +198,24 @@ def train(cfg: DictConfig):
         #         # num_episode=cfg.eval_episode_freq,
         #         num_episodes=1,
         #         # num_episodes=10,
-        #         video=video_recorder,
+        #         # video=video_recorder,
         #     )
         #     print("after G")
         #     # print("DONE EVALUATING")
-        #     episode_reward = np.mean(Gs)
+        #     eval_episode_reward = np.mean(Gs)
         #     env_step = global_step * cfg.env.action_repeat
         #     eval_metrics = {
         #         "episode": episode_idx,
         #         "step": global_step,
         #         "env_step": env_step,
-        #         # "time": time.time() - start_time,
-        #         "episode_reward": episode_reward,
-        #         # "eval_total_time": timer.total_time(),
+        #         "episode_time": elapsed_time,
+        #         "total_time": total_time,
+        #         "episode_reward": eval_episode_reward,
         #     }
         #     logger.info(
-        #         "EVAL | Episode: {} | Reward: {}".format(episode_idx, episode_reward)
+        #         "EVAL | Episode: {} | Reward: {}".format(
+        #             episode_idx, eval_episode_reward
+        #         )
         #     )
         #     if cfg.wandb.use_wandb:
         #         wandb.log({"eval/": eval_metrics}, step=env_step)

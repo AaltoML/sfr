@@ -7,6 +7,8 @@ from torchtyping import TensorType
 State = TensorType["batch_size", "state_dim"]
 Action = TensorType["batch_size", "action_dim"]
 
+ActionTrajectory = TensorType["horizon", "batch_size", "action_dim"]
+
 EvalMode = bool
 T0 = bool
 

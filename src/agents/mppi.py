@@ -24,13 +24,14 @@ def init(
     action_dim: int,
     mlp_dims: List[int] = [512, 512],
     learning_rate: float = 3e-4,
-    num_iterations: int = 100,  # for training DDPG
+    max_ddpg_iterations: int = 100,  # for training DDPG
     # std_schedule: str = "linear(1.0, 0.1, 50)",
     std_clip: float = 0.3,
     # nstep: int = 1,
     gamma: float = 0.99,
     tau: float = 0.005,
     horizon: int = 5,
+    num_mppi_iterations: int = 5,
     num_samples: int = 512,
     mixture_coef: float = 0.05,
     num_topk: int = 64,
@@ -56,7 +57,7 @@ def init(
         critic_target=critic_target,
         optim_actor=optim_actor,
         optim_critic=optim_critic,
-        num_iterations=num_iterations,
+        max_ddpg_iterations=max_ddpg_iterations,
         std_clip=std_clip,
         nstep=1,
         gamma=gamma,
@@ -64,7 +65,8 @@ def init(
         device=device,
     )
     # std = torch.Tensor([0.5], device=device)
-    std = 0.5
+    # std = 0.5
+    std = 0.1
 
     estimate_value = src.agents.objectives.greedy(
         actor=actor,
@@ -99,6 +101,7 @@ def init(
 
     @torch.no_grad()
     def select_action_fn(state: State, eval_mode: bool = False, t0=True):
+        print("t0={}".format(t0))
         # if isinstance(state, np.ndarray):
         #     state = torch.from_numpy(state).to(device).float()
         # print("state: {}".format(state))
@@ -123,12 +126,13 @@ def init(
         # TODO implememnt prev_mean
         # if not t0 and hasattr(self, "_prev_mean"):
         if not t0:
+            # print("USING PREV_MEAN {}".format(_prev_mean[1:]))
             action_mean[:-1] = _prev_mean[1:]
 
         # Iterate CEM
         # for i in range(num_iterations):
         # print("before loop")
-        for i in range(5):
+        for i in range(num_mppi_iterations):
             # logger.info("MPPI iteration: {}".format(i))
             actions = torch.clamp(
                 action_mean.unsqueeze(1)

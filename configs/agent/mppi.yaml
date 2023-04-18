@@ -14,7 +14,8 @@ std_clip: 0.3
 gamma: 0.99
 tau: 0.005
 # MPPI config
-horizon: 5
+# horizon: 5
+horizon: 2
 # horizon: 1
 num_mppi_iterations: 5
 num_samples: 512
@@ -25,6 +26,9 @@ num_topk: 64
 # num_topk: 4
 temperature: 0.5
 momentum: 0.1
+# unc_prop_strategy: "mean"
+unc_prop_strategy: "sample"
+sample_actor: true
 # objective:
 #   _target_: src.agents.objectives.greedy
 #     actor: ${agent.actor}

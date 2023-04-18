@@ -3,6 +3,8 @@ defaults:
   # - model: svgp
   - reward_model: svgp
   - transition_model: svgp
+  # - reward_model: mlp
+  # - transition_model: mlp
   # - model: world_model
   # - model_new: world_model
   # - agent: ddpg
@@ -61,6 +63,8 @@ wandb:
     - "random_seed=${random_seed}"
     - "env=${env.env_name}-${env.task_name}"
     - "alg=${alg_name}"
+    # - "horizon=${agent.horizon}"
+    # - "num_samples=${agent.num_samples}"
 
 hydra:
   job:

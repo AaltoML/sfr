@@ -109,17 +109,24 @@ def predict(
         likelihood.eval()
         if data_new != None:
             X, Y = data_new
-            print("data new X={}, Y={}".format(X.shape, Y.shape))
+            # print("data new X={}, Y={}".format(X.shape, Y.shape))
 
             # # make copy of self
             # TODO how to make copy??
             # svgp_new = svgp.make_copy()
             # var_strat = svgp.variational_strategy.base_variational_strategy
             # TODO how to handle diff Z on each output_dim??
-            Z = svgp.variational_strategy.base_variational_strategy.inducing_points[
-                0, ...
-            ]
-            print("Z={}".format(Z.shape))
+            try:
+                var_dist = (
+                    svgp.variational_strategy.base_variational_strategy.variational_distribution
+                )
+                Z = svgp.variational_strategy.base_variational_strategy.inducing_points[
+                    0, ...
+                ]
+            except AttributeError:
+                var_dist = svgp.variational_strategy.variational_distribution
+                Z = svgp.variational_strategy.inducing_points
+            # print("Z={}".format(Z.shape))
 
             # GPyTorch's way of computing Kuf:
             # full_inputs = torch.cat([inducing_points, X], dim=-2)
@@ -129,10 +136,7 @@ def predict(
             full_covar = svgp.covar_module(full_inputs)
 
             # Covariance terms
-            # num_induc = inducing_points.size(-2)
-            num_induc = svgp.variational_strategy.base_variational_strategy.inducing_points.size(
-                -2
-            )
+            num_induc = Z.size(-2)
             induc_induc_covar = full_covar[..., :num_induc, :num_induc].add_jitter()
             induc_data_covar = full_covar[..., :num_induc, num_induc:].evaluate()
 
@@ -144,9 +148,7 @@ def predict(
 
             # lambda_1, lambda_2 = mean_cov_to_natural_param(var_mean, var_cov, Kuu)
             lambda_1, lambda_2 = mean_cov_to_natural_param(
-                svgp.variational_strategy.base_variational_strategy.variational_distribution.mean,
-                svgp.variational_strategy.base_variational_strategy.variational_distribution.lazy_covariance_matrix,
-                Kuu,
+                var_dist.mean, var_dist.lazy_covariance_matrix, Kuu
             )
 
             lambda_1_t = torch.zeros_like(lambda_1)
@@ -161,7 +163,7 @@ def predict(
                     #                     Xt.unsqueeze_(-1)
                     # pred = svgp.forward(X)
                     pred = svgp(X)
-                    print("pred {}".format(pred))
+                    # print("pred {}".format(pred))
                     mean = pred.mean  # [output_dim, num_new]
                     var = pred.variance  # [output_dim, num_new]
                     # print("pred_mean {}".format(mean))
@@ -266,10 +268,10 @@ def predict(
                 jac_fn_var = jacrev(predict_ve, argnums=1)
                 d_exp_dm = jac_fn_mean(mean, var)  # [num_new, output_dim]
                 d_exp_dv = jac_fn_var(mean, var)  # [num_new, output_dim]
-                print(d_exp_dm.shape)
-                print(d_exp_dv.shape)
-                print(d_exp_dm)
-                print(d_exp_dv)
+                # print(d_exp_dm.shape)
+                # print(d_exp_dv.shape)
+                # print(d_exp_dm)
+                # print(d_exp_dv)
 
                 # ve.backward(inputs=[mean, var])
                 # ve.backward(inputs=[mean, var])
@@ -284,26 +286,26 @@ def predict(
 
                 grad_mu_1 = torch.einsum("bmc, cb -> bm", K_uf, grad_nat_1)
 
-                print("K_uf {}".format(K_uf.shape))
+                # print("K_uf {}".format(K_uf.shape))
                 # K_uf = K_uf.permute(2, 1, 0)
                 K_fu = K_uf.permute(0, 2, 1)
-                print("K_uf {}".format(K_uf.shape))
-                print("K_fu {}".format(K_fu.shape))
-                print("grad_nat_2 {}".format(grad_nat_2.shape))
+                # print("K_uf {}".format(K_uf.shape))
+                # print("K_fu {}".format(K_fu.shape))
+                # print("grad_nat_2 {}".format(grad_nat_2.shape))
                 # grad_mu_2 = torch.einsum("bmc, cb, bnc -> bmn", K_uf, grad_nat_2, K_uf)
                 # grad_mu_2 = torch.einsum("nmf, nf, ncf -> nmc", K_uf, grad_nat_2, K_uf)
-                print(
-                    "torch.diag(grad_nat_2) {}".format(
-                        torch.diag_embed(grad_nat_2).shape
-                    )
-                )
+                # print(
+                #     "torch.diag(grad_nat_2) {}".format(
+                #         torch.diag_embed(grad_nat_2).shape
+                #     )
+                # )
                 grad_mu_2 = K_uf @ torch.diag_embed(grad_nat_2.T) @ K_fu
-                print("grad_mu_2 {}".format(grad_mu_2.shape))
+                # print("grad_mu_2 {}".format(grad_mu_2.shape))
                 # print("K_uf {}".format(K_uf))
                 # grad_mu_2 = K_uf @ K_uf.T
                 # L = torch.cholesky(grad_mu_2)
-                print("psd")
-                print("lambda_2_t {}".format(lambda_2_t.shape))
+                # print("psd")
+                # print("lambda_2_t {}".format(lambda_2_t.shape))
 
                 scale = 1.0
 
@@ -316,10 +318,10 @@ def predict(
 
                 lambda_1_new = lambda_1 - lambda_1_t + lambda_1_t_new
                 lambda_2_new = lambda_2 - lambda_2_t + lambda_2_t_new
-                print("lambda_1_new {}".format(lambda_1_new))
-                print("lambda_2_new {}".format(lambda_2_new))
+                # print("lambda_1_new {}".format(lambda_1_new))
+                # print("lambda_2_new {}".format(lambda_2_new))
 
-                print("jitter {}".format(jitter))
+                # print("jitter {}".format(jitter))
                 new_mean, new_cov = conditional_from_precision_sites_white_full(
                     Kuu,
                     lambda_1_new,
@@ -330,9 +332,7 @@ def predict(
                 new_mean = new_mean.squeeze(-1)
 
                 with torch.no_grad():
-                    var_dist = (
-                        svgp.variational_strategy.base_variational_strategy.variational_distribution
-                    )
+                    # var_dist
                     var_dist.mean.set_(new_mean)
                     var_dist.covariance_matrix.set_(new_cov)
 
@@ -440,7 +440,10 @@ def mean_cov_to_natural_param(mu, Su, K_uu):
     """
     Transforms (m,S) to (λ₁,P) tsvgp_white parameterization
     """
-    mu = torch.unsqueeze(mu, dim=2)
+    # print("mu {}".format(mu.shape))
+    # mu = torch.unsqueeze(mu, dim=2)
+    mu = torch.unsqueeze(mu, dim=-1)
+    # print("mu {}".format(mu.shape))
     lamb1 = K_uu.matmul(Su.inv_matmul(mu))
     lamb2 = K_uu.matmul(Su.inv_matmul(K_uu.evaluate())) - K_uu.evaluate()
 
@@ -475,15 +478,33 @@ def conditional_from_precision_sites_white_full(
     :param L: tensor M x M
     """
     # TODO: rewrite this
+    # print("lambda1 {}".format(lambda1.shape))
 
-    R = (Lambda2 + Kuu).add_jitter(jitter)
+    # R = (Lambda2 + Kuu).add_jitter(jitter)
+    R = Lambda2 + Kuu.evaluate()
+    R += torch.eye(R.shape[-1])[None, ...] * jitter
 
-    L = torch.cholesky(Lambda2)
-    print("L {}".format(L))
-    print(R.shape)
-    L = torch.cholesky(R)
-    mean = Kuu.matmul(torch.cholesky_solve(L, lambda1))
-    cov = Kuu.matmul(torch.cholesky_solve(L, Kuu.evaluate()))
+    # U = torch.cholesky(Lambda2)
+    # print("R {}".format(R.shape))
+    # print("R {}".format(type(R)))
+    # print("R {}".format(R))
+    # print(R.shape)
+    L = torch.linalg.cholesky(R)
+    # lambda1 = lambda1.permute(0, 2, 1)
+    # print("lambda1 {}".format(lambda1.shape))
+    # print("L {}".format(L.shape))
+    # mean = torch.matmul(R.inverse(), lambda1)
+    mean = Kuu.matmul(torch.cholesky_solve(lambda1, L))
+    # print("mean {}".format(mean.shape))
+    # mean = Kuu.matmul(mean)
+    # print("mean {}".format(mean.shape))
+    # mean = Kuu.matmul(torch.cholesky_solve(lambda1, U))
+    # mean = Kuu.matmul(torch.cholesky_solve(lambda1, U))
+    cov = Kuu.matmul(torch.cholesky_solve(Kuu.evaluate(), L))
+    # print("cov {}".format(cov.shape))
+    # cov = cov.matmul(Kuu)
+    # print("cov {}".format(cov.shape))
+    # cov = Kuu.matmul(torch.cholesky_solve(Kuu.evaluate(), U))
     # mean = A @ A.T
 
     # mean = Kuu.matmul(R.inv_matmul(lambda1))

@@ -37,6 +37,8 @@ def init(
     num_topk: int = 64,
     temperature: int = 0.5,
     momentum: float = 0.1,
+    unc_prop_strategy: str = "mean",
+    sample_actor: bool = True,
     device: str = "cuda",
 ) -> Agent:
     actor = Actor(state_dim, mlp_dims, action_dim).to(device)
@@ -77,6 +79,8 @@ def init(
         std=std,
         std_clip=std_clip,
         gamma=gamma,
+        unc_prop_strategy=unc_prop_strategy,
+        sample_actor=sample_actor,
     )
 
     def train_fn(replay_buffer: ReplayBuffer) -> dict:
@@ -100,8 +104,10 @@ def init(
     _prev_mean = torch.zeros(horizon, action_dim, device=device)
 
     @torch.no_grad()
-    def select_action_fn(state: State, eval_mode: bool = False, t0=True):
-        print("t0={}".format(t0))
+    def select_action_fn(
+        state: State, data_new=None, eval_mode: bool = False, t0: bool = True
+    ):
+        # estimate_value_compiled = torch.compile(estimate_value)
         # if isinstance(state, np.ndarray):
         #     state = torch.from_numpy(state).to(device).float()
         # print("state: {}".format(state))
@@ -152,7 +158,8 @@ def init(
                 actions = torch.cat([actions, pi_actions], dim=1)
 
             # Compute elite actions
-            value = estimate_value(state, actions).nan_to_num_(0)
+            value = estimate_value(state, actions, data_new=data_new).nan_to_num_(0)
+            # value = estimate_value_compiled(state, actions).nan_to_num_(0)
             elite_idxs = torch.topk(value.squeeze(1), num_topk, dim=0).indices
             elite_value, elite_actions = value[elite_idxs], actions[:, elite_idxs]
 

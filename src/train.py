@@ -12,6 +12,9 @@ import hydra
 import numpy as np
 import omegaconf
 import torch
+
+
+torch.set_default_dtype(torch.float64)
 import torchrl
 import utils
 import wandb
@@ -97,10 +100,6 @@ def train(cfg: DictConfig):
     )
     print("Made replay buffer")
 
-    # transition_model = hydra.utils.instantiate(cfg.transition_model)
-    # print("Made transition model")
-    # reward_model = hydra.utils.instantiate(cfg.reward_model)
-    # print("Made reward model")
     agent = hydra.utils.instantiate(cfg.agent)
     print("Made agent")
 
@@ -117,15 +116,17 @@ def train(cfg: DictConfig):
         while not time_step.last():
             if episode_idx < cfg.init_random_episodes:
                 action = np.random.uniform(-1, 1, env.action_spec().shape).astype(
-                    dtype=env.action_spec().dtype
+                    dtype=np.float64
+                    # dtype=env.action_spec().dtype
                 )
             else:
                 # if cfg.online_updates and t > 0:
                 if cfg.online_updates and t > 1:
                     data_new = (state_action_inputs, state_diff_outputs)
+                    # print("USING new data")
                 else:
                     data_new = None
-                data_new = None
+                # data_new = None
                 action = agent.select_action(
                     time_step.observation,
                     data_new=data_new,
@@ -170,7 +171,10 @@ def train(cfg: DictConfig):
             )
             for key in time_step_td.keys():
                 time_step_td[key] = torch.as_tensor(
-                    time_step_td[key], device=cfg.device, dtype=torch.float32
+                    # time_step_td[key], device=cfg.device, dtype=torch.float32
+                    time_step_td[key],
+                    device=cfg.device,
+                    dtype=torch.float64,
                 )
             replay_buffer.add(time_step_td)
 

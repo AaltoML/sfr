@@ -29,6 +29,8 @@ input_dim: ???
 output_dim: ???
 device: ???
 
+online_updates: true
+
 alg_name: "mppi-svgp"
 random_seed: 42
 

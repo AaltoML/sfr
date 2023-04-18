@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 import logging
+import math
 from typing import Optional
 
+from typing import Optional
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -94,31 +96,43 @@ class SVGP(gpytorch.models.ApproximateGP):
         return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
 
 
-def predict(svgp: SVGP, likelihood: gpytorch.likelihoods.Likelihood):
-    svgp.eval()
-    likelihood.eval()
-
-    def predict_(x, data_new: Optional = None) -> Prediction:
+def predict(
+    svgp: SVGP,
+    likelihood: gpytorch.likelihoods.Likelihood,
+    # jitter: float = 0.0,
+    jitter: float = 1e-5,
+    # learning_rate: float = 0.8,
+    learning_rate: float = 1.0,
+):
+    def predict_fn(x, data_new: Optional = None) -> Prediction:
+        svgp.eval()
+        likelihood.eval()
         if data_new != None:
             X, Y = data_new
+            print("data new X={}, Y={}".format(X.shape, Y.shape))
 
             # # make copy of self
             # TODO how to make copy??
-            model = self.make_copy()
-            var_strat = svgp.variational_strategy.base_variational_strategy
-            inducing_points = var_strat.inducing_points
-
-            var_dist = var_strat.variational_distribution
-            var_mean = var_dist.mean
-            var_cov = var_dist.lazy_covariance_matrix
+            # svgp_new = svgp.make_copy()
+            # var_strat = svgp.variational_strategy.base_variational_strategy
+            # TODO how to handle diff Z on each output_dim??
+            Z = svgp.variational_strategy.base_variational_strategy.inducing_points[
+                0, ...
+            ]
+            print("Z={}".format(Z.shape))
 
             # GPyTorch's way of computing Kuf:
             # full_inputs = torch.cat([inducing_points, X], dim=-2)
-            full_inputs = torch.cat([torch.squeeze(inducing_points).T, X], dim=-2)
+            # full_inputs = torch.cat([torch.squeeze(Z).T, X], dim=-2)
+            full_inputs = torch.cat([Z, X], dim=-2)
+            # full_covar = svgp.covar_module(full_inputs)
             full_covar = svgp.covar_module(full_inputs)
 
             # Covariance terms
-            num_induc = inducing_points.size(-2)
+            # num_induc = inducing_points.size(-2)
+            num_induc = svgp.variational_strategy.base_variational_strategy.inducing_points.size(
+                -2
+            )
             induc_induc_covar = full_covar[..., :num_induc, :num_induc].add_jitter()
             induc_data_covar = full_covar[..., :num_induc, num_induc:].evaluate()
 
@@ -128,7 +142,12 @@ def predict(svgp: SVGP, likelihood: gpytorch.likelihoods.Likelihood):
             Kuu = induc_induc_covar
             # Kuu_root = Kuu.cholesky()
 
-            lambda_1, lambda_2 = mean_cov_to_natural_param(var_mean, var_cov, Kuu)
+            # lambda_1, lambda_2 = mean_cov_to_natural_param(var_mean, var_cov, Kuu)
+            lambda_1, lambda_2 = mean_cov_to_natural_param(
+                svgp.variational_strategy.base_variational_strategy.variational_distribution.mean,
+                svgp.variational_strategy.base_variational_strategy.variational_distribution.lazy_covariance_matrix,
+                Kuu,
+            )
 
             lambda_1_t = torch.zeros_like(lambda_1)
             lambda_2_t = torch.zeros_like(lambda_2)
@@ -140,33 +159,122 @@ def predict(svgp: SVGP, likelihood: gpytorch.likelihoods.Likelihood):
                     # Xt = torch.tile(X, Y.shape[:-2] + (1, 1, 1))
                     #                 if Y.shape[-1] == 1:
                     #                     Xt.unsqueeze_(-1)
-                    pred = svgp.forward(X)
-                    mean = pred.latent_dist.mean
-                    var = pred.latent_dist.variance
+                    # pred = svgp.forward(X)
+                    pred = svgp(X)
+                    print("pred {}".format(pred))
+                    mean = pred.mean  # [output_dim, num_new]
+                    var = pred.variance  # [output_dim, num_new]
+                    # print("pred_mean {}".format(mean))
+                    # print("pred_var {}".format(var))
+                    # mean = pred.latent_dist.mean
+                    # var = pred.latent_dist.variance
                 mean.requires_grad_()
                 var.requires_grad_()
+                # mean = pred.mean
+                # var = pred.variance
+                # mean.requires_grad_()
+                # var.requires_grad_()
 
+                # mean = mean[:, None, ...]
+                # var = var[:, None, ...]
+                # print("pred_mean {}".format(mean.shape))
+                # print("pred_var {}".format(var.shape))
                 # variational expectations
-                f_dist_b = MultivariateNormal(
-                    mean.T, torch.diag_embed(var.T)
-                )  # Mean: B x N Cov: B x N x N
-                f_dist = (
-                    gpytorch.distributions.MultitaskMultivariateNormal.from_batch_mvn(
+                # TODO gpytroch MVN or torch?
+                # f_dist_b = gpytorch.distributions.MultivariateNormal(
+                #     mean.T, torch.diag_embed(var.T)
+                # )  # Mean: num_new x output_dim Cov: num_new x output_dim x output_dim
+                # f_dist = (
+                #     gpytorch.distributions.MultitaskMultivariateNormal.from_batch_mvn(
+                #         f_dist_b
+                #     )
+                # )
+                # f_dist = gpytorch.distributions.MultitaskMultivariateNormal.from_independent_mvns(
+                #     f_dist_b
+                # )
+
+                # f_dist = gpytorch.distributions.MultitaskMultivariateNormal(f_dist_b)
+                # f_dist = gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
+                # f_dist = gpytorch.distributions.MultivariateNormal(
+                #     mean.T, torch.diag_embed(var.T)
+                # )  # Mean: B x N Cov: B x N x N
+                # print("f_dist_b {}".format(f_dist_b))
+                # print("f_dist_b.event_shape {}".format(f_dist_b.event_shape))
+                # print("f_dist_b {}".format(f_dist_b))
+                # # print("f_dist {}".format(f_dist))
+                # # f_dist = MultivariateNormal(mean, DiagLazyTensor(var))
+                # # f_dist = gpytorch.distributions.MultitaskMultivariateNormal(mean, var)'
+                # print("likelihood {}".format(likelihood))
+                # print("likelihood.noise {}".format(likelihood.noise))
+
+                # # print("likelihood.noise_covar {}".format(likelihood.noise_covar))
+                # def expected_log_prob(target, input):
+                #     mean, variance = input.mean, input.variance
+                #     num_event_dim = len(input.event_shape)
+
+                #     print("target.shape {}".format(target.shape))
+                #     noise = likelihood._shaped_noise_covar(mean.shape).diagonal(
+                #         dim1=-1, dim2=-2
+                #     )
+                #     print("noise {}".format(noise.shape))
+                #     print("input.event_shape {}".format(input.event_shape))
+                #     # Potentially reshape the noise to deal with the multitask case
+                #     # noise = noise.view(*noise.shape[:-1], *input.event_shape)
+
+                #     res = (
+                #         ((target - mean).square() + variance) / noise
+                #         + noise.log()
+                #         + math.log(2 * math.pi)
+                #     )
+                #     res = res.mul(-0.5)
+                #     if (
+                #         num_event_dim > 1
+                #     ):  # Do appropriate summation for multitask Gaussian likelihoods
+                #         res = res.sum(list(range(-1, -num_event_dim, -1)))
+                #     return res
+
+                def predict_ve(mean, var):
+                    f_dist_b = gpytorch.distributions.MultivariateNormal(
+                        mean.T, torch.diag_embed(var.T)
+                    )  # Mean: num_new x output_dim Cov: num_new x output_dim x output_dim
+                    f_dist = gpytorch.distributions.MultitaskMultivariateNormal.from_batch_mvn(
                         f_dist_b
                     )
-                )
-                # f_dist = MultivariateNormal(mean, DiagLazyTensor(var))
-                # f_dist = gpytorch.distributions.MultitaskMultivariateNormal(mean, var)'
-                ve_terms = likelihood.expected_log_prob(
-                    Y, f_dist
-                )  # TODO: Is this right?
-                ve = (
-                    ve_terms.sum()
-                )  # TODO: CHECK: divide by num_data ? but only one point at a time so probably fine
+                    ve_terms = likelihood.expected_log_prob(
+                        # Y, pred,
+                        Y,
+                        f_dist,
+                    )  # TODO: Is this right?
+                    ve = (
+                        ve_terms.sum()
+                    )  # TODO: CHECK: divide by num_data ? but only one point at a time so probably fine
+                    return ve
 
-                ve.backward(inputs=[mean, var])
-                d_exp_dm = mean.grad  # [batch, N]
-                d_exp_dv = var.grad  # [batch, N]
+                # ve_terms = expected_log_prob(Y.T, f_dist)  # TODO: Is this right?
+                # ve_terms = likelihood.expected_log_prob(
+                #     # Y, pred,
+                #     Y,
+                #     f_dist,
+                # )  # TODO: Is this right?
+                # print("ve_terms {}".format(ve_terms.shape))
+                # ve = (
+                #     ve_terms.sum()
+                # )  # TODO: CHECK: divide by num_data ? but only one point at a time so probably fine
+                from functorch import jacrev
+
+                jac_fn_mean = jacrev(predict_ve)
+                jac_fn_var = jacrev(predict_ve, argnums=1)
+                d_exp_dm = jac_fn_mean(mean, var)  # [num_new, output_dim]
+                d_exp_dv = jac_fn_var(mean, var)  # [num_new, output_dim]
+                print(d_exp_dm.shape)
+                print(d_exp_dv.shape)
+                print(d_exp_dm)
+                print(d_exp_dv)
+
+                # ve.backward(inputs=[mean, var])
+                # ve.backward(inputs=[mean, var])
+                # d_exp_dm = mean.grad  # [batch, N]
+                # d_exp_dv = var.grad  # [batch, N]
 
                 eps = 1e-8
                 d_exp_dv.clamp_(max=-eps)
@@ -176,19 +284,42 @@ def predict(svgp: SVGP, likelihood: gpytorch.likelihoods.Likelihood):
 
                 grad_mu_1 = torch.einsum("bmc, cb -> bm", K_uf, grad_nat_1)
 
-                grad_mu_2 = torch.einsum("bmc, cb, bnc -> bmn", K_uf, grad_nat_2, K_uf)
+                print("K_uf {}".format(K_uf.shape))
+                # K_uf = K_uf.permute(2, 1, 0)
+                K_fu = K_uf.permute(0, 2, 1)
+                print("K_uf {}".format(K_uf.shape))
+                print("K_fu {}".format(K_fu.shape))
+                print("grad_nat_2 {}".format(grad_nat_2.shape))
+                # grad_mu_2 = torch.einsum("bmc, cb, bnc -> bmn", K_uf, grad_nat_2, K_uf)
+                # grad_mu_2 = torch.einsum("nmf, nf, ncf -> nmc", K_uf, grad_nat_2, K_uf)
+                print(
+                    "torch.diag(grad_nat_2) {}".format(
+                        torch.diag_embed(grad_nat_2).shape
+                    )
+                )
+                grad_mu_2 = K_uf @ torch.diag_embed(grad_nat_2.T) @ K_fu
+                print("grad_mu_2 {}".format(grad_mu_2.shape))
+                # print("K_uf {}".format(K_uf))
+                # grad_mu_2 = K_uf @ K_uf.T
+                # L = torch.cholesky(grad_mu_2)
+                print("psd")
+                print("lambda_2_t {}".format(lambda_2_t.shape))
 
-                lr = 0.8  # TODO: set as a parameter
                 scale = 1.0
 
-                lambda_1_t_new = (1.0 - lr) * lambda_1_t + lr * scale * grad_mu_1[
-                    ..., None
-                ]
-                lambda_2_t_new = (1.0 - lr) * lambda_2_t + lr * scale * (-2) * grad_mu_2
+                lambda_1_t_new = (
+                    1.0 - learning_rate
+                ) * lambda_1_t + learning_rate * scale * grad_mu_1[..., None]
+                lambda_2_t_new = (
+                    1.0 - learning_rate
+                ) * lambda_2_t + learning_rate * scale * (-2) * grad_mu_2
 
                 lambda_1_new = lambda_1 - lambda_1_t + lambda_1_t_new
                 lambda_2_new = lambda_2 - lambda_2_t + lambda_2_t_new
+                print("lambda_1_new {}".format(lambda_1_new))
+                print("lambda_2_new {}".format(lambda_2_new))
 
+                print("jitter {}".format(jitter))
                 new_mean, new_cov = conditional_from_precision_sites_white_full(
                     Kuu,
                     lambda_1_new,
@@ -197,9 +328,7 @@ def predict(svgp: SVGP, likelihood: gpytorch.likelihoods.Likelihood):
                     # jitter=getattr(self, "tsvgp_jitter", 0.0),
                 )
                 new_mean = new_mean.squeeze(-1)
-                new_cov_root = new_cov.cholesky()
 
-                # fantasy_var_dist = fantasy_model.variational_strategy._variational_distribution
                 with torch.no_grad():
                     var_dist = (
                         svgp.variational_strategy.base_variational_strategy.variational_distribution
@@ -213,17 +342,11 @@ def predict(svgp: SVGP, likelihood: gpytorch.likelihoods.Likelihood):
                 lambda_2_t = lambda_2_t_new
 
         f = svgp(x)
-        # print("latent {}".format(f.variance))
         output = likelihood(f)
-        # print("output {}".format(output))
-        f_dist = td.Normal(loc=f.mean, scale=torch.sqrt(f.variance))
-        # print("f_dist {}".format(f_dist))
-        # y_dist = td.Normal(loc=f.mean, scale=torch.sqrt(output.variance))
-        # print("y_dist {}".format(y_dist))
         noise_var = output.variance - f.variance
         return f.mean, f.variance, noise_var
 
-    return predict_
+    return predict_fn
 
 
 def train(
@@ -245,6 +368,8 @@ def train(
     loss_fn_ = loss_fn(svgp=svgp, likelihood=likelihood, num_data=num_data)
 
     def train_(data_loader: DataLoader, num_epochs: int):
+        svgp.train()
+        likelihood.train()
         for epoch in range(num_epochs):
             for batch_idx, batch in enumerate(data_loader):
                 optimizer.zero_grad()
@@ -353,8 +478,16 @@ def conditional_from_precision_sites_white_full(
 
     R = (Lambda2 + Kuu).add_jitter(jitter)
 
-    mean = Kuu.matmul(R.inv_matmul(lambda1))
-    cov = Kuu.matmul(R.inv_matmul(Kuu.evaluate()))  # TODO: symmetrise?
+    L = torch.cholesky(Lambda2)
+    print("L {}".format(L))
+    print(R.shape)
+    L = torch.cholesky(R)
+    mean = Kuu.matmul(torch.cholesky_solve(L, lambda1))
+    cov = Kuu.matmul(torch.cholesky_solve(L, Kuu.evaluate()))
+    # mean = A @ A.T
+
+    # mean = Kuu.matmul(R.inv_matmul(lambda1))
+    # cov = Kuu.matmul(R.inv_matmul(Kuu.evaluate()))  # TODO: symmetrise?
     return mean, cov
 
 

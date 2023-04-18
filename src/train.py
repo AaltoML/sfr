@@ -120,8 +120,14 @@ def train(cfg: DictConfig):
                     dtype=env.action_spec().dtype
                 )
             else:
+                # if cfg.online_updates and t > 0:
+                if cfg.online_updates and t > 1:
+                    data_new = (state_action_inputs, state_diff_outputs)
+                else:
+                    data_new = None
                 action = agent.select_action(
                     time_step.observation,
+                    data_new=data_new,
                     eval_mode=False,
                     t0=time_step.step_type == StepType.FIRST,
                 )
@@ -134,9 +140,26 @@ def train(cfg: DictConfig):
             time_step_td = TensorDict(
                 {"state": time_step["observation"]}, batch_size=[], device=cfg.device
             )
+            state = torch.Tensor(time_step["observation"], device=cfg.device)
 
             time_step = env.step(action)
 
+            state_action_input = torch.concatenate(
+                [state, torch.Tensor(time_step["action"], device=cfg.device)], -1
+            )[None, ...]
+            state_diff_output = (
+                torch.Tensor(time_step["observation"], device=cfg.device) - state
+            )[None, ...]
+            if t == 0:
+                state_action_inputs = state_action_input
+                state_diff_outputs = state_diff_output
+            else:
+                state_action_inputs = torch.concat(
+                    [state_action_inputs, state_action_input], 0
+                )
+                state_diff_outputs = torch.concat(
+                    [state_diff_outputs, state_diff_output], 0
+                )
             time_step_td.update(
                 {
                     "action": time_step["action"],

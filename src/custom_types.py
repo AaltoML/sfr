@@ -3,11 +3,15 @@ from typing import Any, Iterator, NamedTuple, Optional, Tuple, Union
 
 from torchtyping import TensorType
 
+InputData = TensorType["num_data", "input_dim"]
+OutputData = TensorType["num_data", "output_dim"]
+Data = Tuple[InputData, OutputData]
 
 State = TensorType["batch_size", "state_dim"]
 Action = TensorType["batch_size", "action_dim"]
 
 ActionTrajectory = TensorType["horizon", "batch_size", "action_dim"]
+StateTrajectory = TensorType["horizon", "batch_size", "state_dim"]
 
 EvalMode = bool
 T0 = bool

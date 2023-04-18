@@ -8,7 +8,7 @@ logger = logging.getLogger(__name__)
 import gpytorch
 import torch
 from models.svgp import SVGP
-from src.custom_types import Action, State, StatePrediction
+from src.custom_types import Action, State, StatePrediction, Data
 from src.utils import EarlyStopper
 from torch.utils.data import DataLoader, TensorDataset
 from torchrl.data import ReplayBuffer
@@ -52,12 +52,14 @@ def init(
     ) = svgp.variational_strategy.base_variational_strategy.inducing_points.shape
     svgp_predict_fn = predict(svgp=svgp, likelihood=likelihood)
 
-    def predict_fn(state: State, action: Action) -> StatePrediction:
+    def predict_fn(
+        state: State, action: Action, data_new: Data = None
+    ) -> StatePrediction:
         state_action_input = torch.concat([state, action], -1)
         svgp.eval()
         likelihood.eval()
         delta_state_mean, delta_state_var, noise_var = svgp_predict_fn(
-            state_action_input
+            state_action_input, data_new=data_new
         )
         return StatePrediction(
             state_mean=state + delta_state_mean,

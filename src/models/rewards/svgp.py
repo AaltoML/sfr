@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 import gpytorch
 import torch
 from models.svgp import SVGP
-from src.custom_types import Action, RewardPrediction, State
+from src.custom_types import Action, RewardPrediction, State, Data
 from src.utils import EarlyStopper
 from torch.utils.data import DataLoader, TensorDataset
 from torchrl.data import ReplayBuffer
@@ -44,11 +44,15 @@ def init(
 
     svgp_predict_fn = predict(svgp=svgp, likelihood=likelihood)
 
-    def predict_fn(state: State, action: Action) -> RewardPrediction:
+    def predict_fn(
+        state: State, action: Action, data_new: Data = None
+    ) -> RewardPrediction:
         state_action_input = torch.concat([state, action], -1)
         svgp.eval()
         likelihood.eval()
-        reward_mean, reward_var, noise_var = svgp_predict_fn(state_action_input)
+        reward_mean, reward_var, noise_var = svgp_predict_fn(
+            state_action_input, data_new=data_new
+        )
         return RewardPrediction(
             reward_mean=reward_mean, reward_var=reward_var, noise_var=noise_var
         )

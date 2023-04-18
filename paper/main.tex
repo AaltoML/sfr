@@ -6,7 +6,8 @@
 % \title{Neural Network to Vatiational Sparse Gaussian Process: For Adaptive Exploration}
 % \title{Neural Network to Sparse Variational Gaussian Process: For Updates in Sequential Decision Making}
 % \title{Adapting Neural Networks to New Data For Updates in Sequential Decision Making via Gaussian Processes}
-\title{Converting Neural Networks to Gaussian Processes for Sequential Decision Making Under Uncertainty}
+\title{Converting Neural Networks to Gaussian Processes for Sequential Decision-Making Under Uncertainty}
+% \title{Capturing Neural Networks with Gaussian Processes for Sequential Decision-Making Under Uncertainty}
 
 \author{%
   Aidan ~Scannell \\
@@ -194,6 +195,27 @@
 
 
 \section{Introduction} \label{sec:intro}
+
+\begin{itemize}
+  \item Many real-world problems require learning-based systems that can adapt to new data.
+  \begin{itemize}
+    % \item For example, in domains such as robotics and healthcare,
+    \item For example, when controlling robots in non-stationary environments it is important for the robot to adapt to the changing dynamics.
+    \item However neural networks rely upon gradient-based optimisation.
+    \item Uncertainty can be used to improve sample efficiency via targeted exploration.
+    \item Uncertainty can be used to handle risk in decision making.
+  \end{itemize}
+
+  \item Gaussian processes can easily adapt to new data and they offer well-calibrated uncertainty estimates.
+  \begin{itemize}
+    \item However, they don't scale to high-dimensional and large data sets.
+  \end{itemize}
+  \item
+  \begin{itemize}
+    \item
+  \end{itemize}
+\end{itemize}
+
 %Why we need uncertainty and adaptiveness
 How to adapt to new information is a limitation of current machine learning models. The problem is specifically relevant when we combine a model with a decision-making process. In such a sequential setting, an agent typically makes decisions in an environment and obtains new information and would ideally incorporate the information into their parameters. Not only do we need models that adapt to new informatoion but all express uncertainty over the models predictions. The reason being twofold: in many applications, e.g. healthcare, autonomous driving is an essential requirement, and many advanced exploration techniques require uncertainty to determine where to query next.
 

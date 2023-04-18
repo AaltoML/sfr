@@ -113,7 +113,10 @@ def init(
         # print("state: {}".format(state))
         global _prev_mean
         if isinstance(state, np.ndarray):
-            state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+            # state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+            # TODO should this be float64 or float32?
+            # TODO set dynamically using type of NN params
+            state = torch.tensor(state, dtype=torch.float64, device=device).unsqueeze(0)
         # print("state: {}".format(state))
 
         # sample policy trajectories

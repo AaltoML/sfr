@@ -482,7 +482,7 @@ def conditional_from_precision_sites_white_full(
 
     # R = (Lambda2 + Kuu).add_jitter(jitter)
     R = Lambda2 + Kuu.evaluate()
-    R += torch.eye(R.shape[-1])[None, ...] * jitter
+    R += torch.eye(R.shape[-1], device=R.device)[None, ...] * jitter
 
     # U = torch.cholesky(Lambda2)
     # print("R {}".format(R.shape))

@@ -3,7 +3,7 @@
 %\title{Investigatin Uncertainty Quantification in Model-based Reinforcement Learning}
 % \title{Model-based Reinforcement Learning with Fast Posterior Updates}
 %\title{Sequential Decision-Making under Uncertainty with Big Data}
-\title{Neural Network to Sparse Gaussian Process: For Online Exploration}
+\title{Neural Network to Vatiational Sparse Gaussian Process: For Adaptive Exploration}
 
 \author{%
   Aidan ~Scannell \\
@@ -142,26 +142,25 @@
 \maketitle
 
 \begin{abstract}
-
-Building systems that adapt to new information and express uncertainty is essential to deploy methods in real-world applications e.g. healthcare, autonomous vehicles. While gradient-based training is symbiotic to modern deep learning, it is rigid regarding adding further information, usually involving retraining from scratch. In a functional view, we can view data as the parameters of our model instead of the weights, which we call the dual parameterization of a model. Using the formulation we can assimilate data without gradient-based retraining. Our proposed method allows for deployment in any sequential decision-making process. We show its effectiveness in model-based reinforcement learning using updated information for more efficient exploration.
-
+Building systems that adapt to new information and express uncertainty is essential to deploy methods in real-world applications e.g. healthcare, autonomous vehicles. While gradient-based training is symbiotic to modern deep learning, it is rigid regarding adding further information, usually involving retraining from scratch. Converting a trained neural network to its dual parameterization we can view the parameters of the model as data dependent terms instead of the weights. Furthermore, we can then build a sparse model to form a variational dual sparse Gaussian process. The resultant sparse GP has two obvious advantages: scalable principled uncertainty estimation and the ability adapt to new data without gradient based retraining. Our proposed method can be deployed in any sequential decision-making process, where new information is received and retraining from scratch is not available. We show its effectiveness in model-based reinforcement learning using updated information for more efficient exploration.
 \end{abstract}
 
 
 \section{Introduction} \label{sec:intro}
+%Why we need uncertainty and adaptiveness
+How to adapt to new information is a limitation of current machine learning models. The problem is specifically relevant when we combine a model with a decision-making process. In such a sequential setting, an agent typically makes decisions in an environment and obtains new information and would ideally incorporate the information into their parameters. Not only do we need models that adapt to new informatoion but all express uncertainty over the models predictions. The reason being twofold: in many applications, e.g. healthcare, autonomous driving is an essential requirement, and many advanced exploration techniques require uncertainty to determine where to query next.
 
-%Explain uncertainty in sequential decision making but need for neural networks.
-Sequential decision-making requires uncertainty estimates for effective exploration \citep{srinivas2009gaussian}. For this reason, Gaussian processes (GPs) are a standard surrogate model for Bayesian optimization \citep{garnett_bayesoptbook_2022} and in model-based reinforcement learning \citep{deisenroth2011pilco}. Yet many problems lie in high dimensional input space; for example, images are where GPs cannot learn representations. However, uncertainty is still essential to ensure effective exploration for sequential algorithms \todo{cite here}. Successful approaches have attempted to blend neural networks with uncertainty estimates around predictions, allowing for sophisticated exploration strategies.  [ensembles of NN and citations]
+%Current state of affairs 
+GPs give principled uncertainty estimates and are a standard surrogate model for Bayesian optimization \citep{garnett_bayesoptbook_2022} and are effective in model-based reinforcement learning \citep{deisenroth2011pilco} furthermore they have theoretical guarantees on regret bounds \citep{srinivas2009gaussian}. Yet many problems lie in high dimensional input space; for example, images are where GPs cannot learn representations. In such scenarios such as in many reinforcement learning environments neural networks are used as the surrogate model. However, uncertainty is still essential to ensure effective exploration for sequential algorithms. Successful approaches have attempted to blend neural networks with uncertainty estimates around predictions, allowing for sophisticated exploration strategies. However, there has been limited use of hybrid models that possess the feature representation ability of neural networks but also attractive the properties of GPs, such a hybrid method we propose in this paper.
 
-% Intoduce the laplace GNN 
+% Introduce the laplace GNN + shortcomings
+One common approach for uncertainty with neural networks is a Laplace GNN approximation \citep{daxbergerLaplace2021}. The idea is to essentially takes a trained neural network and linearises around the optimal weights. The resulting linear model can be used to obtain uncertainty estimates and sometimes improved predictions \citep{immerScalable2021}. Given the resultant model is now linear with respect to the weights its is also now possible to convert to a Gaussian process as shown in \citep{immerScalable2021, khan2019approximate}. Yet to obtain uncertainty estimates there is the usual computational scaling of the GP of $O(n^3)$, so cubic in the number of data points. Many approaches  apply crude approximations and yet still obtain good uncertainty estimates. 
 
 %Need for adaptive learning methods + failures with current methods
-Whether using a Gaussian process or a neural network it is often the case that the surrogate model obtains new information which it wants to incorporate in to its 
+In this paper we show that we can take any neural network and define the dual parameters of a Gaussian process \citep{csato2002sparse, adam2021dual, chang2020fast}. Crucially the resultant GP now has predictions in the same space as the space as the initial trained neural network, a property not of previous approaches. Given the dual parameter formulation we can then easily convert a full GP to a variational sparse version. Using the sparse GP we can then take advantage of the property of dual parameters that allows for fast conditioning recently shown in \citep{chang2022fantasizing}. Thus we are able to avoid retraining and condition new data in to our model. The resultant DNN2SGP method can be used in any sequential decision-making scenario where retraining is not available and we show its effectiveness in a planning stage of a model based reinforcement algorithim.
 
 %Need uncertainty and adaptive methods
-
 %Dual formulation in GPs space solves this
-
 %Talk about planning and exploration in RL.
 
 %List the contributions.

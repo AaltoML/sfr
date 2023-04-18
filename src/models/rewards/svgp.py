@@ -51,7 +51,8 @@ def init(
         svgp.eval()
         likelihood.eval()
         reward_mean, reward_var, noise_var = svgp_predict_fn(
-            state_action_input, data_new=data_new
+            state_action_input,
+            # data_new=data_new,
         )
         return RewardPrediction(
             reward_mean=reward_mean, reward_var=reward_var, noise_var=noise_var

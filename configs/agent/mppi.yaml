@@ -28,6 +28,7 @@ temperature: 0.5
 momentum: 0.1
 # unc_prop_strategy: "mean"
 unc_prop_strategy: "sample"
+# sample_actor: true
 sample_actor: true
 # objective:
 #   _target_: src.agents.objectives.greedy

@@ -66,19 +66,23 @@ def predict(
     # Kxx = (1 / delta**2) * kernel(X_train, X_train)  # [num_train, num_train]
     Kxx = kernel(X_train, X_train)  # [num_train, num_train]
     # + torch.eye(X_train.shape[-2]) * noise_var
-    Kxx += torch.eye(Kxx.shape[-1]) * jitter
     Kxx *= 1 / (delta * num_data)
+    Kxx += torch.eye(Kxx.shape[-1]) * jitter
+
     # Kxx *= 1 / (delta)
     # + jnp.eye(X.shape[-2], dtype=X.dtype) * default_jitter()
     print("Kxx {}".format(Kxx))
     print("Kxx {}".format(Kxx.shape))
-
-    U = torch.linalg.cholesky(Kxx)  # [num_train, num_train]
-    print("U {}".format(U.shape))
+    B = Kxx + 2 * torch.eye(Kxx.shape[-1])
+    U = torch.linalg.cholesky(Kxx + 2*torch.eye(Kxx.shape[-1]))  # [num_train, num_train]
+    #print("U {}".format(U.shape))
 
     def predict_fn(x, full_cov: bool = False) -> Prediction:
         # mean = network.forward(x)
         print("x {}".format(x.shape))
+
+        alpha = torch.linalg.solve(B, Y_train)
+        beta = torch.linalg.solve(B, torch.eye(B.shape[0]))
 
         Kss = kernel(x, x)  # [num_test, num_test]
         Kss *= 1 / (delta * num_data)
@@ -89,19 +93,20 @@ def predict(
         # Kxs *= 1 / (delta)
         print("Kxs {}".format(Kxs.shape))
 
+        f_mean = Kxs.T @ alpha
         A = torch.cholesky_solve(Kxs, U)  # [M, N]
         print("A {}".format(A.shape))
 
         # conditional mean
-        f_mean = A.T @ Y_train  # [N]
+        #f_mean = A.T @ Y_train  # [N]
         print("f_mean {}".format(f_mean.shape))
 
         # compute the covariance due to the conditioning
         if full_cov:
-            f_var = Kss - torch.matmul(A.T, A)
+            f_var = Kss - Kxs.T @ beta @ Kxs
         else:
             Kss = torch.diag(Kss)
-            f_var = Kss - torch.sum(torch.square(A), 0)
+            f_var = Kss - torch.diag(Kxs.T @ beta @ Kxs)
         print("f_var {}".format(f_var.shape))
 
         return Prediction(mean=f_mean, var=f_var, noise_var=0)
@@ -170,7 +175,7 @@ def train(
             [torch.square(param.view(-1)) for param in network.parameters()]
         )
         # l2r = 0.5 * torch.sum(torch.sum(jnp.square(p)) for p in jtu.tree_leaves(params))
-        l2r = 0.5 * torch.mean(squared_params)
+        l2r = 0.5 * torch.sum(squared_params)
         # print("params {}".format(params))
         # num_params = params.shape[0]
         # # print("num_params {}".format(num_params))
@@ -185,7 +190,7 @@ def train(
         # print("l2_norm {}".format(1 / (2 * l2_decay**2) * l2_norm.sum()))
         # # return loss_fn(x, y) + 1 / (2 * l2_decay**2) * l2_norm.sum()
         y_pred = network(x)
-        return loss_fn(y_pred, y) + delta * l2r
+        return 0.5 * loss_fn(y_pred, y) + delta * l2r
 
     data_loader = torch.utils.data.DataLoader(
         torch.utils.data.TensorDataset(*data),
@@ -227,33 +232,33 @@ if __name__ == "__main__":
             x * 10
         )  # + x**2 +np.log(5*x + 0.00001)  + 0.5
         if noise == True:
-            y = f + torch.randn(size=(x.shape)) * 0.2
+            y = f + torch.randn(size=(x.shape)) * 0.4
             return y
         else:
             return f
 
     # delta = 0.1
-    delta = 0.8
+    delta = 0.0001
     # delta = 0.00001
     # delta = 1000
     # delta = 0.1
     # delta = 1.0
     network = torch.nn.Sequential(
-        torch.nn.Linear(1, 64),
-        torch.nn.ReLU(),
-        torch.nn.Linear(64, 64),
-        torch.nn.ReLU(),
-        torch.nn.Linear(64, 1),
+        torch.nn.Linear(1, 25),
+        torch.nn.Tanh(),
+        torch.nn.Linear(25, 25),
+        torch.nn.Tanh(),
+        torch.nn.Linear(25, 1),
     )
     print("network: {}".format(network))
-    noise_var = torch.nn.parameter.Parameter(torch.Tensor([1]), requires_grad=True)
+    noise_var = torch.nn.parameter.Parameter(torch.Tensor([0]), requires_grad=True)
 
     # X_train = torch.rand((50, 1)) * 2 - 1
     # X_train = torch.rand((50, 1)) * 2
     X_train = torch.rand((100, 1)) * 2
     # X_train = torch.linspace(-1, 1, 50, dtype=torch.float64).reshape(-1, 1)
     # Y_train = func(X_train, noise=True)
-    Y_train = func(X_train, noise=False)
+    Y_train = func(X_train, noise=True)
     data = (X_train, Y_train)
     print("X, Y: {}, {}".format(X_train.shape, Y_train.shape))
     # X_test = torch.linspace(-1.8, 1.8, 200, dtype=torch.float64).reshape(-1, 1)
@@ -269,15 +274,15 @@ if __name__ == "__main__":
         network=network,
         noise_var=noise_var,
         data=data,
-        num_epochs=5000,
+        num_epochs=2500,
         batch_size=batch_size,
-        learning_rate=1e-3,
+        learning_rate=1e-2,
         loss_fn=torch.nn.MSELoss(),
         delta=delta,
     )
 
     pred = predict(
-        network=network, train_data=(X_train, Y_train), delta=delta, noise_var=noise_var
+        network=network, train_data=(X_train, Y_train), delta=delta, noise_var=0
     )(X_test)
     # print("pred {}".format(pred))
     import matplotlib.pyplot as plt
@@ -311,4 +316,4 @@ if __name__ == "__main__":
     )
     plt.legend()
     plt.savefig("nn2gp.pdf", transparent=True)
-    # plt.plot(X_train, Y_train)
+    plt.plot(X_train, Y_train)

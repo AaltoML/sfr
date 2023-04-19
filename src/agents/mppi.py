@@ -105,7 +105,10 @@ def init(
 
     @torch.no_grad()
     def select_action_fn(
-        state: State, data_new: dict = None, eval_mode: bool = False, t0: bool = True
+        state: State,
+        data_new: dict = {"transition": None, "reward": None},
+        eval_mode: bool = False,
+        t0: bool = True,
     ):
         # estimate_value_compiled = torch.compile(estimate_value)
         # if isinstance(state, np.ndarray):

@@ -120,24 +120,26 @@ def train(cfg: DictConfig):
                     # dtype=env.action_spec().dtype
                 )
             else:
-                # if cfg.online_updates and t > 0:
-                if cfg.online_updates and t > 1:
-                    transition_data_new = (state_action_inputs, state_diff_outputs)
-                    reward_data_new = (state_action_inputs, reward_outputs)
+                if cfg.online_updates and t > 0:
+                    # if cfg.online_updates and t > 1:
+                    # transition_data_new = (state_action_inputs, state_diff_outputs)
+                    # reward_data_new = (state_action_inputs, reward_outputs)
+                    transition_data_new = (state_action_input, state_diff_output)
+                    reward_data_new = (state_action_input, reward_output)
+                    data_new = {
+                        "transition": transition_data_new,
+                        "reward": reward_data_new,
+                    }
                     # print("USING new data")
                 else:
-                    transition_data_new = None
-                    reward_data_new = None
-                    # data_new = None
+                    # transition_data_new = None
+                    # reward_data_new = None
+                    data_new = {"transition": None, "reward": None}
                 # TODO data_new should only be one input
                 # data_new = None
                 action = agent.select_action(
                     time_step.observation,
-                    # data_new=data_new,
-                    data_new={
-                        "transition": transition_data_new,
-                        "reward": reward_data_new,
-                    },
+                    data_new=data_new,
                     eval_mode=False,
                     t0=time_step.step_type == StepType.FIRST,
                 )

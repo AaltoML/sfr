@@ -122,14 +122,22 @@ def train(cfg: DictConfig):
             else:
                 # if cfg.online_updates and t > 0:
                 if cfg.online_updates and t > 1:
-                    data_new = (state_action_inputs, state_diff_outputs)
+                    transition_data_new = (state_action_inputs, state_diff_outputs)
+                    reward_data_new = (state_action_inputs, reward_outputs)
                     # print("USING new data")
                 else:
-                    data_new = None
+                    transition_data_new = None
+                    reward_data_new = None
+                    # data_new = None
+                # TODO data_new should only be one input
                 # data_new = None
                 action = agent.select_action(
                     time_step.observation,
-                    data_new=data_new,
+                    # data_new=data_new,
+                    data_new={
+                        "transition": transition_data_new,
+                        "reward": reward_data_new,
+                    },
                     eval_mode=False,
                     t0=time_step.step_type == StepType.FIRST,
                 )
@@ -146,6 +154,7 @@ def train(cfg: DictConfig):
 
             time_step = env.step(action)
 
+            reward_output = torch.Tensor([time_step["reward"]]).to(cfg.device)
             state_action_input = torch.concatenate(
                 [state, torch.Tensor(time_step["action"]).to(cfg.device)], -1
             )[None, ...]
@@ -155,7 +164,9 @@ def train(cfg: DictConfig):
             if t == 0:
                 state_action_inputs = state_action_input
                 state_diff_outputs = state_diff_output
+                reward_outputs = reward_output
             else:
+                reward_outputs = torch.concat([reward_outputs, reward_output], 0)
                 state_action_inputs = torch.concat(
                     [state_action_inputs, state_action_input], 0
                 )

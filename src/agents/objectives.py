@@ -72,14 +72,14 @@ def greedy(
             return state_trajectory
 
     def greedy_fn(
-        start_state: State, actions: ActionTrajectory, data_new=None
+        start_state: State, actions: ActionTrajectory, data_new: dict = None
     ) -> TensorType[""]:
         """Estimate value of a trajectory starting at state and executing given actions."""
         state = start_state
         # print("start_state: {}".format(start_state.shape))
         G, discount = 0, 1
         state_trajectory = rollout(
-            start_state=start_state, actions=actions, data_new=data_new
+            start_state=start_state, actions=actions, data_new=data_new["transition"]
         )
         # print("state_trajectory: {}".format(state_trajectory.shape))
         # next_state_prediction = transition_model.predict(state, actions[t])
@@ -88,7 +88,7 @@ def greedy(
             G += (
                 discount
                 * reward_model.predict(
-                    state_trajectory[t], actions[t], data_new=data_new
+                    state_trajectory[t], actions[t], data_new=data_new["reward"]
                 ).reward_mean
             )
             discount *= gamma

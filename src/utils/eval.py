@@ -23,6 +23,7 @@ def evaluate(
         if video:
             video.init(env, enabled=(i == 0))
         while not time_step.last():
+            # TODO add data_new here
             action = agent.select_action(
                 time_step.observation, eval_mode=True, t0=time_step.first()
             )

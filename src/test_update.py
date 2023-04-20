@@ -48,8 +48,8 @@ def train(cfg: DictConfig):
 
     def func(x, noise=True):
         # x = x + 1e-6
-        f = torch.sin(x * 5) / x + torch.cos(
-            x * 10
+        f = (
+            torch.sin(x * 5) / x + torch.cos(x * 10) + 3
         )  # + x**2 +np.log(5*x + 0.00001)  + 0.5
         if noise == True:
             y = f + torch.randn(size=(x.shape)) * 0.2

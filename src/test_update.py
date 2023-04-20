@@ -156,35 +156,37 @@ def train(cfg: DictConfig):
         label=r"$\mu_{old}(\cdot) \pm 1.98\sigma_{old}$",
     )
 
-    meanp_new, meanZ, varZ = predict(X_test, data_new=data_new)
+    # meanp_new, meanZ, varZ = predict(X_test, data_new=data_new)
+    # pred = predict(X_test, data_new=data_new)
+    mean_new, var_new, noise_var = predict(X_test, data_new=data_new)
     # pred = likelihood(svgp(X_test))
 
-    plt.plot(Z[:, 0], meanZ)
-    # print("pred mean_new {}".format(mean_new.shape))
-    #print("pred var_new {}".format(var_new.shape))
-    # plt.scatter(Z, torch.ones_like(Z) * -2.5, color="k", marker="|", label="Z")
+    # plt.plot(Z[:, 0], meanZ)
+    print("pred mean_new {}".format(mean_new.shape))
+    print("pred var_new {}".format(var_new.shape))
+    plt.scatter(Z, torch.ones_like(Z) * -2.5, color="k", marker="|", label="Z")
     plt.scatter(X_new, Y_new, color="r", marker="o", alpha=0.6, label="New data")
-    # plt.plot(
-    #     X_test[:, 0], mean_new.detach().numpy(), color="m", label=r"$\mu_{new}(\cdot)$"
-    # )
-    plt.fill_between(
-        Z[:, 0],
-        meanZ - 1.98 * np.sqrt(np.diag(varZ)),
-        # pred.mean[:, 0],
-        meanZ + 1.98 * np.sqrt(np.diag(varZ)),
-        color="m",
-        alpha=0.2,
-        label=r"$\mu_{new}(\cdot) \pm 1.98\sigma_{new}$",
+    plt.plot(
+        X_test[:, 0], mean_new.detach().numpy(), color="m", label=r"$\mu_{new}(\cdot)$"
     )
     # plt.fill_between(
-    #     X_test.squeeze(),
-    #     pred.mean.squeeze() - 1.98 * torch.sqrt(pred.var),
+    #     Z[:, 0],
+    #     meanZ - 1.98 * np.sqrt(np.diag(varZ)),
     #     # pred.mean[:, 0],
-    #     pred.mean.squeeze() + 1.98 * torch.sqrt(pred.var),
-    #     color="c",
+    #     meanZ + 1.98 * np.sqrt(np.diag(varZ)),
+    #     color="m",
     #     alpha=0.2,
-    #     label=r"$\mu(\cdot) \pm 1.98\sigma$",
+    #     label=r"$\mu_{new}(\cdot) \pm 1.98\sigma_{new}$",
     # )
+    plt.fill_between(
+        X_test.squeeze(),
+        mean_new.squeeze() - 1.98 * torch.sqrt(var_new),
+        # pred.mean[:, 0],
+        mean_new.squeeze() + 1.98 * torch.sqrt(var_new),
+        color="c",
+        alpha=0.2,
+        label=r"$\mu(\cdot) \pm 1.98\sigma$",
+    )
 
     # mean, var, noise_var = predict(X_test, data_new=data_new)
     plt.legend()

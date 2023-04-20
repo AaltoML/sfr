@@ -1,12 +1,14 @@
 #!/usr/bin/env python3
 import logging
-from typing import Optional
+from typing import Optional, Union
 from copy import deepcopy
 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+from gpytorch.lazy import DiagLazyTensor, CholLazyTensor, TriangularLazyTensor
+from torchtyping import TensorType
 import gpytorch
 import torch
 import torch.distributions as td
@@ -389,65 +391,45 @@ def predict(
                 X, Y = data_new
 
                 # TODO how to handle diff Z on each output_dim??
-                var_dist = svgp.variational_strategy.variational_distribution
+                # var_dist = svgp.variational_strategy.variational_distribution
                 Z = svgp.variational_strategy.inducing_points
-                print("var_dist.mean {}".format(var_dist.mean.shape))
-                print("var_dist.mean {}".format(var_dist.lazy_covariance_matrix.shape))
+                num_inducing = Z.size(-2)
+                # print("var_dist.mean {}".format(var_dist.mean.shape))
+                # print("var_dist.cov {}".format(var_dist.lazy_covariance_matrix.shape))
 
                 # GPyTorch's way of computing Kuf:
                 full_inputs = torch.cat([Z, X], dim=-2)
                 full_covar = svgp.covar_module(full_inputs)
-                print("full_inputs {}".format(full_inputs.shape))
-                print("full_covar {}".format(full_covar.shape))
+                Kuu = full_covar[..., :num_inducing, :num_inducing].add_jitter()
+                Kuf = full_covar[..., :num_inducing, num_inducing:].evaluate()
+                # print("full_inputs {}".format(full_inputs.shape))
+                # print("Kuu {}".format(Kuu.shape))
+                # print("K_uf {".format(Kuf.shape))
+                # print("full_covar {}".format(full_covar.shape))
 
-                # Covariance terms
-                num_induc = Z.size(-2)
-                induc_induc_covar = full_covar[..., :num_induc, :num_induc].add_jitter()
-                induc_data_covar = full_covar[..., :num_induc, num_induc:].evaluate()
-                print("induc_data_covar {}".format(induc_data_covar.shape))
-                print("induc_induc_covar {}".format(induc_induc_covar.shape))
-
-                K_uf = induc_data_covar
-                Kuu = induc_induc_covar
-                print("Kuu {}".format(Kuu.shape))
-                print("K_uf {}".format(K_uf.shape))
-
-                from gpytorch.lazy import (
-                    DiagLazyTensor,
-                    CholLazyTensor,
-                    TriangularLazyTensor,
-                )
-
-                var_cov_root = TriangularLazyTensor(
-                    deepcopy(svgp.variational_strategy._variational_distribution.chol_variational_covar)
-                )
-                var_cov = CholLazyTensor(var_cov_root)
-
-                var_mean = (
-                    svgp.variational_strategy.variational_distribution.mean
-                )
+                # var_cov_root = TriangularLazyTensor(
+                #     deepcopy(
+                #         svgp.variational_strategy._variational_distribution.chol_variational_covar
+                #     )
+                # )
+                # var_cov = CholLazyTensor(var_cov_root)
 
                 f = svgp(Z)
-
-                L = torch.linalg.cholesky(deepcopy(f.covariance_matrix))
-                var_cov = CholLazyTensor(L)
-
-
-                lambda_1, lambda_2 = mean_cov_to_natural_param(
-                    deepcopy(f.mean), var_cov, deepcopy(Kuu)
+                # L =
+                var_cov = CholLazyTensor(
+                    torch.linalg.cholesky(deepcopy(f.covariance_matrix))
                 )
-
-
+                lambda_1, lambda_2 = mean_cov_to_natural_param(
+                    # deepcopy(f.mean), var_cov, deepcopy(Kuu)
+                    f.mean,
+                    var_cov,
+                    Kuu,
+                )
 
                 new_mean, new_cov = conditional_from_precision_sites_white_full(
                     Kuu, lambda_1, lambda_2, jitter=jitter
                 )
 
-
-                #np.testing.assert_array_almost_equal(var_mean.numpy(),new_mean.numpy().squeeze(),decimal=3)
-                #np.testing.assert_array_almost_equal(var_cov.numpy(), new_cov.numpy(), decimal=2)
-
-                #
                 # online_update
                 for _ in range(1):  # TODO: make parameter
                     with torch.no_grad():
@@ -501,15 +483,13 @@ def predict(
                     print("grad_nat_2 {}".format(grad_nat_2))
 
                     # grad_mu_1 = torch.einsum("bmc, cb -> bm", K_uf, grad_nat_1)
-                    grad_mu_1 = torch.einsum("mc, c -> m", K_uf, grad_nat_1)
-                    grad_mu_1 = K_uf.matmul(grad_nat_1)
+                    # grad_mu_1 = torch.einsum("mc, c -> m", K_uf, grad_nat_1)
+                    grad_mu_1 = Kuf.matmul(grad_nat_1)
 
-                    K_fu = K_uf.T
-                    grad_mu_2 = K_uf @ torch.diag_embed(grad_nat_2.T) @ K_fu
+                    Kfu = Kuf.T
+                    grad_mu_2 = Kuf @ torch.diag_embed(grad_nat_2.T) @ Kfu
                     print("grad_mu_1 {}".format(grad_mu_1.shape))
                     print("grad_mu_2 {}".format(grad_mu_2.shape))
-
-                    scale = 1.0
 
                     lambda_1_t_new = grad_mu_1[..., None]
                     lambda_2_t_new = (-2) * grad_mu_2
@@ -524,85 +504,35 @@ def predict(
                     )
                     print("new_mean {}".format(new_mean.shape))
                     print("new_cov {}".format(new_cov.shape))
-                    new_mean = new_mean.squeeze(-1)
+                    new_mean = new_mean[..., 0]
                     print("new_mean {}".format(new_mean.shape))
 
-                    #with torch.no_grad():
-                        # var_dist
-                        # var_dist.mean.set_(new_mean)
-                        # var_dist.covariance_matrix.set_(new_cov)
-                        # svgp.variational_strategy.variational_distribution.mean.set_(
-                        #     new_mean
-                        # )
-                        # svgp.variational_strategy._variational_distribution.variational_mean.set_(
-                        #     new_mean
-                        # )
-                        # svgp.variational_strategy._variational_distribution.chol_variational_covar.set_(
-                        #     new_cov.cholesky()
-                        # )
-                        # svgp.variational_strategy.variational_distribution.covariance_matrix.set_(
-                        #     new_cov
-                        # )
-                    # svgp_new = SVGP(
-                    #     inducing_points=Z,
-                    #     mean_module=svgp.mean_module,
-                    #     covar_module=svgp.covar_module,
-                    #     learn_inducing_locations=False,
-                    # )
+                    full_cov = False
+                    white = False
 
-                    # f = svgp(
-                    #     x,
-                    #     inducing_points=Z,
-                    #     inducing_values=new_mean,
-                    #     variational_inducing_covar=new_cov,
-                    #     # inducing_values=variational_dist_u.mean,
-                    #     # variational_inducing_covar=variational_dist_u.lazy_covariance_matrix,
-                    #     # **kwargs,
-                    # )
-                    # # If we're in prior mode, then we're done!
-                    # if prior:
-                    #     return self.model.forward(x, **kwargs)
-
-                    # Delete previously cached items from the training distribution
-                    # if self.training:
-                    #     self._clear_cache()
-                    # (Maybe) initialize variational distribution
-                    # if (
-                    #     not svgp.variational_strategy.variational_params_initialized.item()
-                    # ):
-                    #     print("Not initialized")
-                    #     prior_dist = svgp.prior_distribution
-                    #     svgp.variational_strategy._variational_distribution.initialize_variational_distribution(
-                    #         prior_dist
-                    #     )
-                    #     svgp.variational_strategy.variational_params_initialized.fill_(
-                    #         1
-                    #     )
-                    #
-                    # # Ensure inducing_points and x are the same size
-                    # inducing_points = svgp.variational_strategy.inducing_points
-                    # if inducing_points.shape[:-2] != x.shape[:-2]:
-                    #     x, inducing_points = svgp.variational_strategy._expand_inputs(
-                    #         x, inducing_points
-                    #     )
-
-                    # Get p(u)/q(u)
-                    # variational_dist_u = svgp.variational_distribution
-
-                    # Get q(f)
-                    # return super().__call__(
-                    #     x,
-                    #     inducing_points,
-                    #     inducing_values=new_mean,
-                    #     variational_inducing_covar=new_cov,
-                    #     # **kwargs,
-                    # )
-                    x_t, y_t = data_new
-
-                    K_tZ = svgp.covar_module(x,Z)
-                    K_ZZ = svgp.covar_module(Z)
-                    f_test = K_tZ @ torch.linalg.solve(K_ZZ, new_mean)
-
+                    if full_cov:
+                        Knn = svgp.covar_module(x, x).evaluate()
+                    else:
+                        Knn = svgp.covar_module(x, diag=True)
+                    # Knn += torch.eye(Knn.shape[-1]) * jitter
+                    print("Knn {}".format(Knn.shape))
+                    Kmn = svgp.covar_module(Z, x).evaluate()
+                    print("Kmn {}".format(Kmn.shape))
+                    Kmm = svgp.covar_module(Z).evaluate()
+                    Kmm += torch.eye(Kmm.shape[-1]) * jitter
+                    print("Kmm {}".format(Kmm.shape))
+                    Lm = torch.linalg.cholesky(Kmm, upper=False)
+                    print("Lm {}".format(Lm.shape))
+                    q_sqrt = torch.linalg.cholesky(new_cov, upper=False)
+                    f_mean, f_var = base_conditional_with_lm(
+                        Kmn=Kmn,
+                        Lm=Lm,
+                        Knn=Knn,
+                        f=new_mean,
+                        full_cov=full_cov,
+                        q_sqrt=q_sqrt,
+                        white=white,
+                    )
 
                     # outputs = svgp.variational_strategy.forward(
                     #     x,
@@ -617,7 +547,8 @@ def predict(
                     # # f.mean = f_test
                     # # f.variance = torch.zeros_like(f_test)
 
-                    return f_test, new_mean.numpy(), new_cov.numpy() #var_mean.detach().numpy() #new_mean
+                    # f =Prediction(mean=f_mean,var,f_var,noise_var=0.)
+                    return f_mean, f_var, 0
 
             else:
                 f = svgp(x)
@@ -631,6 +562,61 @@ def predict(
             return f.mean, f.variance, noise_var
 
     return predict_fn
+
+
+def base_conditional_with_lm(
+    Kmn: TensorType["NumInducing", "NumData"],
+    Lm: TensorType["NumInducing", "NumInducing"],
+    Knn: Union[TensorType["NumData", "NumData"], TensorType["NumData"]],
+    f: TensorType["NumInducing"],
+    full_cov: Optional[bool] = False,
+    q_sqrt: Optional[
+        Union[TensorType["NumInducing", "NumInducing"], TensorType["NumInducing"]]
+    ] = None,
+    white: Optional[bool] = False,
+):
+    """Same as base_conditional but expects the cholesky Lm instead of Kmm = Lm Lm.T
+
+    Lm can be precomputed, improving performance.
+    """
+    A = torch.linalg.solve_triangular(Lm, Kmn, upper=False)  # [M, N]
+    print("A")
+    print(A.shape)
+    # print(Knn.shape)
+
+    # compute the covariance due to the conditioning
+    if full_cov:
+        fvar = Knn - torch.matmul(A.T, A)
+    else:
+        fvar = Knn - torch.sum(torch.square(A), 0)
+    print("fvar: {}".format(fvar.shape))
+
+    # another backsubstitution in the unwhitened case
+    if not white:
+        A = torch.linalg.solve_triangular(Lm.T, A, upper=True)  # [M, N]
+        print("A: {}".format(A.shape))
+
+    # conditional mean
+    fmean = A.T @ f  # [N]
+    print("fmean: {}".format(fmean.shape))
+
+    # covariance due to inducing variables
+    if q_sqrt is not None:
+        if q_sqrt.ndim == 1:
+            LTA = q_sqrt[..., None] * A  # [M, N]
+        elif q_sqrt.ndim == 2:
+            LTA = q_sqrt.T @ A  # [M, N]
+        else:
+            raise ValueError("Bad dimension for q_sqrt: %s" % str(q_sqrt.ndim))
+        print("LTA: {}".format(LTA.shape))
+
+        if full_cov:
+            fvar = fvar + LTA.T @ LTA  # [N, N]
+        else:
+            fvar = fvar + torch.sum(torch.square(LTA), 0)  # [N]
+        print("fvar yo you: {}".format(fvar.shape))
+
+    return fmean, fvar
 
 
 def train(
@@ -729,13 +715,11 @@ def mean_cov_to_natural_param(mu, Su, K_uu):
     """
     # print("mu {}".format(mu.shape))
     # mu = torch.unsqueeze(mu, dim=2)
-    #Su = Su @ Su.T
+    # Su = Su @ Su.T
     mu = torch.unsqueeze(mu, dim=-1)
     # print("mu {}".format(mu.shape))
     lamb1 = K_uu.matmul(Su.inv_matmul(mu))
     lamb2 = K_uu.matmul(Su.inv_matmul(K_uu.evaluate())) - K_uu.evaluate()
-
-
 
     return lamb1, lamb2
 

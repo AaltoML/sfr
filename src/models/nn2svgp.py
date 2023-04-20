@@ -61,6 +61,8 @@ def predict(
 
     X_train, Y_train = train_data
 
+    Z = torch.linspace(0, 2.5, 50)[:, torch.newaxis]
+
     num_data = X_train.shape[0]
 
     # Kxx = (1 / delta**2) * kernel(X_train, X_train)  # [num_train, num_train]
@@ -73,8 +75,8 @@ def predict(
     # + jnp.eye(X.shape[-2], dtype=X.dtype) * default_jitter()
     print("Kxx {}".format(Kxx))
     print("Kxx {}".format(Kxx.shape))
-    B = Kxx + torch.eye(Kxx.shape[-1])
-    U = torch.linalg.cholesky(Kxx + torch.eye(Kxx.shape[-1]))  # [num_train, num_train]
+    B = Kxx + 2 * torch.eye(Kxx.shape[-1])
+    U = torch.linalg.cholesky(Kxx + 2*torch.eye(Kxx.shape[-1]))  # [num_train, num_train]
     #print("U {}".format(U.shape))
 
     def predict_fn(x, full_cov: bool = False) -> Prediction:
@@ -306,18 +308,14 @@ if __name__ == "__main__":
     plt.savefig("nn.pdf", transparent=True)
     plt.plot(X_test, pred.mean, color="c", label=r"$\mu(\cdot)$")
     plt.fill_between(
-        X_test.squeeze(),
-        pred.mean.squeeze() - 1.98 * torch.sqrt(pred.var),
+        X_test[:, 0],
+        (pred.mean - 1.98 * torch.sqrt(pred.var))[:, 0],
         # pred.mean[:, 0],
-        pred.mean.squeeze() + 1.98 * torch.sqrt(pred.var),
+        (pred.mean + 1.98 * torch.sqrt(pred.var))[:, 0],
         color="c",
         alpha=0.2,
         label=r"$\mu(\cdot) \pm 1.98\sigma$",
     )
     plt.legend()
     plt.savefig("nn2gp.pdf", transparent=True)
-    #plt.plot(X_train, Y_train)
-
-    fig = plt.subplots(1, 1)
-    plt.plot(X_test[:, 0], pred.var)
-    plt.savefig("var.pdf", transparent=True)
+    plt.plot(X_train, Y_train)

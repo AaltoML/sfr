@@ -6,7 +6,7 @@ from typing import Callable, NamedTuple
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-from custom_types import Action, State, StatePrediction, Data
+from src.custom_types import Action, StatePrediction, State, Data
 from torch.utils.data import DataLoader
 
 

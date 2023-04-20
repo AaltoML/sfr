@@ -108,7 +108,7 @@ def train(cfg: DictConfig):
         svgp=svgp,
         likelihood=likelihood,
     )
-    num_epochs = 2000
+    num_epochs = 1000
     print(likelihood.noise)
     src.models.svgp.train(
         svgp=svgp,
@@ -156,20 +156,22 @@ def train(cfg: DictConfig):
         label=r"$\mu_{old}(\cdot) \pm 1.98\sigma_{old}$",
     )
 
-    mean_new, var_new, noise_var_new = predict(X_test, data_new=data_new)
+    meanp_new, meanZ, varZ = predict(X_test, data_new=data_new)
     # pred = likelihood(svgp(X_test))
-    print("pred mean_new {}".format(mean_new.shape))
-    print("pred var_new {}".format(var_new.shape))
+
+    plt.plot(Z[:, 0], meanZ)
+    # print("pred mean_new {}".format(mean_new.shape))
+    #print("pred var_new {}".format(var_new.shape))
     # plt.scatter(Z, torch.ones_like(Z) * -2.5, color="k", marker="|", label="Z")
     plt.scatter(X_new, Y_new, color="r", marker="o", alpha=0.6, label="New data")
-    plt.plot(
-        X_test[:, 0], mean_new.detach().numpy(), color="m", label=r"$\mu_{new}(\cdot)$"
-    )
+    # plt.plot(
+    #     X_test[:, 0], mean_new.detach().numpy(), color="m", label=r"$\mu_{new}(\cdot)$"
+    # )
     plt.fill_between(
-        X_test[:, 0],
-        (mean_new.detach() - 1.98 * torch.sqrt(var_new.detach())),
+        Z[:, 0],
+        meanZ - 1.98 * np.sqrt(np.diag(varZ)),
         # pred.mean[:, 0],
-        (mean_new.detach() + 1.98 * torch.sqrt(var_new.detach())),
+        meanZ + 1.98 * np.sqrt(np.diag(varZ)),
         color="m",
         alpha=0.2,
         label=r"$\mu_{new}(\cdot) \pm 1.98\sigma_{new}$",

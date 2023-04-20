@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import logging
-import math
 from typing import Optional
 
 
@@ -11,10 +10,11 @@ import gpytorch
 import torch
 import torch.distributions as td
 import wandb
-from custom_types import Prediction
 from functorch import jacrev
+from gpytorch.module import _validate_module_outputs
+from src.custom_types import Prediction
+from src.utils import EarlyStopper
 from torch.utils.data import DataLoader
-from utils import EarlyStopper
 
 
 class SVGP(gpytorch.models.ApproximateGP):
@@ -111,14 +111,16 @@ def predict(
     svgp: SVGP,
     likelihood: gpytorch.likelihoods.Likelihood,
     # jitter: float = 0.0,
-    jitter: float = 1e-5,
+    # jitter: float = 1e-5,
+    jitter: float = 1e-9,
     # learning_rate: float = 0.8,
-    learning_rate: float = 1.0,
+    # learning_rate: float = 1.0,
 ):
+    learning_rate = 1.0
     if svgp.is_multi_output:
 
         def predict_fn(x, data_new: Optional = None) -> Prediction:
-            # print("out_size>0")
+            print("out_size>0")
             svgp.eval()
             likelihood.eval()
             if data_new != None:
@@ -136,6 +138,8 @@ def predict(
                 Z = svgp.variational_strategy.base_variational_strategy.inducing_points[
                     0, ...
                 ]
+                print("var_dist.mean {}".format(var_dist.mean.shape))
+                print("var_dist.mean {}".format(var_dist.lazy_covariance_matrix.shape))
                 # print("Z={}".format(Z.shape))
 
                 # GPyTorch's way of computing Kuf:
@@ -332,8 +336,8 @@ def predict(
 
                     lambda_1_new = lambda_1 - lambda_1_t + lambda_1_t_new
                     lambda_2_new = lambda_2 - lambda_2_t + lambda_2_t_new
-                    # print("lambda_1_new {}".format(lambda_1_new))
-                    # print("lambda_2_new {}".format(lambda_2_new))
+                    print("lambda_1_new {}".format(lambda_1_new.shape))
+                    print("lambda_2_new {}".format(lambda_2_new.shape))
 
                     # print("jitter {}".format(jitter))
                     new_mean, new_cov = conditional_from_precision_sites_white_full(
@@ -343,12 +347,21 @@ def predict(
                         jitter=jitter,
                         # jitter=getattr(self, "tsvgp_jitter", 0.0),
                     )
+                    print("new_mean {}".format(new_mean.shape))
+                    print("new_cov {}".format(new_cov.shape))
                     new_mean = new_mean.squeeze(-1)
+                    print("new_mean {}".format(new_mean.shape))
 
                     with torch.no_grad():
                         # var_dist
-                        var_dist.mean.set_(new_mean)
-                        var_dist.covariance_matrix.set_(new_cov)
+                        svgp.variational_strategy.base_variational_strategy.variational_distribution.mean.set_(
+                            new_mean
+                        )
+                        svgp.variational_strategy.base_variational_strategy.variational_distribution.covariance_matrix.set_(
+                            new_cov
+                        )
+                        # var_dist.mean.set_(new_mean)
+                        # var_dist.covariance_matrix.set_(new_cov)
 
                     lambda_1 = lambda_1_new
                     lambda_2 = lambda_2_new
@@ -365,8 +378,9 @@ def predict(
 
     else:
 
+        @torch.no_grad()
         def predict_fn(x, data_new: Optional = None) -> Prediction:
-            # print("out_size=0")
+            print("out_size=0")
             svgp.eval()
             likelihood.eval()
             if data_new != None:
@@ -375,24 +389,26 @@ def predict(
                 # TODO how to handle diff Z on each output_dim??
                 var_dist = svgp.variational_strategy.variational_distribution
                 Z = svgp.variational_strategy.inducing_points
+                print("var_dist.mean {}".format(var_dist.mean.shape))
+                print("var_dist.mean {}".format(var_dist.lazy_covariance_matrix.shape))
 
                 # GPyTorch's way of computing Kuf:
                 full_inputs = torch.cat([Z, X], dim=-2)
                 full_covar = svgp.covar_module(full_inputs)
-                # print("full_inputs {}".format(full_inputs.shape))
-                # print("full_covar {}".format(full_covar.shape))
+                print("full_inputs {}".format(full_inputs.shape))
+                print("full_covar {}".format(full_covar.shape))
 
                 # Covariance terms
                 num_induc = Z.size(-2)
                 induc_induc_covar = full_covar[..., :num_induc, :num_induc].add_jitter()
                 induc_data_covar = full_covar[..., :num_induc, num_induc:].evaluate()
-                # print("induc_data_covar {}".format(induc_data_covar.shape))
-                # print("induc_induc_covar {}".format(induc_induc_covar.shape))
+                print("induc_data_covar {}".format(induc_data_covar.shape))
+                print("induc_induc_covar {}".format(induc_induc_covar.shape))
 
                 K_uf = induc_data_covar
                 Kuu = induc_induc_covar
-                # print("Kuu {}".format(Kuu.shape))
-                # print("K_uf {}".format(K_uf.shape))
+                print("Kuu {}".format(Kuu.shape))
+                print("K_uf {}".format(K_uf.shape))
 
                 lambda_1, lambda_2 = mean_cov_to_natural_param(
                     var_dist.mean, var_dist.lazy_covariance_matrix, Kuu
@@ -409,9 +425,11 @@ def predict(
                         var = pred.variance  # [num_new]
                     mean.requires_grad_()
                     var.requires_grad_()
-                    # print("mean 1 {}".format(mean.shape))
-                    # print("var 1 {}".format(var.shape))
-                    # print("Y {}".format(Y.shape))
+                    print("mean 1 {}".format(mean.shape))
+                    print("var 1 {}".format(var.shape))
+                    print("Y {}".format(Y.shape))
+
+                    assert Y.ndim == 1
 
                     def predict_ve(mean, var):
                         # print("mean you {}".format(mean.shape))
@@ -422,38 +440,60 @@ def predict(
                         # f_dist = gpytorch.distributions.MultitaskMultivariateNormal.from_batch_mvn(
                         #     f_dist_b
                         #
-                        # print("f_dist_b {}".format(f_dist_b))
+                        print("f_dist_b {}".format(f_dist_b))
                         ve_terms = likelihood.expected_log_prob(
                             Y, f_dist_b
                         )  # TODO: Is this right?
-                        # print("ve_terms {}".format(ve_terms.shape))
+                        print("ve_terms {}".format(ve_terms.shape))
                         ve = (
                             ve_terms.sum()
                         )  # TODO: CHECK: divide by num_data ? but only one point at a time so probably fine
-                        # print("ve {}".format(ve.shape))
+                        print("ve {}".format(ve.shape))
                         return ve
 
+                    # f_dist_b = gpytorch.distributions.MultivariateNormal(
+                    #     mean.T, torch.diag_embed(var.T)
+                    # )  # Mean: num_new x output_dim Cov: num_new x output_dim x output_dim
+                    # ve_terms = likelihood.expected_log_prob(
+                    #     Y, f_dist_b
+                    # )  # TODO: Is this right?
+                    # # print("ve_terms {}".format(ve_terms.shape))
+                    # ve = (
+                    #     ve_terms.sum()
+                    # )  # TODO: CHECK: divide by num_data ? but only one point at a time so probably fine
+                    # # print("ve {}".format(ve.shape))
+
+                    # ve.backward(inputs=[mean, var])
+                    # ve.backward(inputs=[mean, var])
+                    # d_exp_dm = mean.grad  # [batch, N]
+                    # d_exp_dv = var.grad  # [batch, N]
+
                     # print("yo yo")
-                    jac_fn_mean = jacrev(predict_ve)
+                    jac_fn_mean = jacrev(predict_ve, argnums=0)
                     jac_fn_var = jacrev(predict_ve, argnums=1)
                     d_exp_dm = jac_fn_mean(mean, var)  # [num_new, output_dim]
                     d_exp_dv = jac_fn_var(mean, var)  # [num_new, output_dim]
-                    # print("d_exp_dm {}".format(d_exp_dm.shape))
-                    # print("d_exp_dv {}".format(d_exp_dv.shape))
+                    print("d_exp_dm {}".format(d_exp_dm.shape))
+                    print("d_exp_dv {}".format(d_exp_dv.shape))
 
                     eps = 1e-8
                     d_exp_dv.clamp_(max=-eps)
 
                     grad_nat_1 = d_exp_dm - 2.0 * (d_exp_dv * mean)
                     grad_nat_2 = d_exp_dv
-                    # print("grad_nat_1 {}".format(grad_nat_1.shape))
-                    # print("grad_nat_2 {}".format(grad_nat_2.shape))
+                    print("grad_nat_1 {}".format(grad_nat_1.shape))
+                    print("grad_nat_2 {}".format(grad_nat_2.shape))
+                    print("grad_nat_1 {}".format(grad_nat_1))
+                    print("grad_nat_2 {}".format(grad_nat_2))
 
                     # grad_mu_1 = torch.einsum("bmc, cb -> bm", K_uf, grad_nat_1)
                     grad_mu_1 = torch.einsum("mc, c -> m", K_uf, grad_nat_1)
+                    grad_mu_1 = K_uf.matmul(grad_nat_1)
 
                     K_fu = K_uf.T
                     grad_mu_2 = K_uf @ torch.diag_embed(grad_nat_2.T) @ K_fu
+                    print("grad_mu_1 {}".format(grad_mu_1.shape))
+                    print("grad_mu_2 {}".format(grad_mu_2.shape))
 
                     scale = 1.0
 
@@ -464,29 +504,110 @@ def predict(
                         1.0 - learning_rate
                     ) * lambda_2_t + learning_rate * scale * (-2) * grad_mu_2
 
-                    lambda_1_new = lambda_1 - lambda_1_t + lambda_1_t_new
-                    lambda_2_new = lambda_2 - lambda_2_t + lambda_2_t_new
-                    # print("lambda_1_new {}".format(lambda_1_new))
-                    # print("lambda_2_new {}".format(lambda_2_new))
+                    lambda_1_new = lambda_1 + lambda_1_t_new
+                    lambda_2_new = lambda_2 + lambda_2_t_new
+                    print("lambda_1_new {}".format(lambda_1_new.shape))
+                    print("lambda_2_new {}".format(lambda_2_new.shape))
 
                     new_mean, new_cov = conditional_from_precision_sites_white_full(
                         Kuu, lambda_1_new, lambda_2_new, jitter=jitter
                     )
+                    print("new_mean {}".format(new_mean.shape))
+                    print("new_cov {}".format(new_cov.shape))
                     new_mean = new_mean.squeeze(-1)
+                    print("new_mean {}".format(new_mean.shape))
 
                     with torch.no_grad():
                         # var_dist
-                        var_dist.mean.set_(new_mean)
-                        var_dist.covariance_matrix.set_(new_cov)
+                        # var_dist.mean.set_(new_mean)
+                        # var_dist.covariance_matrix.set_(new_cov)
+                        # svgp.variational_strategy.variational_distribution.mean.set_(
+                        #     new_mean
+                        # )
+                        svgp.variational_strategy._variational_distribution.variational_mean.set_(
+                            new_mean
+                        )
+                        svgp.variational_strategy._variational_distribution.chol_variational_covar.set_(
+                            new_cov.cholesky()
+                        )
+                        # svgp.variational_strategy.variational_distribution.covariance_matrix.set_(
+                        #     new_cov
+                        # )
+                    # svgp_new = SVGP(
+                    #     inducing_points=Z,
+                    #     mean_module=svgp.mean_module,
+                    #     covar_module=svgp.covar_module,
+                    #     learn_inducing_locations=False,
+                    # )
 
                     lambda_1 = lambda_1_new
                     lambda_2 = lambda_2_new
                     lambda_1_t = lambda_1_t_new
                     lambda_2_t = lambda_2_t_new
+                    # f = svgp(
+                    #     x,
+                    #     inducing_points=Z,
+                    #     inducing_values=new_mean,
+                    #     variational_inducing_covar=new_cov,
+                    #     # inducing_values=variational_dist_u.mean,
+                    #     # variational_inducing_covar=variational_dist_u.lazy_covariance_matrix,
+                    #     # **kwargs,
+                    # )
+                    # # If we're in prior mode, then we're done!
+                    # if prior:
+                    #     return self.model.forward(x, **kwargs)
+
+                    # Delete previously cached items from the training distribution
+                    # if self.training:
+                    #     self._clear_cache()
+                    # (Maybe) initialize variational distribution
+                    if (
+                        not svgp.variational_strategy.variational_params_initialized.item()
+                    ):
+                        print("Not initialized")
+                        prior_dist = svgp.prior_distribution
+                        svgp.variational_strategy._variational_distribution.initialize_variational_distribution(
+                            prior_dist
+                        )
+                        svgp.variational_strategy.variational_params_initialized.fill_(
+                            1
+                        )
+
+                    # Ensure inducing_points and x are the same size
+                    inducing_points = svgp.variational_strategy.inducing_points
+                    if inducing_points.shape[:-2] != x.shape[:-2]:
+                        x, inducing_points = svgp.variational_strategy._expand_inputs(
+                            x, inducing_points
+                        )
+
+                    # Get p(u)/q(u)
+                    # variational_dist_u = svgp.variational_distribution
+
+                    # Get q(f)
+                    # return super().__call__(
+                    #     x,
+                    #     inducing_points,
+                    #     inducing_values=new_mean,
+                    #     variational_inducing_covar=new_cov,
+                    #     # **kwargs,
+                    # )
+                    outputs = svgp.variational_strategy.forward(
+                        x,
+                        inducing_points,
+                        inducing_values=new_mean,
+                        variational_inducing_covar=new_cov,
+                    )
+                    print("outputs {}".format(outputs))
+
+                    if isinstance(outputs, list):
+                        f = [_validate_module_outputs(output) for output in outputs]
+                    f = _validate_module_outputs(outputs)
+            else:
+                f = svgp(x)
 
             # print("before fail")
             # print(x.shape)
-            f = svgp(x)
+            # f = svgp(x)
             # print(f)
             output = likelihood(f)
             noise_var = output.variance - f.variance
@@ -500,10 +621,11 @@ def train(
     likelihood: gpytorch.likelihoods.Likelihood,
     learning_rate: float = 0.1,
     num_data: int = None,
-    wandb_loss_name: str = "Model loss",
+    wandb_loss_name: str = None,
     early_stopper: EarlyStopper = None,
 ):
-    early_stopper.reset()
+    if early_stopper is not None:
+        early_stopper.reset()
     svgp.train()
     likelihood.train()
 
@@ -514,6 +636,7 @@ def train(
     loss_fn_ = loss_fn(svgp=svgp, likelihood=likelihood, num_data=num_data)
 
     def train_(data_loader: DataLoader, num_epochs: int):
+        stop_flag = False
         svgp.train()
         likelihood.train()
         for epoch in range(num_epochs):
@@ -559,7 +682,8 @@ def train(
                 logger.info(
                     "Epoch : {} | Batch: {} | Loss: {}".format(epoch, batch_idx, loss)
                 )
-                stop_flag = early_stopper(loss)
+                if early_stopper is not None:
+                    stop_flag = early_stopper(loss)
                 if stop_flag:
                     logger.info("Early stopping criteria met, stopping training")
                     break
@@ -626,39 +750,39 @@ def conditional_from_precision_sites_white_full(
     # TODO: rewrite this
     # print("lambda1 {}".format(lambda1.shape))
 
-    # R = (Lambda2 + Kuu).add_jitter(jitter)
     R = Lambda2 + Kuu.evaluate()
     # print("R {}".format(R.shape))
     if R.ndim == 3:
         R += torch.eye(R.shape[-1], device=R.device)[None, ...] * jitter
     else:
         R += torch.eye(R.shape[-1], device=R.device) * jitter
+    R = (Lambda2 + Kuu).add_jitter(jitter)
     # print("R {}".format(R.shape))
 
     # U = torch.cholesky(Lambda2)
     # print("R {}".format(type(R)))
     # print("R {}".format(R))
     # print(R.shape)
-    L = torch.linalg.cholesky(R)
+    # L = torch.linalg.cholesky(R)
     # lambda1 = lambda1.permute(0, 2, 1)
     # print("lambda1 {}".format(lambda1.shape))
     # print("L {}".format(L.shape))
     # mean = torch.matmul(R.inverse(), lambda1)
-    mean = Kuu.matmul(torch.cholesky_solve(lambda1, L))
+    # mean = Kuu.matmul(torch.cholesky_solve(lambda1, L))
     # print("mean {}".format(mean.shape))
     # mean = Kuu.matmul(mean)
     # print("mean {}".format(mean.shape))
     # mean = Kuu.matmul(torch.cholesky_solve(lambda1, U))
     # mean = Kuu.matmul(torch.cholesky_solve(lambda1, U))
-    cov = Kuu.matmul(torch.cholesky_solve(Kuu.evaluate(), L))
+    # cov = Kuu.matmul(torch.cholesky_solve(Kuu.evaluate(), L))
     # print("cov {}".format(cov.shape))
     # cov = cov.matmul(Kuu)
     # print("cov {}".format(cov.shape))
     # cov = Kuu.matmul(torch.cholesky_solve(Kuu.evaluate(), U))
     # mean = A @ A.T
 
-    # mean = Kuu.matmul(R.inv_matmul(lambda1))
-    # cov = Kuu.matmul(R.inv_matmul(Kuu.evaluate()))  # TODO: symmetrise?
+    mean = Kuu.matmul(R.inv_matmul(lambda1))
+    cov = Kuu.matmul(R.inv_matmul(Kuu.evaluate()))  # TODO: symmetrise?
     return mean, cov
 
 

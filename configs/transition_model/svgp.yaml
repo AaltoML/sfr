@@ -22,6 +22,7 @@ svgp:
     batch_shape:
       - ${state_dim}
   learn_inducing_locations: true
+  device: ${device}
 likelihood:
   _target_: gpytorch.likelihoods.MultitaskGaussianLikelihood
   num_tasks: ${state_dim}

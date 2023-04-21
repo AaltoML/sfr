@@ -29,6 +29,7 @@ class SVGP(gpytorch.models.ApproximateGP):
         covar_module: gpytorch.kernels.Kernel,
         learn_inducing_locations: bool = True,
         jitter: float = 0.0,
+        device="cuda",
     ):
         self.learn_inducing_locations = learn_inducing_locations
         if isinstance(covar_module, gpytorch.kernels.MultitaskKernel):
@@ -68,7 +69,7 @@ class SVGP(gpytorch.models.ApproximateGP):
             )
 
         task_idxs = np.arange(self.out_size).reshape(-1, 1)
-        self.task_indices = torch.Tensor(task_idxs).to(torch.int64)
+        self.task_indices = torch.Tensor(task_idxs).to(torch.int64).to(device)
         # self.task_indices_i = torch.Tensor([task_indices_i], device=X.device).to(
         #     torch.long
         # )

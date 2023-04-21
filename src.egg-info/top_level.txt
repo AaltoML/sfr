@@ -1,4 +1,0 @@
-bnn-predictive
-configs
-paper
-src

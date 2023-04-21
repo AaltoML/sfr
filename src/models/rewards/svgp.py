@@ -89,12 +89,21 @@ def init(
         Z = state_action_inputs[indices]
         Zs = torch.clone(Z)
         Z = torch.nn.parameter.Parameter(Zs, requires_grad=True)
-        svgp.variational_strategy.inducing_points = Z
+        # svgp.variational_strategy.inducing_points = Z
 
         # TODO reset m and V
+        # TODO is this reuisng mean/covar in place properly?
+        svgp_new = SVGP(
+            inducing_points=Z,
+            mean_module=svgp.mean_module,
+            covar_module=svgp.covar_module,
+            learn_inducing_locations=svgp.learn_inducing_locations,
+            device=device,
+        )
 
         return train(
-            svgp=svgp,
+            svgp=svgp_new,
+            # svgp=svgp,
             likelihood=likelihood,
             learning_rate=learning_rate,
             num_data=num_data,

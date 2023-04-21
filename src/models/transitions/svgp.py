@@ -112,7 +112,7 @@ def init(
                 svgp.variational_strategy.base_variational_strategy.inducing_points.shape
             )
         )
-        svgp.variational_strategy.base_variational_strategy.inducing_points = Z
+        # svgp.variational_strategy.base_variational_strategy.inducing_points = Z
 
         # TODO reset m and V
         # variational_distribution = gpytorch.variational.CholeskyVariationalDistribution(
@@ -127,15 +127,18 @@ def init(
         #         num_tasks=output_dim,
         #     )
         # )
-        # svgp_new = SVGP(
-        #     inducing_points=Z,
-        #     mean_module=svgp.mean_module,
-        #     covar_module=svgp.covar_module,
-        #     learn_inducing_locations=svgp.learn_inducing_locations,
-        # )
+        # TODO is this reuisng mean/covar in place properly?
+        svgp_new = SVGP(
+            inducing_points=Z,
+            mean_module=svgp.mean_module,
+            covar_module=svgp.covar_module,
+            learn_inducing_locations=svgp.learn_inducing_locations,
+            device=device,
+        )
 
         return train(
-            svgp=svgp,
+            # svgp=svgp,
+            svgp=svgp_new,
             likelihood=likelihood,
             learning_rate=learning_rate,
             num_data=num_data,

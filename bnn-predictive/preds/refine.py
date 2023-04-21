@@ -1,5 +1,5 @@
 import torch
-from preds.gradients import Jacobians
+from preds.gradients import Jacobians_naive
 from torch.nn.utils import parameters_to_vector
 from torch.optim import Adam
 from torch.distributions import MultivariateNormal, Normal, kl_divergence
@@ -8,7 +8,7 @@ from opt_einsum import contract as einsum
 
 def laplace_refine(model, X, y, likelihood, prior_prec, n_epochs=1000, lr=1e-3):
     """Laplace in LinNN (GLM) giving posterior mean, and Sigma_chol(d)"""
-    J, f = Jacobians(model, X)
+    J, f = Jacobians_naive(model, X)
     if len(J.shape) == 3:
         J = J.transpose(1, 2)
     theta_star = parameters_to_vector(model.parameters()).detach()
@@ -42,7 +42,7 @@ def laplace_refine(model, X, y, likelihood, prior_prec, n_epochs=1000, lr=1e-3):
 def vi_refine(model, opt, X, y, likelihood, n_epochs=250, lr=1e-2):
     """VI in LinNN (GLM) giving posterior mean, and Sigma_chol(d)"""
     beta = lr
-    J, f = Jacobians(model, X)
+    J, f = Jacobians_naive(model, X)
     if len(J.shape) == 3:
         J = J.transpose(1, 2)
     theta_star = parameters_to_vector(model.parameters()).detach()
@@ -84,7 +84,7 @@ def vi_refine(model, opt, X, y, likelihood, n_epochs=250, lr=1e-2):
 def vi_diag_refine(model, opt, X, y, likelihood, n_epochs=250, lr=1e-3):
     """diag VI in LinNN (GLM) giving posterior mean, and Sigma_chol(d)"""
     beta = lr
-    J, f = Jacobians(model, X)
+    J, f = Jacobians_naive(model, X)
     if len(J.shape) == 3:
         J = J.transpose(1, 2)
     theta_star = parameters_to_vector(model.parameters()).detach()

@@ -21,6 +21,7 @@ svgp:
     batch_shape:
       - 2
   learn_inducing_locations: false
+  device: "cpu"
 likelihood:
   _target_: gpytorch.likelihoods.MultitaskGaussianLikelihood
   num_tasks: 2

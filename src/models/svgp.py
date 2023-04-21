@@ -227,8 +227,13 @@ def predict(
                 def single_gp(task_indices):
                     # svgp.eval()
                     f = svgp(Z, task_indices=task_indices)
-                    print("f: ".format(f))
-                    return f.mean, f.covariance_matrix
+                    print("f: {}".format(f))
+                    mean = f.mean
+                    print("m: {}".format(mean.shape))
+                    cov = f.covariance_matrix
+                    print("c: {}".format(cov.shape))
+                    return mean, cov
+                    # return f.mean, f.covariance_matrix
 
                 # task_indices = torch.LongTensor([[0], [1]])
                 # print("task_indices.shape")

@@ -135,6 +135,7 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
 
     # REFINEMENT
     if not refine:
+        print('Skipping refinement')
         return res
 
     # Full Laplace

@@ -22,3 +22,4 @@ paper/main.pdf
 *.blg
 *.out
 *.envrc
+*.egg-info

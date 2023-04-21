@@ -66,6 +66,12 @@ class SVGP(gpytorch.models.ApproximateGP):
             raise NotImplementedError(
                 "covar_module should be an instance of gpytorch.kernels.Kernel"
             )
+
+        task_idxs = np.arange(self.out_size).reshape(-1, 1)
+        self.task_indices = torch.Tensor(task_idxs).to(torch.int64)
+        # self.task_indices_i = torch.Tensor([task_indices_i], device=X.device).to(
+        #     torch.long
+        # )
         # out_size = inducing_points.shape[0]
         # inducing_points = torch.rand(out_size, num_inducing, in_size)
         # print("out_size: {}".format(out_size))
@@ -208,11 +214,15 @@ def predict(
                 # print(Z.shape)
                 means, covs = [], []
                 # print("svgp.out_size {}".format(svgp.out_size))
-                for task_indices_i in zip(range(svgp.out_size)):
+                #
+                # print("task_indices {}".format(task_indices.shape))
+                # task_indices = torch.Tensor([task_indices_i], device=X.device).to(
+                # for task_indices_i in zip(range(svgp.out_size)):
+                for task_indices_i in svgp.task_indices:
                     # task_indices_i = torch.Tensor([task_indices_i]).to(device=X.device)
-                    task_indices_i = torch.Tensor([task_indices_i], device=X.device).to(
-                        torch.long
-                    )
+                    # task_indices_i = torch.Tensor([task_indices_i], device=X.device).to(
+                    #     torch.long
+                    # )
                     mean, cov = single_gp(task_indices_i)
                     means.append(mean)
                     covs.append(cov)
@@ -324,13 +334,19 @@ def predict(
             # print("lambda_1_t_new {}".format(lambda_1_t_new.shape))
             # print("lambda_2_t_new {}".format(lambda_2_t_new.shape))
 
-            lambda_1_new = lambda_1 + lambda_1_t_new
-            lambda_2_new = lambda_2 + lambda_2_t_new
+            # lambda_1_new = lambda_1 + lambda_1_t_new
+            # lambda_2_new = lambda_2 + lambda_2_t_new
+            lambda_1 = lambda_1 + lambda_1_t_new
+            lambda_2 = lambda_2 + lambda_2_t_new
             # print("lambda_1_new {}".format(lambda_1_new.shape))
             # print("lambda_2_new {}".format(lambda_2_new.shape))
 
             new_mean, new_cov = conditional_from_precision_sites_white_full(
-                Kuu, lambda_1_new, lambda_2_new, jitter=jitter
+                Kuu,
+                lambda_1,
+                lambda_2,
+                jitter=jitter
+                # Kuu, lambda_1_new, lambda_2_new, jitter=jitter
             )
             # print("new_mean {}".format(new_mean.shape))
             # print("new_cov {}".format(new_cov.shape))

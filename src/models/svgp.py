@@ -273,8 +273,8 @@ def predict(
                 f = svgp(Z)
                 cov = f.covariance_matrix[None, ...]  # [1, M, M]
                 mean = f.mean[..., None]  # [M, 1]
-            print("mean {}".format(mean.shape))
-            print("cov you {}".format(cov.shape))
+            # print("mean {}".format(mean.shape))
+            # print("cov you {}".format(cov.shape))
             cov = CholLazyTensor(torch.linalg.cholesky(deepcopy(cov)))
 
             # lambda_1, lambda_2 = mean_cov_to_natural_param(

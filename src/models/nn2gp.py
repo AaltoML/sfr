@@ -75,7 +75,7 @@ def predict(
     print("Kxx {}".format(Kxx.shape))
     B = Kxx + torch.eye(Kxx.shape[-1])
     U = torch.linalg.cholesky(Kxx + torch.eye(Kxx.shape[-1]))  # [num_train, num_train]
-    #print("U {}".format(U.shape))
+    # print("U {}".format(U.shape))
 
     def predict_fn(x, full_cov: bool = False) -> Prediction:
         # mean = network.forward(x)
@@ -98,7 +98,7 @@ def predict(
         print("A {}".format(A.shape))
 
         # conditional mean
-        #f_mean = A.T @ Y_train  # [N]
+        # f_mean = A.T @ Y_train  # [N]
         print("f_mean {}".format(f_mean.shape))
 
         # compute the covariance due to the conditioning
@@ -316,7 +316,7 @@ if __name__ == "__main__":
     )
     plt.legend()
     plt.savefig("nn2gp.pdf", transparent=True)
-    #plt.plot(X_train, Y_train)
+    # plt.plot(X_train, Y_train)
 
     fig = plt.subplots(1, 1)
     plt.plot(X_test[:, 0], pred.var)

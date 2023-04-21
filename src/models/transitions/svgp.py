@@ -136,7 +136,7 @@ def init(
             device=device,
         )
         if "cuda" in device:
-            svgp.cuda()
+            svgp_new.cuda()
 
         return train(
             # svgp=svgp,

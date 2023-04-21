@@ -68,8 +68,8 @@ class SVGP(gpytorch.models.ApproximateGP):
                 "covar_module should be an instance of gpytorch.kernels.Kernel"
             )
 
-        # task_idxs = np.arange(self.out_size).reshape(-1, 1)
-        # self.task_indices = torch.Tensor(task_idxs).to(torch.int64).to(device)
+        task_idxs = np.arange(self.out_size).reshape(-1, 1)
+        self.task_indices = torch.Tensor(task_idxs).to(torch.int64).to(device)
         # self.task_indices_i = torch.Tensor([task_indices_i], device=X.device).to(
         #     torch.long
         # )
@@ -238,9 +238,9 @@ def predict(
                 #
                 # print("task_indices {}".format(task_indices.shape))
                 # task_indices = torch.Tensor([task_indices_i], device=X.device).to(
-                for task_indices_i in range(svgp.out_size):
-                    # for task_indices_i in svgp.task_indices:
-                    task_indices_i = torch.LongTensor([task_indices_i], device=X.device)
+                # for task_indices_i in range(svgp.out_size):
+                for task_indices_i in svgp.task_indices:
+                    # task_indices_i = torch.LongTensor([task_indices_i], device=X.device)
                     # task_indices_i = torch.LongTensor([task_indices_i], device=X.device)
                     # task_indices_i = torch.Tensor([task_indices_i], device=X.device).to(
                     #     torch.long

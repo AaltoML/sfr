@@ -112,7 +112,7 @@ def init(
                 svgp.variational_strategy.base_variational_strategy.inducing_points.shape
             )
         )
-        # svgp.variational_strategy.base_variational_strategy.inducing_points = Z
+        svgp.variational_strategy.base_variational_strategy.inducing_points = Z
 
         # TODO reset m and V
         # variational_distribution = gpytorch.variational.CholeskyVariationalDistribution(

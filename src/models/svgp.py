@@ -151,13 +151,12 @@ def predict(
                 #     )
                 # elif Z.ndim == 3 and Z.shape[0] == 1:
                 #     Z = Z[0, ...]
-                var_dist = (
-                    svgp.variational_strategy.base_variational_strategy.variational_distribution
-                )
+                # var_dist = (
+                #     svgp.variational_strategy.base_variational_strategy.variational_distribution
+                # )
             else:
-                # print("isn't mo")
                 Z = svgp.variational_strategy.inducing_points
-                var_dist = svgp.variational_strategy.variational_distribution
+                # var_dist = svgp.variational_strategy.variational_distribution
             num_inducing = Z.size(-2)
             # print("var_dist.mean {}".format(var_dist.mean.shape))
             # print("var_dist.cov {}".format(var_dist.lazy_covariance_matrix.shape))

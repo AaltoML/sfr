@@ -22,13 +22,14 @@ likelihood:
 # learning_rate: 0.05
 learning_rate: 0.1
 batch_size: 64
-# num_epochs: 2000
-num_epochs: 300
+num_epochs: 2000
+# num_epochs: 300
 # num_workers: 1 # TODO what should I set this to?
 # wandb_loss_name: "Reward model loss"
-wandb_loss_name: "reward/loss"
+wandb_loss_name: "model/reward_loss"
 early_stopper:
   _target_: utils.EarlyStopper
-  patience: 20
+  # patience: 20
+  patience: 100
   min_delta: 0
 device: ${device} # TODO should this always be cpu??

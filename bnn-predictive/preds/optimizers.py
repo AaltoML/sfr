@@ -6,7 +6,7 @@ from preds.gradients import Jacobians_naive
 
 
 def GGN(model, likelihood, data, target=None, ret_f=False):
-    Js, f = Jacobians(model, data)
+    Js, f = Jacobians_naive(model, data)
     if target is not None:
         rs = likelihood.residual(target, f)
     Hess = likelihood.Hessian(f)
@@ -95,9 +95,9 @@ class LaplaceGGN(Adam):
             G += torch.einsum('mpk,mk->p', Js, rs)
         # compute posterior covariance and precision
         self.state['precision'] = JLJ + prior_prec
-        Chol = torch.cholesky(self.state['precision'])
+        Chol = torch.linalg.cholesky(self.state['precision'])
         self.state['Sigma'] = torch.cholesky_inverse(Chol, upper=False)
-        self.state['Sigma_chol'] = torch.cholesky(self.state['Sigma'], upper=False)
+        self.state['Sigma_chol'] = torch.linalg.cholesky(self.state['Sigma'], upper=False)
         # compute posterior mean according to BLR/Exact Laplace
         b = G + JLJ @ theta_star + prior_prec @ prior_mu
         self.state['mu'] = torch.cholesky_solve(b.reshape(-1, 1), Chol, upper=False).flatten()

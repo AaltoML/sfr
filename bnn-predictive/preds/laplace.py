@@ -40,9 +40,9 @@ class Laplace:
                 X, y = X.to(self.device), y.to(self.device)
                 Js, Hess, rs, f = GGN(self.model, self.likelihood, X, y, ret_f=True)
                 precision += torch.einsum('mpk,mkl,mql->pq', Js, Hess, Js)
-            Chol = torch.cholesky(precision)
+            Chol = torch.linalg.cholesky(precision)
             Sigma = torch.cholesky_inverse(Chol, upper=False)
-            self.Sigma_chol = torch.cholesky(Sigma, upper=False)
+            self.Sigma_chol = torch.linalg.cholesky(Sigma, upper=False)
 
         elif cov_type == 'diag':
             model = extend(self.model)

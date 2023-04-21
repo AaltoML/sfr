@@ -3,7 +3,7 @@ from torch.distributions import MultivariateNormal, Normal
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 import logging
 
-from preds.gradients import Jacobians
+from preds.gradients import Jacobians_naive
 from preds.optimizers import GGN
 from preds.likelihoods import get_Lams_Vys, GaussianLh
 from preds.kron import Kron
@@ -30,7 +30,7 @@ def nn_sampling_predictive(X, model, likelihood, mu, Sigma_chol, mc_samples=100,
 
 def linear_sampling_predictive(X, model, likelihood, mu, Sigma_chol, mc_samples=100, no_link=False):
     theta_star = parameters_to_vector(model.parameters())
-    Js, f = Jacobians(model, X)
+    Js, f = Jacobians_naive(model, X)
     if len(Js.shape) > 2:
         Js = Js.transpose(1, 2)
     offset = f - Js @ theta_star
@@ -48,7 +48,7 @@ def linear_sampling_predictive(X, model, likelihood, mu, Sigma_chol, mc_samples=
 
 def svgp_sampling_predictive(X, X_train, y_train, model, likelihood, mc_samples=100, no_link=False):
     link = (lambda x: x) if no_link else likelihood.inv_link
-    lambdas = lambdas_fn(nll_fn, model, y_train, n_classes=likelihood.)
+    lambdas = lambdas_fn(nll_fn, model, y_train, n_classes=likelihood)
     lambdas = lambdas.reshape(lambdas.shape[0], 1).squeeze()
     delta = 0.0001
     m = (lambdas, y, X, param, delta)
@@ -104,7 +104,7 @@ def pred_svgp(x_p, kernel, model, dual_p):
 
 def functional_sampling_predictive(X, model, likelihood, mu, Sigma, mc_samples=1000, no_link=False):
     theta_star = parameters_to_vector(model.parameters())
-    Js, f = Jacobians(model, X)
+    Js, f = Jacobians_naive(model, X)
     # reshape to batch x output x params
     if len(Js.shape) > 2:
         Js = Js.transpose(1, 2)

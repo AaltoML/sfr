@@ -226,7 +226,7 @@ def predict(
 
                 def single_gp(task_indices):
                     # svgp.eval()
-                    f = svgp(Z, task_indices=task_indices)
+                    f = svgp(Z, task_indices=task_indices.to(torch.int32))
                     print("f: {}".format(f))
                     mean = f.mean
                     print("m: {}".format(mean.shape))

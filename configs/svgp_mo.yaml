@@ -4,8 +4,8 @@ svgp:
   inducing_points:
     _target_: torch.rand
     size:
-      # - 1
-      - 2
+      - 1
+      # - 2
       - 128 # num_inducing
       - 1
   mean_module:

@@ -5,8 +5,8 @@ svgp:
   inducing_points:
     _target_: torch.rand
     size:
-      # - ${state_dim}
-      - 1
+      - ${state_dim}
+      # - 1
       - 500 # num_inducing
       - ${input_dim}
   mean_module:

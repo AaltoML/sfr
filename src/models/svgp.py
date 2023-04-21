@@ -209,7 +209,7 @@ def predict(
                 means, covs = [], []
                 # print("svgp.out_size {}".format(svgp.out_size))
                 for task_indices_i in zip(range(svgp.out_size)):
-                    task_indices_i = torch.LongTensor([task_indices_i], device=X.device)
+                    task_indices_i = torch.Tensor([task_indices_i], device=X.device)
                     mean, cov = single_gp(task_indices_i)
                     means.append(mean)
                     covs.append(cov)

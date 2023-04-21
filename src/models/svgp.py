@@ -202,79 +202,74 @@ def predict(
 
             # cov = f.to_data_independent_dist().covariance_matrix
             # cov = CholLazyTensor(torch.linalg.cholesky(deepcopy(f.covariance_matrix)))
-            if svgp.is_multi_output:
-                f = svgp(Z)
-                mean = f.mean
-                covs = []
-                # cov = f.covariance_matrix
-                for i in range(svgp.out_size):
-                    covs.append(
-                        f.covariance_matrix[
-                            i * num_inducing : (i + 1) * num_inducing,
-                            i * num_inducing : (i + 1) * num_inducing,
-                        ]
-                    )
-                cov = torch.stack(covs, 0)
-
-                # def single_gp(task_indices):
-                #     svgp.eval()
-                #     f = svgp(Z, task_indices=task_indices)
-                #     return f.mean, f.covariance_matrix
-
-                # means, covs = [], []
-                # # print("svgp.out_size {}".format(svgp.out_size))
-                # #
-                # # print("task_indices {}".format(task_indices.shape))
-                # # task_indices = torch.Tensor([task_indices_i], device=X.device).to(
-                # # for task_indices_i in zip(range(svgp.out_size)):
-                # for task_indices_i in svgp.task_indices:
-                #     # task_indices_i = torch.Tensor([task_indices_i]).to(device=X.device)
-                #     # task_indices_i = torch.Tensor([task_indices_i], device=X.device).to(
-                #     #     torch.long
-                #     # )
-                #     mean, cov = single_gp(task_indices_i)
-                #     means.append(mean)
-                #     covs.append(cov)
-                # mean = torch.stack(means, -1)
-                # # mean = torch.stack(means, 0)
-                # cov = torch.stack(covs, 0)
-
             # if svgp.is_multi_output:
-
-            #     def single_gp(task_indices):
-            #         svgp.eval()
-            #         f = svgp(Z, task_indices=task_indices)
-            #         return f.mean, f.covariance_matrix
-
-            #     # task_indices = torch.LongTensor([[0], [1]])
-            #     # print("task_indices.shape")
-            #     # print(task_indices.shape)
-            #     # print(Z.shape)
-            #     means, covs = [], []
-            #     # print("svgp.out_size {}".format(svgp.out_size))
-            #     #
-            #     # print("task_indices {}".format(task_indices.shape))
-            #     # task_indices = torch.Tensor([task_indices_i], device=X.device).to(
-            #     # for task_indices_i in zip(range(svgp.out_size)):
-            #     for task_indices_i in svgp.task_indices:
-            #         # task_indices_i = torch.Tensor([task_indices_i]).to(device=X.device)
-            #         # task_indices_i = torch.Tensor([task_indices_i], device=X.device).to(
-            #         #     torch.long
-            #         # )
-            #         mean, cov = single_gp(task_indices_i)
-            #         means.append(mean)
-            #         covs.append(cov)
-            #     mean = torch.stack(means, -1)
-            #     # mean = torch.stack(means, 0)
+            #     f = svgp(Z)
+            #     mean = f.mean
+            #     covs = []
+            #     print("f.covariance_matrix {}".format(f.covariance_matrix.shape))
+            #     # cov = f.covariance_matrix
+            #     for i in range(svgp.out_size):
+            #         print("i {}".format(i))
+            #         covs.append(
+            #             f.covariance_matrix[
+            #                 i * num_inducing : (i + 1) * num_inducing,
+            #                 i * num_inducing : (i + 1) * num_inducing,
+            #             ]
+            #         )
             #     cov = torch.stack(covs, 0)
+            #     cov = CholLazyTensor(cov)
+            # cov = torch.linalg.cholesky(cov)
+            # cov = LazyTensor(torch.linalg.cholesky(cov))
+            # cov = CholLazyTensor(torch.linalg.cholesky(cov))
+
+            if svgp.is_multi_output:
+
+                def single_gp(task_indices):
+                    svgp.eval()
+                    f = svgp(Z, task_indices=task_indices)
+                    return f.mean, f.covariance_matrix
+
+                # task_indices = torch.LongTensor([[0], [1]])
+                # print("task_indices.shape")
+                # print(task_indices.shape)
+                # print(Z.shape)
+                means, covs = [], []
+                # print("svgp.out_size {}".format(svgp.out_size))
+                #
+                # print("task_indices {}".format(task_indices.shape))
+                # task_indices = torch.Tensor([task_indices_i], device=X.device).to(
+                for task_indices_i in range(svgp.out_size):
+                    # for task_indices_i in svgp.task_indices:
+                    task_indices_i = torch.LongTensor([task_indices_i], device=X.device)
+                    # task_indices_i = torch.LongTensor([task_indices_i], device=X.device)
+                    # task_indices_i = torch.Tensor([task_indices_i], device=X.device).to(
+                    #     torch.long
+                    # )
+                    mean, cov = single_gp(task_indices_i)
+                    means.append(mean)
+                    covs.append(cov)
+
+                # task_indices = torch.LongTensor(0, device=X.device)
+                # mean, cov = svgp(Z, task_indices=task_indices)
+                # f = svgp(Z)
+                # mean = f.mean
+                # cov = f.variance
+                # cov = f.covariance_matrix
+                # print("mean {}".format(mean.shape))
+                # print("cov you {}".format(cov.shape))
+                # means.append(mean)
+                # covs.append(cov)
+                mean = torch.stack(means, -1)
+                # mean = torch.stack(means, 0)
+                cov = torch.stack(covs, 0)
 
             else:
                 # print("single svgp.out_size {}".format(svgp.out_size))
                 f = svgp(Z)
                 cov = f.covariance_matrix[None, ...]  # [1, M, M]
                 mean = f.mean[..., None]  # [M, 1]
-            # print("mean {}".format(mean.shape))
-            # print("cov you {}".format(cov.shape))
+            print("mean {}".format(mean.shape))
+            print("cov you {}".format(cov.shape))
             cov = CholLazyTensor(torch.linalg.cholesky(deepcopy(cov)))
 
             # lambda_1, lambda_2 = mean_cov_to_natural_param(

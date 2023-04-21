@@ -2,8 +2,8 @@ import numpy as np
 import torch
 from torch.nn.utils import parameters_to_vector
 from torch.distributions import Normal
-from backpack import backpack, extend
-from backpack.extensions import DiagGGNExact, KFLR
+#from backpack import backpack, extend
+#from backpack.extensions import DiagGGNExact, KFLR
 
 from preds.optimizers import GGN
 from preds.predictives import functional_sampling_predictive, nn_sampling_predictive

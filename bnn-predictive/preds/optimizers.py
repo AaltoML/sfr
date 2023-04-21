@@ -2,7 +2,7 @@ import torch
 from torch.nn.utils import parameters_to_vector
 from torch.optim import Adam
 
-from preds.gradients import Jacobians
+from preds.gradients import Jacobians_naive
 
 
 def GGN(model, likelihood, data, target=None, ret_f=False):

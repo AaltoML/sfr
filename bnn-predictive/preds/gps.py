@@ -14,7 +14,7 @@ from contextlib import contextmanager
 import itertools
 from copy import deepcopy
 
-from preds.gradients import Jacobians_gp
+from preds.gradients import Jacobians_naive
 
 from preds.likelihoods import BernoulliLh, CategoricalLh
 
@@ -37,7 +37,7 @@ class Parallel_Jacobian(nn.Module):
 
     def forward(self, X):
         if self.method == 'batched':
-            Js, fs = Jacobians_gp(self.model, X, self.output)
+            Js, fs = Jacobians_naive(self.model, X, self.output)
             if fs.ndim == 1:
                 fs = fs.view(-1, 1)
         else:

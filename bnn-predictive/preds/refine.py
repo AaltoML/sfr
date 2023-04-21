@@ -32,9 +32,9 @@ def laplace_refine(model, X, y, likelihood, prior_prec, n_epochs=1000, lr=1e-3):
     else:
         Hessian = (J.T * Lams.reshape(1, -1)) @ J
     Precision = Hessian + prior_prec * torch.eye(len(Hessian), device=Hessian.device)
-    Chol = torch.cholesky(Precision)
+    Chol = torch.linalg.cholesky(Precision)
     Sigma = torch.cholesky_inverse(Chol, upper=False)
-    Sigma_chol = torch.cholesky(Sigma, upper=False)
+    Sigma_chol = torch.linalg.cholesky(Sigma, upper=False)
     Sigma_chold = torch.diag(torch.sqrt(1 / torch.diag(Precision)))
     return mu.detach(), Sigma_chol, Sigma_chold, losses
 
@@ -70,10 +70,10 @@ def vi_refine(model, opt, X, y, likelihood, n_epochs=250, lr=1e-2):
             g = J.T @ rs - prior_prec @ mu
         # Update
         prec = (1 - beta) * prec + beta * (H + prior_prec)
-        pchol = torch.cholesky(prec, upper=False)
+        pchol = torch.linalg.cholesky(prec, upper=False)
         b = torch.cholesky_solve(g.reshape(-1, 1), pchol, upper=False).squeeze()
         mu = mu + beta * b
-        Sigma_chol = torch.cholesky(torch.cholesky_inverse(pchol, upper=False), upper=False)
+        Sigma_chol = torch.linalg.cholesky(torch.cholesky_inverse(pchol, upper=False), upper=False)
         q = MultivariateNormal(loc=mu, scale_tril=Sigma_chol)
         loss = -likelihood.log_likelihood(y, f_t) + kl_divergence(q, p)
         losses.append(loss.detach().cpu().item())

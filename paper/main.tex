@@ -1,3 +1,4 @@
+% !TeX spellcheck = en_GB
 \documentclass{article}
 
 %\title{Investigatin Uncertainty Quantification in Model-based Reinforcement Learning}
@@ -52,6 +53,32 @@
 \usepackage{nicefrac}       % compact symbols for 1/2, etc.
 \usepackage{microtype}      % microtypography
 \usepackage{xcolor}         % colors
+
+% Redefine paragraph to be tighter
+\renewcommand{\paragraph}[1]{{\bf #1}~~}
+
+% Latin
+\usepackage{xspace}
+\newcommand{\eg}{\textit{e.g.\@}\xspace}
+\newcommand{\ie}{\textit{i.e.\@}\xspace}
+\newcommand{\cf}{\textit{cf.\@}\xspace}
+\newcommand{\etc}{\textit{etc.\@}\xspace}
+\newcommand{\etal}{\textit{et~al.\@}\xspace}
+
+
+\newcommand{\nipstitle}[1]{{%
+    % rules for title box at top and bottom
+    \def\toptitlebar{\hrule height4pt \vskip .25in \vskip -\parskip} 
+    \def\bottomtitlebar{\vskip .29in \vskip -\parskip \hrule height1pt \vskip .09in} 
+    \phantomsection\hsize\textwidth\linewidth\hsize%
+    \vskip 0.1in%
+    \toptitlebar%
+    \begin{minipage}{\textwidth}%
+        \centering{\LARGE\bf #1\par}%
+    \end{minipage}%
+    \bottomtitlebar%
+    \addcontentsline{toc}{section}{#1}%
+}}
 
 % Bibliography
 %\usepackage[maxcitenames=1, maxbibnames=4, doi=false, isbn=false, eprint=true, backend=bibtex, hyperref=true, url=false, style=authoryear-comp]{biblatex}
@@ -637,12 +664,14 @@ Aidan Scannell is funded by the Finnish Center for Artificial Intelligence.
 
 \clearpage
 
-
-
+\nipstitle{
+    {\Large Supplementary Material:} \\
+    PAPER TITLE GOES HERE}
+\pagestyle{empty}
 
 \appendix
 
-\section{Appendix}
+\section{Method Details}
 
 Optionally include extra information (complete proofs, additional experiments and plots) in the appendix.
 This section will often be part of the supplemental material.
@@ -674,7 +703,7 @@ inference given a state transition data set \(\mathcal{D} = \{\{(s_{t},a_{t}), s
 \cref{alg-mbrl} shows the typical model-based RL loop.
 Importantly, the dynamics are usually only updated after an episode $i$.
 
-\begin{algorithm}[!t]
+\begin{algorithm}[!b]
 \caption{Model-based RL}\label{alg-mbrl}
 \begin{algorithmic}[1]
   \Require Start state $\state_{0}$, initial data set $\dataset_{0}$, dynamics posterior $p(\transitionFn \mid \dataset_{0})$, policy $\policy_{0}$

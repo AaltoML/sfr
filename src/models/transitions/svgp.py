@@ -135,6 +135,8 @@ def init(
             learn_inducing_locations=svgp.learn_inducing_locations,
             device=device,
         )
+        if "cuda" in device:
+            svgp.cuda()
 
         return train(
             # svgp=svgp,

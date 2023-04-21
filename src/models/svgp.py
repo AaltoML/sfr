@@ -400,7 +400,7 @@ def predict(
             Kmn = svgp.covar_module(Z, x).evaluate()
             # print("Kmn {}".format(Kmn.shape))
             Kmm = svgp.covar_module(Z).evaluate()
-            Kmm += torch.eye(Kmm.shape[-1]) * jitter
+            Kmm += torch.eye(Kmm.shape[-1], device=Kmm.device) * jitter
             # print("Kmm {}".format(Kmm.shape))
             Lm = torch.linalg.cholesky(Kmm, upper=False)
             # print("Lm {}".format(Lm.shape))

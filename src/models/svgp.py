@@ -202,74 +202,69 @@ def predict(
 
             # cov = f.to_data_independent_dist().covariance_matrix
             # cov = CholLazyTensor(torch.linalg.cholesky(deepcopy(f.covariance_matrix)))
-            # if svgp.is_multi_output:
-            #     f = svgp(Z)
-            #     mean = f.mean
-            #     covs = []
-            #     print("f.covariance_matrix {}".format(f.covariance_matrix.shape))
-            #     # cov = f.covariance_matrix
-            #     for i in range(svgp.out_size):
-            #         print("i {}".format(i))
-            #         covs.append(
-            #             f.covariance_matrix[
-            #                 i * num_inducing : (i + 1) * num_inducing,
-            #                 i * num_inducing : (i + 1) * num_inducing,
-            #             ]
-            #         )
-            #     cov = torch.stack(covs, 0)
-            #     cov = CholLazyTensor(cov)
+            if svgp.is_multi_output:
+                f = svgp(Z)
+                mean = f.mean
+                covs = []
+                print("f.covariance_matrix {}".format(f.covariance_matrix.shape))
+                # cov = f.covariance_matrix
+                for i in range(svgp.out_size):
+                    print("i {}".format(i))
+                    covs.append(f.covariance_matrix[i::2, i::2])
+                cov = torch.stack(covs, 0)
+                # cov = CholLazyTensor(cov)
             # cov = torch.linalg.cholesky(cov)
             # cov = LazyTensor(torch.linalg.cholesky(cov))
             # cov = CholLazyTensor(torch.linalg.cholesky(cov))
 
-            if svgp.is_multi_output:
+            # if svgp.is_multi_output:
 
-                def single_gp(task_indices):
-                    # svgp.eval()
-                    print("Z {}".format(type(Z)))
-                    f = svgp(Z, task_indices=task_indices.to(torch.int64))
-                    print("f: {}".format(f))
-                    mean = f.mean
-                    print("m: {}".format(mean.shape))
-                    cov = f.covariance_matrix
-                    print("c: {}".format(cov.shape))
-                    return mean, cov
-                    # return f.mean, f.covariance_matrix
+            #     def single_gp(task_indices):
+            #         # svgp.eval()
+            #         print("Z {}".format(type(Z)))
+            #         f = svgp(Z, task_indices=task_indices.to(torch.int64))
+            #         print("f: {}".format(f))
+            #         mean = f.mean
+            #         print("m: {}".format(mean.shape))
+            #         cov = f.covariance_matrix
+            #         print("c: {}".format(cov.shape))
+            #         return mean, cov
+            #         # return f.mean, f.covariance_matrix
 
-                # task_indices = torch.LongTensor([[0], [1]])
-                # print("task_indices.shape")
-                # print(task_indices.shape)
-                # print(Z.shape)
-                means, covs = [], []
-                # print("svgp.out_size {}".format(svgp.out_size))
-                #
-                # print("task_indices {}".format(task_indices.shape))
-                # task_indices = torch.Tensor([task_indices_i], device=X.device).to(
-                # for task_indices_i in range(svgp.out_size):
-                for task_indices_i in svgp.task_indices:
-                    # task_indices_i = torch.LongTensor([task_indices_i], device=X.device)
-                    # task_indices_i = torch.LongTensor([task_indices_i], device=X.device)
-                    # task_indices_i = torch.Tensor([task_indices_i], device=X.device).to(
-                    #     torch.long
-                    # )
-                    mean, cov = single_gp(task_indices_i)
-                    # mean, cov = single_gp(-1)
-                    means.append(mean)
-                    covs.append(cov)
+            #     # task_indices = torch.LongTensor([[0], [1]])
+            #     # print("task_indices.shape")
+            #     # print(task_indices.shape)
+            #     # print(Z.shape)
+            #     means, covs = [], []
+            #     # print("svgp.out_size {}".format(svgp.out_size))
+            #     #
+            #     # print("task_indices {}".format(task_indices.shape))
+            #     # task_indices = torch.Tensor([task_indices_i], device=X.device).to(
+            #     # for task_indices_i in range(svgp.out_size):
+            #     for task_indices_i in svgp.task_indices:
+            #         # task_indices_i = torch.LongTensor([task_indices_i], device=X.device)
+            #         # task_indices_i = torch.LongTensor([task_indices_i], device=X.device)
+            #         # task_indices_i = torch.Tensor([task_indices_i], device=X.device).to(
+            #         #     torch.long
+            #         # )
+            #         mean, cov = single_gp(task_indices_i)
+            #         # mean, cov = single_gp(-1)
+            #         means.append(mean)
+            #         covs.append(cov)
 
-                # task_indices = torch.LongTensor(0, device=X.device)
-                # mean, cov = svgp(Z, task_indices=task_indices)
-                # f = svgp(Z)
-                # mean = f.mean
-                # cov = f.variance
-                # cov = f.covariance_matrix
-                # print("mean {}".format(mean.shape))
-                # print("cov you {}".format(cov.shape))
-                # means.append(mean)
-                # covs.append(cov)
-                mean = torch.stack(means, -1)
-                # mean = torch.stack(means, 0)
-                cov = torch.stack(covs, 0)
+            #     # task_indices = torch.LongTensor(0, device=X.device)
+            #     # mean, cov = svgp(Z, task_indices=task_indices)
+            #     # f = svgp(Z)
+            #     # mean = f.mean
+            #     # cov = f.variance
+            #     # cov = f.covariance_matrix
+            #     # print("mean {}".format(mean.shape))
+            #     # print("cov you {}".format(cov.shape))
+            #     # means.append(mean)
+            #     # covs.append(cov)
+            #     mean = torch.stack(means, -1)
+            #     # mean = torch.stack(means, 0)
+            #     cov = torch.stack(covs, 0)
 
             else:
                 # print("single svgp.out_size {}".format(svgp.out_size))

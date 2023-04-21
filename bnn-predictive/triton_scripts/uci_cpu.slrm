@@ -12,4 +12,4 @@ SEEDS=(5 711 1 75 359 17 420 129 666 69 36)
 SEED=${SEEDS[$SLURM_ARRAY_TASK_ID]}
 logmin=-1
 dataset='satellite'
-srun python -u experiments/classification.py -d ${dataset} --root_dir . --seed ${SEED} --n_layers 2 --activation tanh --logd_min ${logmin}
+srun python -u experiments/classification.py -d ${dataset} --root_dir . --seed ${SEED} --n_layers 2 --activation tanh --logd_min ${logmin} --refine False

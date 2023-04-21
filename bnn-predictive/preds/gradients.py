@@ -1,7 +1,7 @@
 import torch
-from backpack import backpack, extend, memory_cleanup
-from backpack.extensions import BatchGrad
-from backpack.context import CTX
+#from backpack import backpack, extend, memory_cleanup
+#from backpack.extensions import BatchGrad
+#from backpack.context import CTX
 
 
 def gradient(model):
@@ -47,7 +47,7 @@ def Jacobians(model, data):
 
 
 def Jacobians_gp(model, data, outputs=-1):
-    model = extend(model)
+    model = (model)
     to_stack = []
     outputs = range(model.output_size) if outputs == -1 else ([outputs] if isinstance(outputs, int) else outputs)
     for i in outputs:

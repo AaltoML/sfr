@@ -1,5 +1,5 @@
 import torch
-from preds.gradients import Jacobians
+from preds.gradients import Jacobians_naive
 from torch.nn.utils import parameters_to_vector
 from torch.optim import Adam
 from torch.distributions import MultivariateNormal, Normal, kl_divergence
@@ -8,7 +8,7 @@ from opt_einsum import contract as einsum
 
 def laplace_refine(model, X, y, likelihood, prior_prec, n_epochs=1000, lr=1e-3):
     """Laplace in LinNN (GLM) giving posterior mean, and Sigma_chol(d)"""
-    J, f = Jacobians(model, X)
+    J, f = Jacobians_naive(model, X)
     if len(J.shape) == 3:
         J = J.transpose(1, 2)
     theta_star = parameters_to_vector(model.parameters()).detach()
@@ -32,9 +32,9 @@ def laplace_refine(model, X, y, likelihood, prior_prec, n_epochs=1000, lr=1e-3):
     else:
         Hessian = (J.T * Lams.reshape(1, -1)) @ J
     Precision = Hessian + prior_prec * torch.eye(len(Hessian), device=Hessian.device)
-    Chol = torch.cholesky(Precision)
+    Chol = torch.linalg.cholesky(Precision)
     Sigma = torch.cholesky_inverse(Chol, upper=False)
-    Sigma_chol = torch.cholesky(Sigma, upper=False)
+    Sigma_chol = torch.linalg.cholesky(Sigma, upper=False)
     Sigma_chold = torch.diag(torch.sqrt(1 / torch.diag(Precision)))
     return mu.detach(), Sigma_chol, Sigma_chold, losses
 
@@ -42,7 +42,7 @@ def laplace_refine(model, X, y, likelihood, prior_prec, n_epochs=1000, lr=1e-3):
 def vi_refine(model, opt, X, y, likelihood, n_epochs=250, lr=1e-2):
     """VI in LinNN (GLM) giving posterior mean, and Sigma_chol(d)"""
     beta = lr
-    J, f = Jacobians(model, X)
+    J, f = Jacobians_naive(model, X)
     if len(J.shape) == 3:
         J = J.transpose(1, 2)
     theta_star = parameters_to_vector(model.parameters()).detach()
@@ -70,10 +70,10 @@ def vi_refine(model, opt, X, y, likelihood, n_epochs=250, lr=1e-2):
             g = J.T @ rs - prior_prec @ mu
         # Update
         prec = (1 - beta) * prec + beta * (H + prior_prec)
-        pchol = torch.cholesky(prec, upper=False)
+        pchol = torch.linalg.cholesky(prec, upper=False)
         b = torch.cholesky_solve(g.reshape(-1, 1), pchol, upper=False).squeeze()
         mu = mu + beta * b
-        Sigma_chol = torch.cholesky(torch.cholesky_inverse(pchol, upper=False), upper=False)
+        Sigma_chol = torch.linalg.cholesky(torch.cholesky_inverse(pchol, upper=False), upper=False)
         q = MultivariateNormal(loc=mu, scale_tril=Sigma_chol)
         loss = -likelihood.log_likelihood(y, f_t) + kl_divergence(q, p)
         losses.append(loss.detach().cpu().item())
@@ -84,7 +84,7 @@ def vi_refine(model, opt, X, y, likelihood, n_epochs=250, lr=1e-2):
 def vi_diag_refine(model, opt, X, y, likelihood, n_epochs=250, lr=1e-3):
     """diag VI in LinNN (GLM) giving posterior mean, and Sigma_chol(d)"""
     beta = lr
-    J, f = Jacobians(model, X)
+    J, f = Jacobians_naive(model, X)
     if len(J.shape) == 3:
         J = J.transpose(1, 2)
     theta_star = parameters_to_vector(model.parameters()).detach()

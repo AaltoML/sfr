@@ -1,3 +1,4 @@
+% !TeX spellcheck = en_GB
 \documentclass{article}
 
 %\title{Investigatin Uncertainty Quantification in Model-based Reinforcement Learning}
@@ -53,6 +54,38 @@
 \usepackage{nicefrac}       % compact symbols for 1/2, etc.
 \usepackage{microtype}      % microtypography
 \usepackage{xcolor}         % colors
+
+% Redefine paragraph to be tighter
+\renewcommand{\paragraph}[1]{{\bf #1}~~}
+
+% Latin
+\usepackage{xspace}
+\newcommand{\eg}{\textit{e.g.\@}\xspace}
+\newcommand{\ie}{\textit{i.e.\@}\xspace}
+\newcommand{\cf}{\textit{cf.\@}\xspace}
+\newcommand{\etc}{\textit{etc.\@}\xspace}
+\newcommand{\etal}{\textit{et~al.\@}\xspace}
+
+% Tikz
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usetikzlibrary{patterns}
+\usetikzlibrary{decorations,backgrounds,arrows.meta,calc}
+
+% Appendix/supplement title
+\newcommand{\nipstitle}[1]{{%
+    % rules for title box at top and bottom
+    \def\toptitlebar{\hrule height4pt \vskip .25in \vskip -\parskip} 
+    \def\bottomtitlebar{\vskip .29in \vskip -\parskip \hrule height1pt \vskip .09in} 
+    \phantomsection\hsize\textwidth\linewidth\hsize%
+    \vskip 0.1in%
+    \toptitlebar%
+    \begin{minipage}{\textwidth}%
+        \centering{\LARGE\bf #1\par}%
+    \end{minipage}%
+    \bottomtitlebar%
+    \addcontentsline{toc}{section}{#1}%
+}}
 
 % Bibliography
 %\usepackage[maxcitenames=1, maxbibnames=4, doi=false, isbn=false, eprint=true, backend=bibtex, hyperref=true, url=false, style=authoryear-comp]{biblatex}
@@ -547,6 +580,72 @@ It is worth highlighting that the complexity of \cite{changFantasizingDualGPs202
 
 
 \section{Experiments}
+\label{sec:experiments}
+
+\todo{Overview of experiments}
+
+\subsection{Benchmarks on UCI to for supervised learning}
+
+
+\subsection{Supervised learning on image data sets}
+
+
+\subsection{Updating the representation during continual learning}
+
+
+
+\subsection{Fast updates in reinforcement learning}
+
+\begin{figure}[!t]
+  \centering
+  \begin{subfigure}{.2\textwidth}
+  \resizebox{\textwidth}{!}{%
+  \begin{tikzpicture}[inner sep=0,outer sep=0]
+  
+    % Draw decorated 'ground'
+    \draw[postaction={draw, decorate, decoration={border, angle=-45,
+					amplitude=1cm, segment length=.5cm}}] (-3,-1.5) -- (12,-1.5);
+  
+    % The cart
+    \draw[draw=black,fill=black!50,draw=black,line width=3pt,rounded corners=1mm] (0,0) rectangle (9cm,3cm);
+    \node[fill=black,circle,minimum size=.5cm] (dot) at (4.5cm,3cm) {};
+    
+    % Wheels
+    \node[fill=white,draw=black,line width=3pt,circle,minimum size=2cm,,fill=black!50] at (2cm,-.5cm) {};
+    \node[fill=white,draw=black,line width=3pt,circle,minimum size=2cm,fill=black!50] at (7cm,-.5cm) {};  
+    
+    % The arm
+    \node[anchor=north,minimum width=1cm,minimum height=14cm,draw=black,rotate=20,rounded corners=5mm,yshift=7mm,xshift=-.3mm,fill=white,draw=black,line width=3pt] at (dot) {};
+    \node[fill=black,circle,minimum size=.5cm] at (dot) {};
+    
+    % Markings
+    \draw[loosely dashed,line width=1pt] (4.5,6) -- (4.5,-10);
+    
+    % Arrow
+    \draw[->,black,line width=3pt,-{Latex[length=7mm,width=7mm]}] (1,5) --node[above,outer sep=6pt]{\large $x$} (4.5,5);
+    
+    \def\centerarc[#1](#2)(#3:#4:#5)% Syntax: [draw options] (center) (initial angle:final angle:radius)
+    { \draw[#1] ($(#2)+({#5*cos(#3)},{#5*sin(#3)})$) arc (#3:#4:#5); }
+    
+    % Draw arc
+    \centerarc[black,line width=3pt](dot)(270:290:11)
+    \node at (6.5,-9) {$\theta$};
+    
+    \node[white,minimum size=1cm] at (4.5,-13) {};
+    
+  \end{tikzpicture}}
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}{.78\textwidth}
+    \tikz\node[minimum width=\textwidth,minimum height=.35\textwidth,fill=black!10,rounded corners=2pt]{RL trjectories or something interesting?};
+  \end{subfigure}
+  \hfill
+  \caption{Add caption.}
+  \label{fig:rl}
+\end{figure}
+
+
+
 
 % \begin{figure}
 %   \centering
@@ -615,10 +714,15 @@ Environments
   \item Compare impact of function vs weight space
 \end{itemize}
 
-\section{Conclusion} \label{sec:conclusion}
+\section{Discussion and Conclusion}
+\label{sec:conclusion}
 
 
-\section*{Broader Impact}
+
+
+
+
+%\section*{Broader Impact}
 
 \begin{ack}
 ASK A ABOUT THIS SECTION:
@@ -650,12 +754,14 @@ Aidan Scannell is funded by the Finnish Center for Artificial Intelligence.
 
 \clearpage
 
-
-
+\nipstitle{
+    {\Large Supplementary Material:} \\
+    PAPER TITLE GOES HERE}
+\pagestyle{empty}
 
 \appendix
 
-\section{Appendix}
+\section{Method Details}
 
 Optionally include extra information (complete proofs, additional experiments and plots) in the appendix.
 This section will often be part of the supplemental material.
@@ -687,7 +793,7 @@ inference given a state transition data set \(\mathcal{D} = \{\{(s_{t},a_{t}), s
 \cref{alg-mbrl} shows the typical model-based RL loop.
 Importantly, the dynamics are usually only updated after an episode $i$.
 
-\begin{algorithm}[!t]
+\begin{algorithm}[!b]
 \caption{Model-based RL}\label{alg-mbrl}
 \begin{algorithmic}[1]
   \Require Start state $\state_{0}$, initial data set $\dataset_{0}$, dynamics posterior $p(\transitionFn \mid \dataset_{0})$, policy $\policy_{0}$

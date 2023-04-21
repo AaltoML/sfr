@@ -8,7 +8,7 @@ from torch.nn.utils import parameters_to_vector
 from preds.optimizers import LaplaceGGN, get_diagonal_ggn
 from preds.models import SiMLP
 from preds.likelihoods import BernoulliLh, CategoricalLh
-from preds.predictives import nn_sampling_predictive, linear_sampling_predictive
+from preds.predictives import nn_sampling_predictive, linear_sampling_predictive, svgp_sampling_predictive
 from preds.utils import acc, nll_cls, ece
 from preds.mfvi import run_bbb
 from preds.refine import laplace_refine, vi_refine, vi_diag_refine
@@ -37,6 +37,11 @@ def preds_glm(X, model, likelihood, mu, Sigma_chol, samples):
     return gs.mean(dim=0)
 
 
+def preds_svgp(X, X_train, y_train, model, likelihood, n_sparse, samples):
+    gs = svgp_sampling_predictive(X, X_train, y_train, model, likelihood,n_sparse, mc_samples=samples)
+    return gs.mean(dim=0)
+
+
 def preds_nn(X, model, likelihood, mu, Sigma_chol, samples):
     gs = nn_sampling_predictive(X, model, likelihood, mu, Sigma_chol, mc_samples=samples)
     return gs.mean(dim=0)
@@ -52,7 +57,7 @@ def evaluate(p, y, likelihood, name, data):
 
 
 def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, seed,
-              n_layers=2, n_units=50, activation='tanh', n_samples=1000, refine=True):
+              n_layers=2, n_units=50, activation='tanh', n_sparse=100, n_samples=1000, refine=True):
     """Full inference (training and prediction)
     storing all relevant quantities and returning a state dictionary.
     if sigma_noise is None, we have classification.
@@ -100,6 +105,15 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
     res.update(evaluate(res_bbb['preds_train'], y_train, lh, 'bbb', 'train'))
     res.update(evaluate(res_bbb['preds_test'], y_test, lh, 'bbb', 'test'))
     res.update(evaluate(res_bbb['preds_valid'], y_valid, lh, 'bbb', 'valid'))
+
+    # SVGP predictive
+    
+    fs_train = preds_svgp(X_train, model, likelihood, n_sparse=n_sparse, samples=n_samples)
+    fs_test = preds_svgp(X_test, X_train, y_train, model, likelihood, n_sparse=n_sparse,  samples=n_samples)
+    fs_valid = preds_svgp(X_valid, X_train, y_train, model, likelihood, n_sparse=n_sparse, samples=n_samples)
+    res.update(evaluate(fs_train, y_train, lh, 'svgp_ntk', 'train'))
+    res.update(evaluate(fs_test, y_test, lh, 'svgp_ntk', 'test'))
+    res.update(evaluate(fs_valid, y_valid, lh, 'svgp_ntk', 'valid'))
 
     # LinLaplace full Cov assuming convergence
     fs_train = preds_glm(X_train, model, likelihood, theta_star, Sigma_chol, samples=n_samples)
@@ -220,6 +234,7 @@ if __name__ == '__main__':
     parser.add_argument('--root_dir', help='Root directory', default='../')
     parser.add_argument('--name', help='name result file', default='', type=str)
     parser.add_argument('--n_samples', help='number predictive samples', type=int, default=1000)
+    parser.add_argument('--n_sparse', help='number of sparse data points to use for the svgp', type=int, default=100)
     parser.add_argument('--refine', help='on/off switch for posterior refinement', type=bool)
     args = parser.parse_args()
     dataset = args.dataset
@@ -232,6 +247,7 @@ if __name__ == '__main__':
     n_layers, n_units = args.n_layers, args.n_units
     activation = args.activation
     n_samples = args.n_samples
+    n_sparse = args.n_sparse
     name = args.name
     root_dir = args.root_dir
     refine = args.refine
@@ -257,4 +273,4 @@ if __name__ == '__main__':
 
     deltas = np.logspace(logd_min, logd_max, n_deltas)
     main(ds_train, ds_test, ds_valid, deltas, device, dataset, name, seed, res_dir, n_epochs=n_epochs,
-         lr=lr, n_layers=n_layers, n_units=n_units, activation=activation, n_samples=n_samples, refine=refine)
+         lr=lr, n_layers=n_layers, n_units=n_units, activation=activation, n_sparse=n_sparse, n_samples=n_samples, refine=refine)

@@ -121,16 +121,19 @@ def train(cfg: DictConfig):
                 )
             else:
                 if cfg.online_updates and t > 0:
-                    # if cfg.online_updates and t > 1:
-                    # transition_data_new = (state_action_inputs, state_diff_outputs)
-                    # reward_data_new = (state_action_inputs, reward_outputs)
-                    transition_data_new = (state_action_input, state_diff_output)
-                    reward_data_new = (state_action_input, reward_output)
-                    data_new = {
-                        "transition": transition_data_new,
-                        "reward": reward_data_new,
-                    }
-                    # print("USING new data")
+                    if t % 5 == 0:
+                        # if cfg.online_updates and t > 1:
+                        transition_data_new = (state_action_inputs, state_diff_outputs)
+                        reward_data_new = (state_action_inputs, reward_outputs)
+                        # transition_data_new = (state_action_input, state_diff_output)
+                        # reward_data_new = (state_action_input, reward_output)
+                        data_new = {
+                            "transition": transition_data_new,
+                            "reward": reward_data_new,
+                        }
+                        # print("USING new data")
+                    else:
+                        data_new = {"transition": None, "reward": None}
                 else:
                     # transition_data_new = None
                     # reward_data_new = None

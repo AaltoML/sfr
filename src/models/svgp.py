@@ -225,8 +225,9 @@ def predict(
             if svgp.is_multi_output:
 
                 def single_gp(task_indices):
-                    svgp.eval()
+                    # svgp.eval()
                     f = svgp(Z, task_indices=task_indices)
+                    print("f: ".format(f))
                     return f.mean, f.covariance_matrix
 
                 # task_indices = torch.LongTensor([[0], [1]])
@@ -246,6 +247,7 @@ def predict(
                     #     torch.long
                     # )
                     mean, cov = single_gp(task_indices_i)
+                    # mean, cov = single_gp(-1)
                     means.append(mean)
                     covs.append(cov)
 

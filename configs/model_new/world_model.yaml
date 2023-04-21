@@ -1,9 +1,0 @@
-defaults:
-  - reward_model: svgp
-  - transition_model: svgp
-
-_target_: models.GaussianModelBaseEnv
-_convert_: all
-state_size: ${state_dim}
-action_size: ${action_dim}
-device: ${device}

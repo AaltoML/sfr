@@ -6,7 +6,7 @@ paper:
 	mv ${aux_dir}/${filename}.pdf ${filename}.pdf
 
 clean:
-	trash ${aux_dir}
+	rm -rf ${aux_dir}
 
 submission:
 	gs -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dSAFER -dPrinted=false -dFirstPage=1 -dLastPage=13 -sOutputFile=submission.pdf ${filename}.pdf

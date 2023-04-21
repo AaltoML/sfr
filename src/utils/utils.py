@@ -20,6 +20,10 @@ from torch.utils.data import DataLoader, TensorDataset
 from torchrl.data import ReplayBuffer
 
 
+def to_torch(xs, device, dtype=torch.float32):
+    return tuple(torch.as_tensor(x, device=device, dtype=dtype) for x in xs)
+
+
 class EarlyStopper:
     def __init__(self, patience: int = 1, min_delta: float = 0.0):
         self.patience = patience

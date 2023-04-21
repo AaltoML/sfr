@@ -2,7 +2,13 @@
 
 %\title{Investigatin Uncertainty Quantification in Model-based Reinforcement Learning}
 % \title{Model-based Reinforcement Learning with Fast Posterior Updates}
-\title{Sequential Decision-Making under Uncertainty with Big Data}
+%\title{Sequential Decision-Making under Uncertainty with Big Data}
+% \title{Neural Network to Vatiational Sparse Gaussian Process: For Adaptive Exploration}
+% \title{Neural Network to Sparse Variational Gaussian Process: For Updates in Sequential Decision Making}
+% \title{Adapting Neural Networks to New Data For Updates in Sequential Decision Making via Gaussian Processes}
+\title{Converting Neural Networks to Gaussian Processes for Sequential Decision-Making Under Uncertainty}
+% \title{Capturing Neural Networks with Gaussian Processes for Sequential Decision-Making Under Uncertainty}
+
 \author{%
   Aidan ~Scannell \\
   Aalto University\\
@@ -32,9 +38,11 @@
   % \texttt{email} \\
 }
 
+% Pass options to natbib
+\PassOptionsToPackage{numbers, compress}{natbib}
 
 % NeurIPS packages
-\usepackage[preprint,nonatbib]{neurips_2022}
+\usepackage[]{neurips_2023}
 \usepackage[utf8]{inputenc} % allow utf-8 input
 \usepackage[T1]{fontenc}    % use 8-bit T1 fonts
 %\usepackage{hyperref}       % hyperlinks
@@ -46,9 +54,12 @@
 \usepackage{xcolor}         % colors
 
 % Bibliography
-\usepackage[maxcitenames=1, maxbibnames=4, doi=false, isbn=false, eprint=true, backend=bibtex, hyperref=true, url=false, style=authoryear-comp]{biblatex}
-\addbibresource{zotero-library.bib}
+%\usepackage[maxcitenames=1, maxbibnames=4, doi=false, isbn=false, eprint=true, backend=bibtex, hyperref=true, url=false, style=authoryear-comp]{biblatex}
+%\addbibresource{zotero-library.bib}
 % \addbibresource{paper/zotero-library.bib}
+
+% Let's use good old bibtex instead
+
 
 % Our packages
 \usepackage{todonotes}
@@ -117,7 +128,8 @@
 
 
 % Parameters
-\newcommand{\transitionParams}{\ensuremath{\bm\phi}}
+% \newcommand{\transitionParams}{\ensuremath{\bm\phi}}
+\newcommand{\transitionParams}{\ensuremath{\mathbf{w}}}
 \newcommand{\valueFnParams}{\ensuremath{\psi}}
 \newcommand{\policyParams}{\ensuremath{\theta}}
 
@@ -134,194 +146,176 @@
 \maketitle
 
 \begin{abstract}
-  % Reinforcement learning (RL) agents typically do not utilise the information previously gained during an episode.
-  % as they perform learning offline, i.e. after an episode.
-  % Reinforcement learning (RL) agents typically perform learning after an episode, ignoring the potential information gain whilst collecting data.
-  % Reinforcement learning (RL) agents typically perform learning offline and do not utilise the information gained during an episode.
-  % We present a Bayesian model-based RL algorithm which incorporates this information by updating a dynamic model's posterior during an episode.
-  % Our method leverages the fast posterior updates available in the dual parameterisation of sparse variational Gaussian processes.
-  % Importantly, our algorithm scales to 1) environment's with high dimensional state-spaces as it is built upon the connection between Bayesian neural networks (BNNs) and
-  % Gaussian processes (GPs) and 2) long episodes, as the complexity of our updates is independent of episode length.
-  % We demonstrate that our fast posterior updates improve sample efficiency in environments with action penalties, a notoriously difficult
-  % challenge for model-based RL algorithms.
-  %
-  % Reinforcement learning (RL) agents typically perform learning offline and do not utilise the information gained during an episode.
-  % We present a Bayesian model-based RL algorithm which incorporates this information by updating a dynamic model's posterior during an episode.
-  % Typically training a neural network dynamic model is not feasible and nonparameteric methods such as Gaussian processes scale poorly with data.
-  % Importantly, our algorithm scales to 1) environment's with high dimensional state-spaces, 2) large data sets and 3) long episodes,
-  % as the complexity of our updates is independent of episode length.
-  % We demonstrate that our fast posterior updates improve sample efficiency in environments with action penalties, a notoriously difficult
-  % challenge for model-based RL algorithms.
-  %
-  Deep neural networks
+% Building systems that adapt to new information and express uncertainty is essential to deploy methods in real-world applications e.g. healthcare, autonomous vehicles. While gradient-based training is symbiotic to modern deep learning, it is rigid regarding adding further information, usually involving retraining from scratch. Converting a trained neural network to its dual parameterization we can view the parameters of the model as data dependent terms instead of the weights. Furthermore, we can then build a sparse model to form a variational dual sparse Gaussian process. The resultant sparse GP has two obvious advantages: scalable principled uncertainty estimation and the ability adapt to new data without gradient based retraining. Our proposed method can be deployed in any sequential decision-making process, where new information is received and retraining from scratch is not available. We show its effectiveness in model-based reinforcement learning using updated information for more efficient exploration.
+%
+The world is a dynamic environment that requires humans and animals to constantly adapt.
+  Building learning-based systems that can adapt to new data and express uncertainty is essential for their deployment in real-world applications, e.g. healthcare and robotics. However, modern deep learning methods cannot adapt to new data because they rely on gradient-based optimisation, which requires retraining with the addition of new data. In contrast, nonparametric approaches -- such as Gaussian processes -- can adapt to new data. However, they are limited to low-dimensional and small data sets. We present a method that enables any trained neural network (NN) to be converted to a sparse variational Gaussian process (SVGP). Importantly, our method 1) enables fast adaptation to new data, 2) provides well-calibrated uncertainty estimates, and 3) scales to high-dimensional and large data sets. Essentially, our method reaps the benefits of nonparametric models without their well-known issues. We demonstrate the effectiveness of our model's fast adaptation by showing that it can improve sample-efficiency in model-based reinforcement learning and we demonstrate our state-of-the-art NN uncertainty quantification with experiments using UCI data sets.
 
-  Obtain SVGP posterior on trained deep neural network (NN) without optimising any variational parameters.
+  % Building learning-based systems that can adapt to new data and express uncertainty is essential for their deployment
+  % in real-world applications, e.g. healthcare and robotics.
+  % % The ability to adapt to new information and express uncertainty is essential for deploying learning-based systems in real-world applications, e.g. healthcare and robotics.
+  % However, modern deep learning cannot adapt to new data because it relies upon gradient-based optimisation,
+  % which requires retraining with the addition of new data.
+  % In contrast, nonparametric approaches -- such as Gaussian processes -- can adapt to new data without further training.
+  % % Although, traditional approaches are limited to low-dimensional and small data sets, recent advances have scaled
+  % % GPs to large data sets.
+  % However, they are limited to low-dimensional and small data sets.
+  % % We present a method that enables any trained neural network to adapt to new data without further gradient-based optimisation,
+  % % whilst providing scalable and principled uncertainty quantification.
+  % We present a method that enables any trained neural network (NN) to be converted to a sparse variational Gaussian
+  % process (SVGP).
+  % % We present a method that enables any trained neural network to adapt to new data without further gradient-based optimisation,
+  % % whilst providing scalable and principled uncertainty quantification.
+  % % Our method u converts a trained neural network to a sparse variational Gaussian process (SVGP).
+  % Importantly, our method 1) enables fast adaptation to new data,
+  % 2) provides well-calibrated uncertainty estimates, and 3) scales to high-dimensional and large data sets.
+  % % Importantly, our method 1) enables fast adaptation to new data,
+  % % 2) provides well-calibrated uncertainty estimates, and 3) scales to high-dimensional and large data sets.
+  % Essentially, our method reaps the benefits of nonparametric models without their well-known issues.
+  % % 2) does not require further gradient-based optimisation,
+  % We demonstrate the effectiveness of our model's fast adaptation by showing that it can improve sample-efficiency in
+  % model-based reinforcement learning and
+  % we demonstrate our state-of-the-art NN uncertainty quantification with experiments using UCI data sets.
 
-  Dual formulation enables fast updates for 1) model-based RL 2) pathwise, function-space conditioning.
-  % Reinforcement learning (RL) agents typically perform learning offline and do not utilise the information gained during an episode.
-  % We present a Bayesian model-based RL algorithm which incorporates this information by updating a dynamic model's posterior during an episode.
-  % Typically training a neural network dynamic model is not feasible and nonparameteric methods such as Gaussian processes scale poorly with data.
-  % Importantly, our algorithm scales to 1) environment's with high dimensional state-spaces, 2) large data sets and 3) long episodes,
-  % as the complexity of our updates is independent of episode length.
-  % We demonstrate that our fast posterior updates improve sample efficiency in environments with action penalties, a notoriously difficult
-  % challenge for model-based RL algorithms.
+  % obtains principled uncertainty estimates by
+  % Our experiments demonstrate that our model's adaptivity can improve the sample-efficiency of model-based reinforcement
+  % learning.
+
+
+  % in model-based reinforcement learning using updated information for more efficient exploration.
+
+  % Our method can be deployed in any sequential decision-making process, where new information is received and retraining from scratch is not available.
+
+  % % While gradient-based training is symbiotic to modern deep learning, it is rigid regarding adding further information, usually involving retraining from scratch.
+  % Converting a trained neural network to its dual parameterization we can view the parameters of the model as data dependent terms instead of the weights.
+  % Furthermore, we can then build a sparse model to form a variational dual sparse Gaussian process.
+  % The resultant sparse GP has two obvious advantages: scalable principled uncertainty estimation and the ability adapt to new data without gradient based retraining.
+  % Our proposed method can be deployed in any sequential decision-making process, where new information is received and retraining from scratch is not available.
+  % We show its effectiveness in model-based reinforcement learning using updated information for more efficient exploration.
 \end{abstract}
+
 
 \section{Introduction} \label{sec:intro}
 
 \begin{itemize}
-  \item DNNs scale to high-dimensional and large data sets but 1) no UQ and 2) cannot be updated quickly
+  \item Many real-world problems require learning-based systems that can adapt to new data.
   \begin{itemize}
-    \item In many domains we want to make decisions under a learned model's uncertainty, e.g. in healthcare, robotics, autonomous vehicles. (safey, sample efficiency (cost/time))
-    \item In continual learning (e.g. online learning/RL) we need to update model quicker than retraining NN with SGD.
-    \item Poorly calibrated model uncertainty
+    % \item For example, in domains such as robotics and healthcare,
+    \item For example, when controlling robots in non-stationary environments it is important for the robot to adapt to the changing dynamics.
+    \item However neural networks rely upon gradient-based optimisation.
+    \item Uncertainty can be used to improve sample efficiency via targeted exploration.
+    \item Uncertainty can be used to handle risk in decision making.
+  \end{itemize}
+
+  \item Gaussian processes can easily adapt to new data and they offer well-calibrated uncertainty estimates.
+  \begin{itemize}
+    \item However, they don't scale to high-dimensional and large data sets.
+  \end{itemize}
+  \item
+  \begin{itemize}
+    \item
   \end{itemize}
 \end{itemize}
 
+%Why we need uncertainty and adaptiveness
+How to adapt to new information is a limitation of current machine learning models. The problem is specifically relevant when we combine a model with a decision-making process. In such a sequential setting, an agent typically makes decisions in an environment and obtains new information and would ideally incorporate the information into their parameters. Not only do we need models that adapt to new informatoion but all express uncertainty over the models predictions. The reason being twofold: in many applications, e.g. healthcare, autonomous driving is an essential requirement, and many advanced exploration techniques require uncertainty to determine where to query next.
+
+%Current state of affairs 
+GPs give principled uncertainty estimates and are a standard surrogate model for Bayesian optimization \citep{garnett_bayesoptbook_2022} and are effective in model-based reinforcement learning \citep{deisenroth2011pilco} furthermore they have theoretical guarantees on regret bounds \citep{srinivas2009gaussian}. Yet many problems lie in high dimensional input space; for example, images are where GPs cannot learn representations. In such scenarios such as in many reinforcement learning environments neural networks are used as the surrogate model. However, uncertainty is still essential to ensure effective exploration for sequential algorithms. Successful approaches have attempted to blend neural networks with uncertainty estimates around predictions, allowing for sophisticated exploration strategies. However, there has been limited use of hybrid models that possess the feature representation ability of neural networks but also attractive the properties of GPs, such a hybrid method we propose in this paper.
+
+% Introduce the laplace GNN + shortcomings
+One common approach for uncertainty with neural networks is a Laplace GNN approximation \citep{daxbergerLaplace2021}. The idea is to essentially takes a trained neural network and linearises around the optimal weights. The resulting linear model can be used to obtain uncertainty estimates and sometimes improved predictions \citep{immerScalable2021}. Given the resultant model is now linear with respect to the weights its is also now possible to convert to a Gaussian process as shown in \citep{immerScalable2021, khan2019approximate}. Yet to obtain uncertainty estimates there is the usual computational scaling of the GP of $O(n^3)$, so cubic in the number of data points. Many approaches  apply crude approximations and yet still obtain good uncertainty estimates. 
+
+%Need for adaptive learning methods + failures with current methods
+In this paper we show that we can take any neural network and define the dual parameters of a Gaussian process \citep{csato2002sparse, adam2021dual, chang2020fast}. Crucially the resultant GP now has predictions in the same space as the space as the initial trained neural network, a property not of previous approaches. Given the dual parameter formulation we can then easily convert a full GP to a variational sparse version. Using the sparse GP we can then take advantage of the property of dual parameters that allows for fast conditioning recently shown in \citep{chang2022fantasizing}. Thus we are able to avoid retraining and condition new data in to our model. The resultant DNN2SGP method can be used in any sequential decision-making scenario where retraining is not available and we show its effectiveness in a planning stage of a model based reinforcement algorithim.
+
+%Need uncertainty and adaptive methods
+%Dual formulation in GPs space solves this
+%Talk about planning and exploration in RL.
+
+%List the contributions.
+The contributions of the paper our is as follows:
 \begin{itemize}
-  \item BNNs give UQ over high-dimensional parameter space,
-  \begin{itemize}
-    \item Exact inference intractable
-    \item Sampling in parameter space vs Sampling in function space
-  \end{itemize}
+\item We show how to take a trained neural network and convert it to a dual sparse GP. We are able to do this without retraining a variational objective for the Sparse GP. Our sparse GP uses the variational formulation, and thus gives better uncertainty estimates than other no variational sparse approaches used previously.
+\item The sparse GP now gives us a compact representation of our parameters in the function space. We can therefore take advantage of the dual parameters formulation for fast conditioning of new data in to our posterior avoiding retraining of the neural network. Crucially this allows for fast adaptation of models that our used in sequential decision making. We show how this is effective in the planning stage of model-based reinforcement exploration.
 \end{itemize}
 
-\begin{itemize}
-  \item BNN to dual SVGP
-  \begin{itemize}
-    \item Keep in spirit of Laplace approx and fit SVGP with no more optimisation
-    \item Now we can update posterior without retraining, which is fast (good for model-based RL and TS BO?)
-    \item Now we can sample in function space with pathwise conditioning (because we have SVGP).
-    \begin{itemize}
-      \item Our pathwise conditioning will be better as we can use dual update
-    \end{itemize}
-  \end{itemize}
-\end{itemize}
+
+
+\begin{figure}[t!]
+  \setlength{\figurewidth}{.48\textwidth}
+  \setlength{\figureheight}{.5\figurewidth}
+  \begin{subfigure}{.48\textwidth}
+    \centering
+    \tikz\node[fill=black!10,minimum width=\figurewidth,minimum height=\figureheight,rounded corners=5pt]{};
+  \end{subfigure}
+  \hfill
+  \begin{subfigure}{.48\textwidth}
+    \centering
+    \tikz\node[fill=black!10,minimum width=\figurewidth,minimum height=\figureheight,rounded corners=5pt]{};
+  \end{subfigure}
+  \caption{Teaser figure goes here.}
+  \label{fig:teaser}  
+\end{figure}
+
+
 
 \section{Background} \label{sec:background}
-% \section{dual SVGP}
-% In this section we extend these fast updates to environment's with high dimensional state spaces and large data sets.
-% % Our method draws on the connection between BNNs and GPs and formulates a function space SVGP posterior given
-% Our method uses a BNN dynamic model and draws on the connection between BNNs and GPs
-% \parencite{khanApproximate2019} to formulate a function space SVGP posterior,
-% where we can apply the fast updates from \cref{eq-dual-update-svgp}.
-% At a high-level, we first use Laplace's approximation to obtain a weight space posterior for our BNN.
-% We then linearise our BNN around the optimal parameters and interpret it as a GP.
-% Finally, we formulate a lower rank approximation of this GP posterior (i.e. a SVGP posterior) using inducing variables.
-% % formulates a function space SVGP posterior by drawing on the connection between BNNs and GPs.
+Sequential decision making requires uncertainty estimates for effective exploration. 
 
 
-In this section, we recap how to fit a GP posterior to a trained deep neural network (DNN).
-We start by obtaining a posterior over the weights of a trained neural network via the Laplace approximation.
-We then show how we can obtain a function-space posterior, (i.e. a GP posterior)
-by linearising the neural network around the weights Maximum a Posteriori (MAP) estimate.
+In this section, we recap how can obtain a GP posterior from a trained deep neural network (DNN).
+% We start by obtaining a posterior over the weights of a trained neural network via the Laplace approximation.
+% We then show how we can obtain a function-space posterior, (i.e. a GP posterior)
+% by linearising the neural network around the weights Maximum a Posteriori (MAP) estimate.
 % We then show that by linearising the neural network we can obtain a function-space posterior, i.e. a GP posterior.
-
 % We paraterise our single-step dynamic model $\transitionFnWithParams : \inputDomain \rightarrow \outputDomain$
 % as an $L\text{-layer}$ NN with weights $\transitionParams$.
-Given a data set $\dataset = \{\mathbf{x}_{n} \in \inputDomain, \mathbf{y}_{n} \in \outputDomain\}_{n=0}^{N}$,
-the goal of (supervised) deep learning, is to train the weights $\transitionParams \in \R^{P}$ of an $L\text{-layer}$ NN
-$f : \inputDomain \rightarrow \outputDomain$ to minimize the (regularized) empirical risk,
+\textbf{Gaussian processes}
+A Gaussian process (GP) is a distribution over real-valued functions $f(\cdot): \mathcal{X} \rightarrow \R$ defined over $\mathcal{X}$.
+Formally, a GP is defined as,
 \begin{align}
-  \transitionParams^{*} = \arg \min_{\transitionParams \in \R^{D}} \mathcal{L}(\dataset;\transitionParams) = \arg \min_{\transitionParams \in \R^{D}} \left(
-  R(\transitionParams) + \sum_{n=0}^{N-1} l(f(\mathbf{x}_{n} ; \transitionParams), \mathbf{y}_{n}) \right).
+\label{eq-gp-prior}
+  f(\cdot) \sim \mathcal{N}\left( \mu(\cdot), k(\cdot,\cdot') \right) \quad
+  \mu(\cdot): \mathcal{X} \rightarrow \R \quad
+  k(\cdot,\cdot'): \mathcal{X} \times \mathcal{X} \rightarrow \R
 \end{align}
-In practice, it is common to use the mean squared error (MSE) loss
-$l(f(\mathbf{x}_{n} ; \transitionParams),\mathbf{y}_{n}) = \|f(\mathbf{x}_{n} ; \transitionParams) - \mathbf{y}_{n} \|^{2}_{2}$
-and to use the weight decay regularizer $R(\transitionParams)=\frac{1}{2}\gamma^{-2}\|\transitionParams\|^{2}_{2}$.
-However, the practioner is free to choose any loss and regularizer. \todo{I think?}
-
-\textbf{Laplace approximation}
-The Laplace approximation \todo{add citation of original paper} constructs a Gaussian approximation of the weight-space posterior $p(\transitionParams \mid \dataset)$
-by using a second-order Taylor expansion of $\mathcal{L}$ around $\transitionParams^{*}$.
-The posterior approximation is given by,
-\begin{align} \label{eq-laplace-approx-weight-space}
-  p(\transitionParams \mid \dataset) \approx \mathcal{N} \left( \transitionParams \mid \transitionParams^{*} , \bm\Sigma_{\transitionParams^{*}} \right)
-  \quad \text{with} \quad \bm\Sigma_{\transitionParams} =
- - \nabla_{\transitionParams \transitionParams}^{2} \mathcal{L} ( \dataset ; \transitionParams)|_{\transitionParams=\transitionParams^{*}}
-\end{align}
-That is, it sets the posterior precision to the Hessian of the loss at the optimal parameters $\transitionParams^{*}$.
-It is worth noting that computing the Hessian of the loss can be computationally intractable for large networks.
-The prior terms are usually trivial, so we will focus on the likelihood here.
-The Jacobian and Hessian of the log likelihood can be expressed per data point,
-\begin{align} \label{eq-jac}
-  \nabla_{\transitionParams} \log p(\mathbf{y} \mid \mathbf{f}(\mathbf{x}; \transitionParams)) &= \mathbf{J}(\mathbf{x})^{T} \mathbf{r}(\mathbf{y} ; \mathbf{f}) \\
-  \nabla^{2}_{\transitionParams\transitionParams} \log p(\mathbf{y} \mid \mathbf{f}(\mathbf{x}; \transitionParams)) &= \mathbf{H}(\mathbf{x})^{T}
-  \mathbf{r}(\mathbf{y};\mathbf{f}) - \mathbf{J}(\mathbf{x})^{T} \bm\Lambda(\mathbf{y};\mathbf{f}) \mathbf{J}(\mathbf{x}),
-\label{eq-hess}
-\end{align}
-through the Jacobian $\mathbf{J} \in \R^{C \times P}$ and Hessian $\mathbf{H} \in \R^{C \times P \times P}$ of the feature extractor $\mathbf{f}(\mathbf{x}; \bm\transitionParams)$,
-\begin{align} \label{eq-jac}
-[\mathbf{J}(\cdot)]_{ci} = \odv{f_{c}(\cdot ; \transitionParams)}{\transitionParams_{i}}_{\transitionParams=\transitionParams^{*}} \qquad
-[\mathbf{H}(\cdot)]_{cij} = \odv{f_{c}(\cdot ; \transitionParams)}{\transitionParams_{i}\transitionParams_{j}}_{\transitionParams=\transitionParams^{*}}
-\end{align}
-where
-$\mathbf{r}(\mathbf{y}; \mathbf{f}) = \nabla_{\mathbf{f}} \log p(\mathbf{y} \mid \mathbf{f})$ can be interpreted as a residual and
-$\bm\Lambda(\mathbf{y} ; \mathbf{f}) = \nabla^{2}_{\mathbf{f} \mathbf{f}} \log p(\mathbf{y} \mid \mathbf{f})$
-as per-input noise.
-Many approximations exist and can be used alongsied our method.
-We refer the reader to \cite{daxbergerLaplace2021} for more details.
-See \cref{sec-laplace-approximation} for further details on the Laplace approximation.
-
-% \begin{align}
-% \Sigma_{\transitionParams_{i}}^{-1} = - \nabla_{\transitionParams \transitionParams}^{2} \log p(\transitionParams \mid \dataset_{0:i})|_{\transitionParams=\transitionParams^{*}_{i}}
-%   + \frac{1}{\sigma^{2}_{0}} \mathbf{I}
-% \end{align}
-
-
-
-\textbf{Weight space to function space}
-% We can represent the log joint density in the function space,
-% \begin{align} \label{eq-laplace-approx-function-space}
-%   \sum_{n=1}^{N} \log p \left(y_{n} \mid f(\mathbf{x}_{n} ; \transitionParams_{0:i}) \right) + \log p(f(\mathbf{X}; \transitionParams_{0:i}))
-% \end{align}
-We can represent the weight space posterior from \cref{eq-laplace-approx-weight-space}, in
-function space, by linearising the BNN and interpretting it as a GP.
-The GP prior is then given by,
-\begin{align} \label{eq-laplace-approx-function-space}
-  % \transitionFn_{\transitionParams_{i}}(\cdot) \sim \mathcal{N} \left( \mu_{\transitionParams_{i}^{*}}(\cdot), K_{\transitionParams_{i}^{*}}(\cdot, \cdot') \right) \qquad
-  f(\cdot ;\transitionParams) \sim \mathcal{N} \left( \mu(\cdot), k(\cdot, \cdot') \right) \qquad
-  % \mu_{\transitionParams_{i}^{*}}(\cdot)
-  \mu(\cdot)
-  = f(\cdot ;\transitionParams^{*}) \qquad
-  % K_{\transitionParams_{i}^{*}}(\cdot, \cdot')
-  k(\cdot, \cdot')
-  = \gamma^{2} \mathbf{J}(\cdot) \mathbf{J}(\cdot')^{T},
-\end{align}
-where the kernel is the neural tangent kernel (NTK) \parencite{immerImprovingPredictionsBayesian2021}.
-\todo{what mean function shoudl this use???}
-\todo{NTK times some factor??}
-% with Jacobian given by $\mathbf{J}(\cdot) = \odv{\transitionFnWithParams(\cdot)}{\transitionParams}_{\transitionParams=\transitionParams_{i}^{*}}$.
-% The kernel in \cref{eq-laplace-approx-function-space} is the neural tangent kernel (NTK)
-% $k(\mathbf{x}, \mathbf{x}') = \sigma_{0}^{2} J_{\transitionParams^{*}}(\mathbf{x}) J_{\transitionParams^{*}}(\mathbf{x}')^{T}$
-% \parencite{immerImprovingPredictionsBayesian2021}
-% to formulate the GP posterior $p(f(\mathbf{X} ;\transitionParams_{0:i}) \mid \dataset_{0:i})$.
-It is worth noting that the NTK linearises the network around the optimised parameters $\transitionParams_{i}^{*}$,
-so the function space prior (and thus posterior) is only a locally linear approximation.
-In contrast to conventional GP kernels, the NTK does not have any hyperparameters which need to be learned.
-It is also worth noting that the NTK may be highly non stationary and is dependent on the NN architecture, for example, the activation functions.
-Given our GP prior, we can use the properties of multivariate normals to obtain our GP posterior by conditioning on the data.
-Our GP posterior is given by,
-\todo{add mean func to GP posterior if we're using one}
-\begin{align} \label{eq-gp-predictive-posterior}
+where $\mu(\cdot)$ denotes a mean function and $k(\cdot,\cdot')$ a positive definite covariance function, also known as a kernel.
+Given a data set $\dataset = \{\mathbf{x}_{n} \in \inputDomain, \mathbf{y}_{n} \in \outputDomain\}_{n=0}^{N}$,
+we can obtain the GP posterior via multivariate normal conditioning,
+\begin{align}
+\label{eq-gp-predictive-posterior}
   p(f(\mathbf{x}_{*}) \mid \mathbf{y}) &= \mathcal{N}
   % \left( f(\mathbf{x}_{*}) \mid \mathbf{A} \mathbf{m}^{*}, \mathbf{A}\mathbf{K}_{\mathbf{x}\mathbf{x}}^{-1} \mathbf{A}^{T} \right) \\
-  \left( f(\mathbf{x}_{*}) \mid \mathbf{k}_{*\mathbf{x}} \mathbf{K}^{-1}_{\mathbf{x}\mathbf{x}} \mathbf{m}^{*},
+  \left( f(\mathbf{x}_{*}) \mid \mu(\mathbf{x}_{*}) + \mathbf{k}_{*\mathbf{x}} \mathbf{K}^{-1}_{\mathbf{x}\mathbf{x}} (\mathbf{y} - \bm\mu_{\mathbf{X}})),
+  k_{**} - \mathbf{k}_{*\mathbf{x}} \left(\mathbf{K}_{\mathbf{x}\mathbf{x}} \right)^{-1} \mathbf{k}_{*\mathbf{x}}^{T} \right)
+\end{align}
+% Our GP posterior is then given by,
+\todo{add mean func to GP posterior if we're using one}
+\begin{align}
+\label{eq-gp-predictive-posterior}
+  p(f(\mathbf{x}_{*}) \mid \mathbf{y}) &= \mathcal{N}
+  % \left( f(\mathbf{x}_{*}) \mid \mathbf{A} \mathbf{m}^{*}, \mathbf{A}\mathbf{K}_{\mathbf{x}\mathbf{x}}^{-1} \mathbf{A}^{T} \right) \\
+  \left( f(\mathbf{x}_{*}) \mid \mu(\mathbf{x}_{*}) + \mathbf{k}_{*\mathbf{x}} \mathbf{K}^{-1}_{\mathbf{x}\mathbf{x}} \mu_{\mathbf{x}},
   k_{**} - \mathbf{k}_{*\mathbf{x}} \left(\mathbf{K}_{\mathbf{x}\mathbf{x}} + \bm\Lambda(\mathbf{y} ; \mathbf{f})^{-1} \right)^{-1} \mathbf{k}_{*\mathbf{x}}^{T} \right)
 \end{align}
+where $\bm\Lambda(\mathbf{y} ; \mathbf{f}) = \nabla^{2}_{\mathbf{f} \mathbf{f}} \log p(\mathbf{y} \mid \mathbf{f})$ can be viewed as per-input noise. \todo{I'm unsure about this per input noise bit. Check with paul.}
+\todo{what about regression/classification likelhoods}
+This GP predictive posterior is computationally expensive as it requires inverting an $N\times N$ matrix.
 
-
-\section{Dual SVGP} \label{sec:method}
-The GP predictive posterior in \cref{eq-gp-predictive-posterior} is computationally expensive
-as it requires inverting $N\times N$ matrix.
-Sparse approximations using pseudo points ...
-\begin{align} \label{eq-svgp-predictive-posterior}
-  p(f(\mathbf{x}_{*}) \mid \mathbf{y}) &= \mathcal{N}
-  % \left( f(\mathbf{x}_{*}) \mid \mathbf{A} \mathbf{m}^{*}, \mathbf{A}\mathbf{K}_{\mathbf{x}\mathbf{x}}^{-1} \mathbf{A}^{T} \right) \\
-  \left( f(\mathbf{x}_{*}) \mid \mathbf{k}_{*\mathbf{x}} \mathbf{K}^{-1}_{\mathbf{x}\mathbf{x}} \mathbf{m}^{*},
-  k_{**} - \mathbf{k}_{*\mathbf{x}} \mathbf{K}^{-1}_{\mathbf{x}\mathbf{x}} \mathbf{k}_{*\mathbf{x}}^{T} \right) \\
-  % &\approx \mathcal{N}
-  % \left( f(\mathbf{x}_{*}) \mid \mathbf{A} \mathbf{m}^{*}, \mathbf{A}\mathbf{K}_{\mathbf{z}\mathbf{z}}^{-1} \mathbf{A}^{T} + \mathbf{A} \mathbf{V}^{*} \mathbf{A}^{T} \right) \\
+\textbf{Sparse Gaussian processes}
+% The GP predictive posterior in \cref{eq-gp-predictive-posterior} is computationally expensive as it requires inverting an $N\times N$ matrix.
+A practical and computationally appealing alternative is to augment the joint probability space with pseudo inputs $\mathbf{Z} \in \R^{M \times D}$
+and corresponding outputs
+$\mathbf{u} = f(\mathbf{Z}; \transitionParams) \in \R^{M \times C}$, known as inducing variables, where $M \ll N$.
+\todo{cite sparse gp papers}
+Instead of collapsing the inducing variables like \cite{titsiasVariational2009}, they can be treated variationally
+$p(\mathbf{u} \mid \mathbf{y}) \approx q(\mathbf{u}) = \mathcal{N}\left( \mathbf{u} \mid \mathbf{m}, \mathbf{V} \right)$, where $\mathbf{m}$ and $\mathbf{V}$ are variational parameters
+which need to be optimised \citep{hensmanGaussian2013}.
+The sparse variational GP (SVGP) predictive posterior is then given by,
+\begin{align}
+\label{eq-dual-svgp-predictive-posterior}
+  p(f(\mathbf{x}_{*}) \mid \mathbf{y})
 &\approx \mathcal{N} \left( f(\mathbf{x}_{*}) \mid \mathbf{k}_{*\mathbf{z}} \mathbf{K}^{-1}_{\mathbf{z}\mathbf{z}} \mathbf{m}^{*},
   k_{**} - \mathbf{k}_{*\mathbf{z}} \mathbf{K}^{-1}_{\mathbf{z}\mathbf{z}} \mathbf{k}_{*\mathbf{z}}^{T}
   % \mathbf{k}_{*\inducingInput} \mathbf{K}^{-1}_{\mathbf{z}\mathbf{z}} \mathbf{k}_{*\inducingInput}^{T}
@@ -329,7 +323,82 @@ Sparse approximations using pseudo points ...
   \right)
 \coloneqq q_{\inducingVariable}(f(\mathbf{x}_{*}))
 \end{align}
+
+
+\textbf{Deep learning}
+Given the data set $\dataset = \{\mathbf{x}_{n} \in \inputDomain, \mathbf{y}_{n} \in \outputDomain\}_{n=0}^{N}$,
+the goal of (supervised) deep learning, is to train the weights $\transitionParams \in \R^{P}$ of an $L\text{-layer}$ NN
+$f : \inputDomain \rightarrow \outputDomain$ to minimize the (regularized) empirical risk,
+\begin{align} \label{eq-empirical-risk}
+  \transitionParams^{*} = \arg \min_{\transitionParams \in \R^{D}} \mathcal{L}(\dataset;\transitionParams) = \arg \min_{\transitionParams \in \R^{D}} \left(
+  \sum_{n=0}^{N-1} l(f(\mathbf{x}_{n} ; \transitionParams), \mathbf{y}_{n}) + R(\transitionParams)  \right).
+\end{align}
+In practice, it is common to use the mean squared error (MSE) loss
+$l(f(\mathbf{x}_{n} ; \transitionParams),\mathbf{y}_{n}) = \|f(\mathbf{x}_{n} ; \transitionParams) - \mathbf{y}_{n} \|^{2}_{2}$
+and to use the weight decay regularizer $R(\transitionParams)=\frac{1}{2}\gamma^{-2}\|\transitionParams\|^{2}_{2}$.
+However, the practioner is free to choose any loss and regularizer. \todo{I think?}
+% \textbf{Bayesian neural networks}
+% \textbf{Weight space to function space}
+From a Bayesian perspective, we can interpret the terms in \cref{eq-empirical-risk} as the log-prior and the i.i.d. log likelihood, i.e.,
+\begin{align} \label{eq-log-prior}
+  R(\transitionParams) &= \underbrace{\log p(\transitionParams)}_{\text{log prior}} = \log \mathcal{N}(\transitionParams \mid 0, \gamma^{2} \mathbf{I}) \\
+  l(f(\mathbf{x}_{n} ; \transitionParams), \mathbf{y}_{n}) &= \underbrace{\log p(\mathbf{y}_{n} \mid f(\mathbf{x}_{n}; \transitionParams))}_{\text{log likelihood}}
+  = \log \mathcal{N} \left( \mathbf{y}_{n} \mid f(\mathbf{x}_{n}; \transitionParams), \mathbf{I} \right) \label{eq-log-likelihood}
+\end{align}
+
+\textbf{NN to GP}
+Given this interpretation, we can represent the weight space prior from \cref{eq-log-prior}, in
+function space, by linearising the BNN around $\transitionParams^{*}$ and interpretting it as a GP.
+The GP prior is then given by,
+\begin{align} \label{eq-laplace-approx-function-space}
+  % \transitionFn_{\transitionParams_{i}}(\cdot) \sim \mathcal{N} \left( \mu_{\transitionParams_{i}^{*}}(\cdot), K_{\transitionParams_{i}^{*}}(\cdot, \cdot') \right) \qquad
+  f(\cdot ;\transitionParams) \sim \mathcal{N} \left( \mu(\cdot), k(\cdot, \cdot') \right) \quad
+  % \mu_{\transitionParams_{i}^{*}}(\cdot)
+  \mu(\cdot)
+  = 0 \quad
+  % = f(\cdot ;\transitionParams^{*}) \quad
+  % K_{\transitionParams_{i}^{*}}(\cdot, \cdot')
+  k(\cdot, \cdot')
+  = \frac{1}{\gamma^{2}} \mathbf{J}(\cdot) \mathbf{J}(\cdot')^{T},
+\end{align}
+where the kernel is the neural tangent kernel (NTK) \citep{immerImprovingPredictionsBayesian2021},
+\todo{what mean function shoudl this use???}
+\todo{NTK times some factor??}
+with Jacobian given by $\mathbf{J}(\cdot) = \odv{\transitionFn(\cdot; \transitionParams)}{\transitionParams}_{\transitionParams=\transitionParams^{*}}$.
+% The kernel in \cref{eq-laplace-approx-function-space} is the neural tangent kernel (NTK)
+% $k(\mathbf{x}, \mathbf{x}') = \sigma_{0}^{2} J_{\transitionParams^{*}}(\mathbf{x}) J_{\transitionParams^{*}}(\mathbf{x}')^{T}$
+% \citep{immerImprovingPredictionsBayesian2021}
+% to formulate the GP posterior $p(f(\mathbf{X} ;\transitionParams_{0:i}) \mid \dataset_{0:i})$.
+Given this GP prior, we can use \cref{eq-gp-predictive-posterior} to obtain our GP posterior by conditioning on the data.
+% Given our GP prior, we can use the properties of multivariate normals to obtain our GP posterior by conditioning on the data.
 % where $\mathbf{A} = \mathbf{k}_{*\mathbf{x}} \mathbf{K}^{-1}_{\mathbf{x}\mathbf{x}}$
+In contrast to conventional GP kernels, the NTK does not have any hyperparameters which need to be learned.
+Intuitively, we can view the optimisation in \cref{eq-empirical-risk} as learning our kernel.
+As a result, our NTK may be highly non stationary as it is dependent on the NN architecture, for example, the activation functions.
+It is worth noting that the NTK linearises the network around the optimised parameters $\transitionParams^{*}$,
+so the function space prior (and thus posterior) is only a locally linear approximation.
+
+We now have a method to obtain a GP posterior from a trained DNN.
+% In contrast to other approaches, our formulation has not restricted us to using a weight-space posterior obtained from the Laplace approximation.
+In contrast to other approaches, our formulation has not restricted us to using a weight-space posterior from a BNN.
+However, in practice, the GP posterior is not very useful as it requires inverting an $N\times N$ matrix which has complexity $\mathcal{O}(N^{3})$.
+The SVGP in \cref{eq-dual-svgp-predictive-posterior} offers a solution to this problem but it is not immediately clear how to set $\mathbf{m}$ and $\mathbf{V}$.
+In the next section, we show how we can directly obtain an SVGP posterior (i.e. set $\mathbf{m}$ and $\mathbf{V}$) directly from both
+1) a trained NN and 2) a BNN weight-space posterior.
+% $\mathbf{m}$ and $\mathbf{V}$
+% However, it is not obvious how we can use a SVGP to set $\mathbf{m}$ and $\mathbf{V}$
+
+
+
+% In contrast, to previous work, this approach did not require us Laplace approximation. we will not restrict our
+% It is worth noting that the NTK linearises the network around the optimised parameters $\transitionParams^{*}$,
+% so the function space prior (and thus posterior) is only a locally linear approximation.
+% In contrast to conventional GP kernels, the NTK does not have any hyperparameters which need to be learned.
+% It is also worth noting that the NTK may be highly non stationary and is dependent on the NN architecture, for example, the activation functions.
+
+
+\section{Methods}
+In the next section we show how we can obtain a SVGP directly from 1) a trained NN and 2) a BNN posterior.
 
 We follow \cite{csatoSparseOnlineGaussian2002} and express our GP posterior in the dual parameter space.
 However, we consider the variational formulation introduced by \cite{adamDualParameterizationSparse2021}, where the optimal variational parameters are given by,
@@ -342,7 +411,7 @@ Importantly, we can calculate the natural parameters $(\bm\alpha, \bm\beta)$ in 
 \bm\alpha_{n} &=  \nabla_{\meanParam{1}} \mathbb{E}_{q_{\inducingVariable}(f(\mathbf{x}_{n}))} \left[ \log p(\mathbf{y}_{n} \mid f(\mathbf{x}_{n}) ) \right] \\
 \bm\beta_{n} &=  \nabla_{\meanParam{1}} \mathbb{E}_{q_{\inducingVariable}(f(\mathbf{x}_{n}))} \left[ \log p(\mathbf{y}_{n} \mid f(\mathbf{x}_{n}) ) \right].
 \end{align}
-This simplifies SVGP inference \parencite{hensmanGaussian2013} as it no longer requires the variational parameters $(\mathbf{m}, \mathbf{V})$ to be optimised.
+This simplifies SVGP inference \citep{hensmanGaussian2013} as it no longer requires the variational parameters $(\mathbf{m}, \mathbf{V})$ to be optimised.
 
 % Importantly, \cite{changFantasizingDualGPs2022} show that in the dual space,
 % conditioning on new observations reduces to suming the dual variables from the previous time
@@ -461,6 +530,34 @@ It is worth highlighting that the complexity of \cite{changFantasizingDualGPs202
 
 
 \section{Experiments}
+
+% \begin{figure}
+%   \centering
+%   \includegraphics[width=0.5\textwidth, angle=270]{figs/weight-space-to-functio-space.pdf}
+%   \caption{}
+% \end{figure}
+
+% \begin{figure}
+%   \centering
+%   \includegraphics[width=0.5\textwidth, trim=0 100 0 10]{figs/cartpole-training-curves.pdf}
+%   \caption{}
+% \end{figure}
+
+% \begin{table}
+%   \caption{Negative test log likelihood (lower is better) on UCI classification tasks (2 hidden layers, 50 tanh). Our SVGP predictive outperforms the GLM predictive. }
+% \end{table}
+
+\begin{itemize}
+  \item Show prediction performance in classification: UCI classification results, compare to BNN predictive paper
+  \item Fast adapatation in model-based RL: results for cartpole
+  \item Is linearising NN mean and using fast updates during episode better than keeping non-linearised mean and not updating?
+  \item Possible ablations
+  \begin{itemize}
+    \item How does number of inducing points affect performance?
+  \end{itemize}
+  \item How good is the assumption that we can linearise BNN to get NTK?
+\end{itemize}
+
 Environments
 \begin{itemize}
   \item Compare updated posterior with non updated posterior
@@ -506,21 +603,36 @@ Environments
 
 \section*{Broader Impact}
 
-\section*{Acknowledgements}
+\begin{ack}
+ASK A ABOUT THIS SECTION:
 Aidan Scannell is funded by the Finnish Center for Artificial Intelligence.
+\end{ack}
+
 
 % \section*{References}
-\small
-\printbibliography
-\normalsize
+%\small
+%\printbibliography
+%\normalsize
 % TODO make bibliography small a better way
 
-References follow the acknowledgments. Use unnumbered first-level heading for
-the references. Any choice of citation style is acceptable as long as you are
-consistent. It is permissible to reduce the font size to \verb+small+ (9 point)
-when listing the references.
-Note that the Reference section does not count towards the page limit.
-\medskip
+%References follow the acknowledgments. Use unnumbered first-level heading for
+%the references. Any choice of citation style is acceptable as long as you are
+%consistent. It is permissible to reduce the font size to \verb+small+ (9 point)
+%when listing the references.
+%Note that the Reference section does not count towards the page limit.
+%\medskip
+
+
+\phantomsection%
+\addcontentsline{toc}{section}{References}
+\begingroup
+\small
+\bibliographystyle{abbrvnat}
+\bibliography{zotero-library,bibliography}
+\endgroup
+
+\clearpage
+
 
 
 
@@ -648,7 +760,7 @@ However, under specific dynamics and reward structures (e.g. PILCO) this objecti
 \end{align}
 
 \textbf{Hallucinated upper confidence RL}
-A more theoretically grounded exploration strategy is UCRL \autocite{jakschNearoptimal2010}, which optimises joinly over
+A more theoretically grounded exploration strategy is UCRL \citep{jakschNearoptimal2010}, which optimises joinly over
 policies and models inside the set
 \(\mathcal{M} = \{ f \mid | f(s,a) - \mu_{i}(s, a) | \leq \beta_{i} \Sigma_{i}(s, a) \quad \forall s, a \in \mathcal{S} \times \mathcal{A} \}\), representing all statistically plausible
 models under the posterior \(p(f(s,a) \mid \mathcal{D}_{0:i} \cup (s,a)) = \mathcal{N}(f(s,a) \mid \mu_{i}(s,a), \Sigma_{i}(s,a))\) at episode \(i\).
@@ -704,7 +816,7 @@ for example, model bias and the exploration-exploitation trade-off.
 In this section we extend these fast updates to environment's with high dimensional state spaces and large data sets.
 % Our method draws on the connection between BNNs and GPs and formulates a function space SVGP posterior given
 Our method uses a BNN dynamic model and draws on the connection between BNNs and GPs
-\parencite{khanApproximate2019} to formulate a function space SVGP posterior,
+\citep{khanApproximate2019} to formulate a function space SVGP posterior,
 where we can apply the fast updates from \cref{eq-dual-update-svgp}.
 At a high-level, we first use Laplace's approximation to obtain a weight space posterior for our BNN.
 We then linearise our BNN around the optimal parameters and interpret it as a GP.
@@ -758,6 +870,38 @@ Intuitively, \(\eta(\state,\action) \in [-1,1]\) enables the optimisation to sel
 
 \section{Laplace Approximation} \label{sec-laplace-approximation}
 
+\textbf{Laplace approximation}
+The Laplace approximation \todo{add citation of original paper} constructs a Gaussian approximation of the weight-space posterior $p(\transitionParams \mid \dataset)$
+by using a second-order Taylor expansion of $\mathcal{L}$ around $\transitionParams^{*}$.
+The posterior approximation is given by,
+\begin{align} \label{eq-laplace-approx-weight-space}
+  p(\transitionParams \mid \dataset) \approx \mathcal{N} \left( \transitionParams \mid \transitionParams^{*} , \bm\Sigma_{\transitionParams^{*}} \right)
+  \quad \text{with} \quad \bm\Sigma_{\transitionParams} =
+ - \nabla_{\transitionParams \transitionParams}^{2} \mathcal{L} ( \dataset ; \transitionParams)|_{\transitionParams=\transitionParams^{*}}
+\end{align}
+That is, it sets the posterior precision to the Hessian of the loss at the optimal parameters $\transitionParams^{*}$.
+It is worth noting that computing the Hessian of the loss can be computationally intractable for large networks.
+The prior terms are usually trivial, so we focus on the likelihood here.
+The Jacobian and Hessian of the log likelihood can be expressed per data point,
+\begin{align} \label{eq-jac}
+  \nabla_{\transitionParams} \log p(\mathbf{y} \mid \mathbf{f}(\mathbf{x}; \transitionParams)) &= \mathbf{J}(\mathbf{x})^{T} \mathbf{r}(\mathbf{y} ; \mathbf{f}) \\
+  \nabla^{2}_{\transitionParams\transitionParams} \log p(\mathbf{y} \mid \mathbf{f}(\mathbf{x}; \transitionParams)) &= \mathbf{H}(\mathbf{x})^{T}
+  \mathbf{r}(\mathbf{y};\mathbf{f}) - \mathbf{J}(\mathbf{x})^{T} \bm\Lambda(\mathbf{y};\mathbf{f}) \mathbf{J}(\mathbf{x}),
+\label{eq-hess}
+\end{align}
+through the Jacobian $\mathbf{J} \in \R^{C \times P}$ and Hessian $\mathbf{H} \in \R^{C \times P \times P}$ of the feature extractor $\mathbf{f}(\mathbf{x}; \bm\transitionParams)$,
+\begin{align} \label{eq-jac}
+[\mathbf{J}(\cdot)]_{ci} = \odv{f_{c}(\cdot ; \transitionParams)}{\transitionParams_{i}}_{\transitionParams=\transitionParams^{*}} \qquad
+[\mathbf{H}(\cdot)]_{cij} = \odv{f_{c}(\cdot ; \transitionParams)}{\transitionParams_{i}\transitionParams_{j}}_{\transitionParams=\transitionParams^{*}}
+\end{align}
+where
+$\mathbf{r}(\mathbf{y}; \mathbf{f}) = \nabla_{\mathbf{f}} \log p(\mathbf{y} \mid \mathbf{f})$ can be interpreted as a residual and
+$\bm\Lambda(\mathbf{y} ; \mathbf{f}) = \nabla^{2}_{\mathbf{f} \mathbf{f}} \log p(\mathbf{y} \mid \mathbf{f})$
+as per-input noise.
+Many approximations exist and can be used alongsied our method.
+We refer the reader to \cite{daxbergerLaplace2021} for more details.
+See \cref{sec-laplace-approximation} for further details on the Laplace approximation.
+
 
 \section{Template stuff}
 \subsection{Generate TikZ Figures from Python}
@@ -809,7 +953,7 @@ with open("table.tex", 'w') as file:
 \end{table}
 
 \subsection{Biblatex}
-Rember when using biblatex to use 'parencite' for \parencite{kamtheDataEfficient2018} and when using natbib to use 'citep'.
+Rember when using biblatex to use 'parencite' for \citep{kamtheDataEfficient2018} and when using natbib to use 'citep'.
 
-
+%\bibliography{biblio.bib}
 \end{document}

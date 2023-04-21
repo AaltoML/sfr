@@ -1,0 +1,5 @@
+# @package _global_
+defaults:
+  - override /agent: ddpg
+
+alg_name: "ddpg"

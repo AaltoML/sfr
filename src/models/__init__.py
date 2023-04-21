@@ -1,5 +1,6 @@
 # #!/usr/bin/env python3
-# from .base import TransitionModel, GaussianModelBaseEnv
-from .transition import TransitionModel
-from .reward import RewardModel
-from .world_model import GaussianModelBaseEnv
+from .rewards.base import RewardModel
+from .transitions.base import TransitionModel
+from .rewards import *
+from .transitions import *
+from .svgp import *

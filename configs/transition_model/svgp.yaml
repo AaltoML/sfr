@@ -1,10 +1,12 @@
-_target_: models.transition.build_SVGPTransitionModel
-# _convert_: all
+_target_: src.models.transitions.svgp.init
+_convert_: all
 svgp:
+  _target_: models.svgp.SVGP
   inducing_points:
     _target_: torch.rand
     size:
-      - ${state_dim}
+      # - ${state_dim}
+      - 1
       - 500 # num_inducing
       - ${input_dim}
   mean_module:
@@ -26,5 +28,12 @@ likelihood:
 # learning_rate: 0.05
 learning_rate: 0.1
 batch_size: 64
-num_workers: 1 # TODO what should I set this to?
-wandb_loss_name: "Transition model loss"
+num_epochs: 300
+# num_workers: 1 # TODO what should I set this to?
+# wandb_loss_name: "model/transition_loss"
+wandb_loss_name: "transition/loss"
+early_stopper:
+  _target_: utils.EarlyStopper
+  patience: 50
+  min_delta: 0
+device: ${device} # TODO should this always be cpu??

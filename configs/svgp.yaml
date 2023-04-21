@@ -1,0 +1,22 @@
+svgp:
+  _target_: models.svgp.SVGP
+  _convert_: all
+  inducing_points:
+    _target_: torch.rand
+    size:
+      # - 500 # num_inducing
+      - 256 # num_inducing
+      # - 128 # num_inducing
+      - 1
+  mean_module:
+    _target_: gpytorch.means.ConstantMean
+    # _target_: gpytorch.means.ZeroMean
+  covar_module:
+    _target_: gpytorch.kernels.ScaleKernel
+    base_kernel:
+      _target_: gpytorch.kernels.RBFKernel
+      ard_num_dims: 1
+  learn_inducing_locations: false
+  # learn_inducing_locations: true
+likelihood:
+  _target_: gpytorch.likelihoods.GaussianLikelihood

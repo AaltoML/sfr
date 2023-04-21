@@ -1,70 +1,56 @@
 defaults:
   # - model: laplace
   # - model: svgp
-  - model: world_model
-  - model_new: world_model
-  # - task: cartpole_swingup
-  # - env: cartpole_swingup
-  - env: cartpole_balance
+  - reward_model: svgp
+  - transition_model: svgp
+  # - reward_model: mlp
+  # - transition_model: mlp
+  # - model: world_model
+  # - model_new: world_model
+  # - agent: ddpg
+  - agent: mppi
+  - env: cartpole_swingup
+  # - env: cartpole_balance
   # - env: Pendulum-v1
   # - env: CartPole-v1
-  - planner: mppi
+  # - planner: mppi
   # - planner: cem
   # - model: probabilistic_ensemble
   # Use slurm on cluster or local?
   # - override hydra/launcher: submitit_local
-  - override hydra/launcher: local
-  # - override hydra/launcher: slurm
+  # - override hydra/launcher: local
+  - override hydra/launcher: slurm
   # Disable logging by Hydra
   - override hydra/job_logging: none
   - override hydra/hydra_logging: none
   - _self_
 
-# task: cartpole_swingup
+state_dim: ???
+action_dim: ???
+input_dim: ???
+output_dim: ???
+device: ???
+
+online_updates: true
+
+alg_name: "mppi-svgp"
 random_seed: 42
-name: "svgp"
-device: "cpu"
-# device: "gpu"
 
-init_env_steps: 1000
+init_random_episodes: 10
+num_train_episodes: 2000
+# episode_length: 1000
+episode_length: 100
+update_every_steps: 2
 
-frame_stack: 1
-action_repeat: 1
+eval_episode_freq: 10
+# eval_episode_freq: 2
+# save_video: true
+save_video: false
 
-# observation_dim: ???
-# action_dim: ???
-state_dim: 5 # dm_control
-# state_dim: 4 # gym
-action_dim: 1
-# action_dim:
-#   _target_: ${env.action_spec().shape}
-# input_dim: 5 # gym
-# output_dim: 5 # gym
-input_dim: 6 # dm_control
-output_dim: 6 # dm_control
-# output_dim: ${observation_dim}
-# batch_shape:
-#   _target_: torch.Size
-#   args:
-#     - ${output_dim}
-
-# frames_per_batch: 50
-# total_frames: 50000
-num_episodes: 2000
-max_steps_per_episode: 200
-save_video: true
-save_train_video: true
-
-# training:
-#   batch_size: 64
-#   max_epochs: 1000
-#   num_workers: 8
-
-# initial_dataset:
-#   num_episodes: 20
 replay_buffer_capacity: 100000
+save_buffer: false
 buffer_scratch_dir: "/tmp/"
-batch_size: 64
+batch_size: 512
 
 wandb:
   group: ${env.env_name}-${env.task_name}
@@ -72,9 +58,13 @@ wandb:
   entity: "aidanscannell"
   project: "bayesian-model-based-rl-with-fast-updates"
   use_wandb: True
-  run_name: ${env.env_name}-${random_seed}-${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
+  run_name: ${alg_name}-${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   tags:
     - "random_seed=${random_seed}"
+    - "env=${env.env_name}-${env.task_name}"
+    - "alg=${alg_name}"
+    # - "horizon=${agent.horizon}"
+    # - "num_samples=${agent.num_samples}"
 
 hydra:
   job:

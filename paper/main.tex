@@ -184,19 +184,43 @@
 %
   % Building learning-based systems  for their deployment in real-world applications
 
-  The world is a complex dynamic environment where humans and animals leverage high-dimensional sensory data to successfully operate and
-  adapt to changes in the environment.
-  Building learning-based systems that can handle high-dimensional data whilst adapting to new data whilst expressing uncertainty is essential for their deployment in real-world applications, e.g. healthcare and robotics.
-  However, modern deep learning methods cannot adapt to new data because they rely on gradient-based optimisation, which requires retraining with the addition of new data. In contrast, nonparametric approaches -- such as Gaussian processes -- can adapt to new data. However, they are limited to low-dimensional and small data sets. We present a method that enables any trained neural network (NN) to be converted to a sparse variational Gaussian process (SVGP).
+  % The world is a complex dynamic environment where humans and animals leverage high-dimensional sensory data to successfully operate and
+  % adapt to changes in the environment.
+  Building learning-based systems that can handle high-dimensional and large data sets whilst expressing uncertainty is essential in many real-world applications, e.g. healthcare and robotics.
+  Although Gaussian processes can learn nonlinear functions whilst providing principled uncertainty quantification, they are limited to low-dimensional and small data sets.
+  We present a method that enables any trained neural network (NN) to be converted to a sparse variational Gaussian process (SVGP).
+Importantly, our method scales to high-dimensional and large data sets whilst providing well-calibrated uncertainty estimates.
+Further to this, our function-space posterior enables
+any neural network to be 1) adapted online without retraining and 2) used as a functional regulariser in continual learning.
+Essentially, our method reaps the benefits of function space without the well-known issues associated with nonparametric models.
+% Essentially, our method reaps the benefits of nonparametric models without their well-known issues.
+We demonstrate that our method scales to high-dimensional and large data sets such as XXXXX.
+We then show that our method obtains state-of-the-art uncertainty quantification with experiments using UCI data sets.
+Finally, we demonstrate the power of our NN's function-space posterior by showing
+that 1) it can improve sample-efficiency in model-based reinforcement learning (via our model's online adaptation)
+and 2) it can improve XXXX in continual learning.
 
-  However, modern deep learning methods cannot adapt to new data because they rely on gradient-based optimisation, which requires retraining with the addition of new data. In contrast, nonparametric approaches -- such as Gaussian processes -- can adapt to new data. However, they are limited to low-dimensional and small data sets. We present a method that enables any trained neural network (NN) to be converted to a sparse variational Gaussian process (SVGP).
-Importantly, our method
-1) scales to high-dimensional and large data sets,
-2) provides well-calibrated uncertainty estimates, and
-3) enables fast adaptation to new data.
-Essentially, our method reaps the benefits of nonparametric models without their well-known issues.
-We demonstrate our state-of-the-art NN uncertainty quantification with experiments using UCI data sets and
-demonstrate the effectiveness of our model's fast adaptation by showing that it can improve sample-efficiency in model-based reinforcement learning.
+
+% Further to this, our method enables neural networks to be adapted online via efficient updates
+
+% Essentially, our method reaps the benefits of nonparametric models without their well-known issues.
+
+% We further show the benefits
+% 3) enables fast adaptation to new data.
+
+%   In contrast, nonparametric approaches -- such as Gaussian processes -- can adapt to new data. However, they are limited to low-dimensional and small data sets. We present a method that enables any trained neural network (NN) to be converted to a sparse variational Gaussian process (SVGP).
+
+%   However, modern deep learning methods cannot adapt to new data because they rely on gradient-based optimisation, which requires retraining with the addition of new data.
+
+%   However, modern deep learning methods cannot adapt to new data because they rely on gradient-based optimisation, which requires retraining with the addition of new data. In contrast, nonparametric approaches -- such as Gaussian processes -- can adapt to new data. However, they are limited to low-dimensional and small data sets.
+%   We present a method that enables any trained neural network (NN) to be converted to a sparse variational Gaussian process (SVGP).
+% Importantly, our method
+% 1) scales to high-dimensional and large data sets,
+% 2) provides well-calibrated uncertainty estimates, and
+% 3) enables fast adaptation to new data.
+% Essentially, our method reaps the benefits of nonparametric models without their well-known issues.
+% We demonstrate our state-of-the-art NN uncertainty quantification with experiments using UCI data sets and
+% demonstrate the effectiveness of our model's fast adaptation by showing that it can improve sample-efficiency in model-based reinforcement learning.
 %
 % The world is a dynamic environment that requires humans and animals to constantly adapt.
 %   Building learning-based systems that can adapt to new data and express uncertainty is essential for their deployment in real-world applications, e.g. healthcare and robotics. However, modern deep learning methods cannot adapt to new data because they rely on gradient-based optimisation, which requires retraining with the addition of new data. In contrast, nonparametric approaches -- such as Gaussian processes -- can adapt to new data. However, they are limited to low-dimensional and small data sets. We present a method that enables any trained neural network (NN) to be converted to a sparse variational Gaussian process (SVGP). Importantly, our method 1) enables fast adaptation to new data, 2) provides well-calibrated uncertainty estimates, and 3) scales to high-dimensional and large data sets. Essentially, our method reaps the benefits of nonparametric models without their well-known issues. We demonstrate the effectiveness of our model's fast adaptation by showing that it can improve sample-efficiency in model-based reinforcement learning and we demonstrate our state-of-the-art NN uncertainty quantification with experiments using UCI data sets.

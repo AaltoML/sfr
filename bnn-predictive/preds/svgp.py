@@ -12,7 +12,7 @@ from torch.func import vmap, jacrev, functional_call, hessian
 
 class SVGPNTK():
 
-    def __init__(self, nn_model, likelihood, data, n_sparse=100, sparse_data=None, device='cpu'):
+    def __init__(self, nn_model, likelihood, data, prior_prec, n_sparse=0.25, sparse_data=None, device='cpu'):
         # data
         (y, x) = data
         self.n_classes = nn_model(x[0]).shape[-1]
@@ -20,8 +20,8 @@ class SVGPNTK():
 
         # randomly select n_sparse points
         if sparse_data is None:
-            self.n_sparse = n_sparse
-            indices = torch.randperm(y.shape[0])[:n_sparse]
+            self.n_sparse = int(y.shape[0]*n_sparse)
+            indices = torch.randperm(y.shape[0])[:self.n_sparse]
             self.y = y[indices]
             self.x = x[indices]
         else:
@@ -31,7 +31,7 @@ class SVGPNTK():
 
         self.n_classes = nn_model(self.x[0]).shape[-1]
 
-        self.delta = 0.001
+        self.delta = prior_prec / y.shape[0]
         self.eps = 10**(-7)
 
         # trained model and kernel type

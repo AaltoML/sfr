@@ -37,8 +37,8 @@ def preds_glm(X, model, likelihood, mu, Sigma_chol, samples):
     return gs.mean(dim=0)
 
 
-def preds_svgp(X, X_train, y_train, model, likelihood, n_sparse, sparse_points, samples=1000):
-    gs, sparse_data = svgp_sampling_predictive(X, X_train, y_train, model, likelihood,n_sparse,sparse_points, mc_samples=samples)
+def preds_svgp(X, X_train, y_train, model, likelihood,prior_prec, n_sparse, sparse_points, samples=1000):
+    gs, sparse_data = svgp_sampling_predictive(X, X_train, y_train, model, likelihood, prior_prec, n_sparse,sparse_points, mc_samples=samples)
     return gs.mean(dim=0), sparse_data
 
 
@@ -57,7 +57,7 @@ def evaluate(p, y, likelihood, name, data):
 
 
 def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, seed,
-              n_layers=2, n_units=50, activation='tanh', n_sparse=100, n_samples=1000, refine=True):
+              n_layers=2, n_units=50, activation='tanh', n_sparse=0.25, n_samples=1000, refine=True):
     """Full inference (training and prediction)
     storing all relevant quantities and returning a state dictionary.
     if sigma_noise is None, we have classification.
@@ -110,9 +110,9 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
 
     # SVGP predictive
     
-    fs_train, data_sparse = preds_svgp(X_train, X_train, y_train,model, likelihood, n_sparse=n_sparse, samples=n_samples, sparse_points=None)
-    fs_test, _ = preds_svgp(X_test, X_train, y_train, model, likelihood, n_sparse=n_sparse,  samples=n_samples, sparse_points=data_sparse)
-    fs_valid, _ = preds_svgp(X_valid, X_train, y_train, model, likelihood, n_sparse=n_sparse, samples=n_samples, sparse_points=data_sparse)
+    fs_train, data_sparse = preds_svgp(X_train, X_train, y_train, model, likelihood,prior_prec,  n_sparse=n_sparse, samples=n_samples, sparse_points=None)
+    fs_test, _ = preds_svgp(X_test, X_train, y_train, model, likelihood, prior_prec, n_sparse=n_sparse,  samples=n_samples, sparse_points=data_sparse)
+    fs_valid, _ = preds_svgp(X_valid, X_train, y_train, model, likelihood, prior_prec,  n_sparse=n_sparse, samples=n_samples, sparse_points=data_sparse)
     res.update(evaluate(fs_train, y_train, lh, 'svgp_ntk', 'train'))
     res.update(evaluate(fs_test, y_test, lh, 'svgp_ntk', 'test'))
     res.update(evaluate(fs_valid, y_valid, lh, 'svgp_ntk', 'valid'))
@@ -236,7 +236,7 @@ if __name__ == '__main__':
     parser.add_argument('--root_dir', help='Root directory', default='../')
     parser.add_argument('--name', help='name result file', default='', type=str)
     parser.add_argument('--n_samples', help='number predictive samples', type=int, default=1000)
-    parser.add_argument('--n_sparse', help='number of sparse data points to use for the svgp', type=int, default=100)
+    parser.add_argument('--n_sparse', help='number of sparse data points to use for the svgp', type=float, default=0.5)
     parser.add_argument('--refine', help='on/off switch for posterior refinement', type=bool)
     args = parser.parse_args()
     dataset = args.dataset

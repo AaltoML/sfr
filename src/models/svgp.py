@@ -248,13 +248,13 @@ class SVGP(gpytorch.models.ApproximateGP):
 
         grad_mu_1 = torch.einsum("bmc, cb -> mb", Kuf, grad_nat_1)
         grad_mu_2 = torch.einsum("bmc, cb, bnc -> bmn", Kuf, grad_nat_2, Kuf)
-        # if svgp.is_multi_output:
-        #     grad_mu_1 = torch.einsum("bmc, cb -> mb", Kuf, grad_nat_1)
-        #     grad_mu_2 = torch.einsum("bmc, cb, bnc -> bmn", Kuf, grad_nat_2, Kuf)
-        #     # grad_mu_2 = torch.einsum("nmf, nf, ncf -> nmc", K_uf, grad_nat_2, K_uf)
-        # else:
-        #     grad_mu_1 = torch.einsum("mc, c -> m", Kuf, grad_nat_1)
-        #     grad_mu_2 = torch.einsum("mc, c, nc -> mn", Kuf, grad_nat_2, Kuf)
+        if self.is_multi_output:
+            grad_mu_1 = torch.einsum("bmc, cb -> mb", Kuf, grad_nat_1)
+            grad_mu_2 = torch.einsum("bmc, cb, bnc -> bmn", Kuf, grad_nat_2, Kuf)
+            # grad_mu_2 = torch.einsum("nmf, nf, ncf -> nmc", K_uf, grad_nat_2, K_uf)
+        else:
+            grad_mu_1 = torch.einsum("mc, c -> m", Kuf, grad_nat_1)
+            grad_mu_2 = torch.einsum("mc, c, nc -> mn", Kuf, grad_nat_2, Kuf)
         # grad_mu_1 = Kuf.matmul(grad_nat_1)
         # print("grad_mu_1 {}".format(grad_mu_1.shape))
         # # grad_mu_1 = torch.diagonal(grad_mu_1, dim1=0, dim2=-1)
@@ -276,8 +276,8 @@ class SVGP(gpytorch.models.ApproximateGP):
         lambda_2 = lambda_2 + lambda_2_t_new
         self.lambda_1 = lambda_1
         self.lambda_2 = lambda_2
-        # print("lambda_1_new {}".format(lambda_1_new.shape))
-        # print("lambda_2_new {}".format(lambda_2_new.shape))
+        print("lambda_1 {}".format(lambda_1.shape))
+        print("lambda_2 {}".format(lambda_2.shape))
 
         # new_mean, new_cov = conditional_from_precision_sites_white_full(
         #     Kuu, lambda_1, lambda_2, jitter=self.jitter
@@ -296,7 +296,12 @@ class SVGP(gpytorch.models.ApproximateGP):
         S_q = torch.matmul(torch.transpose(iLRK, -1, -2), iLRK)
         print("S_q {}".format(S_q.shape))
         chol_S_q = torch.linalg.cholesky(S_q, upper=False)
-        m_q = (Kuu @ torch.cholesky_solve(lambda_1, LR, upper=False))[0]
+        tmp = torch.cholesky_solve(lambda_1, LR, upper=False)
+        print("tmp {}".format(tmp.shape))
+        m_q = Kuu @ tmp
+        print("m_q {}".format(m_q.shape))
+        m_q = torch.diagonal(m_q, dim1=0, dim2=-1)
+        # m_q = m_q[0]
         print("m_q {}".format(m_q.shape))
         # m_q = (Kuu @ torch.linalg.cholesky_solve(LR, lambda_1, upper=False))[0]
         # return m_q, chol_S_q
@@ -374,6 +379,7 @@ class SVGP(gpytorch.models.ApproximateGP):
         Lm = torch.linalg.cholesky(Kmm, upper=False)
         print("Lm {}".format(Lm.shape))
         q_sqrt = torch.linalg.cholesky(new_cov, upper=False)
+        print("q_sqrt {}".format(q_sqrt.shape))
 
         if self.is_multi_output:
             f_means, f_vars = [], []
@@ -844,14 +850,16 @@ def mean_cov_to_natural_param(mu, Su, K_uu):
     assert mu.ndim == 2
     mu = torch.unsqueeze(mu.T, dim=-1)
     # mu = mu.T
-    # print("mu {}".format(mu.shape))
-    # print("Su {}".format(Su.shape))
-    # print("K_uu {}".format(K_uu.shape))
+    print("mu {}".format(mu.shape))
+    print("Su {}".format(Su.shape))
+    print("K_uu {}".format(K_uu.shape))
     print(
         "K_uu.matmul(Su.inv_matmul(mu)) {}".format(K_uu.matmul(Su.inv_matmul(mu)).shape)
     )
-    lamb1 = K_uu.matmul(Su.inv_matmul(mu))[..., 0].permute(1, 0)
+    lamb1 = torch.transpose(K_uu.matmul(Su.inv_matmul(mu))[..., 0], -1, -2)
     lamb2 = K_uu.matmul(Su.inv_matmul(K_uu.evaluate())) - K_uu.evaluate()
+    print("lamb1 {}".format(lamb1.shape))
+    print("lamb2 {}".format(lamb2.shape))
 
     return lamb1, lamb2
 

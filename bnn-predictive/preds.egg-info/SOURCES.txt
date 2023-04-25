@@ -12,6 +12,7 @@ preds/models.py
 preds/optimizers.py
 preds/predictives.py
 preds/refine.py
+preds/svgp.py
 preds/utils.py
 preds.egg-info/PKG-INFO
 preds.egg-info/SOURCES.txt

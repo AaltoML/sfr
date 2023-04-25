@@ -6,10 +6,10 @@
 #SBATCH --mem-per-cpu=16000   # 16000MB of memory
 
 module load miniconda
-source activate bnn-env-3
+source activate conda/bnn-env-torch2
 
 SEEDS=(5 711 1 75 359 17 420 129 666 69 36)
 SEED=${SEEDS[$SLURM_ARRAY_TASK_ID]}
-logmin=-1
-dataset='satellite'
+logmin=-2
+dataset='australian'
 srun python -u experiments/classification.py -d ${dataset} --root_dir . --seed ${SEED} --n_layers 2 --activation tanh --logd_min ${logmin} --refine False

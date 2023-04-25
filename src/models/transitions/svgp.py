@@ -106,7 +106,7 @@ def init(
                 svgp.variational_strategy.base_variational_strategy.inducing_points.shape
             )
         )
-        # svgp.variational_strategy.base_variational_strategy.inducing_points = Z
+        svgp.variational_strategy.base_variational_strategy.inducing_points = Z
 
         # TODO reset m and V
         # variational_distribution = gpytorch.variational.CholeskyVariationalDistribution(
@@ -134,8 +134,8 @@ def init(
             svgp_new.cuda()
 
         return src.models.svgp.train(
-            # svgp=svgp,
-            svgp=svgp_new,
+            svgp=svgp,
+            # svgp=svgp_new,
             # likelihood=likelihood,
             learning_rate=learning_rate,
             num_data=num_data,

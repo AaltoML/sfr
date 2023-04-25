@@ -1,6 +1,6 @@
 #!/bin/bash
-#SBATCH --array=1-10
-#SBATCH --time=0-0:20:00    # 10 hours
+#SBATCH --array=1-80
+#SBATCH --time=0-2:00:00    # 2 hours
 #SBATCH --output=/scratch/work/%u/bnn-svgp/logs/uci_classification_%A_%a.out
 #SBATCH --partition=gpu
 ##SBATCH --gres=gpu:a100:1
@@ -11,7 +11,15 @@ module load miniconda
 source activate conda/bnn-env-torch2
 
 SEEDS=(5 711 1 75 359 17 420 129 666 69 36)
-SEED=${SEEDS[$SLURM_ARRAY_TASK_ID]}
-logmin=-2
-dataset='australian'
+SEED=${SEEDS[$SLURM_ARRAY_TASK_ID%10]}
+case $SLURM_ARRAY_TASK_ID % 8 in
+   0)  dataset='australian',logmin=-2;;
+   1)  dataset='breast_cancer',logmin=-2  ;;
+   2)  dataset='digits',logmin=-1  ;;
+   3)  dataset='glass',logmin=-2  ;;
+   4)  dataset='ionosphere',logmin=-2 ;;
+   5)  dataset='satellite',logmin=-1 ;;
+   6)  dataset='vehicle',logmin=-2;;
+   7)  dataset='waveform',logmin=-2 ;;
+esac
 srun python -u experiments/classification.py -d ${dataset} --root_dir . --seed ${SEED} --n_layers 2 --activation tanh --logd_min ${logmin} --refine False

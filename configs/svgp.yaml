@@ -19,5 +19,5 @@ svgp:
   learn_inducing_locations: false
   # learn_inducing_locations: true
   device: "cpu"
-likelihood:
-  _target_: gpytorch.likelihoods.GaussianLikelihood
+  likelihood:
+    _target_: gpytorch.likelihoods.GaussianLikelihood

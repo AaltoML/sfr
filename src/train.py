@@ -113,6 +113,7 @@ def train(cfg: DictConfig):
         time_step = env.reset()
         episode_reward = 0
         t = 0
+        reset_updates = False
         while not time_step.last():
             if episode_idx < cfg.init_random_episodes:
                 action = np.random.uniform(-1, 1, env.action_spec().shape).astype(

@@ -37,8 +37,8 @@ def preds_glm(X, model, likelihood, mu, Sigma_chol, samples):
     return gs.mean(dim=0)
 
 
-def preds_svgp(X, X_train, y_train, model, likelihood, n_sparse, samples):
-    gs = svgp_sampling_predictive(X, X_train, y_train, model, likelihood,n_sparse, mc_samples=samples)
+def preds_svgp(X, X_train, y_train, model, likelihood, n_sparse, sparse_points, samples=1000):
+    gs = svgp_sampling_predictive(X, X_train, y_train, model, likelihood,n_sparse,sparse_points, mc_samples=samples)
     return gs.mean(dim=0)
 
 
@@ -78,7 +78,9 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
 
     model = SiMLP(D, K, n_layers, n_units, activation=activation).to(device)
     optimizer = LaplaceGGN(model, lr=lr, prior_prec=prior_prec)
+    print('Training NN...')
     res['losses'] = train(model, likelihood, X_train, y_train, optimizer, n_epochs)
+    print('Trained NN')
     # baseline  (needs higher lr)
     lrv, epochsv = lr * 10, int(n_epochs/2)
     res_bbb = run_bbb(ds_train, ds_test, ds_valid, prior_prec, device, likelihood, epochsv, lr=lrv,
@@ -108,9 +110,9 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
 
     # SVGP predictive
     
-    fs_train = preds_svgp(X_train, model, likelihood, n_sparse=n_sparse, samples=n_samples)
-    fs_test = preds_svgp(X_test, X_train, y_train, model, likelihood, n_sparse=n_sparse,  samples=n_samples)
-    fs_valid = preds_svgp(X_valid, X_train, y_train, model, likelihood, n_sparse=n_sparse, samples=n_samples)
+    fs_train, data_sparse = preds_svgp(X_train, X_train, y_train,model, likelihood, n_sparse=n_sparse, samples=n_samples, sparse_points=None)
+    fs_test, _ = preds_svgp(X_test, X_train, y_train, model, likelihood, n_sparse=n_sparse,  samples=n_samples, sparse_points=data_sparse)
+    fs_valid, _ = preds_svgp(X_valid, X_train, y_train, model, likelihood, n_sparse=n_sparse, samples=n_samples, sparse_points=data_sparse)
     res.update(evaluate(fs_train, y_train, lh, 'svgp_ntk', 'train'))
     res.update(evaluate(fs_test, y_test, lh, 'svgp_ntk', 'test'))
     res.update(evaluate(fs_valid, y_valid, lh, 'svgp_ntk', 'valid'))

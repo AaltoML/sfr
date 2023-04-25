@@ -1,5 +1,5 @@
 import torch
-from torch.distributions import MultivariateNormal, Normal
+from torch.distributions import MultivariateNormal, LowRankMultivariateNormal, Normal
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 import logging
 
@@ -48,13 +48,16 @@ def linear_sampling_predictive(X, model, likelihood, mu, Sigma_chol, mc_samples=
     return torch.stack(predictions)
 
 
-def svgp_sampling_predictive(X, X_train, y_train, model, likelihood, mc_samples=100, n_sparse=100, no_link=False):
+def svgp_sampling_predictive(X, X_train, y_train, model, likelihood, n_sparse=100, mc_samples=100,sparse_data=None, no_link=False):
+    """Returns the sparse data used for convenience."""
     link = (lambda x: x) if no_link else likelihood.inv_link
     data = (y_train, X_train)
-    svgp = SVGPNTK(nn_model, likelihood, data, n_sparse=n_sparse)
+    svgp = SVGPNTK(model, likelihood, data, n_sparse=n_sparse, sparse_data=sparse_data)
     f_mu, f_var = svgp.predict(X)
-    fs = MultivariateNormal(f_mu, f_var)
-    return link(fs.sample((mc_samples,)))
+    data_sparse = svgp.get_sparse_data()
+    fs = LowRankMultivariateNormal(f_mu, cov_diag=f_var, cov_factor=10**(-6)*torch.ones(f_mu.shape[0], f_mu.shape[0]))
+  
+    return link(fs.sample((mc_samples,))), data_sparse
 
 
 def functional_sampling_predictive(X, model, likelihood, mu, Sigma, mc_samples=1000, no_link=False):

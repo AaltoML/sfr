@@ -21,8 +21,8 @@ svgp:
         - ${state_dim}
     batch_shape:
       - ${state_dim}
-  # learn_inducing_locations: true  # TODO turn this back on?
-  learn_inducing_locations: false
+  learn_inducing_locations: true # TODO turn this back on?
+  # learn_inducing_locations: false
   device: ${device}
   likelihood:
     _target_: gpytorch.likelihoods.MultitaskGaussianLikelihood

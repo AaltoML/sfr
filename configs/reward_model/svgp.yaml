@@ -2,6 +2,7 @@ _target_: src.models.rewards.svgp.init
 _convert_: all
 svgp:
   _target_: models.svgp.SVGP
+  _convert_: all
   inducing_points:
     _target_: torch.rand
     size:
@@ -16,8 +17,8 @@ svgp:
     base_kernel:
       _target_: gpytorch.kernels.RBFKernel
       ard_num_dims: ${input_dim}
-  # learn_inducing_locations: true  # TODO turn this back on?
-  learn_inducing_locations: false
+  learn_inducing_locations: true # TODO turn this back on?
+  # learn_inducing_locations: false
   device: ${device}
   likelihood:
     _target_: gpytorch.likelihoods.GaussianLikelihood

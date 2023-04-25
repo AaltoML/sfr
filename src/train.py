@@ -234,13 +234,16 @@ def train(cfg: DictConfig):
         elapsed_time = time.time() - last_time
         total_time = time.time() - start_time
         last_time = time.time()
+        logger.info("reward shape {}".format(episode_reward.shape))
+        logger.info("reward type {}".format(type(episode_reward)))
         train_metrics = {
             "episode": episode_idx,
             "step": global_step,
             "env_step": env_step,
             "episode_time": elapsed_time,
             "total_time": total_time,
-            "episode_reward": np.mean(episode_reward),
+            "episode_reward": episode_reward,
+            # "episode_reward": np.mean(episode_reward),
         }
         logger.info(
             "TRAINING | Episode: {} | Reward: {}".format(episode_idx, episode_reward)

@@ -5,8 +5,8 @@ svgp:
   inducing_points:
     _target_: torch.rand
     size:
-      # - ${state_dim}
-      - 1
+      - ${state_dim}
+      # - 1
       - 500 # num_inducing
       - ${input_dim}
   mean_module:
@@ -21,7 +21,8 @@ svgp:
         - ${state_dim}
     batch_shape:
       - ${state_dim}
-  learn_inducing_locations: true
+  # learn_inducing_locations: true  # TODO turn this back on?
+  learn_inducing_locations: false
   device: ${device}
   likelihood:
     _target_: gpytorch.likelihoods.MultitaskGaussianLikelihood

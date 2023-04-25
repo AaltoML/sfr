@@ -41,7 +41,7 @@ init_random_episodes: 10
 num_train_episodes: 2000
 # episode_length: 1000
 episode_length: 100
-update_every_steps: 2
+update_every_steps: 10
 
 eval_episode_freq: 10
 # eval_episode_freq: 2

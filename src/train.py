@@ -123,13 +123,22 @@ def train(cfg: DictConfig):
                 if cfg.online_updates and t > 0:
                     # transition_data_new = (state_action_input, state_diff_output)
                     # reward_data_new = (state_action_input, reward_output)
-                    data_new = (state_action_input, state_diff_output, reward_output)
-                    agent.update(data_new)
+                    # data_new = (state_action_input, state_diff_output, reward_output)
+                    # agent.update(data_new)
                     # agent.transition_model.update(transition_data_new)
                     # agent.reward_model.update(reward_data_new)
-                    # if (
-                    #     t % cfg.online_update_freq == 0
-                    # ):  # TODO uncomment this when updates are caching
+                    if (
+                        t % cfg.online_update_freq == 0
+                    ):  # TODO uncomment this when updates are caching
+                        data_new = (
+                            state_action_inputs,
+                            state_diff_outputs,
+                            reward_outputs,
+                        )
+                        agent.update(data_new)
+                        reset_updates = True
+                    else:
+                        reset_updates = False
                     #     # if cfg.online_updates and t > 1:
                     #     # transition_data_new = (state_action_inputs, state_diff_outputs)
                     #     # reward_data_new = (state_action_inputs, reward_outputs)
@@ -176,7 +185,7 @@ def train(cfg: DictConfig):
             state_diff_output = (
                 torch.Tensor(time_step["observation"]).to(cfg.device) - state
             )[None, ...]
-            if t == 0:
+            if t == 0 or reset_updates:
                 state_action_inputs = state_action_input
                 state_diff_outputs = state_diff_output
                 reward_outputs = reward_output

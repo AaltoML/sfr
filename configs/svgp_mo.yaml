@@ -11,11 +11,11 @@ svgp:
       - 256 # num_inducing
       - 1
   mean_module:
-    # _target_: gpytorch.means.ConstantMean
-    # batch_shape: 3
-    _target_: gpytorch.means.ZeroMean
-    batch_shape:
-      - 3
+    _target_: gpytorch.means.ConstantMean
+    batch_shape: 3
+    # _target_: gpytorch.means.ZeroMean
+    # batch_shape:
+    #   - 3
   covar_module:
     _target_: gpytorch.kernels.ScaleKernel
     base_kernel:

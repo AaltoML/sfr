@@ -287,7 +287,7 @@ class SVGP(gpytorch.models.ApproximateGP):
         Kuu = Kuu.evaluate()
         P = lambda_2  # L - likelihood precision square root
         m = Kuu.shape[-1]
-        Id = torch.eye(m, dtype=torch.float64)
+        Id = torch.eye(m, dtype=torch.float64, device=Kuu.device)
         # print("Id {}".format(Id.shape))
         R = Kuu + P
         # print("R {}".format(R.shape))

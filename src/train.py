@@ -136,7 +136,14 @@ def train(cfg: DictConfig):
                             state_diff_outputs,
                             reward_outputs,
                         )
+                        # print(
+                        #     "state_action_inputs {}".format(state_action_inputs.shape)
+                        # )
+                        # print("state_diff_outputs {}".format(state_diff_outputs.shape))
+                        # print("reward_outputs {}".format(reward_outputs.shape))
+                        logger.info("Updating mode at t={}".format(t))
                         agent.update(data_new)
+                        logger.info("Finished updating models")
                         reset_updates = True
                     else:
                         reset_updates = False
@@ -239,7 +246,8 @@ def train(cfg: DictConfig):
             "TRAINING | Episode: {} | Reward: {}".format(episode_idx, episode_reward)
         )
         if cfg.wandb.use_wandb:
-            wandb.log({"train/": train_metrics}, step=env_step)
+            wandb.log({"train/": train_metrics})
+            # wandb.log({"train/": train_metrics}, step=env_step)
 
         # Train agent
         # for _ in range(cfg.episode_length // cfg.update_every_steps):

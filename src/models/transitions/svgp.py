@@ -96,10 +96,13 @@ def init(
 
         indices = torch.randperm(num_data)[:num_inducing]
         Z = state_action_inputs[indices]
-        # Zs = torch.stack([torch.clone(Z) for _ in range(output_dim)], 0)
+        Zs = torch.stack([torch.clone(Z) for _ in range(output_dim)], 0)
         # TODO check it's ok to use [1, ...] instead of [5, ...]
-        Zs = torch.clone(Z)[None, ...]
-        Z = torch.nn.parameter.Parameter(Zs, requires_grad=True)
+        # Zs = torch.clone(Z)[None, ...]
+        # Z = torch.nn.parameter.Parameter(Zs, requires_grad=True)
+        Z = torch.nn.parameter.Parameter(
+            Zs, requires_grad=svgp.learn_inducing_locations
+        )
         print("Z.shape {}".format(Z.shape))
         print(
             "Zold: {}".format(
@@ -107,6 +110,15 @@ def init(
             )
         )
         svgp.variational_strategy.base_variational_strategy.inducing_points = Z
+
+        print(
+            "svgp.variational_strategy.base_variational_strategy.prior_distribution {}".format(
+                svgp.variational_strategy.base_variational_strategy.prior_distribution
+            )
+        )
+        # svgp.variational_strategy.base_variational_strategy.variational_distribution.initialize_variational_distribution(
+        #     svgp.variational_strategy.base_variational_strategy.prior_distribution
+        # )
 
         # TODO reset m and V
         # variational_distribution = gpytorch.variational.CholeskyVariationalDistribution(

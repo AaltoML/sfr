@@ -84,7 +84,10 @@ def init(
         # Z = state_action_inputs[indices]
         Z = state_action_inputs[indices]
         Zs = torch.clone(Z)
-        Z = torch.nn.parameter.Parameter(Zs, requires_grad=True)
+        # Z = torch.nn.parameter.Parameter(Zs, requires_grad=True)
+        Z = torch.nn.parameter.Parameter(
+            Zs, requires_grad=svgp.learn_inducing_locations
+        )
         svgp.variational_strategy.inducing_points = Z
 
         # TODO reset m and V

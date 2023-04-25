@@ -117,11 +117,9 @@ class NTK():
         f = functional_call(self.curr_net, params, (x.unsqueeze(0)))#[:, class_out] # TODO: Why using self.net doesn't work?
         return f
 
-    def empirical_ntk(self, params, x1, x2):
+    def empirical_ntk(self, params, x1, x2, compute='full'):
         """Assumes flat inputs."""
         # Compute J(x1)
-      #  print(x1.shape)
-       # print(x2.shape)
         jac1 = vmap(jacrev(self.fnet_single), (None, 0))(params, x1)
         jac1 = [j.flatten(2) for j in jac1.values()]
      
@@ -129,7 +127,18 @@ class NTK():
         jac2 = vmap(jacrev(self.fnet_single), (None, 0))(params, x2)
         jac2 = [j.flatten(2) for j in jac2.values()]
         # Compute J(x1) @ J(x2).T
-        result = torch.stack([torch.einsum('Naf,Mbf->NMab', j1, j2) for j1, j2 in zip(jac1, jac2)])
+        einsum_expr = None
+        if compute == 'full':
+            einsum_expr = 'Naf,Mbf->NMab'
+        elif compute == 'trace':
+            einsum_expr = 'Naf,Maf->NM'
+        elif compute == 'diagonal':
+            einsum_expr = 'Naf,Maf->NMa'
+        else:
+            assert False
+
+        result = torch.stack(
+            [torch.einsum(einsum_expr, j1, j2) for j1, j2 in zip(jac1, jac2)])
         result = result.sum(0)
         return result
 

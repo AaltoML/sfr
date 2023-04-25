@@ -48,7 +48,7 @@ def linear_sampling_predictive(X, model, likelihood, mu, Sigma_chol, mc_samples=
     return torch.stack(predictions)
 
 
-def svgp_sampling_predictive(X, X_train, y_train, model, likelihood, n_sparse=100, mc_samples=100,sparse_data=None, no_link=False):
+def svgp_sampling_predictive(X, X_train, y_train, model, likelihood, n_sparse=100, sparse_data=None, mc_samples=100, no_link=False):
     """Returns the sparse data used for convenience."""
     link = (lambda x: x) if no_link else likelihood.inv_link
     data = (y_train, X_train)

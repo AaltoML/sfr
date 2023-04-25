@@ -38,8 +38,8 @@ def preds_glm(X, model, likelihood, mu, Sigma_chol, samples):
 
 
 def preds_svgp(X, X_train, y_train, model, likelihood, n_sparse, sparse_points, samples=1000):
-    gs = svgp_sampling_predictive(X, X_train, y_train, model, likelihood,n_sparse,sparse_points, mc_samples=samples)
-    return gs.mean(dim=0)
+    gs, sparse_data = svgp_sampling_predictive(X, X_train, y_train, model, likelihood,n_sparse,sparse_points, mc_samples=samples)
+    return gs.mean(dim=0), sparse_data
 
 
 def preds_nn(X, model, likelihood, mu, Sigma_chol, samples):

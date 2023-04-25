@@ -100,7 +100,12 @@ def train(cfg: DictConfig):
     )
     print("Made replay buffer")
 
-    agent = hydra.utils.instantiate(cfg.agent)
+    transition_model = hydra.utils.instantiate(cfg.agent.transition_model)
+    reward_model = hydra.utils.instantiate(cfg.agent.reward_model)
+    agent = hydra.utils.instantiate(
+        cfg.agent, reward_model=reward_model, transition_model=transition_model
+    )
+    # agent = hydra.utils.instantiate(cfg.agent)
     print("Made agent")
 
     # elapsed_time, total_time = timer.reset()
@@ -187,6 +192,7 @@ def train(cfg: DictConfig):
 
             reward_output = torch.Tensor([time_step["reward"]]).to(cfg.device)
             # print("reward_output {}".format(reward_output.shape))
+            action_input = torch.Tensor(time_step["action"]).to(cfg.device)
             state_action_input = torch.concatenate(
                 [state, torch.Tensor(time_step["action"]).to(cfg.device)], -1
             )[None, ...]
@@ -221,6 +227,50 @@ def train(cfg: DictConfig):
                     dtype=torch.float64,
                 )
             replay_buffer.add(time_step_td)
+
+            if episode_idx > cfg.init_random_episodes:
+                if cfg.online_updates and t > 0:
+                    # print("state {}".format(state.shape))
+                    # print("action_input {}".format(action_input.shape))
+                    state_diff_pred = transition_model.predict(
+                        state=state[None, ...], action=action_input[None, ...]
+                    )
+                    # print("state_diff_pred {}".format(state_diff_pred.state_mean.shape))
+                    # print("state_diff_pred {}".format(state_diff_pred))
+                    # print("state_diff_output {}".format(state_diff_output.shape))
+                    # print("state_diff_output {}".format(state_diff_output))
+                    mse_transition_model = torch.sum(
+                        (state_diff_pred.state_mean - state_diff_output) ** 2
+                    )
+                    nlpd_transition_model = -torch.sum(
+                        torch.distributions.Normal(
+                            state_diff_pred.state_mean,
+                            torch.sqrt(state_diff_pred.state_var),
+                        ).log_prob(reward_output)
+                    )
+
+                    reward_pred = reward_model.predict(
+                        state=state[None, ...], action=action_input[None, ...]
+                    )
+                    mse_reward_model = torch.sum(
+                        (reward_pred.reward_mean - reward_output) ** 2
+                    )
+                    # print("mse_trans {}".format(mse_transition_model))
+                    # print("mse_reward {}".format(mse_reward_model))
+                    wandb.log({"mse_transition_model": mse_transition_model})
+                    wandb.log({"mse_reward_model": mse_reward_model})
+
+                    nlpd_reward_model = -torch.sum(
+                        torch.distributions.Normal(
+                            reward_pred.reward_mean, torch.sqrt(reward_pred.reward_var)
+                        ).log_prob(reward_output)
+                    )
+                    # print("nlpd_transition_model {}".format(nlpd_transition_model))
+                    # print("nlpd_reward_model {}".format(nlpd_reward_model))
+                    wandb.log(
+                        {"nlpd_transition_model": torch.prod(nlpd_transition_model)}
+                    )
+                    wandb.log({"nlpd_reward_model": torch.prod(nlpd_reward_model)})
 
             global_step += 1
             episode_reward += time_step["reward"]

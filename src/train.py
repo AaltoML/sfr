@@ -121,30 +121,37 @@ def train(cfg: DictConfig):
                 )
             else:
                 if cfg.online_updates and t > 0:
-                    if (
-                        t % cfg.online_update_freq == 0
-                    ):  # TODO uncomment this when updates are caching
-                        # if cfg.online_updates and t > 1:
-                        transition_data_new = (state_action_inputs, state_diff_outputs)
-                        reward_data_new = (state_action_inputs, reward_outputs)
-                        # transition_data_new = (state_action_input, state_diff_output)
-                        # reward_data_new = (state_action_input, reward_output)
-                        data_new = {
-                            "transition": transition_data_new,
-                            "reward": reward_data_new,
-                        }
-                        # print("USING new data")
-                    else:
-                        data_new = {"transition": None, "reward": None}
-                else:
-                    # transition_data_new = None
-                    # reward_data_new = None
-                    data_new = {"transition": None, "reward": None}
+                    # transition_data_new = (state_action_input, state_diff_output)
+                    # reward_data_new = (state_action_input, reward_output)
+                    data_new = (state_action_input, state_diff_output, reward_output)
+                    agent.update(data_new)
+                    # agent.transition_model.update(transition_data_new)
+                    # agent.reward_model.update(reward_data_new)
+                    # if (
+                    #     t % cfg.online_update_freq == 0
+                    # ):  # TODO uncomment this when updates are caching
+                    #     # if cfg.online_updates and t > 1:
+                    #     # transition_data_new = (state_action_inputs, state_diff_outputs)
+                    #     # reward_data_new = (state_action_inputs, reward_outputs)
+                    #     transition_data_new = (state_action_input, state_diff_output)
+                    #     reward_data_new = (state_action_input, reward_output)
+                    #     # data_new = {
+                    #     #     "transition": transition_data_new,
+                    #     #     "reward": reward_data_new,
+                    #     # }
+                    #     # print("USING new data")
+                    #     agent.transition_model.update(transition_data_new)
+                    #     agent.reward_model.update(reward_data_new)
+                    # # else:
+                    # #     data_new = {"transition": None, "reward": None}
+                # else:
+                # transition_data_new = None
+                # reward_data_new = None
+                # data_new = {"transition": None, "reward": None}
                 # TODO data_new should only be one input
                 # data_new = None
                 action = agent.select_action(
                     time_step.observation,
-                    data_new=data_new,
                     eval_mode=False,
                     t0=time_step.step_type == StepType.FIRST,
                 )
@@ -173,6 +180,7 @@ def train(cfg: DictConfig):
                 state_action_inputs = state_action_input
                 state_diff_outputs = state_diff_output
                 reward_outputs = reward_output
+                # state_diff_reward_outputs = torch.concat([sts])
             else:
                 reward_outputs = torch.concat([reward_outputs, reward_output], 0)
                 state_action_inputs = torch.concat(

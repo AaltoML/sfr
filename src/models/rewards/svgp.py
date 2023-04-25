@@ -11,13 +11,13 @@ from src.custom_types import Action, RewardPrediction, State, Data
 from src.utils import EarlyStopper
 from torch.utils.data import DataLoader, TensorDataset
 from torchrl.data import ReplayBuffer
-
+import src
 from .base import RewardModel
 
 
 def init(
     svgp: SVGP,
-    likelihood: gpytorch.likelihoods.Likelihood,
+    # likelihood: gpytorch.likelihoods.Likelihood,
     learning_rate: float = 1e-2,
     batch_size: int = 64,
     num_epochs: int = 1000,
@@ -30,7 +30,7 @@ def init(
     print("after svgp cuda")
     if "cuda" in device:
         svgp.cuda()
-        likelihood.cuda()
+        svgp.likelihood.cuda()
     # print("is svgp on gpu")
     # # svgp.to(device)
     # print(svgp.is_cuda)
@@ -40,19 +40,15 @@ def init(
 
     assert len(svgp.variational_strategy.inducing_points.shape) == 2
     num_inducing, input_dim = svgp.variational_strategy.inducing_points.shape
-    from models.svgp import predict, train
+    # from models.svgp import train
 
-    svgp_predict_fn = predict(svgp=svgp, likelihood=likelihood)
+    # svgp_predict_fn = predict(svgp=svgp, likelihood=likelihood)
 
-    def predict_fn(
-        state: State, action: Action, data_new: Data = None
-    ) -> RewardPrediction:
+    def predict_fn(state: State, action: Action) -> RewardPrediction:
         state_action_input = torch.concat([state, action], -1)
         svgp.eval()
-        likelihood.eval()
-        reward_mean, reward_var, noise_var = svgp_predict_fn(
-            state_action_input, data_new=data_new
-        )
+        svgp.likelihood.eval()
+        reward_mean, reward_var, noise_var = svgp.predict(state_action_input)
         return RewardPrediction(
             reward_mean=reward_mean, reward_var=reward_var, noise_var=noise_var
         )
@@ -65,7 +61,7 @@ def init(
         state_action_inputs = torch.concat([state, action], -1)
 
         svgp.train()
-        likelihood.train()
+        svgp.likelihood.train()
 
         num_data = len(replay_buffer)
         print("num_data: {}".format(num_data))
@@ -97,20 +93,21 @@ def init(
             inducing_points=Z,
             mean_module=svgp.mean_module,
             covar_module=svgp.covar_module,
+            likelihood=svgp.likelihood,
             learn_inducing_locations=svgp.learn_inducing_locations,
             device=device,
         )
         if "cuda" in device:
             svgp_new.cuda()
 
-        return train(
+        return src.models.svgp.train(
             svgp=svgp_new,
             # svgp=svgp,
-            likelihood=likelihood,
+            # likelihood=likelihood,
             learning_rate=learning_rate,
             num_data=num_data,
             wandb_loss_name=wandb_loss_name,
             early_stopper=early_stopper,
         )(data_loader=train_loader, num_epochs=num_epochs)
 
-    return RewardModel(predict=predict_fn, train=train_fn)
+    return RewardModel(predict=predict_fn, train=train_fn, update=svgp.update)

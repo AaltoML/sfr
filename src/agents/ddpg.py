@@ -163,7 +163,10 @@ def init_from_actor_critic(
             action = dist.sample(clip=None)
         return action
 
-    return Agent(select_action=select_action_fn, train=train_fn)
+    def update_fn(data_new):
+        pass
+
+    return Agent(select_action=select_action_fn, train=train_fn, update=update_fn)
 
 
 def update_q(

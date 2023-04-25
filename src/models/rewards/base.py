@@ -11,5 +11,6 @@ from torch.utils.data import DataLoader
 
 
 class RewardModel(NamedTuple):
-    predict: Callable[[State, Action, Data], RewardPrediction]
+    predict: Callable[[State, Action], RewardPrediction]
     train: Callable[[DataLoader], dict]
+    update: Callable[[Data], None]

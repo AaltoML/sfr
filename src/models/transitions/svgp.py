@@ -12,13 +12,13 @@ from src.custom_types import Action, State, StatePrediction, Data
 from src.utils import EarlyStopper
 from torch.utils.data import DataLoader, TensorDataset
 from torchrl.data import ReplayBuffer
-
+import src
 from .base import TransitionModel
 
 
 def init(
     svgp: SVGP,
-    likelihood: gpytorch.likelihoods.Likelihood,
+    # likelihood: gpytorch.likelihoods.Likelihood,
     learning_rate: float = 1e-2,
     batch_size: int = 64,
     num_epochs: int = 1000,
@@ -27,13 +27,11 @@ def init(
     early_stopper: EarlyStopper = None,
     device: str = "cuda",
 ) -> TransitionModel:
-    from models.svgp import predict, train
-
     print("trans device {}".format(device))
     print("after svgp cuda")
     if "cuda" in device:
         svgp.cuda()
-        likelihood.cuda()
+        svgp.likelihood.cuda()
     # print("is svgp on gpu")
     # # svgp.to(device)
     # print(svgp.is_cuda)
@@ -50,17 +48,13 @@ def init(
         num_inducing,
         input_dim,
     ) = svgp.variational_strategy.base_variational_strategy.inducing_points.shape
-    svgp_predict_fn = predict(svgp=svgp, likelihood=likelihood)
+    # svgp_predict_fn = predict(svgp=svgp, likelihood=likelihood)
 
-    def predict_fn(
-        state: State, action: Action, data_new: Data = None
-    ) -> StatePrediction:
+    def predict_fn(state: State, action: Action) -> StatePrediction:
         state_action_input = torch.concat([state, action], -1)
         svgp.eval()
-        likelihood.eval()
-        delta_state_mean, delta_state_var, noise_var = svgp_predict_fn(
-            state_action_input, data_new=data_new
-        )
+        svgp.likelihood.eval()
+        delta_state_mean, delta_state_var, noise_var = svgp.predict(state_action_input)
         return StatePrediction(
             state_mean=state + delta_state_mean,
             state_var=delta_state_var,
@@ -76,10 +70,10 @@ def init(
         state_diff = next_state - state
 
         svgp.train()
-        likelihood.train()
+        svgp.likelihood.train()
 
         num_data = len(replay_buffer)
-        print("num_data: {}".format(num_data))
+        # print("num_data: {}".format(num_data))
         train_loader = DataLoader(
             TensorDataset(state_action_inputs, state_diff),
             batch_size=batch_size,
@@ -132,20 +126,21 @@ def init(
             inducing_points=Z,
             mean_module=svgp.mean_module,
             covar_module=svgp.covar_module,
+            likelihood=svgp.likelihood,
             learn_inducing_locations=svgp.learn_inducing_locations,
             device=device,
         )
         if "cuda" in device:
             svgp_new.cuda()
 
-        return train(
+        return src.models.svgp.train(
             # svgp=svgp,
             svgp=svgp_new,
-            likelihood=likelihood,
+            # likelihood=likelihood,
             learning_rate=learning_rate,
             num_data=num_data,
             wandb_loss_name=wandb_loss_name,
             early_stopper=early_stopper,
         )(data_loader=train_loader, num_epochs=num_epochs)
 
-    return TransitionModel(predict=predict_fn, train=train_fn)
+    return TransitionModel(predict=predict_fn, train=train_fn, update=svgp.update)

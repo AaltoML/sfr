@@ -106,6 +106,8 @@ class SVGP(gpytorch.models.ApproximateGP):
         self.lambda_1 = None
         self.lambda_2 = None
 
+        self.has_updated = False
+
     def forward(self, x, data_new: Optional = None):
         if data_new is None:
             mean_x = self.mean_module(x)
@@ -163,16 +165,16 @@ class SVGP(gpytorch.models.ApproximateGP):
                 f = self(Z)
                 cov = f.covariance_matrix[None, ...]  # [1, M, M]
                 mean = f.mean[..., None]  # [M, 1]
-            print("MEAN {}".format(mean.shape))
-            print("cov you {}".format(cov.shape))
+            # print("MEAN {}".format(mean.shape))
+            # print("cov you {}".format(cov.shape))
             cov = CholLazyTensor(torch.linalg.cholesky(deepcopy(cov)))
 
             lambda_1, lambda_2 = mean_cov_to_natural_param(mean, cov, Kuu)
         else:
             lambda_1 = self.lambda_1
             lambda_2 = self.lambda_2
-        print("lambda_1 {}".format(lambda_1.shape))
-        print("lambda_2 {}".format(lambda_2.shape))
+        # print("lambda_1 {}".format(lambda_1.shape))
+        # print("lambda_2 {}".format(lambda_2.shape))
 
         # new_mean, new_cov = conditional_from_precision_sites_white_full(
         #     Kuu, lambda_1, lambda_2, jitter=jitter
@@ -186,17 +188,17 @@ class SVGP(gpytorch.models.ApproximateGP):
         if not self.is_multi_output:
             mean = mean[..., None]
             var = var[..., None]
-        print("mean 1 {}".format(mean.shape))
-        print("var 1 {}".format(var.shape))
+        # print("mean 1 {}".format(mean.shape))
+        # print("var 1 {}".format(var.shape))
         # print("Y {}".format(Y.shape))
         # if Y.ndim == 1:
         # Y = Y[..., None]
         # print("Y {}".format(Y.shape))
 
         def predict_ve(mean, var):
-            print("MEAN YOU {}".format(mean.shape))
-            print("VAR YOU {}".format(var.shape))
-            print("Y {}".format(Y.shape))
+            # print("MEAN YOU {}".format(mean.shape))
+            # print("VAR YOU {}".format(var.shape))
+            # print("Y {}".format(Y.shape))
             # f_dist_b = gpytorch.distributions.MultivariateNormal(
             #     mean.T, torch.diag_embed(var.T)
             # )  # Mean: num_new x output_dim Cov: num_new x output_dim x output_dim
@@ -205,13 +207,13 @@ class SVGP(gpytorch.models.ApproximateGP):
                 f_dist_b = gpytorch.distributions.MultivariateNormal(
                     mean.T, torch.diag_embed(var.T)
                 )
-                print("f_dist_b {}".format(f_dist_b))
+                # print("f_dist_b {}".format(f_dist_b))
                 f_dist = (
                     gpytorch.distributions.MultitaskMultivariateNormal.from_batch_mvn(
                         f_dist_b
                     )
                 )
-                print("f_dist {}".format(f_dist))
+                # print("f_dist {}".format(f_dist))
                 ve_terms = self.likelihood.expected_log_prob(
                     Y, f_dist
                 )  # TODO: Is this right?
@@ -219,56 +221,56 @@ class SVGP(gpytorch.models.ApproximateGP):
                 f_dist_b = gpytorch.distributions.MultivariateNormal(
                     mean[..., 0], torch.diag_embed(var[..., 0])
                 )
-                print("f_dist_b {}".format(f_dist_b))
+                # print("f_dist_b {}".format(f_dist_b))
                 ve_terms = self.likelihood.expected_log_prob(
                     Y, f_dist_b
                 )  # TODO: Is this right?
-            print("ve_terms {}".format(ve_terms.shape))
+            # print("ve_terms {}".format(ve_terms.shape))
             # ve = ve_terms
             ve = (
                 ve_terms.sum()
             )  # TODO: CHECK: divide by num_data ? but only one point at a time so probably fine
-            print("ve {}".format(ve.shape))
+            # print("ve {}".format(ve.shape))
             return ve
 
         jac_fn_mean = jacrev(predict_ve, argnums=0)
         jac_fn_var = jacrev(predict_ve, argnums=1)
         d_exp_dm = jac_fn_mean(mean, var)  # [num_new, output_dim]
         d_exp_dv = jac_fn_var(mean, var)  # [num_new, output_dim]
-        print("d_exp_dm {}".format(d_exp_dm.shape))
-        print("d_exp_dv {}".format(d_exp_dv.shape))
+        # print("d_exp_dm {}".format(d_exp_dm.shape))
+        # print("d_exp_dv {}".format(d_exp_dv.shape))
 
         eps = 1e-8
         d_exp_dv.clamp_(max=-eps)
 
         grad_nat_1 = d_exp_dm - 2.0 * (d_exp_dv * mean)
         grad_nat_2 = d_exp_dv
-        print("grad_nat_1 {}".format(grad_nat_1.shape))
-        print("grad_nat_2 {}".format(grad_nat_2.shape))
+        # print("grad_nat_1 {}".format(grad_nat_1.shape))
+        # print("grad_nat_2 {}".format(grad_nat_2.shape))
 
         grad_mu_1 = torch.einsum("bmc, cb -> mb", Kuf, grad_nat_1)
         grad_mu_2 = torch.einsum("bmc, cb, bnc -> bmn", Kuf, grad_nat_2, Kuf)
-        if self.is_multi_output:
-            grad_mu_1 = torch.einsum("bmc, cb -> mb", Kuf, grad_nat_1)
-            grad_mu_2 = torch.einsum("bmc, cb, bnc -> bmn", Kuf, grad_nat_2, Kuf)
-            # grad_mu_2 = torch.einsum("nmf, nf, ncf -> nmc", K_uf, grad_nat_2, K_uf)
-        else:
-            grad_mu_1 = torch.einsum("mc, c -> m", Kuf, grad_nat_1)
-            grad_mu_2 = torch.einsum("mc, c, nc -> mn", Kuf, grad_nat_2, Kuf)
+        # if self.is_multi_output:
+        #     grad_mu_1 = torch.einsum("bmc, cb -> mb", Kuf, grad_nat_1)
+        #     grad_mu_2 = torch.einsum("bmc, cb, bnc -> bmn", Kuf, grad_nat_2, Kuf)
+        #     # grad_mu_2 = torch.einsum("nmf, nf, ncf -> nmc", K_uf, grad_nat_2, K_uf)
+        # else:
+        #     grad_mu_1 = torch.einsum("mc, c -> m", Kuf, grad_nat_1)
+        #     grad_mu_2 = torch.einsum("mc, c, nc -> mn", Kuf, grad_nat_2, Kuf)
         # grad_mu_1 = Kuf.matmul(grad_nat_1)
         # print("grad_mu_1 {}".format(grad_mu_1.shape))
         # # grad_mu_1 = torch.diagonal(grad_mu_1, dim1=0, dim2=-1)
         # grad_mu_1 = grad_mu_1[..., 1].T
         # grad_mu_2 = Kuf @ torch.diag_embed(grad_nat_2.T) @ torch.transpose(Kuf, -1, -2)
-        print("kuf {}".format(Kuf.shape))
-        print("grad_mu_1 {}".format(grad_mu_1.shape))
-        print("grad_mu_2 {}".format(grad_mu_2.shape))
+        # print("kuf {}".format(Kuf.shape))
+        # print("grad_mu_1 {}".format(grad_mu_1.shape))
+        # print("grad_mu_2 {}".format(grad_mu_2.shape))
 
         # lambda_1_t_new = grad_mu_1[..., None]
         lambda_1_t_new = grad_mu_1
         lambda_2_t_new = (-2) * grad_mu_2
-        print("lambda_1_t_new {}".format(lambda_1_t_new.shape))
-        print("lambda_2_t_new {}".format(lambda_2_t_new.shape))
+        # print("lambda_1_t_new {}".format(lambda_1_t_new.shape))
+        # print("lambda_2_t_new {}".format(lambda_2_t_new.shape))
 
         # lambda_1_new = lambda_1 + lambda_1_t_new
         # lambda_2_new = lambda_2 + lambda_2_t_new
@@ -276,8 +278,8 @@ class SVGP(gpytorch.models.ApproximateGP):
         lambda_2 = lambda_2 + lambda_2_t_new
         self.lambda_1 = lambda_1
         self.lambda_2 = lambda_2
-        print("lambda_1 {}".format(lambda_1.shape))
-        print("lambda_2 {}".format(lambda_2.shape))
+        # print("lambda_1 {}".format(lambda_1.shape))
+        # print("lambda_2 {}".format(lambda_2.shape))
 
         # new_mean, new_cov = conditional_from_precision_sites_white_full(
         #     Kuu, lambda_1, lambda_2, jitter=self.jitter
@@ -286,30 +288,30 @@ class SVGP(gpytorch.models.ApproximateGP):
         P = lambda_2  # L - likelihood precision square root
         m = Kuu.shape[-1]
         Id = torch.eye(m, dtype=torch.float64)
-        print("Id {}".format(Id.shape))
+        # print("Id {}".format(Id.shape))
         R = Kuu + P
-        print("R {}".format(R.shape))
+        # print("R {}".format(R.shape))
         LR = torch.linalg.cholesky(R + Id * self.jitter, upper=False)
-        print("LR {}".format(LR.shape))
+        # print("LR {}".format(LR.shape))
         iLRK = torch.linalg.solve_triangular(LR, Kuu, upper=False)
-        print("iLRK {}".format(iLRK.shape))
+        # print("iLRK {}".format(iLRK.shape))
         S_q = torch.matmul(torch.transpose(iLRK, -1, -2), iLRK)
-        print("S_q {}".format(S_q.shape))
+        # print("S_q {}".format(S_q.shape))
         chol_S_q = torch.linalg.cholesky(S_q, upper=False)
         tmp = torch.cholesky_solve(lambda_1, LR, upper=False)
-        print("tmp {}".format(tmp.shape))
+        # print("tmp {}".format(tmp.shape))
         m_q = Kuu @ tmp
-        print("m_q {}".format(m_q.shape))
+        # print("m_q {}".format(m_q.shape))
         m_q = torch.diagonal(m_q, dim1=0, dim2=-1)
         # m_q = m_q[0]
-        print("m_q {}".format(m_q.shape))
+        # print("m_q {}".format(m_q.shape))
         # m_q = (Kuu @ torch.linalg.cholesky_solve(LR, lambda_1, upper=False))[0]
         # return m_q, chol_S_q
         new_mean = m_q
         new_cov = S_q
         # new_cov = chol_S_q
-        print("new_mean new stuff {}".format(new_mean.shape))
-        print("new_cov {}".format(new_cov.shape))
+        # print("new_mean new stuff {}".format(new_mean.shape))
+        # print("new_cov {}".format(new_cov.shape))
 
         if self.is_multi_output:
             new_mean = new_mean.T
@@ -326,19 +328,23 @@ class SVGP(gpytorch.models.ApproximateGP):
             self.variational_strategy.variational_distribution.covariance_matrix.set_(
                 new_cov
             )
-        print("new_mean {}".format(new_mean.shape))
-        print("new_cov {}".format(new_cov.shape))
+        # print("new_mean {}".format(new_mean.shape))
+        # print("new_cov {}".format(new_cov.shape))
         # new_mean = new_mean[..., 0]
         # print("new_mean {}".format(new_mean.shape))
+        self.has_updated = True
 
     @torch.no_grad()
-    def predict(self, x, full_cov: bool = False, white: bool = True) -> Prediction:
+    def predict(self, x, full_cov: bool = False) -> Prediction:
+        # def predict(self, x, full_cov: bool = False, white: bool = True) -> Prediction:
         # if svgp.is_multi_output:
         #     print("out_size>0")
         # else:
         #     print("out_size=0")
-        # white: bool = False
-        # white: bool = True
+        if self.has_updated:
+            white: bool = False
+        else:
+            white: bool = True
         self.eval()
         self.likelihood.eval()
 
@@ -360,26 +366,26 @@ class SVGP(gpytorch.models.ApproximateGP):
                 self.variational_strategy.variational_distribution.covariance_matrix
             )
             new_mean = new_mean.reshape(self.out_size, -1)
-        print("new_mean predict {}".format(new_mean.shape))
-        print("new_cov predict {}".format(new_cov.shape))
+        # print("new_mean predict {}".format(new_mean.shape))
+        # print("new_cov predict {}".format(new_cov.shape))
         # new_mean = new_mean.reshape(self.out_size, -1)
-        print("new_mean predict {}".format(new_mean.shape))
+        # print("new_mean predict {}".format(new_mean.shape))
 
         if full_cov:
             Knn = self.covar_module(x, x).evaluate()
         else:
             Knn = self.covar_module(x, diag=True)
         # Knn += torch.eye(Knn.shape[-1]) * jitter
-        print("Knn {}".format(Knn.shape))
+        # print("Knn {}".format(Knn.shape))
         Kmn = self.covar_module(Z, x).evaluate()
-        print("Kmn {}".format(Kmn.shape))
+        # print("Kmn {}".format(Kmn.shape))
         Kmm = self.covar_module(Z).evaluate()
         Kmm += torch.eye(Kmm.shape[-1], device=Kmm.device) * self.jitter
-        print("Kmm {}".format(Kmm.shape))
+        # print("Kmm {}".format(Kmm.shape))
         Lm = torch.linalg.cholesky(Kmm, upper=False)
-        print("Lm {}".format(Lm.shape))
+        # print("Lm {}".format(Lm.shape))
         q_sqrt = torch.linalg.cholesky(new_cov, upper=False)
-        print("q_sqrt {}".format(q_sqrt.shape))
+        # print("q_sqrt {}".format(q_sqrt.shape))
 
         if self.is_multi_output:
             f_means, f_vars = [], []
@@ -398,7 +404,7 @@ class SVGP(gpytorch.models.ApproximateGP):
             f_mean = torch.stack(f_means, 0)
             f_var = torch.stack(f_vars, 0)
         else:
-            print("q_sqrt {}".format(q_sqrt.shape))
+            # print("q_sqrt {}".format(q_sqrt.shape))
             f_mean, f_var = base_conditional_with_lm(
                 Kmn=Kmn,
                 Lm=Lm,
@@ -412,18 +418,18 @@ class SVGP(gpytorch.models.ApproximateGP):
         if white:
             # TODO this is needed for making predictions before doing fast upudates
             # TODO but not needed after udpates
-            print("f_mean.shape")
-            print(f_mean.shape)
-            print(self.mean_module(x).shape)
+            # print("f_mean.shape")
+            # print(f_mean.shape)
+            # print(self.mean_module(x).shape)
             f_mean += self.mean_module(x)
         # print("f_mean {}".format(f_mean.shape))
         # print("f_var {}".format(f_var.shape))
 
         # TODO implement likelihood to get noise_var
         noise_var = self.likelihood.noise
-        print("noise_var {}".format(noise_var.shape))
-        print("f_mean.T {}".format(f_mean.T.shape))
-        print("f_var.T {}".format(f_var.T.shape))
+        # print("noise_var {}".format(noise_var.shape))
+        # print("f_mean.T {}".format(f_mean.T.shape))
+        # print("f_var.T {}".format(f_var.T.shape))
         return f_mean.T, f_var.T, noise_var
 
         # else:
@@ -712,10 +718,10 @@ def base_conditional_with_lm(
 
     Lm can be precomputed, improving performance.
     """
-    print("f : {}".format(f.shape))
+    # print("f : {}".format(f.shape))
     A = torch.linalg.solve_triangular(Lm, Kmn, upper=False)  # [M, N]
-    print("A")
-    print(A.shape)
+    # print("A")
+    # print(A.shape)
     # print(Knn.shape)
 
     # compute the covariance due to the conditioning
@@ -723,16 +729,16 @@ def base_conditional_with_lm(
         fvar = Knn - torch.matmul(A.T, A)
     else:
         fvar = Knn - torch.sum(torch.square(A), 0)
-    print("fvar: {}".format(fvar.shape))
+    # print("fvar: {}".format(fvar.shape))
 
     # another backsubstitution in the unwhitened case
     if not white:
         A = torch.linalg.solve_triangular(Lm.T, A, upper=True)  # [M, N]
-        print("A: {}".format(A.shape))
+        # print("A: {}".format(A.shape))
 
     # conditional mean
     fmean = A.T @ f  # [N]
-    print("fmean: {}".format(fmean.shape))
+    # print("fmean: {}".format(fmean.shape))
 
     # covariance due to inducing variables
     if q_sqrt is not None:
@@ -742,13 +748,13 @@ def base_conditional_with_lm(
             LTA = q_sqrt.T @ A  # [M, N]
         else:
             raise ValueError("Bad dimension for q_sqrt: %s" % str(q_sqrt.ndim))
-        print("LTA: {}".format(LTA.shape))
+        # print("LTA: {}".format(LTA.shape))
 
         if full_cov:
             fvar = fvar + LTA.T @ LTA  # [N, N]
         else:
             fvar = fvar + torch.sum(torch.square(LTA), 0)  # [N]
-        print("fvar yo you: {}".format(fvar.shape))
+        # print("fvar yo you: {}".format(fvar.shape))
 
     return fmean, fvar
 
@@ -825,6 +831,10 @@ def train(
                 logger.info("Breaking out loop")
                 break
 
+        svgp.has_updated = False
+        svgp.lambda_1 = None
+        svgp.lambda_2 = None
+
     return train_
 
 
@@ -850,16 +860,16 @@ def mean_cov_to_natural_param(mu, Su, K_uu):
     assert mu.ndim == 2
     mu = torch.unsqueeze(mu.T, dim=-1)
     # mu = mu.T
-    print("mu {}".format(mu.shape))
-    print("Su {}".format(Su.shape))
-    print("K_uu {}".format(K_uu.shape))
-    print(
-        "K_uu.matmul(Su.inv_matmul(mu)) {}".format(K_uu.matmul(Su.inv_matmul(mu)).shape)
-    )
+    # print("mu {}".format(mu.shape))
+    # print("Su {}".format(Su.shape))
+    # print("K_uu {}".format(K_uu.shape))
+    # print(
+    #     "K_uu.matmul(Su.inv_matmul(mu)) {}".format(K_uu.matmul(Su.inv_matmul(mu)).shape)
+    # )
     lamb1 = torch.transpose(K_uu.matmul(Su.inv_matmul(mu))[..., 0], -1, -2)
     lamb2 = K_uu.matmul(Su.inv_matmul(K_uu.evaluate())) - K_uu.evaluate()
-    print("lamb1 {}".format(lamb1.shape))
-    print("lamb2 {}".format(lamb2.shape))
+    # print("lamb1 {}".format(lamb1.shape))
+    # print("lamb2 {}".format(lamb2.shape))
 
     return lamb1, lamb2
 

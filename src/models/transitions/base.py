@@ -11,5 +11,6 @@ from torch.utils.data import DataLoader
 
 
 class TransitionModel(NamedTuple):
-    predict: Callable[[State, Action, Data], StatePrediction]
+    predict: Callable[[State, Action], StatePrediction]
     train: Callable[[DataLoader], dict]
+    update: Callable[[Data], None]

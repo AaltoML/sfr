@@ -31,7 +31,7 @@ input_dim: ???
 output_dim: ???
 device: ???
 
-# online_updates: true
+online_updates: false
 online_update_freq: 2
 # online_update_freq: 50
 

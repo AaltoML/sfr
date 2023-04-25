@@ -831,6 +831,7 @@ def train(
                 logger.info("Breaking out loop")
                 break
 
+        logger.info("Resetting dual params")
         svgp.has_updated = False
         svgp.lambda_1 = None
         svgp.lambda_2 = None

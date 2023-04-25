@@ -8,7 +8,7 @@
 % \title{Neural Network to Sparse Variational Gaussian Process: For Updates in Sequential Decision Making}
 % \title{Adapting Neural Networks to New Data For Updates in Sequential Decision Making via Gaussian Processes}
 % \title{Converting Neural Networks to Gaussian Processes for Sequential Decision-Making Under Uncertainty}
-\title{Deep Neural Networks to Sparse Variational Gaussian Processes}
+\title{Sparse Function Space Representation of Neural Networks for Exploration and Representation}
 % \title{Capturing Neural Networks with Gaussian Processes for Sequential Decision-Making Under Uncertainty}
 
 \author{%
@@ -188,96 +188,21 @@
 \maketitle
 
 \begin{abstract}
-% Building systems that adapt to new information and express uncertainty is essential to deploy methods in real-world applications e.g. healthcare, autonomous vehicles. While gradient-based training is symbiotic to modern deep learning, it is rigid regarding adding further information, usually involving retraining from scratch. Converting a trained neural network to its dual parameterization we can view the parameters of the model as data dependent terms instead of the weights. Furthermore, we can then build a sparse model to form a variational dual sparse Gaussian process. The resultant sparse GP has two obvious advantages: scalable principled uncertainty estimation and the ability adapt to new data without gradient based retraining. Our proposed method can be deployed in any sequential decision-making process, where new information is received and retraining from scratch is not available. We show its effectiveness in model-based reinforcement learning using updated information for more efficient exploration.
-%
-  % Building learning-based systems  for their deployment in real-world applications
-
-  % The world is a complex dynamic environment where humans and animals leverage high-dimensional sensory data to successfully operate and
-  % adapt to changes in the environment.
-  Building learning-based systems that can handle high-dimensional and large data sets whilst expressing uncertainty is essential in many real-world applications, e.g. healthcare and robotics.
-  Although Gaussian processes can learn nonlinear functions whilst providing principled uncertainty quantification, they are limited to low-dimensional and small data sets.
-  We present a method that enables any trained neural network (NN) to be converted to a sparse variational Gaussian process (SVGP).
-Importantly, our method scales to high-dimensional and large data sets whilst providing well-calibrated uncertainty estimates.
-Further to this, our function-space posterior enables
-any neural network to be 1) adapted online without retraining and 2) used as a functional regulariser in continual learning.
-Essentially, our method reaps the benefits of function space without the well-known issues associated with nonparametric models.
-% Essentially, our method reaps the benefits of nonparametric models without their well-known issues.
-We demonstrate that our method scales to high-dimensional and large data sets such as XXXXX.
-We then show that our method obtains state-of-the-art uncertainty quantification with experiments using UCI data sets.
-Finally, we demonstrate the power of our NN's function-space posterior by showing
-that 1) it can improve sample-efficiency in model-based reinforcement learning (via our model's online adaptation)
-and 2) it can improve XXXX in continual learning.
-
-
-% Further to this, our method enables neural networks to be adapted online via efficient updates
-
-% Essentially, our method reaps the benefits of nonparametric models without their well-known issues.
-
-% We further show the benefits
-% 3) enables fast adaptation to new data.
-
-%   In contrast, nonparametric approaches -- such as Gaussian processes -- can adapt to new data. However, they are limited to low-dimensional and small data sets. We present a method that enables any trained neural network (NN) to be converted to a sparse variational Gaussian process (SVGP).
-
-%   However, modern deep learning methods cannot adapt to new data because they rely on gradient-based optimisation, which requires retraining with the addition of new data.
-
-%   However, modern deep learning methods cannot adapt to new data because they rely on gradient-based optimisation, which requires retraining with the addition of new data. In contrast, nonparametric approaches -- such as Gaussian processes -- can adapt to new data. However, they are limited to low-dimensional and small data sets.
-%   We present a method that enables any trained neural network (NN) to be converted to a sparse variational Gaussian process (SVGP).
-% Importantly, our method
-% 1) scales to high-dimensional and large data sets,
-% 2) provides well-calibrated uncertainty estimates, and
-% 3) enables fast adaptation to new data.
-% Essentially, our method reaps the benefits of nonparametric models without their well-known issues.
-% We demonstrate our state-of-the-art NN uncertainty quantification with experiments using UCI data sets and
-% demonstrate the effectiveness of our model's fast adaptation by showing that it can improve sample-efficiency in model-based reinforcement learning.
-%
-% The world is a dynamic environment that requires humans and animals to constantly adapt.
-%   Building learning-based systems that can adapt to new data and express uncertainty is essential for their deployment in real-world applications, e.g. healthcare and robotics. However, modern deep learning methods cannot adapt to new data because they rely on gradient-based optimisation, which requires retraining with the addition of new data. In contrast, nonparametric approaches -- such as Gaussian processes -- can adapt to new data. However, they are limited to low-dimensional and small data sets. We present a method that enables any trained neural network (NN) to be converted to a sparse variational Gaussian process (SVGP). Importantly, our method 1) enables fast adaptation to new data, 2) provides well-calibrated uncertainty estimates, and 3) scales to high-dimensional and large data sets. Essentially, our method reaps the benefits of nonparametric models without their well-known issues. We demonstrate the effectiveness of our model's fast adaptation by showing that it can improve sample-efficiency in model-based reinforcement learning and we demonstrate our state-of-the-art NN uncertainty quantification with experiments using UCI data sets.
-
-  % Building learning-based systems that can adapt to new data and express uncertainty is essential for their deployment
-  % in real-world applications, e.g. healthcare and robotics.
-  % % The ability to adapt to new information and express uncertainty is essential for deploying learning-based systems in real-world applications, e.g. healthcare and robotics.
-  % However, modern deep learning cannot adapt to new data because it relies upon gradient-based optimisation,
-  % which requires retraining with the addition of new data.
-  % In contrast, nonparametric approaches -- such as Gaussian processes -- can adapt to new data without further training.
-  % % Although, traditional approaches are limited to low-dimensional and small data sets, recent advances have scaled
-  % % GPs to large data sets.
-  % However, they are limited to low-dimensional and small data sets.
-  % % We present a method that enables any trained neural network to adapt to new data without further gradient-based optimisation,
-  % % whilst providing scalable and principled uncertainty quantification.
-  % We present a method that enables any trained neural network (NN) to be converted to a sparse variational Gaussian
-  % process (SVGP).
-  % % We present a method that enables any trained neural network to adapt to new data without further gradient-based optimisation,
-  % % whilst providing scalable and principled uncertainty quantification.
-  % % Our method u converts a trained neural network to a sparse variational Gaussian process (SVGP).
-  % Importantly, our method 1) enables fast adaptation to new data,
-  % 2) provides well-calibrated uncertainty estimates, and 3) scales to high-dimensional and large data sets.
-  % % Importantly, our method 1) enables fast adaptation to new data,
-  % % 2) provides well-calibrated uncertainty estimates, and 3) scales to high-dimensional and large data sets.
-  % Essentially, our method reaps the benefits of nonparametric models without their well-known issues.
-  % % 2) does not require further gradient-based optimisation,
-  % We demonstrate the effectiveness of our model's fast adaptation by showing that it can improve sample-efficiency in
-  % model-based reinforcement learning and
-  % we demonstrate our state-of-the-art NN uncertainty quantification with experiments using UCI data sets.
-
-  % obtains principled uncertainty estimates by
-  % Our experiments demonstrate that our model's adaptivity can improve the sample-efficiency of model-based reinforcement
-  % learning.
-
-
-  % in model-based reinforcement learning using updated information for more efficient exploration.
-
-  % Our method can be deployed in any sequential decision-making process, where new information is received and retraining from scratch is not available.
-
-  % % While gradient-based training is symbiotic to modern deep learning, it is rigid regarding adding further information, usually involving retraining from scratch.
-  % Converting a trained neural network to its dual parameterization we can view the parameters of the model as data dependent terms instead of the weights.
-  % Furthermore, we can then build a sparse model to form a variational dual sparse Gaussian process.
-  % The resultant sparse GP has two obvious advantages: scalable principled uncertainty estimation and the ability adapt to new data without gradient based retraining.
-  % Our proposed method can be deployed in any sequential decision-making process, where new information is received and retraining from scratch is not available.
-  % We show its effectiveness in model-based reinforcement learning using updated information for more efficient exploration.
+Under sequential learning paradigms, such as continual learning (CL) or reinforcement learning (RL), efficient representation and exploration elude standard training techniques for deep learning  models. In RL it is common to receive new information from the environment but due to time and hardware constraints it is not possible to adapt by retraining. Similarly, CL needs  compact representations of previous tasks to avoid forgetting. Recently, methods for converting trained neural networks from weight space to function space show promise in providing a principled approach for probabilistic treatment of the problem. However, they lack ways of sparsifying the representation and methods for quick adaptation to new data. We introduce a sparse representation of the neural network in function space, which enables fast adpatation and compact representation to solve the limitations of the weight space formulation.
 \end{abstract}
 
+\section{Introduction}
+\label{sec:intro}
+%
+Neural networks have experienced unparalleled success in the large data, offline and gradient-based training regime. 
+Deep learning is great and in the suerpvised and unsupervised setting solve large-scale problems.
+How about sequential learning problems such as continual or reinforcement learning.
+In continual learning mainitaining a compact representation
 
-\section{Introduction} \label{sec:intro}
+
+
+
+
 
 \begin{itemize}
   \item Many real-world problems require learning-based systems that can adapt to new data.
@@ -299,6 +224,8 @@ and 2) it can improve XXXX in continual learning.
   \end{itemize}
 \end{itemize}
 
+
+
 %Why we need uncertainty and adaptiveness
 How to adapt to new information is a limitation of current machine learning models. The problem is specifically relevant when we combine a model with a decision-making process. In such a sequential setting, an agent typically makes decisions in an environment and obtains new information and would ideally incorporate the information into their parameters. Not only do we need models that adapt to new informatoion but all express uncertainty over the models predictions. The reason being twofold: in many applications, e.g. healthcare, autonomous driving is an essential requirement, and many advanced exploration techniques require uncertainty to determine where to query next.
 
@@ -314,6 +241,11 @@ In this paper we show that we can take any neural network and define the dual pa
 %Need uncertainty and adaptive methods
 %Dual formulation in GPs space solves this
 %Talk about planning and exploration in RL.
+We introduce a sparse representation of the neural network in the function space. 
+
+1) principled uncertainty quantification.
+2) A compact representation for continual learning
+3) Fast updates for adaptive exploration.
 
 %List the contributions.
 The contributions of the paper our is as follows:

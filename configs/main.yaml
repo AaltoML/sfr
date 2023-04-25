@@ -32,7 +32,8 @@ output_dim: ???
 device: ???
 
 online_updates: true
-online_update_freq: 1
+online_update_freq: 2
+# online_update_freq: 50
 
 alg_name: "mppi-svgp"
 random_seed: 42
@@ -41,7 +42,7 @@ init_random_episodes: 10
 num_train_episodes: 2000
 # episode_length: 1000
 episode_length: 100
-update_every_steps: 10
+update_every_steps: 2
 
 eval_episode_freq: 10
 # eval_episode_freq: 2

@@ -60,15 +60,15 @@ wandb:
   entity: "aidanscannell"
   project: "bayesian-model-based-rl-with-fast-updates"
   use_wandb: True
-  run_name: ${alg_name}-${online_update_freq}-h=${agent.horizon}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
+  run_name: ${alg_name}-${online_update_freq}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   # run_name: ${alg_name}-${online_update_freq}-${agent.horizon}-${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   tags:
     - "random_seed=${random_seed}"
     - "env=${env.env_name}-${env.task_name}"
     - "alg=${alg_name}"
     - "online_update_freq=${online_update_freq}"
-    - "horizon=${agent.horizon}"
-    - "num_samples=${agent.num_samples}"
+    # - "horizon=${agent.horizon}"
+    # - "num_samples=${agent.num_samples}"
 
 hydra:
   job:

@@ -30,8 +30,8 @@ class SVGPNTK():
             self.x = sparse_x
 
         self.n_classes = nn_model(self.x[0]).shape[-1]
-
-        self.delta = prior_prec / y.shape[0]
+        self.delta = prior_prec
+      #  self.delta = prior_prec / y.shape[0]
         self.eps = 10**(-7)
 
         # trained model and kernel type

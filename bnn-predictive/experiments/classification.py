@@ -80,7 +80,6 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
     optimizer = LaplaceGGN(model, lr=lr, prior_prec=prior_prec)
     print('Training NN...')
     res['losses'] = train(model, likelihood, X_train, y_train, optimizer, n_epochs)
-    print('Trained NN')
     # baseline  (needs higher lr)
     lrv, epochsv = lr * 10, int(n_epochs/2)
     res_bbb = run_bbb(ds_train, ds_test, ds_valid, prior_prec, device, likelihood, epochsv, lr=lrv,
@@ -156,6 +155,7 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
 
     # Full Laplace
     m, S_chol, S_chold, losses = laplace_refine(model, X_train, y_train, likelihood, prior_prec)
+    
     res['losses_lap'] = losses
     fs_train = preds_glm(X_train, model, likelihood, m, S_chol, samples=n_samples)
     fs_test = preds_glm(X_test, model, likelihood, m, S_chol, samples=n_samples)
@@ -238,7 +238,7 @@ if __name__ == '__main__':
     parser.add_argument('--name', help='name result file', default='', type=str)
     parser.add_argument('--n_samples', help='number predictive samples', type=int, default=1000)
     parser.add_argument('--n_sparse', help='number of sparse data points to use for the svgp', type=float, default=0.5)
-    parser.add_argument('--refine', help='on/off switch for posterior refinement', type=bool)
+    parser.add_argument('--refine', help='on/off switch for posterior refinement', type=int)
     args = parser.parse_args()
     dataset = args.dataset
     double = args.double
@@ -254,6 +254,8 @@ if __name__ == '__main__':
     name = args.name
     root_dir = args.root_dir
     refine = args.refine
+    refine = bool(refine)
+    print(f'Refine: {refine}')
 
     data_dir = os.path.join(root_dir, 'data')
     res_dir = os.path.join(root_dir, 'experiments', 'results', 'uci')

@@ -9,6 +9,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 import hydra
+import matplotlib.pyplot as plt
 import numpy as np
 import omegaconf
 import torch
@@ -101,7 +102,10 @@ def train(cfg: DictConfig):
     print("Made replay buffer")
 
     transition_model = hydra.utils.instantiate(cfg.agent.transition_model)
-    reward_model = hydra.utils.instantiate(cfg.agent.reward_model)
+
+    svgp = hydra.utils.instantiate(cfg.agent.reward_model.svgp)
+    reward_model = hydra.utils.instantiate(cfg.agent.reward_model, svgp=svgp)
+    # reward_model = hydra.utils.instantiate(cfg.agent.reward_model)
     agent = hydra.utils.instantiate(
         cfg.agent, reward_model=reward_model, transition_model=transition_model
     )
@@ -126,6 +130,8 @@ def train(cfg: DictConfig):
                     # dtype=env.action_spec().dtype
                 )
             else:
+                # if t > 10:
+                #     break
                 if cfg.online_updates and t > 0:
                     # transition_data_new = (state_action_input, state_diff_output)
                     # reward_data_new = (state_action_input, reward_output)
@@ -203,6 +209,9 @@ def train(cfg: DictConfig):
                 state_action_inputs = state_action_input
                 state_diff_outputs = state_diff_output
                 reward_outputs = reward_output
+                state_action_inputs_all = state_action_input
+                state_diff_outputs_all = state_diff_output
+                reward_outputs_all = reward_output
                 # state_diff_reward_outputs = torch.concat([sts])
             else:
                 reward_outputs = torch.concat([reward_outputs, reward_output], 0)
@@ -212,6 +221,13 @@ def train(cfg: DictConfig):
                 state_diff_outputs = torch.concat(
                     [state_diff_outputs, state_diff_output], 0
                 )
+            reward_outputs_all = torch.concat([reward_outputs_all, reward_output], 0)
+            state_action_inputs_all = torch.concat(
+                [state_action_inputs_all, state_action_input], 0
+            )
+            state_diff_outputs_all = torch.concat(
+                [state_diff_outputs_all, state_diff_output], 0
+            )
             time_step_td.update(
                 {
                     "action": time_step["action"],
@@ -271,6 +287,91 @@ def train(cfg: DictConfig):
                         {"nlpd_transition_model": torch.prod(nlpd_transition_model)}
                     )
                     wandb.log({"nlpd_reward_model": torch.prod(nlpd_reward_model)})
+
+                # # Z=reward_model.predict(state=s)
+                # X_new = state_action_inputs_all
+                # print("X_new {}".format(X_new.shape))
+                # Y_new = reward_outputs_all
+                # print("Y_new {}".format(Y_new.shape))
+                # Y = reward_model.predict(
+                #     state=state_action_inputs_all[:, 0:5],
+                #     action=state_action_inputs_all[:, 5:],
+                # )
+                # mean_new = Y.reward_mean
+                # print("mean_new {}".format(mean_new.shape))
+                # var_new = Y.reward_var
+                # print("var_new {}".format(var_new.shape))
+                # # X_test = torch.linspace(-10, 10, 1000)
+                # # X_test = torch.concat([state[]])
+                # X_test = state_action_inputs_all
+                # print("X_test {}".format(X_test.shape))
+                # Z = svgp.variational_strategy.inducing_points.detach()
+                # print("Z {}".format(Z.shape))
+
+                # def plot(i):
+                #     # plt.scatter(
+                #     #     Z[:, 0],
+                #     #     np.zeros_like(Z[:, 0]),
+                #     #     color="k",
+                #     #     marker="|",
+                #     #     alpha=0.6,
+                #     #     label="Z",
+                #     # )
+                #     plt.scatter(
+                #         X_new[:, 0],
+                #         Y_new,
+                #         color="c",
+                #         marker="o",
+                #         alpha=0.6,
+                #         label="New data",
+                #     )
+                #     # plt.scatter(
+                #     #     X_new_2,
+                #     #     Y_new_2[:, i],
+                #     #     color="r",
+                #     #     marker="o",
+                #     #     alpha=0.6,
+                #     #     label="New data",
+                #     # )
+
+                #     # plt.plot(
+                #     #     X_test[:, 0],
+                #     #     mean.detach()[:, i],
+                #     #     color="m",
+                #     #     label=r"$\mu_{old}(\cdot)$",
+                #     # )
+                #     # plt.fill_between(
+                #     #     X_test[:, 0],
+                #     #     mean[:, i] - 1.98 * torch.sqrt(var[:, i]),
+                #     #     # pred.mean[:, 0],
+                #     #     mean[:, i] + 1.98 * torch.sqrt(var[:, i]),
+                #     #     color="m",
+                #     #     alpha=0.2,
+                #     #     label=r"$\mu_{old}(\cdot) \pm 1.98\sigma_{old}(\cdot)$",
+                #     # )
+
+                #     plt.plot(
+                #         X_test[:, 0],
+                #         mean_new.detach(),
+                #         color="c",
+                #         label=r"$\mu_{new}(\cdot)$",
+                #     )
+                #     plt.fill_between(
+                #         X_test[:, 0],
+                #         mean_new - 1.98 * torch.sqrt(var_new),
+                #         # pred.mean[:, 0],
+                #         mean_new + 1.98 * torch.sqrt(var_new),
+                #         color="c",
+                #         alpha=0.2,
+                #         label=r"$\mu_{new}(\cdot) \pm 1.98\sigma_{new}(\cdot)$",
+                #     )
+
+                #     # mean, var, noise_var = predict(X_test, data_new=data_new)
+                #     plt.legend()
+                #     plt.savefig("mo_gp" + str(i) + ".pdf", transparent=True)
+
+                # plt.figure()
+                # plot(t)
 
             global_step += 1
             episode_reward += time_step["reward"]

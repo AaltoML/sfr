@@ -67,7 +67,7 @@ def greedy(
 
     def greedy_fn(start_state: State, actions: ActionTrajectory) -> TensorType[""]:
         """Estimate value of a trajectory starting at state and executing given actions."""
-        state = start_state
+        # state = start_state
         # print("start_state: {}".format(start_state.shape))
         G, discount = 0, 1
         state_trajectory = rollout(start_state=start_state, actions=actions)
@@ -95,15 +95,16 @@ def greedy(
             )
             discount *= gamma
 
+        # print("state_trajectory[-1, :] {}".format(state_trajectory[-1, :].shape))
         # reward = reward_model.predict(state_trajectory[t], actions[t]).reward_mean
         # print("reward_mean {}".format(reward.shape))
         # print("G {}".format(G.shape))
-        final_action_dist = actor(state, std)
+        final_action_dist = actor(state_trajectory[-1, :], std)
         if sample_actor:
             final_action = final_action_dist.sample(clip=std_clip)
         else:
             final_action = final_action_dist.mean
-        G_final = discount * torch.min(*critic(state, final_action))
+        G_final = discount * torch.min(*critic(state_trajectory[-1, :], final_action))
         # print("G_ginal {}".format(G_final.shape))
         return G[..., None] + G_final
 

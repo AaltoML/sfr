@@ -65,8 +65,9 @@ wandb:
     - "random_seed=${random_seed}"
     - "env=${env.env_name}-${env.task_name}"
     - "alg=${alg_name}"
-    # - "horizon=${agent.horizon}"
-    # - "num_samples=${agent.num_samples}"
+    - "online_update_freq=${online_update_freq}"
+    - "horizon=${agent.horizon}"
+    - "num_samples=${agent.num_samples}"
 
 hydra:
   job:

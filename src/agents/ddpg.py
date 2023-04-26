@@ -48,7 +48,8 @@ def init(
     mlp_dims: List[int] = [512, 512],
     learning_rate: float = 3e-4,
     max_ddpg_iterations: int = 100,  # for training DDPG
-    std_schedule: str = "linear(1.0, 0.1, 50)",
+    # std_schedule: str = "linear(1.0, 0.1, 50)",
+    std: float = 0.1,  # TODO make this schedule
     std_clip: float = 0.3,
     nstep: int = 3,
     gamma: float = 0.99,
@@ -74,7 +75,8 @@ def init(
         optim_actor=optim_actor,
         optim_critic=optim_critic,
         max_ddpg_iterations=max_ddpg_iterations,
-        std_schedule=std_schedule,
+        # std_schedule=std_schedule,
+        std=std,
         std_clip=std_clip,
         nstep=nstep,
         gamma=gamma,
@@ -90,7 +92,8 @@ def init_from_actor_critic(
     optim_actor,
     optim_critic,
     max_ddpg_iterations: int = 100,  # for training DDPG
-    std_schedule: str = "linear(1.0, 0.1, 50)",
+    # std_schedule: str = "linear(1.0, 0.1, 50)",
+    std: float = 0.1,  # TODO make this schedule
     std_clip: float = 0.3,
     nstep: int = 3,
     gamma: float = 0.99,
@@ -109,7 +112,6 @@ def init_from_actor_critic(
     )
 
     def train_fn(replay_buffer: ReplayBuffer) -> dict:
-        std = 0.1
         info = {"std": std}
         for i in range(max_ddpg_iterations):
             # std = linear_schedule(std_schedule, i)  # linearly udpate std
@@ -156,7 +158,7 @@ def init_from_actor_critic(
     def select_action_fn(state: State, eval_mode: EvalMode = False, t0: T0 = None):
         if isinstance(state, np.ndarray):
             state = torch.from_numpy(state).to(device).float()
-        dist = actor.forward(state, std=0.0)
+        dist = actor.forward(state, std=std)
         if eval_mode:
             action = dist.mean
         else:

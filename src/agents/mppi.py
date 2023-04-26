@@ -26,6 +26,7 @@ def init(
     learning_rate: float = 3e-4,
     max_ddpg_iterations: int = 100,  # for training DDPG
     # std_schedule: str = "linear(1.0, 0.1, 50)",
+    std: float = 0.1,  # TODO make this schedule
     std_clip: float = 0.3,
     # nstep: int = 1,
     gamma: float = 0.99,

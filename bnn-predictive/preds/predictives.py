@@ -55,8 +55,8 @@ def svgp_sampling_predictive(X, X_train, y_train, model, likelihood, prior_prec,
     svgp = SVGPNTK(model, likelihood, data, prior_prec, n_sparse=n_sparse, sparse_data=sparse_data)
     f_mu, f_var = svgp.predict(X)
     data_sparse = svgp.get_sparse_data()
-    fs = LowRankMultivariateNormal(f_mu, cov_diag=f_var, cov_factor=10**(-6)*torch.ones(f_mu.shape[0], f_mu.shape[0]))
-  
+    fs = Normal(f_mu, f_var)
+
     return link(fs.sample((mc_samples,))), data_sparse
 
 

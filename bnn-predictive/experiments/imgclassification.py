@@ -8,7 +8,7 @@ from torchvision.datasets import VisionDataset
 from tqdm import tqdm
 import os
 
-from preds.models import CIFAR10Net, CIFAR100Net, MLPS
+from preds.models import CIFAR10Net,  MLPS  #CIFAR100Net
 from preds.datasets import MNIST, FMNIST, CIFAR10
 
 torch.backends.cudnn.deterministic = True

@@ -52,21 +52,20 @@ class SVGPNTK():
 
     def estimate_lambdas(self, lambdas_data, clip_lambda=True):
         (y, logits_train) = lambdas_data
-        lambdas_fn = hessian(self.nll)
-        lambdas = lambdas_fn(logits_train, y)
-        #torch.jit(vmap(self.likelihood.Hessian))(logits_train, y)
+        if logits_train.ndim == 1:
+            logits_train = logits_train.unsqueeze(-1)
+        hessian_fn = hessian(self.nll)
+        lambdas = []
+        for i in range(y.shape[0]):
+            lambdas.append(hessian_fn(logits_train[i], y[i]))
+        lambdas = torch.stack(lambdas, axis=0)
         # for multiclass, lambdas shp (K,K); only clip diagonal
         if clip_lambda:
-            if self.n_classes > 1:
-                diag = lambdas[:,torch.arange(lambdas.shape[1]),
+            diag = lambdas[:,torch.arange(lambdas.shape[1]),
                                          torch.arange(lambdas.shape[2])]
-                diag = torch.clip(diag, self.eps)                         
-            else:
-                diag = torch.diag(lambdas)
-                diag = torch.clip(diag, min=self.eps)
+            diag = torch.clip(diag, self.eps)            
             mask = torch.diag(torch.ones_like(diag))
             lambdas = mask*torch.diag(diag) + (1. - mask)*lambdas
-        lambdas = lambdas.reshape(lambdas.shape[0], -1).squeeze()
         return lambdas
 
     def estimate_duals(self, data):
@@ -74,24 +73,40 @@ class SVGPNTK():
         (y, x) = data
         lambdas_data = (y, self.nn_model(x))
         lambdas = self.estimate_lambdas(lambdas_data)
+        if self.n_classes == 2:
+            n_class_idx = 1
+        else:
+            n_class_idx = self.n_classes
+        alpha_f = torch.zeros(n_class_idx, y.shape[0])
+        beta_f = torch.zeros(n_class_idx, y.shape[0], y.shape[0])
 
-        gram = torch.squeeze(self.kernel.empirical_ntk(self.kernel.params, x, x))
-        K = 1/(self.delta*x.shape[0]) * gram 
-        A = torch.inverse(lambdas) * torch.eye(gram.shape[0]) + K
-        alpha_f = torch.linalg.solve(A, y)
-        beta_f = torch.linalg.solve(torch.inverse(lambdas) * torch.eye(gram.shape[0]) + K, torch.eye(K.shape[0]))
+        for i_class in range(n_class_idx):
+            lambdas_class = lambdas[:, i_class, i_class]
+            gram = torch.squeeze(self.kernel.empirical_ntk(self.kernel.params, x, x, class_num=i_class))
+            K = 1/(self.delta*x.shape[0]) * gram 
+            lambda_inv = lambdas_class**(-1)
+            A = lambda_inv * torch.eye(gram.shape[0]) + K
+            alpha_f[i_class] = torch.linalg.solve(A, y.float())
+            beta_f[i_class] = torch.linalg.solve(lambda_inv * torch.eye(gram.shape[0]) + K, torch.eye(K.shape[0]))
         return alpha_f, beta_f
 
     def predict(self, x_p):
-        gram_pp = torch.squeeze(self.kernel.empirical_ntk(self.kernel.params, x_p, x_p))
-        gram_px = torch.squeeze(self.kernel.empirical_ntk(self.kernel.params, x_p, self.x))
-        K_pp = 1/(self.delta*self.x.shape[0]) * gram_pp
-        K_px = 1/(self.delta*self.x.shape[0]) * gram_px
-        mean_f = K_px @ self.alpha
-        var_f = K_px @ self.beta @ K_px.T
-        var_f = K_pp - var_f
-        var_f = torch.diag(var_f)
-        return mean_f, var_f
+        if self.n_classes == 2:
+            n_class_idx = 1
+        else:
+            n_class_idx = self.n_classes
+        mean_f = torch.zeros(x_p.shape[0], n_class_idx)
+        var_f = torch.zeros(x_p.shape[0], n_class_idx)
+        for i_class in range(n_class_idx):
+            gram_pp = torch.squeeze(self.kernel.empirical_ntk(self.kernel.params, x_p, x_p, class_num=i_class))
+            gram_px = torch.squeeze(self.kernel.empirical_ntk(self.kernel.params, x_p, self.x, class_num=i_class))
+            K_pp = 1/(self.delta*self.x.shape[0]) * gram_pp
+            K_px = 1/(self.delta*self.x.shape[0]) * gram_px
+            mean_f[:, i_class] = K_px @ self.alpha[i_class]
+            var = K_px @ self.beta[i_class] @ K_px.T
+            var = K_pp - var
+            var_f[:, i_class] = torch.diag(var)
+        return mean_f.squeeze(), var_f.squeeze()
 
     def sample_pred(self, x_, n_samples):
         """Sample the predictive distribution."""
@@ -103,7 +118,7 @@ class SVGPNTK():
 
 class NTK():
 
-    def __init__(self, nn_model, device='cpu'):
+    def __init__(self, nn_model,device='cpu'):
         self.net = nn_model
         self.curr_net = copy.deepcopy(self.net)
         self.curr_net.eval()
@@ -111,20 +126,26 @@ class NTK():
 
         self.device = device
 
-
-    def fnet_single(self, params, x):
+    def fnet_single(self, params, x, class_num=0):
         class_out = 0
-        f = functional_call(self.curr_net, params, (x.unsqueeze(0)))#[:, class_out] # TODO: Why using self.net doesn't work?
+        f = functional_call(self.curr_net, params, (x.unsqueeze(0)))
+        if f.ndim == 1:
+            f = f.unsqueeze(-1)
+        else:
+            f = f[:, class_num] # TODO: Why using self.net doesn't work?
         return f
 
-    def empirical_ntk(self, params, x1, x2, compute='full'):
+    def empirical_ntk(self, params, x1, x2, class_num=0, compute='full'):
         """Assumes flat inputs."""
         # Compute J(x1)
-        jac1 = vmap(jacrev(self.fnet_single), (None, 0))(params, x1)
+        def fnet_class(params, x):
+            return self.fnet_single(params, x, class_num=class_num)
+
+        jac1 = vmap(jacrev(fnet_class), (None, 0))(params, x1)
         jac1 = [j.flatten(2) for j in jac1.values()]
      
         # Compute J(x2)
-        jac2 = vmap(jacrev(self.fnet_single), (None, 0))(params, x2)
+        jac2 = vmap(jacrev(fnet_class), (None, 0))(params, x2)
         jac2 = [j.flatten(2) for j in jac2.values()]
         # Compute J(x1) @ J(x2).T
         einsum_expr = None

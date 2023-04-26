@@ -157,7 +157,15 @@ def init_from_actor_critic(
     @torch.no_grad()
     def select_action_fn(state: State, eval_mode: EvalMode = False, t0: T0 = None):
         if isinstance(state, np.ndarray):
-            state = torch.from_numpy(state).to(device).float()
+            # state = torch.from_numpy(state).to(device).float()
+            # print("state {}".format(state.shape))
+            state = torch.tensor(state, dtype=torch.float64, device=device)
+        if state.ndim == 2:
+            # TODO added this but not checked its right
+            # TODO previously had torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
+            assert state.shape[0] == 1
+            state = state[0, ...]
+            # print("state {}".format(state.shape))
         dist = actor.forward(state, std=std)
         if eval_mode:
             action = dist.mean

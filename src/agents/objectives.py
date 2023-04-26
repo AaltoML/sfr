@@ -38,15 +38,11 @@ def greedy(
         #         final_action = final_action_dist.mean
         #     G_final = discount * torch.min(*critic(state, final_action))
         #     return G[..., None] + G_final
-        def rollout(
-            start_state: State, actions: ActionTrajectory, data_new=None
-        ) -> StateTrajectory:
+        def rollout(start_state: State, actions: ActionTrajectory) -> StateTrajectory:
             state = start_state
             state_trajectory = state[None, ...]
             for t in range(horizon):
-                state = transition_model.predict(
-                    state, actions[t], data_new=data_new
-                ).state_mean
+                state = transition_model.predict(state, actions[t]).state_mean
                 state_trajectory = torch.concatenate(
                     [state_trajectory, state[None, ...]], 0
                 )
@@ -54,13 +50,11 @@ def greedy(
 
     elif unc_prop_strategy == "sample":
 
-        def rollout(start_state: State, actions: ActionTrajectory, data_new=None):
+        def rollout(start_state: State, actions: ActionTrajectory):
             state = start_state
             state_trajectory = state[None, ...]
             for t in range(horizon):
-                next_state_prediction = transition_model.predict(
-                    state, actions[t], data_new=data_new
-                )
+                next_state_prediction = transition_model.predict(state, actions[t])
                 state_dist = td.Normal(
                     next_state_prediction.state_mean,
                     next_state_prediction.state_var + next_state_prediction.noise_var,
@@ -71,34 +65,47 @@ def greedy(
                 )
             return state_trajectory
 
-    def greedy_fn(
-        start_state: State, actions: ActionTrajectory, data_new: dict = None
-    ) -> TensorType[""]:
+    def greedy_fn(start_state: State, actions: ActionTrajectory) -> TensorType[""]:
         """Estimate value of a trajectory starting at state and executing given actions."""
-        state = start_state
+        # state = start_state
         # print("start_state: {}".format(start_state.shape))
         G, discount = 0, 1
-        state_trajectory = rollout(
-            start_state=start_state, actions=actions, data_new=data_new["transition"]
-        )
+        state_trajectory = rollout(start_state=start_state, actions=actions)
         # print("state_trajectory: {}".format(state_trajectory.shape))
         # next_state_prediction = transition_model.predict(state, actions[t])
         # reward_prediction = reward_model.predict(state_trajectory, actions).reward_mean
+        # if data_new["reward"] is not None:
+        #     try:
+        #         # print("data_new[reward] {}".format(data_new["reward"].shape))
+        #         print("data_new[reward] {}".format(type(data_new["reward"])))
+        #         print(
+        #             "data_new[reward] {} {}".format(
+        #                 data_new["reward"][0].shape, data_new["reward"][1].shape
+        #             )
+        #         )
+        #     except:
+        #         print("data_new[reward] {}".format("none"))
+        # else:
+        #     print("data_new[reward] {}".format("none"))
+        # reward_model.dual_update(data_new=data_new["reward"])
         for t in range(horizon):
             G += (
                 discount
-                * reward_model.predict(
-                    state_trajectory[t], actions[t], data_new=data_new["reward"]
-                ).reward_mean
+                * reward_model.predict(state_trajectory[t], actions[t]).reward_mean
             )
             discount *= gamma
 
-        final_action_dist = actor(state, std)
+        # print("state_trajectory[-1, :] {}".format(state_trajectory[-1, :].shape))
+        # reward = reward_model.predict(state_trajectory[t], actions[t]).reward_mean
+        # print("reward_mean {}".format(reward.shape))
+        # print("G {}".format(G.shape))
+        final_action_dist = actor(state_trajectory[-1, :], std)
         if sample_actor:
             final_action = final_action_dist.sample(clip=std_clip)
         else:
             final_action = final_action_dist.mean
-        G_final = discount * torch.min(*critic(state, final_action))
+        G_final = discount * torch.min(*critic(state_trajectory[-1, :], final_action))
+        # print("G_ginal {}".format(G_final.shape))
         return G[..., None] + G_final
 
     return greedy_fn

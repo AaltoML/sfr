@@ -145,7 +145,7 @@ def train(cfg: DictConfig):
     #
     # svgp.set_dual()
     # mean, var, noise_var = svgp.predict(X_test, white=False)
-    mean, var, noise_var = svgp.predict(X_test, white=True)
+    mean, var, noise_var = svgp.predict(X_test)
     # pred = likelihood(svgp(X_test))
     print("pred mean {}".format(mean.shape))
     print("pred var {}".format(var.shape))
@@ -252,7 +252,7 @@ def train(cfg: DictConfig):
         return fig
 
     svgp.update(data_new=data_new)
-    mean_new, var_new, noise_var = svgp.predict(X_test, white=False)
+    mean_new, var_new, noise_var = svgp.predict(X_test)
     print("pred mean_new {}".format(mean_new.shape))
     print("pred var_new {}".format(var_new.shape))
     fig = plot("gp_new_1.pdf", data_new=data_new)
@@ -262,7 +262,7 @@ def train(cfg: DictConfig):
     # svgp.update(data_new=data_new)
     # svgp.update(data_new=data_new)
     svgp.update(data_new=data_new_2)
-    mean_new_2, var_new_2, noise_var = svgp.predict(X_test, white=False)
+    mean_new_2, var_new_2, noise_var = svgp.predict(X_test)
     print("pred mean_new {}".format(mean_new_2.shape))
     print("pred var_new {}".format(var_new_2.shape))
     plt.scatter(

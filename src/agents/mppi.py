@@ -26,6 +26,7 @@ def init(
     learning_rate: float = 3e-4,
     max_ddpg_iterations: int = 100,  # for training DDPG
     # std_schedule: str = "linear(1.0, 0.1, 50)",
+    std: float = 0.1,  # TODO make this schedule
     std_clip: float = 0.3,
     # nstep: int = 1,
     gamma: float = 0.99,
@@ -106,7 +107,6 @@ def init(
     @torch.no_grad()
     def select_action_fn(
         state: State,
-        data_new: dict = {"transition": None, "reward": None},
         eval_mode: bool = False,
         t0: bool = True,
     ):
@@ -164,7 +164,7 @@ def init(
                 actions = torch.cat([actions, pi_actions], dim=1)
 
             # Compute elite actions
-            value = estimate_value(state, actions, data_new=data_new).nan_to_num_(0)
+            value = estimate_value(state, actions).nan_to_num_(0)
             # value = estimate_value_compiled(state, actions).nan_to_num_(0)
             elite_idxs = torch.topk(value.squeeze(1), num_topk, dim=0).indices
             elite_value, elite_actions = value[elite_idxs], actions[:, elite_idxs]
@@ -202,4 +202,9 @@ def init(
                 # device=std.device,
             )
 
-    return Agent(select_action=select_action_fn, train=train_fn)
+    def update_fn(data_new):
+        state_action_input, state_diff_output, reward_output = data_new
+        transition_model.update(data_new=(state_action_input, state_diff_output))
+        reward_model.update(data_new=(state_action_input, reward_output))
+
+    return Agent(select_action=select_action_fn, train=train_fn, update=update_fn)

@@ -9,6 +9,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 import hydra
+import matplotlib.pyplot as plt
 import numpy as np
 import omegaconf
 import torch
@@ -100,7 +101,15 @@ def train(cfg: DictConfig):
     )
     print("Made replay buffer")
 
-    agent = hydra.utils.instantiate(cfg.agent)
+    transition_model = hydra.utils.instantiate(cfg.agent.transition_model)
+
+    svgp = hydra.utils.instantiate(cfg.agent.reward_model.svgp)
+    reward_model = hydra.utils.instantiate(cfg.agent.reward_model, svgp=svgp)
+    # reward_model = hydra.utils.instantiate(cfg.agent.reward_model)
+    agent = hydra.utils.instantiate(
+        cfg.agent, reward_model=reward_model, transition_model=transition_model
+    )
+    # agent = hydra.utils.instantiate(cfg.agent)
     print("Made agent")
 
     # elapsed_time, total_time = timer.reset()
@@ -113,6 +122,7 @@ def train(cfg: DictConfig):
         time_step = env.reset()
         episode_reward = 0
         t = 0
+        reset_updates = False
         while not time_step.last():
             if episode_idx < cfg.init_random_episodes:
                 action = np.random.uniform(-1, 1, env.action_spec().shape).astype(
@@ -120,31 +130,56 @@ def train(cfg: DictConfig):
                     # dtype=env.action_spec().dtype
                 )
             else:
+                # if t > 10:
+                #     break
                 if cfg.online_updates and t > 0:
+                    # transition_data_new = (state_action_input, state_diff_output)
+                    # reward_data_new = (state_action_input, reward_output)
+                    # data_new = (state_action_input, state_diff_output, reward_output)
+                    # agent.update(data_new)
+                    # agent.transition_model.update(transition_data_new)
+                    # agent.reward_model.update(reward_data_new)
                     if (
                         t % cfg.online_update_freq == 0
                     ):  # TODO uncomment this when updates are caching
-                        # if cfg.online_updates and t > 1:
-                        transition_data_new = (state_action_inputs, state_diff_outputs)
-                        reward_data_new = (state_action_inputs, reward_outputs)
-                        # transition_data_new = (state_action_input, state_diff_output)
-                        # reward_data_new = (state_action_input, reward_output)
-                        data_new = {
-                            "transition": transition_data_new,
-                            "reward": reward_data_new,
-                        }
-                        # print("USING new data")
+                        data_new = (
+                            state_action_inputs,
+                            state_diff_outputs,
+                            reward_outputs,
+                        )
+                        # print(
+                        #     "state_action_inputs {}".format(state_action_inputs.shape)
+                        # )
+                        # print("state_diff_outputs {}".format(state_diff_outputs.shape))
+                        # print("reward_outputs {}".format(reward_outputs.shape))
+                        logger.info("Updating mode at t={}".format(t))
+                        agent.update(data_new)
+                        logger.info("Finished updating models")
+                        reset_updates = True
                     else:
-                        data_new = {"transition": None, "reward": None}
-                else:
-                    # transition_data_new = None
-                    # reward_data_new = None
-                    data_new = {"transition": None, "reward": None}
+                        reset_updates = False
+                    #     # if cfg.online_updates and t > 1:
+                    #     # transition_data_new = (state_action_inputs, state_diff_outputs)
+                    #     # reward_data_new = (state_action_inputs, reward_outputs)
+                    #     transition_data_new = (state_action_input, state_diff_output)
+                    #     reward_data_new = (state_action_input, reward_output)
+                    #     # data_new = {
+                    #     #     "transition": transition_data_new,
+                    #     #     "reward": reward_data_new,
+                    #     # }
+                    #     # print("USING new data")
+                    #     agent.transition_model.update(transition_data_new)
+                    #     agent.reward_model.update(reward_data_new)
+                    # # else:
+                    # #     data_new = {"transition": None, "reward": None}
+                # else:
+                # transition_data_new = None
+                # reward_data_new = None
+                # data_new = {"transition": None, "reward": None}
                 # TODO data_new should only be one input
                 # data_new = None
                 action = agent.select_action(
                     time_step.observation,
-                    data_new=data_new,
                     eval_mode=False,
                     t0=time_step.step_type == StepType.FIRST,
                 )
@@ -163,16 +198,21 @@ def train(cfg: DictConfig):
 
             reward_output = torch.Tensor([time_step["reward"]]).to(cfg.device)
             # print("reward_output {}".format(reward_output.shape))
+            action_input = torch.Tensor(time_step["action"]).to(cfg.device)
             state_action_input = torch.concatenate(
                 [state, torch.Tensor(time_step["action"]).to(cfg.device)], -1
             )[None, ...]
             state_diff_output = (
                 torch.Tensor(time_step["observation"]).to(cfg.device) - state
             )[None, ...]
-            if t == 0:
+            if t == 0 or reset_updates:
                 state_action_inputs = state_action_input
                 state_diff_outputs = state_diff_output
                 reward_outputs = reward_output
+                state_action_inputs_all = state_action_input
+                state_diff_outputs_all = state_diff_output
+                reward_outputs_all = reward_output
+                # state_diff_reward_outputs = torch.concat([sts])
             else:
                 reward_outputs = torch.concat([reward_outputs, reward_output], 0)
                 state_action_inputs = torch.concat(
@@ -181,6 +221,13 @@ def train(cfg: DictConfig):
                 state_diff_outputs = torch.concat(
                     [state_diff_outputs, state_diff_output], 0
                 )
+            reward_outputs_all = torch.concat([reward_outputs_all, reward_output], 0)
+            state_action_inputs_all = torch.concat(
+                [state_action_inputs_all, state_action_input], 0
+            )
+            state_diff_outputs_all = torch.concat(
+                [state_diff_outputs_all, state_diff_output], 0
+            )
             time_step_td.update(
                 {
                     "action": time_step["action"],
@@ -197,6 +244,135 @@ def train(cfg: DictConfig):
                 )
             replay_buffer.add(time_step_td)
 
+            if episode_idx > cfg.init_random_episodes:
+                if cfg.online_updates and t > 0:
+                    # print("state {}".format(state.shape))
+                    # print("action_input {}".format(action_input.shape))
+                    state_diff_pred = transition_model.predict(
+                        state=state[None, ...], action=action_input[None, ...]
+                    )
+                    # print("state_diff_pred {}".format(state_diff_pred.state_mean.shape))
+                    # print("state_diff_pred {}".format(state_diff_pred))
+                    # print("state_diff_output {}".format(state_diff_output.shape))
+                    # print("state_diff_output {}".format(state_diff_output))
+                    mse_transition_model = torch.sum(
+                        (state_diff_pred.state_mean - state_diff_output) ** 2
+                    )
+                    nlpd_transition_model = -torch.sum(
+                        torch.distributions.Normal(
+                            state_diff_pred.state_mean,
+                            torch.sqrt(state_diff_pred.state_var),
+                        ).log_prob(reward_output)
+                    )
+
+                    reward_pred = reward_model.predict(
+                        state=state[None, ...], action=action_input[None, ...]
+                    )
+                    mse_reward_model = torch.sum(
+                        (reward_pred.reward_mean - reward_output) ** 2
+                    )
+                    # print("mse_trans {}".format(mse_transition_model))
+                    # print("mse_reward {}".format(mse_reward_model))
+                    wandb.log({"mse_transition_model": mse_transition_model})
+                    wandb.log({"mse_reward_model": mse_reward_model})
+
+                    nlpd_reward_model = -torch.sum(
+                        torch.distributions.Normal(
+                            reward_pred.reward_mean, torch.sqrt(reward_pred.reward_var)
+                        ).log_prob(reward_output)
+                    )
+                    # print("nlpd_transition_model {}".format(nlpd_transition_model))
+                    # print("nlpd_reward_model {}".format(nlpd_reward_model))
+                    wandb.log(
+                        {"nlpd_transition_model": torch.prod(nlpd_transition_model)}
+                    )
+                    wandb.log({"nlpd_reward_model": torch.prod(nlpd_reward_model)})
+
+                # # Z=reward_model.predict(state=s)
+                # X_new = state_action_inputs_all
+                # print("X_new {}".format(X_new.shape))
+                # Y_new = reward_outputs_all
+                # print("Y_new {}".format(Y_new.shape))
+                # Y = reward_model.predict(
+                #     state=state_action_inputs_all[:, 0:5],
+                #     action=state_action_inputs_all[:, 5:],
+                # )
+                # mean_new = Y.reward_mean
+                # print("mean_new {}".format(mean_new.shape))
+                # var_new = Y.reward_var
+                # print("var_new {}".format(var_new.shape))
+                # # X_test = torch.linspace(-10, 10, 1000)
+                # # X_test = torch.concat([state[]])
+                # X_test = state_action_inputs_all
+                # print("X_test {}".format(X_test.shape))
+                # Z = svgp.variational_strategy.inducing_points.detach()
+                # print("Z {}".format(Z.shape))
+
+                # def plot(i):
+                #     # plt.scatter(
+                #     #     Z[:, 0],
+                #     #     np.zeros_like(Z[:, 0]),
+                #     #     color="k",
+                #     #     marker="|",
+                #     #     alpha=0.6,
+                #     #     label="Z",
+                #     # )
+                #     plt.scatter(
+                #         X_new[:, 0],
+                #         Y_new,
+                #         color="c",
+                #         marker="o",
+                #         alpha=0.6,
+                #         label="New data",
+                #     )
+                #     # plt.scatter(
+                #     #     X_new_2,
+                #     #     Y_new_2[:, i],
+                #     #     color="r",
+                #     #     marker="o",
+                #     #     alpha=0.6,
+                #     #     label="New data",
+                #     # )
+
+                #     # plt.plot(
+                #     #     X_test[:, 0],
+                #     #     mean.detach()[:, i],
+                #     #     color="m",
+                #     #     label=r"$\mu_{old}(\cdot)$",
+                #     # )
+                #     # plt.fill_between(
+                #     #     X_test[:, 0],
+                #     #     mean[:, i] - 1.98 * torch.sqrt(var[:, i]),
+                #     #     # pred.mean[:, 0],
+                #     #     mean[:, i] + 1.98 * torch.sqrt(var[:, i]),
+                #     #     color="m",
+                #     #     alpha=0.2,
+                #     #     label=r"$\mu_{old}(\cdot) \pm 1.98\sigma_{old}(\cdot)$",
+                #     # )
+
+                #     plt.plot(
+                #         X_test[:, 0],
+                #         mean_new.detach(),
+                #         color="c",
+                #         label=r"$\mu_{new}(\cdot)$",
+                #     )
+                #     plt.fill_between(
+                #         X_test[:, 0],
+                #         mean_new - 1.98 * torch.sqrt(var_new),
+                #         # pred.mean[:, 0],
+                #         mean_new + 1.98 * torch.sqrt(var_new),
+                #         color="c",
+                #         alpha=0.2,
+                #         label=r"$\mu_{new}(\cdot) \pm 1.98\sigma_{new}(\cdot)$",
+                #     )
+
+                #     # mean, var, noise_var = predict(X_test, data_new=data_new)
+                #     plt.legend()
+                #     plt.savefig("mo_gp" + str(i) + ".pdf", transparent=True)
+
+                # plt.figure()
+                # plot(t)
+
             global_step += 1
             episode_reward += time_step["reward"]
             t += 1
@@ -209,19 +385,23 @@ def train(cfg: DictConfig):
         elapsed_time = time.time() - last_time
         total_time = time.time() - start_time
         last_time = time.time()
+        logger.info("reward shape {}".format(episode_reward.shape))
+        logger.info("reward type {}".format(type(episode_reward)))
         train_metrics = {
             "episode": episode_idx,
             "step": global_step,
             "env_step": env_step,
             "episode_time": elapsed_time,
             "total_time": total_time,
-            "episode_reward": np.mean(episode_reward),
+            "episode_reward": episode_reward,
+            # "episode_reward": np.mean(episode_reward),
         }
         logger.info(
             "TRAINING | Episode: {} | Reward: {}".format(episode_idx, episode_reward)
         )
         if cfg.wandb.use_wandb:
-            wandb.log({"train/": train_metrics}, step=env_step)
+            wandb.log({"train/": train_metrics})
+            # wandb.log({"train/": train_metrics}, step=env_step)
 
         # Train agent
         # for _ in range(cfg.episode_length // cfg.update_every_steps):

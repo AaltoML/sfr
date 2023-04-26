@@ -36,19 +36,6 @@ class QuickDS(VisionDataset):
 def get_dataset(dataset, double, dir, device=None):
     if dataset == 'MNIST':
         # Download training data from open datasets.
-        training_data = datasets_torch.FashionMNIST(
-        root=dir,
-        train=True,
-        download=True,
-        transform=ToTensor(),
-        )
-# Download test data from open datasets.
-        test_data = datasets_torch.FashionMNIST(
-            root=dir,
-            train=False,
-            download=True,
-            transform=ToTensor(),
-        )
         ds_train = MNIST(train=True, double=double, root=dir)
         ds_test = MNIST(train=False, double=double, root=dir)
     elif dataset == 'FMNIST':

@@ -101,15 +101,15 @@ def train(cfg: DictConfig):
     )
     print("Made replay buffer")
 
-    transition_model = hydra.utils.instantiate(cfg.agent.transition_model)
+    # transition_model = hydra.utils.instantiate(cfg.agent.transition_model)
 
-    svgp = hydra.utils.instantiate(cfg.agent.reward_model.svgp)
-    reward_model = hydra.utils.instantiate(cfg.agent.reward_model, svgp=svgp)
-    # reward_model = hydra.utils.instantiate(cfg.agent.reward_model)
-    agent = hydra.utils.instantiate(
-        cfg.agent, reward_model=reward_model, transition_model=transition_model
-    )
-    # agent = hydra.utils.instantiate(cfg.agent)
+    # svgp = hydra.utils.instantiate(cfg.agent.reward_model.svgp)
+    # reward_model = hydra.utils.instantiate(cfg.agent.reward_model, svgp=svgp)
+    # # reward_model = hydra.utils.instantiate(cfg.agent.reward_model)
+    # agent = hydra.utils.instantiate(
+    #     cfg.agent, reward_model=reward_model, transition_model=transition_model
+    # )
+    agent = hydra.utils.instantiate(cfg.agent)
     print("Made agent")
 
     # elapsed_time, total_time = timer.reset()
@@ -244,134 +244,134 @@ def train(cfg: DictConfig):
                 )
             replay_buffer.add(time_step_td)
 
-            if episode_idx > cfg.init_random_episodes:
-                if cfg.online_updates and t > 0:
-                    # print("state {}".format(state.shape))
-                    # print("action_input {}".format(action_input.shape))
-                    state_diff_pred = transition_model.predict(
-                        state=state[None, ...], action=action_input[None, ...]
-                    )
-                    # print("state_diff_pred {}".format(state_diff_pred.state_mean.shape))
-                    # print("state_diff_pred {}".format(state_diff_pred))
-                    # print("state_diff_output {}".format(state_diff_output.shape))
-                    # print("state_diff_output {}".format(state_diff_output))
-                    mse_transition_model = torch.sum(
-                        (state_diff_pred.state_mean - state_diff_output) ** 2
-                    )
-                    nlpd_transition_model = -torch.sum(
-                        torch.distributions.Normal(
-                            state_diff_pred.state_mean,
-                            torch.sqrt(state_diff_pred.state_var),
-                        ).log_prob(reward_output)
-                    )
+            # if episode_idx > cfg.init_random_episodes:
+            #     if cfg.online_updates and t > 0:
+            #         # print("state {}".format(state.shape))
+            #         # print("action_input {}".format(action_input.shape))
+            #         state_diff_pred = transition_model.predict(
+            #             state=state[None, ...], action=action_input[None, ...]
+            #         )
+            #         # print("state_diff_pred {}".format(state_diff_pred.state_mean.shape))
+            #         # print("state_diff_pred {}".format(state_diff_pred))
+            #         # print("state_diff_output {}".format(state_diff_output.shape))
+            #         # print("state_diff_output {}".format(state_diff_output))
+            #         mse_transition_model = torch.sum(
+            #             (state_diff_pred.state_mean - state_diff_output) ** 2
+            #         )
+            #         nlpd_transition_model = -torch.sum(
+            #             torch.distributions.Normal(
+            #                 state_diff_pred.state_mean,
+            #                 torch.sqrt(state_diff_pred.state_var),
+            #             ).log_prob(reward_output)
+            #         )
 
-                    reward_pred = reward_model.predict(
-                        state=state[None, ...], action=action_input[None, ...]
-                    )
-                    mse_reward_model = torch.sum(
-                        (reward_pred.reward_mean - reward_output) ** 2
-                    )
-                    # print("mse_trans {}".format(mse_transition_model))
-                    # print("mse_reward {}".format(mse_reward_model))
-                    wandb.log({"mse_transition_model": mse_transition_model})
-                    wandb.log({"mse_reward_model": mse_reward_model})
+            #         reward_pred = reward_model.predict(
+            #             state=state[None, ...], action=action_input[None, ...]
+            #         )
+            #         mse_reward_model = torch.sum(
+            #             (reward_pred.reward_mean - reward_output) ** 2
+            #         )
+            #         # print("mse_trans {}".format(mse_transition_model))
+            #         # print("mse_reward {}".format(mse_reward_model))
+            #         wandb.log({"mse_transition_model": mse_transition_model})
+            #         wandb.log({"mse_reward_model": mse_reward_model})
 
-                    nlpd_reward_model = -torch.sum(
-                        torch.distributions.Normal(
-                            reward_pred.reward_mean, torch.sqrt(reward_pred.reward_var)
-                        ).log_prob(reward_output)
-                    )
-                    # print("nlpd_transition_model {}".format(nlpd_transition_model))
-                    # print("nlpd_reward_model {}".format(nlpd_reward_model))
-                    wandb.log(
-                        {"nlpd_transition_model": torch.prod(nlpd_transition_model)}
-                    )
-                    wandb.log({"nlpd_reward_model": torch.prod(nlpd_reward_model)})
+            #         nlpd_reward_model = -torch.sum(
+            #             torch.distributions.Normal(
+            #                 reward_pred.reward_mean, torch.sqrt(reward_pred.reward_var)
+            #             ).log_prob(reward_output)
+            #         )
+            #         # print("nlpd_transition_model {}".format(nlpd_transition_model))
+            #         # print("nlpd_reward_model {}".format(nlpd_reward_model))
+            #         wandb.log(
+            #             {"nlpd_transition_model": torch.prod(nlpd_transition_model)}
+            #         )
+            #         wandb.log({"nlpd_reward_model": torch.prod(nlpd_reward_model)})
 
-                # # Z=reward_model.predict(state=s)
-                # X_new = state_action_inputs_all
-                # print("X_new {}".format(X_new.shape))
-                # Y_new = reward_outputs_all
-                # print("Y_new {}".format(Y_new.shape))
-                # Y = reward_model.predict(
-                #     state=state_action_inputs_all[:, 0:5],
-                #     action=state_action_inputs_all[:, 5:],
-                # )
-                # mean_new = Y.reward_mean
-                # print("mean_new {}".format(mean_new.shape))
-                # var_new = Y.reward_var
-                # print("var_new {}".format(var_new.shape))
-                # # X_test = torch.linspace(-10, 10, 1000)
-                # # X_test = torch.concat([state[]])
-                # X_test = state_action_inputs_all
-                # print("X_test {}".format(X_test.shape))
-                # Z = svgp.variational_strategy.inducing_points.detach()
-                # print("Z {}".format(Z.shape))
+            # # Z=reward_model.predict(state=s)
+            # X_new = state_action_inputs_all
+            # print("X_new {}".format(X_new.shape))
+            # Y_new = reward_outputs_all
+            # print("Y_new {}".format(Y_new.shape))
+            # Y = reward_model.predict(
+            #     state=state_action_inputs_all[:, 0:5],
+            #     action=state_action_inputs_all[:, 5:],
+            # )
+            # mean_new = Y.reward_mean
+            # print("mean_new {}".format(mean_new.shape))
+            # var_new = Y.reward_var
+            # print("var_new {}".format(var_new.shape))
+            # # X_test = torch.linspace(-10, 10, 1000)
+            # # X_test = torch.concat([state[]])
+            # X_test = state_action_inputs_all
+            # print("X_test {}".format(X_test.shape))
+            # Z = svgp.variational_strategy.inducing_points.detach()
+            # print("Z {}".format(Z.shape))
 
-                # def plot(i):
-                #     # plt.scatter(
-                #     #     Z[:, 0],
-                #     #     np.zeros_like(Z[:, 0]),
-                #     #     color="k",
-                #     #     marker="|",
-                #     #     alpha=0.6,
-                #     #     label="Z",
-                #     # )
-                #     plt.scatter(
-                #         X_new[:, 0],
-                #         Y_new,
-                #         color="c",
-                #         marker="o",
-                #         alpha=0.6,
-                #         label="New data",
-                #     )
-                #     # plt.scatter(
-                #     #     X_new_2,
-                #     #     Y_new_2[:, i],
-                #     #     color="r",
-                #     #     marker="o",
-                #     #     alpha=0.6,
-                #     #     label="New data",
-                #     # )
+            # def plot(i):
+            #     # plt.scatter(
+            #     #     Z[:, 0],
+            #     #     np.zeros_like(Z[:, 0]),
+            #     #     color="k",
+            #     #     marker="|",
+            #     #     alpha=0.6,
+            #     #     label="Z",
+            #     # )
+            #     plt.scatter(
+            #         X_new[:, 0],
+            #         Y_new,
+            #         color="c",
+            #         marker="o",
+            #         alpha=0.6,
+            #         label="New data",
+            #     )
+            #     # plt.scatter(
+            #     #     X_new_2,
+            #     #     Y_new_2[:, i],
+            #     #     color="r",
+            #     #     marker="o",
+            #     #     alpha=0.6,
+            #     #     label="New data",
+            #     # )
 
-                #     # plt.plot(
-                #     #     X_test[:, 0],
-                #     #     mean.detach()[:, i],
-                #     #     color="m",
-                #     #     label=r"$\mu_{old}(\cdot)$",
-                #     # )
-                #     # plt.fill_between(
-                #     #     X_test[:, 0],
-                #     #     mean[:, i] - 1.98 * torch.sqrt(var[:, i]),
-                #     #     # pred.mean[:, 0],
-                #     #     mean[:, i] + 1.98 * torch.sqrt(var[:, i]),
-                #     #     color="m",
-                #     #     alpha=0.2,
-                #     #     label=r"$\mu_{old}(\cdot) \pm 1.98\sigma_{old}(\cdot)$",
-                #     # )
+            #     # plt.plot(
+            #     #     X_test[:, 0],
+            #     #     mean.detach()[:, i],
+            #     #     color="m",
+            #     #     label=r"$\mu_{old}(\cdot)$",
+            #     # )
+            #     # plt.fill_between(
+            #     #     X_test[:, 0],
+            #     #     mean[:, i] - 1.98 * torch.sqrt(var[:, i]),
+            #     #     # pred.mean[:, 0],
+            #     #     mean[:, i] + 1.98 * torch.sqrt(var[:, i]),
+            #     #     color="m",
+            #     #     alpha=0.2,
+            #     #     label=r"$\mu_{old}(\cdot) \pm 1.98\sigma_{old}(\cdot)$",
+            #     # )
 
-                #     plt.plot(
-                #         X_test[:, 0],
-                #         mean_new.detach(),
-                #         color="c",
-                #         label=r"$\mu_{new}(\cdot)$",
-                #     )
-                #     plt.fill_between(
-                #         X_test[:, 0],
-                #         mean_new - 1.98 * torch.sqrt(var_new),
-                #         # pred.mean[:, 0],
-                #         mean_new + 1.98 * torch.sqrt(var_new),
-                #         color="c",
-                #         alpha=0.2,
-                #         label=r"$\mu_{new}(\cdot) \pm 1.98\sigma_{new}(\cdot)$",
-                #     )
+            #     plt.plot(
+            #         X_test[:, 0],
+            #         mean_new.detach(),
+            #         color="c",
+            #         label=r"$\mu_{new}(\cdot)$",
+            #     )
+            #     plt.fill_between(
+            #         X_test[:, 0],
+            #         mean_new - 1.98 * torch.sqrt(var_new),
+            #         # pred.mean[:, 0],
+            #         mean_new + 1.98 * torch.sqrt(var_new),
+            #         color="c",
+            #         alpha=0.2,
+            #         label=r"$\mu_{new}(\cdot) \pm 1.98\sigma_{new}(\cdot)$",
+            #     )
 
-                #     # mean, var, noise_var = predict(X_test, data_new=data_new)
-                #     plt.legend()
-                #     plt.savefig("mo_gp" + str(i) + ".pdf", transparent=True)
+            #     # mean, var, noise_var = predict(X_test, data_new=data_new)
+            #     plt.legend()
+            #     plt.savefig("mo_gp" + str(i) + ".pdf", transparent=True)
 
-                # plt.figure()
-                # plot(t)
+            # plt.figure()
+            # plot(t)
 
             global_step += 1
             episode_reward += time_step["reward"]

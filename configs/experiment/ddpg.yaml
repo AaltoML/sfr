@@ -3,6 +3,3 @@ defaults:
   - override /agent: ddpg
 
 alg_name: "ddpg"
-
-agent:
-  horizon: 0

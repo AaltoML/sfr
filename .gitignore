@@ -1,4 +1,5 @@
 .DS_Store
+bnn-predictive/experiments/results/MNIST
 .idea
 *.log
 .direnv

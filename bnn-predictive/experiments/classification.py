@@ -211,9 +211,10 @@ def main(ds_train, ds_test, ds_valid, deltas, device, dataset, name, seed, res_d
     resdict['N_test'] = len(ds_test)
     resdict['K'] = ds_train.C
 
-    with open(os.path.join(res_dir, f'classification_{dataset}_{name}_{seed}.pkl'), 'wb') as f:
+    res_file = f'classification_{dataset}_{name}_{seed}.pkl'
+    with open(os.path.join(res_dir, res_file), 'wb') as f:
         pickle.dump(resdict, f)
-
+    print(f'Wrote results to {res_file}')
 
 if __name__ == '__main__':
     import argparse
@@ -255,7 +256,7 @@ if __name__ == '__main__':
     refine = args.refine
 
     data_dir = os.path.join(root_dir, 'data')
-    res_dir = os.path.join(root_dir, 'experiments', 'results')
+    res_dir = os.path.join(root_dir, 'experiments', 'results', 'uci')
     print(f'Writing results to {res_dir}')
     print(f'Reading data from {data_dir}')
     print(f'Dataset: {dataset}')
@@ -266,7 +267,10 @@ if __name__ == '__main__':
 
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
     torch.set_default_device(device)
-
+    if device != 'cuda':
+        print('Running on CPU')
+    else:
+        print(f'Device name: {torch.cuda.get_device_name()}')
     ds_train = UCIClassificationDatasets(dataset, random_seed=seed, root=data_dir, stratify=True,
                                          train=True, double=double)
     ds_test = UCIClassificationDatasets(dataset, random_seed=seed, root=data_dir, stratify=True,

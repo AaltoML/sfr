@@ -16,14 +16,13 @@ import torch
 
 
 torch.set_default_dtype(torch.float64)
+import src
 import torchrl
 import utils
 import wandb
 from dm_env import specs, StepType
 from omegaconf import DictConfig, OmegaConf
 from tensordict import TensorDict
-
-# from src.utils.buffer import ReplayBuffer
 from utils import EarlyStopper, set_seed_everywhere
 
 
@@ -406,30 +405,35 @@ def train(cfg: DictConfig):
         # Train agent
         # for _ in range(cfg.episode_length // cfg.update_every_steps):
         if episode_idx >= cfg.init_random_episodes:
-            # logger.info("Training reward_model")
-            # reward_model.train(replay_buffer)
-            # logger.info("Training transition_model")
-            # transition_model.train(replay_buffer)
-
             logger.info("Training agent")
             agent.train(replay_buffer)
 
             # Log rewards/videos in eval env
             if episode_idx % cfg.eval_episode_freq == 0:
                 # print("Evaluating {}".format(episode_idx))
-                print("before G")
-                Gs = utils.evaluate(
+                logger.info("Starting eval episodes")
+                G_no_online_updates = src.utils.evaluate(
                     eval_env,
                     agent,
                     episode_idx=episode_idx,
-                    # num_episode=cfg.eval_episode_freq,
                     num_episodes=1,
-                    # num_episodes=10,
-                    # video=video_recorder,
+                    online_updates=False,
+                    online_update_freq=cfg.online_update_freq,
+                    video=video_recorder,
+                    device=cfg.device,
                 )
-                print("after G")
+
+                # Gs = utils.evaluate(
+                #     eval_env,
+                #     agent,
+                #     episode_idx=episode_idx,
+                #     # num_episode=cfg.eval_episode_freq,
+                #     num_episodes=1,
+                #     # num_episodes=10,
+                #     # video=video_recorder,
+                # )
                 # print("DONE EVALUATING")
-                eval_episode_reward = np.mean(Gs)
+                # eval_episode_reward = np.mean(Gs)
                 env_step = global_step * cfg.env.action_repeat
                 eval_metrics = {
                     "episode": episode_idx,
@@ -437,13 +441,35 @@ def train(cfg: DictConfig):
                     "env_step": env_step,
                     "episode_time": elapsed_time,
                     "total_time": total_time,
-                    "episode_reward": eval_episode_reward,
+                    # "episode_reward": eval_episode_reward,
+                    "episode_return/no_online_updates": G_no_online_updates,
                 }
                 logger.info(
-                    "EVAL | Episode: {} | Reward: {}".format(
-                        episode_idx, eval_episode_reward
+                    "EVAL (no updates) | Episode: {} | Retrun: {}".format(
+                        episode_idx, G_no_online_updates
                     )
                 )
+
+                if cfg.online_updates:
+                    G_online_updates = src.utils.evaluate(
+                        eval_env,
+                        agent,
+                        episode_idx=episode_idx,
+                        num_episodes=1,
+                        online_updates=cfg.online_updates,
+                        online_update_freq=cfg.online_update_freq,
+                        video=video_recorder,
+                        device=cfg.device,
+                    )
+                    eval_metrics.update(
+                        {"episode_return/online_updates": G_online_updates}
+                    )
+                    logger.info(
+                        "EVAL (with updates) | Episode: {} | Return: {}".format(
+                            episode_idx, G_online_updates
+                        )
+                    )
+
                 if cfg.wandb.use_wandb:
                     wandb.log({"eval/": eval_metrics})
 

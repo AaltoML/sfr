@@ -186,9 +186,8 @@
 \maketitle
 
 \begin{abstract}
-Under sequential learning paradigms, such as Continual Learning or Reinforcement Learning, deep learning training techniques show shortcomings in retaining previously acquired knowledge and adapting to evolving environments through exploration.
-Retraining the model to incorporate new data or avoiding forgetting can be inefficient or impossible in many scenarios, setting hard constraints on time and hardware resources.
-Existing techniques for converting trained neural networks from weight to function space allow a principled approach to the problem but still have scaling issues. In this paper, we present a method for sparsifying the representation of the neural networks in function space, which enables fast adaptation and compact representation that solves the limitations of the weight space formulation without the well-known flaws associated with nonparametric models.\looseness-1
+Under sequential learning paradigms, such as Continual Learning (CL) or Reinforcement Learning (RL), deep learning training techniques show shortcomings, given limited access to previous data.
+In many scenarios, retraining the model to incorporate new data or avoiding forgetting can be inefficient or impossible. Existing techniques for converting trained neural networks from weight to function space allow a principled approach for CL but resort to unprincipled subset approaches. Whilst adaptivity in RL is typically ignored. In this paper, we present a method for sparsifying the representation of the neural networks in function space, which enables fast adaptation and compact representation that solves the limitations of the weight space formulation without the well-known flaws associated with nonparametric models. Furthermore, we show experiments on how our method can be a general approach to help solve exploration and retention in CL and RL.
 \end{abstract}
 
 \section{Introduction}

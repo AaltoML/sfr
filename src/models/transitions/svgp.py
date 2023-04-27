@@ -134,17 +134,39 @@ def init(
         #     )
         # )
         # TODO is this reuisng mean/covar in place properly?
-        svgp_new = SVGP(
-            inducing_points=Z,
-            mean_module=svgp.mean_module,
-            covar_module=svgp.covar_module,
-            likelihood=svgp.likelihood,
-            learn_inducing_locations=svgp.learn_inducing_locations,
-            device=device,
-        )
-        if "cuda" in device:
-            svgp_new.cuda()
+        # svgp_new = SVGP(
+        #     inducing_points=Z,
+        #     mean_module=svgp.mean_module,
+        #     covar_module=svgp.covar_module,
+        #     likelihood=svgp.likelihood,
+        #     learn_inducing_locations=svgp.learn_inducing_locations,
+        #     device=device,
+        # )
+        # if "cuda" in device:
+        #     svgp_new.cuda()
 
+        if svgp.is_multi_output:
+            svgp.variational_strategy.base_variational_strategy.variational_distribution.mean.set_(
+                torch.zeros_like(
+                    svgp.variational_strategy.base_variational_strategy.variational_distribution.mean
+                )
+            )
+            svgp.variational_strategy.base_variational_strategy.variational_distribution.covariance_matrix.set_(
+                torch.ones_like(
+                    svgp.variational_strategy.base_variational_strategy.variational_distribution.covariance_matrix
+                )
+            )
+        else:
+            svgp.variational_strategy.variational_distribution.mean.set_(
+                torch.zeros_like(
+                    svgp.variational_strategy.variational_distribution.mean
+                )
+            )
+            svgp.variational_strategy.variational_distribution.covariance_matrix.set_(
+                torch.ones_like(
+                    svgp.variational_strategy.variational_distribution.covariance_matrix
+                )
+            )
         return src.models.svgp.train(
             svgp=svgp,
             # svgp=svgp_new,

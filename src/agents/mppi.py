@@ -70,7 +70,7 @@ def init(
     )
     # std = torch.Tensor([0.5], device=device)
     # std = 0.5
-    std = 0.1
+    # std = 0.1
 
     estimate_value = src.agents.objectives.greedy(
         actor=actor,

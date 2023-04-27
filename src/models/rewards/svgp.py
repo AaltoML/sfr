@@ -103,28 +103,29 @@ def init(
         # if "cuda" in device:
         #     svgp_new.cuda()
 
-        if svgp.is_multi_output:
-            svgp.variational_strategy.base_variational_strategy.variational_distribution.mean.set_(
-                torch.zeros_like(
-                    svgp.variational_strategy.base_variational_strategy.variational_distribution.mean
+        with torch.no_grad():
+            if svgp.is_multi_output:
+                svgp.variational_strategy.base_variational_strategy.variational_distribution.mean.set_(
+                    torch.zeros_like(
+                        svgp.variational_strategy.base_variational_strategy.variational_distribution.mean
+                    )
                 )
-            )
-            svgp.variational_strategy.base_variational_strategy.variational_distribution.covariance_matrix.set_(
-                torch.ones_like(
-                    svgp.variational_strategy.base_variational_strategy.variational_distribution.covariance_matrix
+                svgp.variational_strategy.base_variational_strategy.variational_distribution.covariance_matrix.set_(
+                    torch.ones_like(
+                        svgp.variational_strategy.base_variational_strategy.variational_distribution.covariance_matrix
+                    )
                 )
-            )
-        else:
-            svgp.variational_strategy.variational_distribution.mean.set_(
-                torch.zeros_like(
-                    svgp.variational_strategy.variational_distribution.mean
+            else:
+                svgp.variational_strategy.variational_distribution.mean.set_(
+                    torch.zeros_like(
+                        svgp.variational_strategy.variational_distribution.mean
+                    )
                 )
-            )
-            svgp.variational_strategy.variational_distribution.covariance_matrix.set_(
-                torch.ones_like(
-                    svgp.variational_strategy.variational_distribution.covariance_matrix
+                svgp.variational_strategy.variational_distribution.covariance_matrix.set_(
+                    torch.ones_like(
+                        svgp.variational_strategy.variational_distribution.covariance_matrix
+                    )
                 )
-            )
         return src.models.svgp.train(
             # svgp=svgp_new,
             svgp=svgp,

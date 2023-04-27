@@ -53,6 +53,8 @@ def evaluate(p, y, likelihood, name, data):
     res[f'{data}_nll_{name}'] = nll_cls(p, y, likelihood)
     res[f'{data}_acc_{name}'] = acc(p, y, likelihood)
     res[f'{data}_ece_{name}'] = ece(p, y, likelihood, bins=10)
+    if name == 'svgp_ntk' and data == 'valid':
+        print(nll_cls(p, y, likelihood))
     return res
 
 

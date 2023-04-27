@@ -41,6 +41,6 @@ case $firstdigit in
 esac
 echo $dataset
 echo $SEED
-name='sparse_half'
-sparse_ratio=0.5
+name='sparse_quarter'
+sparse_ratio=0.25
 srun python -u experiments/classification.py -d ${dataset} --root_dir . --seed ${SEED} --n_layers 2 --activation tanh --logd_min ${logmin} --refine 0 --name ${name} --n_sparse ${sparse_ratio}

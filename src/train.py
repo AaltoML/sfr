@@ -392,7 +392,7 @@ def train(cfg: DictConfig):
             "env_step": env_step,
             "episode_time": elapsed_time,
             "total_time": total_time,
-            "episode_reward": episode_reward,
+            "episode_return": episode_reward,
             # "episode_reward": np.mean(episode_reward),
         }
         logger.info(

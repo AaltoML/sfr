@@ -19,6 +19,7 @@ def greedy(
     gamma: float = 0.99,
     unc_prop_strategy: str = "mean",
     sample_actor: bool = True,
+    bootstrap: bool = True,
 ):
     if unc_prop_strategy == "mean":
         # def greedy_fn(start_state: State, actions: ActionTrajectory) -> TensorType[""]:
@@ -106,7 +107,10 @@ def greedy(
             final_action = final_action_dist.mean
         G_final = discount * torch.min(*critic(state_trajectory[-1, :], final_action))
         # print("G_ginal {}".format(G_final.shape))
-        return G[..., None] + G_final
+        if bootstrap:
+            return G[..., None] + G_final
+        else:
+            return G[..., None]
 
     return greedy_fn
 

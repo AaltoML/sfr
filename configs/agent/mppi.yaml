@@ -31,6 +31,7 @@ unc_prop_strategy: "mean"
 # unc_prop_strategy: "sample"
 # sample_actor: true
 sample_actor: true
+bootstrap: true
 # objective:
 #   _target_: src.agents.objectives.greedy
 #     actor: ${agent.actor}

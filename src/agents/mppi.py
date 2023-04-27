@@ -40,6 +40,7 @@ def init(
     momentum: float = 0.1,
     unc_prop_strategy: str = "mean",
     sample_actor: bool = True,
+    bootstrap: bool = True,
     device: str = "cuda",
 ) -> Agent:
     actor = Actor(state_dim, mlp_dims, action_dim).to(device)
@@ -82,6 +83,7 @@ def init(
         gamma=gamma,
         unc_prop_strategy=unc_prop_strategy,
         sample_actor=sample_actor,
+        bootstrap=bootstrap,
     )
 
     def train_fn(replay_buffer: ReplayBuffer) -> dict:

@@ -9,7 +9,8 @@ defaults:
   # - model_new: world_model
   # - agent: ddpg
   - agent: mppi
-  - env: cartpole_swingup
+  # - env: cartpole_swingup
+  - env: cheetah_run
   # - env: cartpole_balance
   # - env: Pendulum-v1
   # - env: CartPole-v1

@@ -1,27 +1,115 @@
 #!/usr/bin/env python3
 import logging
 from functools import partial
+from typing import Callable, Tuple
 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-
+import torch.nn.functional as torch_F
 import numpy as np
 import torch
 import torch.nn as nn
-from src.custom_types import Action, Data, Prediction, State
+from src.custom_types import (
+    Action,
+    Data,
+    InputData,
+    OutputData,
+    Prediction,
+    State,
+    OutputMean,
+    OutputVar,
+)
 from src.utils import EarlyStopper
-from torch.func import functional_call, jacrev, jvp, vjp, vmap
+from torch.func import functional_call, jacrev, jvp, vjp, vmap, hessian
+
+# from torch.nn.functional import hessian, jacobian
 from torchrl.data import ReplayBuffer
+from torchtyping import TensorType
+
+
+Alpha = TensorType["num_data", "output_dim"]
+Beta = TensorType["num_data", "num_data", "output_dim"]
+AlphaInducing = TensorType["num_inducing", "output_dim"]
+BetaInducing = TensorType["num_inducing", "num_inducing", "output_dim"]
+
+FuncData = TensorType["num_data", "output_dim"]
+InducingPoints = TensorType["num_inducing", "input_dim"]
+
+Lambda_1 = TensorType["num_data", "num_inducing", "output_dim"]
+Lambda_2 = TensorType["num_data", "output_dim", "output_dim"]
+NTK = Callable[[InputData, InputData], TensorType[""]]
+
+TestInput = TensorType["num_test", "input_dim"]
+
+
+class NTKSVGP:
+    def __init__(
+        self,
+        kernel: NTK,
+        alpha: Alpha,
+        beta: BetaInducing,
+        Z: InducingPoints,
+        jitter: float = 1e-6,
+    ):
+        self.kernel = kernel
+        self.alpha = alpha
+        self.beta = beta
+        self.Z = Z
+        self.jitter = jitter
+
+        self._predict_fn = predict_from_duals(
+            alpha=self.alpha,
+            beta=self.beta,
+            kernel=self.kernel,
+            Z=self.Z,
+            jitter=self.jitter,
+        )
+
+    def predict(self, x: TestInput):
+        # TODO implement noise_var correctly
+        f_mean, f_var = self._predict_fn(x, full_cov=False)
+        return Prediction(mean=f_mean, var=f_var, noise_var=0.0)
+
+    def update(self, x: InputData, y: OutputData):
+        Kui = self.kernel(self.Z, x)
+        print("Kui {}".format(Kui.shape))
+        print("alpha {}".format(self.alpha.shape))
+        print("beta {}".format(self.beta.shape))
+        print("x {}".format(x.shape))
+        print("y {}".format(y.shape))
+        self.alpha = self.alpha + (Kui @ y[None, ...])[..., 0]
+        print(
+            "torch.eye(X_test.shape[0])[None, ...] {}".format(
+                torch.eye(x.shape[0])[None, ...].shape
+            )
+        )
+        self.beta = self.beta + Kui @ (
+            1**-1 * torch.eye(x.shape[0])[None, ...]
+        ) @ torch.transpose(Kui, -1, -2)
+        print("ALPHA {}".format(self.alpha.shape))
+        print("BETA {}".format(self.beta.shape))
+
+        self._predict_fn = predict_from_duals(
+            alpha=self.alpha,
+            beta=self.beta,
+            kernel=self.kernel,
+            Z=self.Z,
+            jitter=self.jitter,
+        )
 
 
 @torch.no_grad()
-def predict(
+def build_NTKSVGP(
     network: torch.nn.Module,
     train_data: Data,
+    # num_inducing: int = 50,
+    num_inducing: int = 30,
+    # num_inducing: int = 100,
+    # jitter: float = 1e-3,
     jitter: float = 1e-6,
     delta=0.001,
-    noise_var: float = 1.0,
+    # noise_var: float = 1.0,
 ):
     # Detaching the parameters because we won't be calling Tensor.backward().
     params = {k: v.detach() for k, v in network.named_parameters()}
@@ -53,76 +141,81 @@ def predict(
         basis = torch.eye(
             output.numel(), dtype=output.dtype, device=output.device
         ).view(output.numel(), -1)
-        return vmap(get_ntk_slice)(basis)
+        return 1 / (delta * num_data) * vmap(get_ntk_slice)(basis)
+
+    output_dims = 1
+    kernels = [kernel]
+
+    def mo_kernel(x1, x2):
+        K = torch.empty(output_dims, x1.shape[0], x2.shape[0])
+        for i, kernel in enumerate(kernels):
+            K[i, :, :] = kernel(x1, x2)
+        return K
 
     # kernel = partial(
     #     empirical_ntk_ntk_vps, func=fnet_single, params=params, compute="full"
     # )
+    mse = torch.nn.MSELoss()
+
+    def nll(f: FuncData, y: OutputData):
+        print("nll {} {}".format(f.shape, y.shape))
+        loss = mse(f, y)
+        print("loss {}".format(loss.shape))
+        return 0.5 * loss
+        # print("nll {} {}".format(f.shape, y.shape))
+        # # TODO should delta be in here?
+        # log_prob = torch.distributions.Normal(f, scale=torch.ones_like(f)).log_prob(y)
+        # print("log_prob {}".format(log_prob.shape))
+        # # TODO check this product is over output_dim only
+        # return -torch.sum(log_prob)
 
     X_train, Y_train = train_data
-
-    Z = torch.linspace(0, 2.5, 50)[:, torch.newaxis]
-
     num_data = X_train.shape[0]
 
-    # Kxx = (1 / delta**2) * kernel(X_train, X_train)  # [num_train, num_train]
-    Kxx = kernel(X_train, X_train)  # [num_train, num_train]
-    # + torch.eye(X_train.shape[-2]) * noise_var
-    Kxx *= 1 / (delta * num_data)
-    Kxx += torch.eye(Kxx.shape[-1]) * jitter
+    # TODO sample Z from X_train
+    #
+    indices = torch.randperm(num_data)[:num_inducing]
+    Z = X_train[indices]
+    # Z = torch.linspace(0, 2.5, num_inducing)[:, None]
+    print("Z {}".format(Z.shape))
 
-    # Kxx *= 1 / (delta)
-    # + jnp.eye(X.shape[-2], dtype=X.dtype) * default_jitter()
-    print("Kxx {}".format(Kxx))
-    print("Kxx {}".format(Kxx.shape))
-    B = Kxx + 2 * torch.eye(Kxx.shape[-1])
-    U = torch.linalg.cholesky(Kxx + 2*torch.eye(Kxx.shape[-1]))  # [num_train, num_train]
-    #print("U {}".format(U.shape))
+    alpha, beta = calc_sparse_dual_params(
+        network=network, train_data=train_data, Z=Z, kernel=mo_kernel, nll=nll
+    )
+    print("alpha {}".format(alpha.shape))
+    print("beta {}".format(beta.shape))
 
-    def predict_fn(x, full_cov: bool = False) -> Prediction:
-        # mean = network.forward(x)
-        print("x {}".format(x.shape))
-
-        alpha = torch.linalg.solve(B, Y_train)
-        beta = torch.linalg.solve(B, torch.eye(B.shape[0]))
-
-        Kss = kernel(x, x)  # [num_test, num_test]
-        Kss *= 1 / (delta * num_data)
-        # Kss *= 1 / (delta)
-        print("Kss {}".format(Kss.shape))
-        Kxs = kernel(X_train, x)  # [num_train, num_test]
-        Kxs *= 1 / (delta * num_data)
-        # Kxs *= 1 / (delta)
-        print("Kxs {}".format(Kxs.shape))
-
-        f_mean = Kxs.T @ alpha
-        A = torch.cholesky_solve(Kxs, U)  # [M, N]
-        print("A {}".format(A.shape))
-
-        # conditional mean
-        #f_mean = A.T @ Y_train  # [N]
-        print("f_mean {}".format(f_mean.shape))
-
-        # compute the covariance due to the conditioning
-        if full_cov:
-            f_var = Kss - Kxs.T @ beta @ Kxs
-        else:
-            Kss = torch.diag(Kss)
-            f_var = Kss - torch.diag(Kxs.T @ beta @ Kxs)
-        print("f_var {}".format(f_var.shape))
-
-        return Prediction(mean=f_mean, var=f_var, noise_var=0)
-
-    return predict_fn
+    model = NTKSVGP(kernel=mo_kernel, alpha=alpha, beta=beta, Z=Z, jitter=jitter)
+    return model
 
 
-def empirical_ntk_ntk_vps(func, params, x1, x2, compute="full"):
-    def get_ntk(x1, x2):
+@torch.no_grad()
+def predict(
+    network: torch.nn.Module,
+    train_data: Data,
+    # num_inducing: int = 50,
+    num_inducing: int = 30,
+    # num_inducing: int = 100,
+    # jitter: float = 1e-3,
+    jitter: float = 1e-6,
+    delta=0.001,
+    # noise_var: float = 1.0,
+):
+    # Detaching the parameters because we won't be calling Tensor.backward().
+    params = {k: v.detach() for k, v in network.named_parameters()}
+
+    def fnet_single(params, x):
+        print("inside fnet_single {}".format(x.shape))
+        f = functional_call(network, params, (x.unsqueeze(0),)).squeeze(0)[:, 0]
+        print("f: {}".format(f.shape))
+        return f
+
+    def kernel(x1, x2):
         def func_x1(params):
-            return func(params, x1)
+            return fnet_single(params, x1)
 
         def func_x2(params):
-            return func(params, x2)
+            return fnet_single(params, x2)
 
         output, vjp_fn = vjp(func_x1, params)
 
@@ -138,25 +231,262 @@ def empirical_ntk_ntk_vps(func, params, x1, x2, compute="full"):
         basis = torch.eye(
             output.numel(), dtype=output.dtype, device=output.device
         ).view(output.numel(), -1)
-        return vmap(get_ntk_slice)(basis)
+        return 1 / (delta * num_data) * vmap(get_ntk_slice)(basis)
 
-    # get_ntk(x1, x2) computes the NTK for a single data point x1, x2
-    # Since the x1, x2 inputs to empirical_ntk_ntk_vps are batched,
-    # we actually wish to compute the NTK between every pair of data points
-    # between {x1} and {x2}. That's what the vmaps here do.
-    result = vmap(vmap(get_ntk, (None, 0)), (0, None))(x1, x2)
+    output_dims = 1
+    kernels = [kernel]
 
-    if compute == "full":
-        return result
-    if compute == "trace":
-        return torch.einsum("NMKK->NM", result)
-    if compute == "diagonal":
-        return torch.einsum("NMKK->NMK", result)
+    def mo_kernel(x1, x2):
+        K = torch.empty(output_dims, x1.shape[0], x2.shape[0])
+        for i, kernel in enumerate(kernels):
+            K[i, :, :] = kernel(x1, x2)
+        return K
+
+    # kernel = partial(
+    #     empirical_ntk_ntk_vps, func=fnet_single, params=params, compute="full"
+    # )
+    mse = torch.nn.MSELoss()
+
+    def nll(f: FuncData, y: OutputData):
+        print("nll {} {}".format(f.shape, y.shape))
+        loss = mse(f, y)
+        print("loss {}".format(loss.shape))
+        return 0.5 * loss
+        # print("nll {} {}".format(f.shape, y.shape))
+        # # TODO should delta be in here?
+        # log_prob = torch.distributions.Normal(f, scale=torch.ones_like(f)).log_prob(y)
+        # print("log_prob {}".format(log_prob.shape))
+        # # TODO check this product is over output_dim only
+        # return -torch.sum(log_prob)
+
+    X_train, Y_train = train_data
+    num_data = X_train.shape[0]
+
+    # TODO sample Z from X_train
+    #
+    indices = torch.randperm(num_data)[:num_inducing]
+    Z = X_train[indices]
+    # Z = torch.linspace(0, 2.5, num_inducing)[:, None]
+    print("Z {}".format(Z.shape))
+
+    alpha, beta = calc_sparse_dual_params(
+        network=network, train_data=train_data, Z=Z, kernel=mo_kernel, nll=nll
+    )
+    print("alpha {}".format(alpha.shape))
+    print("beta {}".format(beta.shape))
+
+    predict_fn_ = predict_from_duals(
+        alpha=alpha, beta=beta, kernel=mo_kernel, Z=Z, jitter=jitter
+    )
+
+    def predict_fn(x: TestInput, full_cov: bool = False):
+        f_mean, f_var = predict_fn_(x=x, full_cov=full_cov)
+        # TODO set noise_var correctly
+        return Prediction(mean=f_mean, var=f_var, noise_var=0.0)
+
+    return predict_fn
+
+
+def predict_from_duals(
+    alpha: Alpha, beta: Beta, kernel: NTK, Z: InducingPoints, jitter: float = 1e-3
+):
+    Kuu = kernel(Z, Z)
+    print("Kuu {}".format(Kuu.shape))
+    I = torch.eye(Kuu.shape[-1])[None, ...] * jitter
+    print("I {}".format(I.shape))
+    Kuu += I
+    # beta += I
+    print("Kuu {}".format(Kuu.shape))
+
+    assert beta.shape == Kuu.shape
+    # iBKuu = torch.linalg.solve(beta + Kuu, torch.eye(Kuu.shape[-1]))
+    # print("iBKuu {}".format(iBKuu.shape))
+    # V = torch.matmul(torch.matmul(Kuu, iBKuu), Kuu)
+    V = torch.matmul(Kuu, torch.linalg.solve(beta + Kuu, Kuu))
+    # print("V {}".format(V.shape))
+    # iKuuViKuu = torch.linalg.solve(torch.linalg.solve(Kuu, V), Kuu, left=False)
+    # print("iKuuViKuu {}".format(iKuuViKuu.shape))
+    # iKuuViKuua = torch.matmul(iKuuViKuu, alpha[..., None])
+    # print("iKuuVKuua {}".format(iKuuViKuua.shape))
+
+    def predict(x: TestInput, full_cov: bool = False) -> Tuple[OutputMean, OutputVar]:
+        Kxx = kernel(x, x)
+        print("Kxx {}".format(Kxx.shape))
+        Kxu = kernel(x, Z)
+        print("Kxu {}".format(Kxu.shape))
+
+        # f_mean = torch.matmul(Kxu, iKuuViKuua)
+        # print("f_mean {}".format(f_mean.shape))
+        # f_mean = f_mean[..., 0].T
+        # print("f_mean {}".format(f_mean.shape))
+
+        m_u = (
+            V
+            @ torch.linalg.solve(Kuu, torch.eye(Kuu.shape[-1])[None, ...])
+            @ alpha[..., None]
+        )
+        print("m_u {}".format(m_u.shape))
+
+        f_mean = (
+            Kxu @ torch.linalg.solve(Kuu, torch.eye(Kuu.shape[-1])[None, ...]) @ m_u
+        )
+        print("f_mean {}".format(f_mean.shape))
+        f_mean = f_mean[..., 0].T
+        print("f_mean {}".format(f_mean.shape))
+        beta_z = torch.linalg.solve(
+            Kuu, torch.eye(Kuu.shape[-1])[None, ...]
+        ) - torch.linalg.solve(beta + Kuu, torch.eye(Kuu.shape[-1])[None, ...])
+
+        if full_cov:
+            f_cov = Kxx - torch.matmul(
+                torch.matmul(Kxu, iBKuu), torch.transpose(Kxu, -1, -2)
+            )
+            print("f_cov full_cov {}".format(f_cov.shape))
+            return f_mean, f_cov
+        else:
+            # TODO implement more efficiently
+            # f_cov = Kxx - torch.matmul(
+            #     torch.matmul(Kxu, iBKuu), torch.transpose(Kxu, -1, -2)
+            # )
+            f_cov = Kxx - torch.matmul(
+                torch.matmul(Kxu, beta_z), torch.transpose(Kxu, -1, -2)
+            )
+            print("f_cov {}".format(f_cov.shape))
+            f_var = torch.diagonal(f_cov, dim1=-2, dim2=-1).T
+            print("f_var {}".format(f_var.shape))
+            return f_mean, f_var
+
+    return predict
+
+
+def calc_sparse_dual_params(
+    network: torch.nn.Module,
+    train_data: Tuple[InputData, OutputData],
+    Z: InducingPoints,
+    kernel: NTK,
+    nll: Callable[[FuncData, OutputData], float],
+) -> Tuple[AlphaInducing, BetaInducing]:
+    num_inducing, input_dim = Z.shape
+    X, Y = train_data
+    assert X.ndim == 2
+    assert Y.ndim == 2
+    assert X.shape[0] == Y.shape[0]
+    assert X.shape[1] == input_dim
+    Kuf = kernel(Z, X)
+    print("Kuf {}".format(Kuf.shape))
+    F = network(X)
+    print("F {}".format(F.shape))
+    lambda_1, lambda_2 = calc_lambdas(Y=Y, F=F, nll=nll)
+    print("lambda_1 {}".format(lambda_1.shape))
+    print("lambda_2 {}".format(lambda_2.shape))
+    alpha, beta = calc_sparse_dual_params_from_lambdas(
+        lambda_1=lambda_1, lambda_2=lambda_2, Kuf=Kuf
+    )
+    print("alpha {}".format(alpha.shape))
+    print("beta {}".format(beta.shape))
+    return alpha, beta
+
+
+def calc_sparse_dual_params_from_lambdas(
+    lambda_1: Lambda_1,
+    lambda_2: Lambda_2,
+    Kuf: TensorType["output_dim", "num_inducing", "num_data"],
+) -> Tuple[AlphaInducing, BetaInducing]:
+    assert lambda_1.ndim == 2
+    num_data, output_dim = lambda_1.shape
+    assert lambda_2.ndim == 3
+    assert lambda_2.shape[0] == num_data
+    assert lambda_2.shape[1] == lambda_2.shape[2] == output_dim
+    assert Kuf.ndim == 3
+    assert Kuf.shape[0] == output_dim
+    assert Kuf.shape[2] == num_data
+    alpha_u = torch.matmul(Kuf, torch.transpose(lambda_1, -1, -2)[..., None])[..., 0]
+    print("alpha_u {}".format(alpha_u.shape))
+    lambda_2_diag = torch.diagonal(lambda_2, dim1=-2, dim2=-1)
+    # TODO broadcast lambda_2 correctly for multiple output dims
+    print("lambda_2_diag {}".format(lambda_2_diag.shape))
+    inv_lambda_2 = lambda_2_diag**-1 * torch.eye(num_data)
+    # inv_lambda_2 = torch.diag(lambda_2_diag[:, 0] ** -1)
+    print("inv_lambda_2 {}".format(inv_lambda_2.shape))
+    beta_u = torch.matmul(
+        torch.matmul(Kuf, inv_lambda_2),
+        torch.transpose(Kuf, -1, -2),
+    )
+    print("beta_u {}".format(beta_u.shape))
+    return alpha_u, beta_u
+
+
+def calc_lambdas(
+    Y: OutputData,  # [num_data, output_dim]
+    F: FuncData,  # [num_data, output_dim]
+    nll: Callable[[FuncData, OutputData], float],
+) -> Tuple[Lambda_1, Lambda_2]:
+    assert Y.ndim == 2
+    assert F.ndim == 2
+    assert Y.shape[0] == F.shape[0]
+    assert Y.shape[1] == F.shape[1]
+    nll_jacobian_fn = jacrev(nll)
+    nll_hessian_fn = torch.vmap(hessian(nll))
+
+    # nll_jacobian_fn = torch.gradient(nll)
+    lambda_1 = nll_jacobian_fn(F, Y)
+    lambda_2 = nll_hessian_fn(F, Y)
+    # lambda_1, lambda_2 = [], []
+    # TODO we can do better than a for loop...
+    # for y, f in zip(Y, F):
+    #     # lambda_1.append(nll_jacobian_fn(f, y))
+    #     print("nll_hessian_fn(f, y) {}".format(nll_hessian_fn(f, y).shape))
+    #     lambda_2.append(nll_hessian_fn(f, y))
+    #     # TODO implement clipping for lambdas
+    # lambda_1 = torch.stack(lambda_1, dim=0)  # [num_data, output_dim]
+    # TODO should lambda_1 just be Y?
+    lambda_1 = Y
+    print("lambda_2 {}".format(lambda_2))
+    # lambda_2 = torch.stack(lambda_2, dim=0)  # [num_data, output_dim, output_dim]
+    return lambda_1, lambda_2
+
+
+# def empirical_ntk_ntk_vps(func, params, x1, x2, compute="full"):
+#     def get_ntk(x1, x2):
+#         def func_x1(params):
+#             return func(params, x1)
+
+#         def func_x2(params):
+#             return func(params, x2)
+
+#         output, vjp_fn = vjp(func_x1, params)
+
+#         def get_ntk_slice(vec):
+#             # This computes vec @ J(x2).T
+#             # `vec` is some unit vector (a single slice of the Identity matrix)
+#             vjps = vjp_fn(vec)
+#             # This computes J(X1) @ vjps
+#             _, jvps = jvp(func_x2, (params,), vjps)
+#             return jvps
+
+#         # Here's our identity matrix
+#         basis = torch.eye(
+#             output.numel(), dtype=output.dtype, device=output.device
+#         ).view(output.numel(), -1)
+#         return vmap(get_ntk_slice)(basis)
+
+#     # get_ntk(x1, x2) computes the NTK for a single data point x1, x2
+#     # Since the x1, x2 inputs to empirical_ntk_ntk_vps are batched,
+#     # we actually wish to compute the NTK between every pair of data points
+#     # between {x1} and {x2}. That's what the vmaps here do.
+#     result = vmap(vmap(get_ntk, (None, 0)), (0, None))(x1, x2)
+
+#     if compute == "full":
+#         return result
+#     if compute == "trace":
+#         return torch.einsum("NMKK->NM", result)
+#     if compute == "diagonal":
+#         return torch.einsum("NMKK->NMK", result)
 
 
 def train(
     network: nn.Module,
-    noise_var,
+    # noise_var,
     data,
     num_epochs: int = 1000,
     batch_size: int = 16,
@@ -191,8 +521,9 @@ def train(
         # )
         # print("l2_norm {}".format(1 / (2 * l2_decay**2) * l2_norm.sum()))
         # # return loss_fn(x, y) + 1 / (2 * l2_decay**2) * l2_norm.sum()
-        y_pred = network(x)
-        return 0.5 * loss_fn(y_pred, y) + delta * l2r
+        f_pred = network(x)
+        # return 0.5 * loss_fn(y_pred, y) + delta * l2r
+        return 0.5 * loss_fn(f_pred, y) + delta * l2r
 
     data_loader = torch.utils.data.DataLoader(
         torch.utils.data.TensorDataset(*data),
@@ -202,9 +533,7 @@ def train(
     )
 
     network.train()
-    optimizer = torch.optim.Adam(
-        [{"params": network.parameters()}, {"params": noise_var}], lr=learning_rate
-    )
+    optimizer = torch.optim.Adam([{"params": network.parameters()}], lr=learning_rate)
     loss_history = []
     for epoch_idx in range(num_epochs):
         for batch_idx, batch in enumerate(data_loader):
@@ -253,7 +582,7 @@ if __name__ == "__main__":
         torch.nn.Linear(25, 1),
     )
     print("network: {}".format(network))
-    noise_var = torch.nn.parameter.Parameter(torch.Tensor([0]), requires_grad=True)
+    # noise_var = torch.nn.parameter.Parameter(torch.Tensor([0]), requires_grad=True)
 
     # X_train = torch.rand((50, 1)) * 2 - 1
     # X_train = torch.rand((50, 1)) * 2
@@ -265,33 +594,61 @@ if __name__ == "__main__":
     print("X, Y: {}, {}".format(X_train.shape, Y_train.shape))
     # X_test = torch.linspace(-1.8, 1.8, 200, dtype=torch.float64).reshape(-1, 1)
     X_test = torch.linspace(0.0, 2.5, 110, dtype=torch.float64).reshape(-1, 1)
-    # X_test = torch.linspace(-0.2, 2.2, 200, dtype=torch.float64).reshape(-1, 1)
+    X_test = torch.linspace(-0.2, 2.2, 200, dtype=torch.float64).reshape(-1, 1)
+    X_test = torch.linspace(-1.0, 2.2, 200, dtype=torch.float64).reshape(-1, 1)
+    # X_test = torch.linspace(-6.0, 2.2, 200, dtype=torch.float64).reshape(-1, 1)
+    X_test = torch.linspace(-2.0, 3.5, 300, dtype=torch.float64).reshape(-1, 1)
+    X_test = torch.linspace(-0.7, 3.5, 300, dtype=torch.float64).reshape(-1, 1)
     # X_test = torch.linspace(-8, 8, 200, dtype=torch.float64).reshape(-1, 1)
     # X_test = torch.linspace(-2, 2, 100, dtype=torch.float64).reshape(-1, 1)
     print("X_test: {}".format(X_test.shape))
     print("f: {}".format(network(X_test).shape))
 
+    X_new = torch.linspace(-0.5, -0.2, 20, dtype=torch.float64).reshape(-1, 1)
+    Y_new = func(X_new, noise=True)
+
+    X_new_2 = torch.linspace(3.0, 4.0, 20, dtype=torch.float64).reshape(-1, 1)
+    Y_new_2 = func(X_new_2, noise=True)
+
+    X_new_3 = torch.linspace(-6.0, -5.0, 20, dtype=torch.float64).reshape(-1, 1)
+    Y_new_3 = func(X_new_3, noise=True)
+
     batch_size = X_train.shape[0]
     metrics = train(
         network=network,
-        noise_var=noise_var,
+        # noise_var=noise_var,
         data=data,
         num_epochs=2500,
+        # num_epochs=25,
         batch_size=batch_size,
         learning_rate=1e-2,
         loss_fn=torch.nn.MSELoss(),
         delta=delta,
     )
 
-    pred = predict(
-        network=network, train_data=(X_train, Y_train), delta=delta, noise_var=0
-    )(X_test)
+    svgp = build_NTKSVGP(
+        network=network,
+        train_data=(X_train, Y_train),
+        num_inducing=30,
+        jitter=1e-6,
+        delta=delta,
+    )
+    pred = svgp.predict(X_test)
+
+    # pred = predict(network=network, train_data=(X_train, Y_train), delta=delta)(X_test)
     # print("pred {}".format(pred))
+    print("mean {}".format(pred.mean.shape))
+    print("var {}".format(pred.var.shape))
+    print("X_test {}".format(X_test.shape))
+    print(X_test.shape)
     import matplotlib.pyplot as plt
 
-    fig = plt.subplots(1, 1)
-    plt.plot(np.arange(len(metrics["loss"])), metrics["loss"])
-    plt.savefig("loss.pdf", transparent=True)
+    # plot_var = False
+    plot_var = True
+
+    # fig = plt.subplots(1, 1)
+    # plt.plot(np.arange(len(metrics["loss"])), metrics["loss"])
+    # plt.savefig("loss.pdf", transparent=True)
     fig = plt.subplots(1, 1)
     plt.scatter(X_train, Y_train, color="k", marker="x", label="Data")
     plt.legend()
@@ -299,23 +656,96 @@ if __name__ == "__main__":
     fig = plt.subplots(1, 1)
     plt.scatter(X_train, Y_train, color="k", marker="x", alpha=0.6, label="Data")
     plt.plot(
-        X_test,
-        network(X_test).detach().numpy(),
+        X_test[:, 0],
+        func(X_test, noise=False),
+        color="b",
+        label=r"$f_{true}(\cdot)$",
+    )
+    plt.plot(
+        X_test[:, 0],
+        network(X_test).detach()[:, 0],
         color="m",
         linestyle="--",
-        label=r"$f_{\theta}(\cdot)$",
+        label=r"$f_{NN}(\cdot)$",
     )
-    plt.savefig("nn.pdf", transparent=True)
-    plt.plot(X_test, pred.mean, color="c", label=r"$\mu(\cdot)$")
-    plt.fill_between(
-        X_test[:, 0],
-        (pred.mean - 1.98 * torch.sqrt(pred.var))[:, 0],
-        # pred.mean[:, 0],
-        (pred.mean + 1.98 * torch.sqrt(pred.var))[:, 0],
-        color="c",
-        alpha=0.2,
-        label=r"$\mu(\cdot) \pm 1.98\sigma$",
-    )
+    plt.savefig("nnyo.pdf", transparent=True)
+    plt.plot(X_test[:, 0], pred.mean[:, 0], color="c", label=r"$\mu(\cdot)$")
+    if plot_var:
+        plt.fill_between(
+            X_test[:, 0],
+            (pred.mean - 1.98 * torch.sqrt(pred.var))[:, 0],
+            # pred.mean[:, 0],
+            (pred.mean + 1.98 * torch.sqrt(pred.var))[:, 0],
+            color="c",
+            alpha=0.2,
+            label=r"$\mu(\cdot) \pm 1.98\sigma$",
+        )
+    plt.scatter(svgp.Z, torch.ones_like(svgp.Z) * -5, marker="|", color="b", label="Z")
     plt.legend()
-    plt.savefig("nn2gp.pdf", transparent=True)
-    plt.plot(X_train, Y_train)
+    plt.savefig("nn2svgp.pdf", transparent=True)
+    svgp.update(x=X_new, y=Y_new)
+
+    pred_new = svgp.predict(X_test)
+    print("mean NEW {}".format(pred_new.mean.shape))
+    print("var NEW {}".format(pred_new.var.shape))
+    plt.scatter(X_new, Y_new, color="m", marker="o", alpha=0.6, label="New data")
+    plt.plot(X_test[:, 0], pred_new.mean[:, 0], color="m", label=r"$\mu_{new}(\cdot)$")
+    if plot_var:
+        plt.fill_between(
+            X_test[:, 0],
+            (pred_new.mean - 1.98 * torch.sqrt(pred_new.var))[:, 0],
+            # pred.mean[:, 0],
+            (pred_new.mean + 1.98 * torch.sqrt(pred_new.var))[:, 0],
+            color="m",
+            alpha=0.2,
+            label=r"$\mu_{new}(\cdot) \pm 1.98\sigma_{new}(\cdot)$",
+        )
+
+    svgp.update(x=X_new_2, y=Y_new_2)
+    pred_new_2 = svgp.predict(X_test)
+    print("mean NEW {}".format(pred_new_2.mean.shape))
+    print("var NEW {}".format(pred_new_2.var.shape))
+    plt.scatter(X_new_2, Y_new_2, color="y", marker="o", alpha=0.6, label="New data 2")
+    plt.plot(
+        X_test[:, 0],
+        pred_new_2.mean[:, 0],
+        color="y",
+        linestyle="-",
+        label=r"$\mu_{new,2}(\cdot)$",
+    )
+    if plot_var:
+        plt.fill_between(
+            X_test[:, 0],
+            (pred_new_2.mean - 1.98 * torch.sqrt(pred_new_2.var))[:, 0],
+            # pred.mean[:, 0],
+            (pred_new_2.mean + 1.98 * torch.sqrt(pred_new_2.var))[:, 0],
+            color="y",
+            alpha=0.2,
+            label=r"$\mu_{new,2}(\cdot) \pm 1.98\sigma_{new,2}(\cdot)$",
+        )
+
+    # svgp.update(x=X_new_3, y=Y_new_3)
+    # pred_new_3 = svgp.predict(X_test)
+    # print("mean NEW {}".format(pred_new_3.mean.shape))
+    # print("var NEW {}".format(pred_new_3.var.shape))
+    # plt.scatter(X_new_3, Y_new_3, color="g", marker="o", alpha=0.6, label="New data 3")
+    # plt.plot(
+    #     X_test[:, 0],
+    #     pred_new_3.mean[:, 0],
+    #     color="g",
+    #     linestyle="-",
+    #     label=r"$\mu_{new,3}(\cdot)$",
+    # )
+    # if plot_var:
+    #     plt.fill_between(
+    #         X_test[:, 0],
+    #         (pred_new_3.mean - 1.98 * torch.sqrt(pred_new_3.var))[:, 0],
+    #         # pred.mean[:, 0],
+    #         (pred_new_3.mean + 1.98 * torch.sqrt(pred_new_3.var))[:, 0],
+    #         color="y",
+    #         alpha=0.2,
+    #         label=r"$\mu_{new,3}(\cdot) \pm 1.98\sigma_{new,3}(\cdot)$",
+    #     )
+
+    plt.legend()
+    plt.savefig("nn2svgp_new.pdf", transparent=True)

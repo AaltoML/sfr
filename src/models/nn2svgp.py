@@ -43,20 +43,95 @@ NTK = Callable[[InputData, InputData], TensorType[""]]
 TestInput = TensorType["num_test", "input_dim"]
 
 
+def nll(f: FuncData, y: OutputData):
+    loss = torch.nn.MSELoss()(f, y)
+    # loss = mse(f, y)
+    return 0.5 * loss
+
+
 class NTKSVGP:
     def __init__(
         self,
-        kernel: NTK,
-        alpha: Alpha,
-        beta: BetaInducing,
-        Z: InducingPoints,
+        network: torch.nn.Module,
+        train_data: Data,
+        num_inducing: int = 30,
         jitter: float = 1e-6,
+        delta: float = 0.001,
+        nll=nll,
     ):
-        self.kernel = kernel
-        self.alpha = alpha
-        self.beta = beta
+        X_train, Y_train = train_data
+        assert X_train.ndim == 2
+        assert Y_train.ndim == 2
+        assert X_train.shape[0] == Y_train.shape[0]
+        num_data, output_dim = Y_train.shape
+        print("Y_train.shape {}".format(Y_train.shape))
+        num_data = X_train.shape[0]
+        indices = torch.randperm(num_data)[:num_inducing]
+        Z = X_train[indices]
+        assert Z.ndim == 2
+        self.num_inducing, self.input_dim = Z.shape
         self.Z = Z
         self.jitter = jitter
+
+        # Detaching the parameters because we won't be calling Tensor.backward().
+        params = {k: v.detach() for k, v in network.named_parameters()}
+
+        def fnet_single(params, x):
+            print("inside fnet_single {}".format(x.shape))
+            f = functional_call(network, params, (x.unsqueeze(0),)).squeeze(0)
+            print("f: {}".format(f.shape))
+            f = f[:, 0]
+            print("f: {}".format(f.shape))
+            return f
+
+        def kernel(x1: InputData, x2: InputData):
+            def func_x1(params):
+                return fnet_single(params, x1)
+
+            def func_x2(params):
+                return fnet_single(params, x2)
+
+            output, vjp_fn = vjp(func_x1, params)
+
+            def get_ntk_slice(vec):
+                # This computes vec @ J(x2).T
+                # `vec` is some unit vector (a single slice of the Identity matrix)
+                vjps = vjp_fn(vec)
+                # This computes J(X1) @ vjps
+                _, jvps = jvp(func_x2, (params,), vjps)
+                return jvps
+
+            # Here's our identity matrix
+            basis = torch.eye(
+                output.numel(), dtype=output.dtype, device=output.device
+            ).view(output.numel(), -1)
+            return 1 / (delta * num_data) * vmap(get_ntk_slice)(basis)
+
+        kernels = [kernel]
+
+        def mo_kernel(x1, x2):
+            K = torch.empty(output_dim, x1.shape[0], x2.shape[0])
+            print("K {}".format(K.shape))
+            for i, kernel in enumerate(kernels):
+                K[i, :, :] = kernel(x1, x2)
+            print("K {}".format(K.shape))
+            return K
+
+        # TODO make multi output kernel properly
+        self.kernel = mo_kernel
+
+        self.alpha, self.beta = calc_sparse_dual_params(
+            network=network, train_data=train_data, Z=Z, kernel=self.kernel, nll=nll
+        )
+        print("alpha {}".format(self.alpha.shape))
+        print("beta {}".format(self.beta.shape))
+        assert self.alpha.ndim == 2
+        assert self.beta.ndim == 3
+        assert self.alpha.shape[0] == output_dim
+        assert self.alpha.shape[1] == num_inducing
+        assert self.beta.shape[0] == output_dim
+        assert self.beta.shape[1] == num_inducing
+        assert self.beta.shape[2] == num_inducing
 
         self._predict_fn = predict_from_duals(
             alpha=self.alpha,
@@ -66,27 +141,30 @@ class NTKSVGP:
             jitter=self.jitter,
         )
 
+    @torch.no_grad()
     def predict(self, x: TestInput):
         # TODO implement noise_var correctly
         f_mean, f_var = self._predict_fn(x, full_cov=False)
         return Prediction(mean=f_mean, var=f_var, noise_var=0.0)
 
     def update(self, x: InputData, y: OutputData):
+        assert x.ndim == 2 and y.ndim == 2
+        num_new_data, input_dim = x.shape
         Kui = self.kernel(self.Z, x)
         print("Kui {}".format(Kui.shape))
         print("alpha {}".format(self.alpha.shape))
         print("beta {}".format(self.beta.shape))
         print("x {}".format(x.shape))
         print("y {}".format(y.shape))
-        self.alpha = self.alpha + (Kui @ y[None, ...])[..., 0]
-        print(
-            "torch.eye(X_test.shape[0])[None, ...] {}".format(
-                torch.eye(x.shape[0])[None, ...].shape
-            )
+
+        # lambda_1, lambda_2 = calc_lambdas(Y=Y, F=F, nll=nll)
+
+        self.alpha += (Kui @ y.T[..., None])[..., 0]
+        self.beta += (
+            Kui
+            @ (1**-1 * torch.eye(num_new_data)[None, ...])
+            @ torch.transpose(Kui, -1, -2)
         )
-        self.beta = self.beta + Kui @ (
-            1**-1 * torch.eye(x.shape[0])[None, ...]
-        ) @ torch.transpose(Kui, -1, -2)
         print("ALPHA {}".format(self.alpha.shape))
         print("BETA {}".format(self.beta.shape))
 
@@ -99,197 +177,10 @@ class NTKSVGP:
         )
 
 
-@torch.no_grad()
-def build_NTKSVGP(
-    network: torch.nn.Module,
-    train_data: Data,
-    # num_inducing: int = 50,
-    num_inducing: int = 30,
-    # num_inducing: int = 100,
-    # jitter: float = 1e-3,
-    jitter: float = 1e-6,
-    delta=0.001,
-    # noise_var: float = 1.0,
-):
-    # Detaching the parameters because we won't be calling Tensor.backward().
-    params = {k: v.detach() for k, v in network.named_parameters()}
-
-    def fnet_single(params, x):
-        print("inside fnet_single {}".format(x.shape))
-        f = functional_call(network, params, (x.unsqueeze(0),)).squeeze(0)[:, 0]
-        print("f: {}".format(f.shape))
-        return f
-
-    def kernel(x1, x2):
-        def func_x1(params):
-            return fnet_single(params, x1)
-
-        def func_x2(params):
-            return fnet_single(params, x2)
-
-        output, vjp_fn = vjp(func_x1, params)
-
-        def get_ntk_slice(vec):
-            # This computes vec @ J(x2).T
-            # `vec` is some unit vector (a single slice of the Identity matrix)
-            vjps = vjp_fn(vec)
-            # This computes J(X1) @ vjps
-            _, jvps = jvp(func_x2, (params,), vjps)
-            return jvps
-
-        # Here's our identity matrix
-        basis = torch.eye(
-            output.numel(), dtype=output.dtype, device=output.device
-        ).view(output.numel(), -1)
-        return 1 / (delta * num_data) * vmap(get_ntk_slice)(basis)
-
-    output_dims = 1
-    kernels = [kernel]
-
-    def mo_kernel(x1, x2):
-        K = torch.empty(output_dims, x1.shape[0], x2.shape[0])
-        for i, kernel in enumerate(kernels):
-            K[i, :, :] = kernel(x1, x2)
-        return K
-
-    # kernel = partial(
-    #     empirical_ntk_ntk_vps, func=fnet_single, params=params, compute="full"
-    # )
-    mse = torch.nn.MSELoss()
-
-    def nll(f: FuncData, y: OutputData):
-        print("nll {} {}".format(f.shape, y.shape))
-        loss = mse(f, y)
-        print("loss {}".format(loss.shape))
-        return 0.5 * loss
-        # print("nll {} {}".format(f.shape, y.shape))
-        # # TODO should delta be in here?
-        # log_prob = torch.distributions.Normal(f, scale=torch.ones_like(f)).log_prob(y)
-        # print("log_prob {}".format(log_prob.shape))
-        # # TODO check this product is over output_dim only
-        # return -torch.sum(log_prob)
-
-    X_train, Y_train = train_data
-    num_data = X_train.shape[0]
-
-    # TODO sample Z from X_train
-    #
-    indices = torch.randperm(num_data)[:num_inducing]
-    Z = X_train[indices]
-    # Z = torch.linspace(0, 2.5, num_inducing)[:, None]
-    print("Z {}".format(Z.shape))
-
-    alpha, beta = calc_sparse_dual_params(
-        network=network, train_data=train_data, Z=Z, kernel=mo_kernel, nll=nll
-    )
-    print("alpha {}".format(alpha.shape))
-    print("beta {}".format(beta.shape))
-
-    model = NTKSVGP(kernel=mo_kernel, alpha=alpha, beta=beta, Z=Z, jitter=jitter)
-    return model
-
-
-@torch.no_grad()
-def predict(
-    network: torch.nn.Module,
-    train_data: Data,
-    # num_inducing: int = 50,
-    num_inducing: int = 30,
-    # num_inducing: int = 100,
-    # jitter: float = 1e-3,
-    jitter: float = 1e-6,
-    delta=0.001,
-    # noise_var: float = 1.0,
-):
-    # Detaching the parameters because we won't be calling Tensor.backward().
-    params = {k: v.detach() for k, v in network.named_parameters()}
-
-    def fnet_single(params, x):
-        print("inside fnet_single {}".format(x.shape))
-        f = functional_call(network, params, (x.unsqueeze(0),)).squeeze(0)[:, 0]
-        print("f: {}".format(f.shape))
-        return f
-
-    def kernel(x1, x2):
-        def func_x1(params):
-            return fnet_single(params, x1)
-
-        def func_x2(params):
-            return fnet_single(params, x2)
-
-        output, vjp_fn = vjp(func_x1, params)
-
-        def get_ntk_slice(vec):
-            # This computes vec @ J(x2).T
-            # `vec` is some unit vector (a single slice of the Identity matrix)
-            vjps = vjp_fn(vec)
-            # This computes J(X1) @ vjps
-            _, jvps = jvp(func_x2, (params,), vjps)
-            return jvps
-
-        # Here's our identity matrix
-        basis = torch.eye(
-            output.numel(), dtype=output.dtype, device=output.device
-        ).view(output.numel(), -1)
-        return 1 / (delta * num_data) * vmap(get_ntk_slice)(basis)
-
-    output_dims = 1
-    kernels = [kernel]
-
-    def mo_kernel(x1, x2):
-        K = torch.empty(output_dims, x1.shape[0], x2.shape[0])
-        for i, kernel in enumerate(kernels):
-            K[i, :, :] = kernel(x1, x2)
-        return K
-
-    # kernel = partial(
-    #     empirical_ntk_ntk_vps, func=fnet_single, params=params, compute="full"
-    # )
-    mse = torch.nn.MSELoss()
-
-    def nll(f: FuncData, y: OutputData):
-        print("nll {} {}".format(f.shape, y.shape))
-        loss = mse(f, y)
-        print("loss {}".format(loss.shape))
-        return 0.5 * loss
-        # print("nll {} {}".format(f.shape, y.shape))
-        # # TODO should delta be in here?
-        # log_prob = torch.distributions.Normal(f, scale=torch.ones_like(f)).log_prob(y)
-        # print("log_prob {}".format(log_prob.shape))
-        # # TODO check this product is over output_dim only
-        # return -torch.sum(log_prob)
-
-    X_train, Y_train = train_data
-    num_data = X_train.shape[0]
-
-    # TODO sample Z from X_train
-    #
-    indices = torch.randperm(num_data)[:num_inducing]
-    Z = X_train[indices]
-    # Z = torch.linspace(0, 2.5, num_inducing)[:, None]
-    print("Z {}".format(Z.shape))
-
-    alpha, beta = calc_sparse_dual_params(
-        network=network, train_data=train_data, Z=Z, kernel=mo_kernel, nll=nll
-    )
-    print("alpha {}".format(alpha.shape))
-    print("beta {}".format(beta.shape))
-
-    predict_fn_ = predict_from_duals(
-        alpha=alpha, beta=beta, kernel=mo_kernel, Z=Z, jitter=jitter
-    )
-
-    def predict_fn(x: TestInput, full_cov: bool = False):
-        f_mean, f_var = predict_fn_(x=x, full_cov=full_cov)
-        # TODO set noise_var correctly
-        return Prediction(mean=f_mean, var=f_var, noise_var=0.0)
-
-    return predict_fn
-
-
 def predict_from_duals(
     alpha: Alpha, beta: Beta, kernel: NTK, Z: InducingPoints, jitter: float = 1e-3
 ):
+    print("Z {}".format(Z.shape))
     Kuu = kernel(Z, Z)
     print("Kuu {}".format(Kuu.shape))
     I = torch.eye(Kuu.shape[-1])[None, ...] * jitter
@@ -303,7 +194,7 @@ def predict_from_duals(
     # print("iBKuu {}".format(iBKuu.shape))
     # V = torch.matmul(torch.matmul(Kuu, iBKuu), Kuu)
     V = torch.matmul(Kuu, torch.linalg.solve(beta + Kuu, Kuu))
-    # print("V {}".format(V.shape))
+    print("V {}".format(V.shape))
     # iKuuViKuu = torch.linalg.solve(torch.linalg.solve(Kuu, V), Kuu, left=False)
     # print("iKuuViKuu {}".format(iKuuViKuu.shape))
     # iKuuViKuua = torch.matmul(iKuuViKuu, alpha[..., None])
@@ -406,6 +297,7 @@ def calc_sparse_dual_params_from_lambdas(
     # TODO broadcast lambda_2 correctly for multiple output dims
     print("lambda_2_diag {}".format(lambda_2_diag.shape))
     inv_lambda_2 = lambda_2_diag**-1 * torch.eye(num_data)
+    # print("inv_lambda_2 {}".format(inv_lambda_2.shape))
     # inv_lambda_2 = torch.diag(lambda_2_diag[:, 0] ** -1)
     print("inv_lambda_2 {}".format(inv_lambda_2.shape))
     beta_u = torch.matmul(
@@ -444,44 +336,6 @@ def calc_lambdas(
     print("lambda_2 {}".format(lambda_2))
     # lambda_2 = torch.stack(lambda_2, dim=0)  # [num_data, output_dim, output_dim]
     return lambda_1, lambda_2
-
-
-# def empirical_ntk_ntk_vps(func, params, x1, x2, compute="full"):
-#     def get_ntk(x1, x2):
-#         def func_x1(params):
-#             return func(params, x1)
-
-#         def func_x2(params):
-#             return func(params, x2)
-
-#         output, vjp_fn = vjp(func_x1, params)
-
-#         def get_ntk_slice(vec):
-#             # This computes vec @ J(x2).T
-#             # `vec` is some unit vector (a single slice of the Identity matrix)
-#             vjps = vjp_fn(vec)
-#             # This computes J(X1) @ vjps
-#             _, jvps = jvp(func_x2, (params,), vjps)
-#             return jvps
-
-#         # Here's our identity matrix
-#         basis = torch.eye(
-#             output.numel(), dtype=output.dtype, device=output.device
-#         ).view(output.numel(), -1)
-#         return vmap(get_ntk_slice)(basis)
-
-#     # get_ntk(x1, x2) computes the NTK for a single data point x1, x2
-#     # Since the x1, x2 inputs to empirical_ntk_ntk_vps are batched,
-#     # we actually wish to compute the NTK between every pair of data points
-#     # between {x1} and {x2}. That's what the vmaps here do.
-#     result = vmap(vmap(get_ntk, (None, 0)), (0, None))(x1, x2)
-
-#     if compute == "full":
-#         return result
-#     if compute == "trace":
-#         return torch.einsum("NMKK->NM", result)
-#     if compute == "diagonal":
-#         return torch.einsum("NMKK->NMK", result)
 
 
 def train(
@@ -626,7 +480,7 @@ if __name__ == "__main__":
         delta=delta,
     )
 
-    svgp = build_NTKSVGP(
+    svgp = NTKSVGP(
         network=network,
         train_data=(X_train, Y_train),
         num_inducing=30,
@@ -749,3 +603,190 @@ if __name__ == "__main__":
 
     plt.legend()
     plt.savefig("nn2svgp_new.pdf", transparent=True)
+
+
+# @torch.no_grad()
+# def build_NTKSVGP(
+#     network: torch.nn.Module,
+#     train_data: Data,
+#     # num_inducing: int = 50,
+#     num_inducing: int = 30,
+#     # num_inducing: int = 100,
+#     # jitter: float = 1e-3,
+#     jitter: float = 1e-6,
+#     delta=0.001,
+#     # noise_var: float = 1.0,
+# ):
+#     # Detaching the parameters because we won't be calling Tensor.backward().
+#     params = {k: v.detach() for k, v in network.named_parameters()}
+
+#     def fnet_single(params, x):
+#         print("inside fnet_single {}".format(x.shape))
+#         f = functional_call(network, params, (x.unsqueeze(0),)).squeeze(0)[:, 0]
+#         print("f: {}".format(f.shape))
+#         return f
+
+#     def kernel(x1, x2):
+#         def func_x1(params):
+#             return fnet_single(params, x1)
+
+#         def func_x2(params):
+#             return fnet_single(params, x2)
+
+#         output, vjp_fn = vjp(func_x1, params)
+
+#         def get_ntk_slice(vec):
+#             # This computes vec @ J(x2).T
+#             # `vec` is some unit vector (a single slice of the Identity matrix)
+#             vjps = vjp_fn(vec)
+#             # This computes J(X1) @ vjps
+#             _, jvps = jvp(func_x2, (params,), vjps)
+#             return jvps
+
+#         # Here's our identity matrix
+#         basis = torch.eye(
+#             output.numel(), dtype=output.dtype, device=output.device
+#         ).view(output.numel(), -1)
+#         return 1 / (delta * num_data) * vmap(get_ntk_slice)(basis)
+
+#     kernels = [kernel]
+
+#     def mo_kernel(x1, x2):
+#         K = torch.empty(output_dim, x1.shape[0], x2.shape[0])
+#         for i, kernel in enumerate(kernels):
+#             K[i, :, :] = kernel(x1, x2)
+#         return K
+
+#     # kernel = partial(
+#     #     empirical_ntk_ntk_vps, func=fnet_single, params=params, compute="full"
+#     # )
+#     mse = torch.nn.MSELoss()
+
+#     def nll(f: FuncData, y: OutputData):
+#         print("nll {} {}".format(f.shape, y.shape))
+#         loss = mse(f, y)
+#         print("loss {}".format(loss.shape))
+#         return 0.5 * loss
+#         # print("nll {} {}".format(f.shape, y.shape))
+#         # # TODO should delta be in here?
+#         # log_prob = torch.distributions.Normal(f, scale=torch.ones_like(f)).log_prob(y)
+#         # print("log_prob {}".format(log_prob.shape))
+#         # # TODO check this product is over output_dim only
+#         # return -torch.sum(log_prob)
+
+#     X_train, Y_train = train_data
+#     num_data = X_train.shape[0]
+
+#     # TODO sample Z from X_train
+#     #
+#     indices = torch.randperm(num_data)[:num_inducing]
+#     Z = X_train[indices]
+#     # Z = torch.linspace(0, 2.5, num_inducing)[:, None]
+#     print("Z {}".format(Z.shape))
+
+#     alpha, beta = calc_sparse_dual_params(
+#         network=network, train_data=train_data, Z=Z, kernel=mo_kernel, nll=nll
+#     )
+#     print("alpha {}".format(alpha.shape))
+#     print("beta {}".format(beta.shape))
+
+#     model = NTKSVGP(kernel=mo_kernel, alpha=alpha, beta=beta, Z=Z, jitter=jitter)
+#     return model
+
+
+# @torch.no_grad()
+# def predict(
+#     network: torch.nn.Module,
+#     train_data: Data,
+#     # num_inducing: int = 50,
+#     num_inducing: int = 30,
+#     # num_inducing: int = 100,
+#     # jitter: float = 1e-3,
+#     jitter: float = 1e-6,
+#     delta=0.001,
+#     # noise_var: float = 1.0,
+# ):
+#     # Detaching the parameters because we won't be calling Tensor.backward().
+#     params = {k: v.detach() for k, v in network.named_parameters()}
+
+#     def fnet_single(params, x):
+#         print("inside fnet_single {}".format(x.shape))
+#         f = functional_call(network, params, (x.unsqueeze(0),)).squeeze(0)[:, 0]
+#         print("f: {}".format(f.shape))
+#         return f
+
+#     def kernel(x1, x2):
+#         def func_x1(params):
+#             return fnet_single(params, x1)
+
+#         def func_x2(params):
+#             return fnet_single(params, x2)
+
+#         output, vjp_fn = vjp(func_x1, params)
+
+#         def get_ntk_slice(vec):
+#             # This computes vec @ J(x2).T
+#             # `vec` is some unit vector (a single slice of the Identity matrix)
+#             vjps = vjp_fn(vec)
+#             # This computes J(X1) @ vjps
+#             _, jvps = jvp(func_x2, (params,), vjps)
+#             return jvps
+
+#         # Here's our identity matrix
+#         basis = torch.eye(
+#             output.numel(), dtype=output.dtype, device=output.device
+#         ).view(output.numel(), -1)
+#         return 1 / (delta * num_data) * vmap(get_ntk_slice)(basis)
+
+#     output_dims = 1
+#     kernels = [kernel]
+
+#     def mo_kernel(x1, x2):
+#         K = torch.empty(output_dims, x1.shape[0], x2.shape[0])
+#         for i, kernel in enumerate(kernels):
+#             K[i, :, :] = kernel(x1, x2)
+#         return K
+
+#     # kernel = partial(
+#     #     empirical_ntk_ntk_vps, func=fnet_single, params=params, compute="full"
+#     # )
+#     mse = torch.nn.MSELoss()
+
+#     def nll(f: FuncData, y: OutputData):
+#         print("nll {} {}".format(f.shape, y.shape))
+#         loss = mse(f, y)
+#         print("loss {}".format(loss.shape))
+#         return 0.5 * loss
+#         # print("nll {} {}".format(f.shape, y.shape))
+#         # # TODO should delta be in here?
+#         # log_prob = torch.distributions.Normal(f, scale=torch.ones_like(f)).log_prob(y)
+#         # print("log_prob {}".format(log_prob.shape))
+#         # # TODO check this product is over output_dim only
+#         # return -torch.sum(log_prob)
+
+#     X_train, Y_train = train_data
+#     num_data = X_train.shape[0]
+
+#     # TODO sample Z from X_train
+#     #
+#     indices = torch.randperm(num_data)[:num_inducing]
+#     Z = X_train[indices]
+#     # Z = torch.linspace(0, 2.5, num_inducing)[:, None]
+#     print("Z {}".format(Z.shape))
+
+#     alpha, beta = calc_sparse_dual_params(
+#         network=network, train_data=train_data, Z=Z, kernel=mo_kernel, nll=nll
+#     )
+#     print("alpha {}".format(alpha.shape))
+#     print("beta {}".format(beta.shape))
+
+#     predict_fn_ = predict_from_duals(
+#         alpha=alpha, beta=beta, kernel=mo_kernel, Z=Z, jitter=jitter
+#     )
+
+#     def predict_fn(x: TestInput, full_cov: bool = False):
+#         f_mean, f_var = predict_fn_(x=x, full_cov=full_cov)
+#         # TODO set noise_var correctly
+#         return Prediction(mean=f_mean, var=f_var, noise_var=0.0)
+
+#     return predict_fn

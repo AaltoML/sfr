@@ -1,5 +1,6 @@
 .DS_Store
 bnn-predictive/experiments/results/
+bnn-predictive/conda
 .idea
 *.log
 .direnv

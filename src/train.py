@@ -123,7 +123,7 @@ def train(cfg: DictConfig):
         t = 0
         reset_updates = False
         while not time_step.last():
-            if episode_idx < cfg.init_random_episodes:
+            if episode_idx <= cfg.init_random_episodes:
                 action = np.random.uniform(-1, 1, env.action_spec().shape).astype(
                     dtype=np.float64
                     # dtype=env.action_spec().dtype
@@ -384,7 +384,7 @@ def train(cfg: DictConfig):
         elapsed_time = time.time() - last_time
         total_time = time.time() - start_time
         last_time = time.time()
-        logger.info("reward shape {}".format(episode_reward.shape))
+        # logger.info("reward shape {}".format(episode_reward.shape))
         logger.info("reward type {}".format(type(episode_reward)))
         train_metrics = {
             "episode": episode_idx,

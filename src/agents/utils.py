@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 import wandb
-from custom_types import Action, EvalMode, State, T0
+from src.custom_types import Action, EvalMode, State, T0
 from torch import distributions as pyd
 from torch.distributions.utils import _standard_normal
 from torch.utils.data import DataLoader

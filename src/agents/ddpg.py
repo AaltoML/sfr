@@ -11,7 +11,7 @@ import src.agents.utils as util
 import torch
 import torch.nn as nn
 import wandb
-from custom_types import Action, EvalMode, State, T0
+from src.custom_types import Action, EvalMode, State, T0
 from torchrl.data.replay_buffers import ReplayBuffer
 
 from .agent import Agent

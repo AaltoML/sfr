@@ -2,7 +2,8 @@ defaults:
   # - model: laplace
   # - model: svgp
   - reward_model: svgp
-  - transition_model: svgp
+  # - transition_model: svgp
+  - transition_model: nn2svgp
   # - reward_model: mlp
   # - transition_model: mlp
   # - model: world_model
@@ -10,6 +11,7 @@ defaults:
   # - agent: ddpg
   - agent: mppi
   - env: cartpole_swingup
+  # - env: cheetah_run
   # - env: cartpole_balance
   # - env: Pendulum-v1
   # - env: CartPole-v1
@@ -19,8 +21,8 @@ defaults:
   # Use slurm on cluster or local?
   # - override hydra/launcher: submitit_local
   # - override hydra/launcher: local
-  - override hydra/launcher: lumi
-  # - override hydra/launcher: slurm
+  # - override hydra/launcher: lumi
+  - override hydra/launcher: slurm
   # Disable logging by Hydra
   - override hydra/job_logging: none
   - override hydra/hydra_logging: none
@@ -39,7 +41,8 @@ online_update_freq: 2
 alg_name: "mppi-svgp"
 random_seed: 42
 
-init_random_episodes: 10
+# init_random_episodes: 10
+init_random_episodes: 1
 num_train_episodes: 2000
 # episode_length: 1000
 episode_length: 100

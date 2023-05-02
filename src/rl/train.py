@@ -26,7 +26,7 @@ from tensordict import TensorDict
 from utils import EarlyStopper, set_seed_everywhere
 
 
-@hydra.main(version_base="1.3", config_path="../configs", config_name="main")
+@hydra.main(version_base="1.3", config_path="./configs", config_name="main")
 def train(cfg: DictConfig):
     try:  # Make experiment reproducible
         set_seed_everywhere(cfg.random_seed)
@@ -412,7 +412,7 @@ def train(cfg: DictConfig):
             if episode_idx % cfg.eval_episode_freq == 0:
                 # print("Evaluating {}".format(episode_idx))
                 logger.info("Starting eval episodes")
-                G_no_online_updates = src.utils.evaluate(
+                G_no_online_updates = src.rl.utils.evaluate(
                     eval_env,
                     agent,
                     episode_idx=episode_idx,
@@ -451,7 +451,7 @@ def train(cfg: DictConfig):
                 )
 
                 if cfg.online_updates:
-                    G_online_updates = src.utils.evaluate(
+                    G_online_updates = src.rl.utils.evaluate(
                         eval_env,
                         agent,
                         episode_idx=episode_idx,

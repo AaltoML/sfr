@@ -14,8 +14,8 @@ import torch.distributions as td
 import wandb
 from functorch import jacrev
 from gpytorch.module import _validate_module_outputs
-from src.custom_types import Prediction
-from src.utils import EarlyStopper
+from src.rl.custom_types import Prediction
+from src.rl.utils import EarlyStopper
 from torch.utils.data import DataLoader
 import numpy as np
 

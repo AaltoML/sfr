@@ -8,8 +8,8 @@ logger = logging.getLogger(__name__)
 import gpytorch
 import torch
 from models.svgp import SVGP
-from src.custom_types import Action, State, StatePrediction, Data
-from src.utils import EarlyStopper
+from src.rl.custom_types import Action, State, StatePrediction, Data
+from src.rl.utils import EarlyStopper
 from torch.utils.data import DataLoader, TensorDataset
 from torchrl.data import ReplayBuffer
 import src
@@ -168,7 +168,7 @@ def init(
                         svgp.variational_strategy.variational_distribution.covariance_matrix
                     )
                 )
-        return src.models.svgp.train(
+        return src.rl.models.svgp.train(
             svgp=svgp,
             # svgp=svgp_new,
             # likelihood=likelihood,

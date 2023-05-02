@@ -3,7 +3,7 @@ import hydra
 from omegaconf import DictConfig
 
 
-@hydra.main(version_base="1.3", config_path="../configs", config_name="main")
+@hydra.main(version_base="1.3", config_path="./configs", config_name="main")
 def train(cfg: DictConfig):
     import train
 

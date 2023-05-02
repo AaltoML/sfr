@@ -142,27 +142,7 @@ if __name__ == "__main__":
         learning_rate=1e-2,
     )
 
-    alpha, beta = src.nn2svgp.nn2svgp.calc_sparse_dual_params(
-        network=network,
-        train_data=(X_train, Y_train),
-        Z=ntksvgp.Z,
-        kernel=ntksvgp.kernel,
-        nll=likelihood.nn_loss,
-    )
-    ntksvgp._predict_fn = src.nn2svgp.nn2svgp.predict_from_duals(
-        alpha=alpha,
-        beta=beta,
-        kernel=ntksvgp.kernel,
-        Z=ntksvgp.Z,
-        jitter=ntksvgp.jitter,
-    )
-
-    # ntksvgp.update(x=X_train, y=Y_train)
-    # ntksvgp.update(x=X_train, y=Y_train)
     f_mean, f_var = ntksvgp.predict_f(X_test_short)
-
-    # pred = predict(network=network, train_data=(X_train, Y_train), delta=delta)(X_test)
-    # print("pred {}".format(pred))
     print("MEAN {}".format(f_mean.shape))
     print("VAR {}".format(f_var.shape))
     print("X_test_short {}".format(X_test_short.shape))

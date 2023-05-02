@@ -7,11 +7,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 import numpy as np
-import src.agents.utils as util
+import src.rl.agents.utils as util
 import torch
 import torch.nn as nn
 import wandb
-from src.custom_types import Action, EvalMode, State, T0
+from src.rl.custom_types import Action, EvalMode, State, T0
 from torchrl.data.replay_buffers import ReplayBuffer
 
 from .agent import Agent

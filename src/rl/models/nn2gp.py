@@ -9,8 +9,8 @@ logger = logging.getLogger(__name__)
 import numpy as np
 import torch
 import torch.nn as nn
-from src.custom_types import Action, Data, Prediction, State
-from src.utils import EarlyStopper
+from src.rl.custom_types import Action, Data, Prediction, State
+from src.rl.utils import EarlyStopper
 from torch.func import functional_call, jacrev, jvp, vjp, vmap
 from torchrl.data import ReplayBuffer
 

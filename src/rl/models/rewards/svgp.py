@@ -4,14 +4,15 @@ import logging
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
-import gpytorch
+
+import src
 import torch
 from models.svgp import SVGP
-from src.custom_types import Action, RewardPrediction, State, Data
-from src.utils import EarlyStopper
+from src.rl.custom_types import Action, Data, RewardPrediction, State
+from src.rl.utils import EarlyStopper
 from torch.utils.data import DataLoader, TensorDataset
 from torchrl.data import ReplayBuffer
-import src
+
 from .base import RewardModel
 
 
@@ -126,7 +127,7 @@ def init(
                         svgp.variational_strategy.variational_distribution.covariance_matrix
                     )
                 )
-        return src.models.svgp.train(
+        return src.rl.models.svgp.train(
             # svgp=svgp_new,
             svgp=svgp,
             # likelihood=likelihood,

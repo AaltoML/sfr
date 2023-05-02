@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 import numpy as np
 import torch
 from dm_env import StepType
-from src.agents import Agent
+from src.rl.agents import Agent
 from tensordict import TensorDict
 from torchrl.data import ReplayBuffer
 

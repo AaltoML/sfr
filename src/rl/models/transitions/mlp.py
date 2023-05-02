@@ -5,11 +5,10 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-import gpytorch
 import torch
 import wandb
-from src.custom_types import Action, State, StatePrediction
-from src.utils import EarlyStopper
+from src.rl.custom_types import Action, InputData, OutputData, State, StatePrediction
+from src.rl.utils import EarlyStopper
 from torchrl.data import ReplayBuffer
 
 from .base import TransitionModel
@@ -73,4 +72,7 @@ def init(
                 logger.info("Breaking out loop")
                 break
 
-    return TransitionModel(predict=predict_fn, train=train_fn)
+    def dummy_update_fn(x: InputData, y: OutputData):
+        pass
+
+    return TransitionModel(predict=predict_fn, train=train_fn, update=dummy_update_fn)

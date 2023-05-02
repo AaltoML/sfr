@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 from typing import Callable, NamedTuple, Optional, Any
 
-from src.custom_types import Action, EvalMode, State, T0
+from src.rl.custom_types import Action, EvalMode, State, T0
 from torch.utils.data import DataLoader
 
 Data = Any

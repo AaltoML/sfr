@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 import torch
 import torch.distributions as td
-from src.custom_types import ActionTrajectory, State, StateTrajectory
-from src.models import RewardModel, TransitionModel
+from src.rl.custom_types import ActionTrajectory, State, StateTrajectory
+from src.rl.models import RewardModel, TransitionModel
 from torchtyping import TensorType
 
 from .ddpg import Actor, Critic

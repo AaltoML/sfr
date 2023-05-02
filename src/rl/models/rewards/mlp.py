@@ -7,8 +7,8 @@ logger = logging.getLogger(__name__)
 
 import torch
 import wandb
-from src.custom_types import Action, RewardPrediction, State
-from src.utils import EarlyStopper
+from src.rl.custom_types import Action, RewardPrediction, State, InputData, OutputData
+from src.rl.utils import EarlyStopper
 from torchrl.data import ReplayBuffer
 
 from .base import RewardModel
@@ -65,4 +65,7 @@ def init(
                 logger.info("Breaking out loop")
                 break
 
-    return RewardModel(predict=predict_fn, train=train_fn)
+    def dummy_update_fn(x: InputData, y: OutputData):
+        pass
+
+    return RewardModel(predict=predict_fn, train=train_fn, update=dummy_update_fn)

@@ -67,6 +67,9 @@ class NTKSVGP(nn.Module):
 
         self.build_dual_svgp()
 
+    def set_data(self, train_data: Data):
+        self.train_data = train_data
+
     def build_dual_svgp(self):
         if isinstance(self.prior, src.nn2svgp.priors.Gaussian):
             delta = self.prior.delta

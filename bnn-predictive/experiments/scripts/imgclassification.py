@@ -10,7 +10,7 @@ from torchvision.transforms import ToTensor
 from tqdm import tqdm
 import os
 
-from preds.models import CIFAR10Net,  MLPS  #CIFAR100Net
+from preds.models import CIFAR10Net,  MLPS, CIFAR100Net
 from preds.datasets import MNIST, FMNIST, CIFAR10
 
 torch.backends.cudnn.deterministic = True
@@ -158,6 +158,14 @@ if __name__ == '__main__':
     device = 'cuda' if torch.cuda.is_available() else 'cpu'
 
     ds_train, ds_test = get_dataset(dataset, double, data_dir, device=device)
+
+    if not os.path.exists(res_dir):
+        os.makedirs(res_dir)
+        print(res_dir)
+    
+    if not os.path.exists(os.path.join(res_dir, 'models')):
+        os.makedirs(os.path.join(res_dir, 'models'))
+
 
     # naming convention: dataset_model_seed_delta
     fname = 'models/' + '_'.join([dataset, model_name, str(seed)]) + '_{delta:.1e}.pt'

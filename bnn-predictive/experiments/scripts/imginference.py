@@ -401,6 +401,7 @@ if __name__ == '__main__':
     model_name = args.model
     rerun = args.rerun
     root_dir = args.root_dir
+    seed = args.seed
     data_dir = os.path.join(root_dir, 'data')
     res_dir = os.path.join(root_dir, 'experiments', 'results', dataset)
 

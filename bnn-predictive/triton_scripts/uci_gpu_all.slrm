@@ -1,6 +1,6 @@
 #!/bin/bash
 #SBATCH --array=0-79
-#SBATCH --time=0-3:00:00   
+#SBATCH --time=0-1:00:00   
 #SBATCH --output=/scratch/work/%u/bnn-svgp/logs/uci_classification_%A_%a.out
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu

@@ -54,6 +54,7 @@ def svgp_sampling_predictive(X, X_train, y_train, model, likelihood, prior_prec,
     data = (y_train, X_train)
     svgp = SVGPNTK(model, likelihood, data, prior_prec, n_sparse=n_sparse, sparse_data=sparse_data, subset=subset)
     f_mu, f_var = svgp.predict(X)
+    map_pred = model(X)
     f_mu = model(X) + f_mu
     data_sparse = svgp.get_sparse_data()
     fs = Normal(f_mu, f_var.clamp(1e-5))

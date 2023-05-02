@@ -3,7 +3,7 @@ import torch
 from torch import nn
 from torch.nn import init
 import torch.nn.functional as F
-
+from collections import OrderedDict
 
 class BayesianLinear(nn.Module):
 
@@ -171,51 +171,60 @@ class SiMLP(MLP):
         super().__init__(input_size, hidden_sizes, output_size, activation, **kwargs)
 
 
-"""Models from DeepOBS benchmark suite:
+"""Models adapted from DeepOBS benchmark suite:
 https://github.com/fsschneider/DeepOBS/blob/develop/deepobs/pytorch/testproblems/
 testproblems_modules.py
 """
 
 
-class CIFAR10Net(nn.Sequential):
-    """
-    Deepobs network with optional last sigmoid activation (instead of relu)
-    In Deepobs called `net_cifar10_3c3d`
-    """
-
-    def __init__(self, in_channels=3, n_out=10, use_tanh=False):
-        super(CIFAR10Net, self).__init__()
+class CIFAR10Net(nn.Module):
+    def __init__(self,
+                 in_channels: int = 3,
+                 n_out: int = 10,
+                 use_tanh: bool = False):
+        super().__init__()
         self.output_size = n_out
         activ = nn.Tanh if use_tanh else nn.ReLU
 
-        self.add_module('conv1', nn.Conv2d(
-            in_channels=in_channels, out_channels=64, kernel_size=5))
-        self.add_module('relu1', nn.ReLU())
-        self.add_module('maxpool1', nn.MaxPool2d(
-            kernel_size=3, stride=2, padding=32))
+        self.cnn_block = nn.Sequential(OrderedDict([
+            ('conv1', nn.Conv2d(in_channels=in_channels,
+                                out_channels=64,
+                                kernel_size=(5, 5),
+                                stride=(1, 1))),
+            ('relu1', nn.ReLU()),
+            ('maxpool1', nn.Sequential(
+                nn.ZeroPad2d((0, 1, 0, 1)),
+                nn.MaxPool2d(kernel_size=3, stride=2))),
+            ('conv2', nn.Conv2d(in_channels=64,
+                                out_channels=96,
+                                kernel_size=(3, 3),
+                                stride=(1, 1))),
+            ('relu2', nn.ReLU()),
+            ('maxpool2', nn.Sequential(
+                nn.ZeroPad2d((0, 1, 0, 1)),
+                nn.MaxPool2d(kernel_size=3, stride=2))),
+            ('conv3', nn.Conv2d(in_channels=96,
+                                out_channels=128,
+                                kernel_size=(3, 3),
+                                stride=(1, 1),
+                                padding=(1, 1))),
+            ('relu3', nn.ReLU()),
+            ('maxpool3', nn.Sequential(
+                nn.ZeroPad2d((1, 1, 1, 1)),
+                nn.MaxPool2d(kernel_size=3, stride=2)))
+        ]))
+        self.lin_block = nn.Sequential(OrderedDict([
+            ('flatten', nn.Flatten()),
+            ('dense1', nn.Linear(in_features=3 * 3 * 128,
+                                 out_features=512)),
+            ('activ1', activ()),
+            ('dense2', nn.Linear(in_features=512,
+                                 out_features=256)),
+            ('activ2', activ()),
+            ('dense3', nn.Linear(in_features=256,
+                                 out_features=self.output_size))
 
-        self.add_module('conv2', nn.Conv2d(
-            in_channels=64, out_channels=96, kernel_size=3))
-        self.add_module('relu2', nn.ReLU())
-        self.add_module('maxpool2', nn.Maxpool2d(
-            kernel_size=3, stride=2, padding=48))
-
-        self.add_module('conv3', nn.Conv2d(
-            in_channels=96, out_channels=128, kernel_size=3, padding_mode='same'))
-        self.add_module('relu3', nn.ReLU())
-        self.add_module('maxpool3', nn.Maxpool2d(
-            kernel_size=3, stride=2, padding=64))
-
-        self.add_module('flatten', nn.Flatten())
-
-        self.add_module('dense1', nn.Linear(
-            in_features=3 * 3 * 128, out_features=512))
-        self.add_module('relu4', activ())
-        self.add_module('dense2', nn.Linear(in_features=512, out_features=256))
-        self.add_module('relu5', activ())
-        self.add_module('dense3', nn.Linear(in_features=256, out_features=n_out))
-
-        # init the layers
+        ]))
         for module in self.modules():
             if isinstance(module, nn.Conv2d):
                 nn.init.constant_(module.bias, 0.0)
@@ -224,3 +233,84 @@ class CIFAR10Net(nn.Sequential):
             if isinstance(module, nn.Linear):
                 nn.init.constant_(module.bias, 0.0)
                 nn.init.xavier_uniform_(module.weight)
+
+    def forward(self, x):
+        x = self.cnn_block(x)
+        out = self.lin_block(x)
+        return out
+
+
+
+class CIFAR100Net(nn.Module):
+    def __init__(self,
+                 in_channels: int = 3,
+                 n_out: int = 100):
+        super().__init__()
+        assert n_out in (10, 100)
+        self.output_size = n_out
+
+        self.cnn_block = nn.Sequential(OrderedDict([
+            ('conv1', nn.Conv2d(in_channels=in_channels,
+                                out_channels=96,
+                                kernel_size=(3, 3),
+                                stride=(1, 1),
+                                padding=(1, 1))),
+            ('relu1', nn.ReLU()),
+            ('conv2', nn.Conv2d(in_channels=96,
+                                out_channels=96,
+                                kernel_size=(3, 3),
+                                stride=(1, 1),
+                                padding=(1, 1))),
+            ('relu2', nn.ReLU()),
+            ('padding1', nn.ZeroPad2d(padding=(0, 1, 0, 1))),
+            ('conv3', nn.Conv2d(in_channels=96,
+                                out_channels=96,
+                                kernel_size=(3, 3),
+                                stride=(2, 2))),
+            ('relu3', nn.ReLU()),
+            ('conv4', nn.Conv2d(in_channels=96,
+                                out_channels=192,
+                                kernel_size=(3, 3),
+                                stride=(1, 1),
+                                padding=(1, 1))),
+            ('relu4', nn.ReLU()),
+            ('conv5', nn.Conv2d(in_channels=192,
+                                out_channels=192,
+                                kernel_size=(3, 3),
+                                stride=(1, 1),
+                                padding=(1, 1))),
+            ('relu5', nn.ReLU()),
+            ('padding2', nn.ZeroPad2d(padding=(0, 1, 0, 1))),
+            ('conv6', nn.Conv2d(in_channels=192,
+                                out_channels=192,
+                                kernel_size=(3, 3),
+                                stride=(2, 2))),
+            ('relu6', nn.ReLU()),
+            ('conv7', nn.Conv2d(in_channels=192,
+                                out_channels=192,
+                                kernel_size=(3, 3),
+                                stride=(1, 1))),
+            ('relu7', nn.ReLU()),
+            ('conv8', nn.Conv2d(in_channels=192,
+                                out_channels=192,
+                                kernel_size=(1, 1),
+                                stride=(1, 1))),
+            ('relu8', nn.ReLU()),
+            ('conv9', nn.Conv2d(in_channels=192,
+                                out_channels=10,
+                                kernel_size=(1, 1),
+                                stride=(1, 1))),
+            ('avg', nn.AvgPool2d(kernel_size=(6, 6),
+                                 stride=(6, 6),
+                                 padding=0)),
+            ('flatten', nn.Flatten())
+        ]))
+
+        for module in self.modules():
+            if isinstance(module, nn.Conv2d):
+                nn.init.constant_(module.bias, 0.1)
+                nn.init.xavier_normal_(module.weight)
+
+    def forward(self, x):
+        x = self.cnn_block(x)
+        return x

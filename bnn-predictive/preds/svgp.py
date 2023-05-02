@@ -72,7 +72,6 @@ class SVGPNTK():
         lambdas = vmap(torch.diag)(lambdas)
         if clip_lambda:
             lambdas = torch.clip(lambdas, self.eps)
-        print(lambdas.mean())
         return lambdas
 
     def estimate_duals(self):
@@ -91,8 +90,8 @@ class SVGPNTK():
             gram = torch.squeeze(self.kernel.empirical_ntk(self.kernel.params, self.z, self.x, class_num=i_class))    #TODO: x by z
             K = 1/(self.delta) * gram # was x.shape
             K_t = torch.transpose(K, dim0=1, dim1=0)
-            lambda_inv = lambdas_class**(-1) #*torch.eye(self.x.shape[0])
-            A = K @ (lambda_inv * torch.eye(self.x.shape[0]) )@ K_t
+            lambda_inv = lambdas_class #*torch.eye(self.x.shape[0])
+            A = K @ (lambda_inv * torch.eye(self.x.shape[0]))@ K_t
             alpha_f[i_class] = torch.matmul(K, self.y.float()) #torch.linalg.solve(A, y.float())
             beta_f[i_class] = A #torch.linalg.solve(lambda_inv * torch.eye(gram.shape[0]) + K, torch.eye(K.shape[0]))
         return alpha_f, beta_f

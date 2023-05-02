@@ -273,6 +273,7 @@ if __name__ == '__main__':
     print(f'Reading data from {data_dir}')
     print(f'Dataset: {dataset}')
     print(f'Seed: {seed}')
+    print(f'Sparse points: {n_sparse}')
 
     if double:
         torch.set_default_dtype(torch.double)

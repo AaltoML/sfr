@@ -39,7 +39,7 @@ class SVGPNTK():
 
         self.n_classes = nn_model(self.x[0]).shape[-1]
         self.delta = prior_prec
-        self.eps = 10**(-7)
+        self.eps = 10**(-6)
 
         # trained model and kernel type
         self.kernel = NTK(nn_model, device)
@@ -52,27 +52,27 @@ class SVGPNTK():
         self.beta = beta
 
     def nll(self, logits, y):
-        return -self.likelihood.log_likelihood(y, logits)
+        return -torch.mean(self.likelihood.log_likelihood(logits, y))
 
     def get_sparse_data(self):
         return (self.z_y, self.z)
 
-    def estimate_lambdas(self, lambdas_data, clip_lambda=True):
-        (y, logits_train) = lambdas_data
+    def estimate_lambdas(self, clip_lambda=True):
+        logits_train = self.nn_model(self.x)
         if logits_train.ndim == 1:
             logits_train = logits_train.unsqueeze(-1)
-        hessian_fn = hessian(self.nll)
+        hessian_fn = hessian(self.nll, argnums=0)
+       # lambdas = hessian_fn(logits_train.detach(), self.y.detach())
         lambdas = []
-        for i in range(y.shape[0]):
-            lambdas.append(hessian_fn(logits_train[i], y[i]))
+        for i in range(self.y.shape[0]):
+            lambdas.append(hessian_fn(logits_train[i], self.y[i]))
         lambdas = torch.stack(lambdas, axis=0)
-        # for multiclass, lambdas shp (K,K); only clip diagonal
+        if lambdas.ndim == 1:
+            lambdas = lambdas.unsqueeze(-1).unsqueeze(-1)
+        lambdas = vmap(torch.diag)(lambdas)
         if clip_lambda:
-            diag = lambdas[:,torch.arange(lambdas.shape[1]),
-                                         torch.arange(lambdas.shape[2])]
-            diag = torch.clip(diag, self.eps)            
-            mask = torch.diag(torch.ones_like(diag))
-            lambdas = mask*torch.diag(diag) + (1. - mask)*lambdas
+            lambdas = torch.clip(lambdas, self.eps)
+        print(lambdas.mean())
         return lambdas
 
     def estimate_duals(self):
@@ -87,7 +87,7 @@ class SVGPNTK():
         beta_f = torch.zeros(n_class_idx, self.z.shape[0], self.z.shape[0])
 
         for i_class in range(n_class_idx):
-            lambdas_class = lambdas[:, i_class, i_class]
+            lambdas_class = lambdas[:, i_class]
             gram = torch.squeeze(self.kernel.empirical_ntk(self.kernel.params, self.z, self.x, class_num=i_class))    #TODO: x by z
             K = 1/(self.delta) * gram # was x.shape
             K_t = torch.transpose(K, dim0=1, dim1=0)

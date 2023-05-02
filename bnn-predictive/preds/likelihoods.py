@@ -60,7 +60,7 @@ class GaussianLh(Likelihood):
 
 class BernoulliLh(Likelihood):
 
-    def log_likelihood(self, y, f):
+    def log_likelihood(self, f, y):
         dist = Bernoulli(logits=f)
         return torch.sum(dist.log_prob(y))
 
@@ -77,7 +77,7 @@ class BernoulliLh(Likelihood):
 
 class CategoricalLh(Likelihood):
 
-    def log_likelihood(self, y, f):
+    def log_likelihood(self, f, y):
         dist = Categorical(logits=f)
         return torch.sum(dist.log_prob(y))
 

@@ -4,14 +4,14 @@
 #SBATCH --account=project_2004878
 #SBATCH --time=0:05:00
 #SBATCH --partition=gpusmall
-#SBATCH --gres=gpu:1
+#SBATCH --gres=gpu:a100:1
 #SBATCH --cpus-per-task=10
 #SBATCH --mem-per-cpu=8000
 #SBATCH --output=/scratch/project_2004878/bnn-svgp/logs/uci/uci_all_%J_%a_run.out
 
 
 source /scratch/project_2004878/miniconda3/etc/profile.d/conda.sh
-conda activate conda/bnn-env-torch2
+conda activate bnn-env-torch2
 
 SEEDS=(711 1 75 359 17 420 129 666 69 36)
 case $(((SLURM_ARRAY_TASK_ID >= 10) * 1)) in

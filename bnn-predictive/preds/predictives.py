@@ -54,9 +54,16 @@ def svgp_sampling_predictive(X, X_train, y_train, model, likelihood, prior_prec,
     data = (y_train, X_train)
     svgp = SVGPNTK(model, likelihood, data, prior_prec, n_sparse=n_sparse, sparse_data=sparse_data, subset=subset)
     f_mu, f_var = svgp.predict(X)
+   # print(f_mu.mean())
     data_sparse = svgp.get_sparse_data()
-    fs = Normal(f_mu, f_var.clamp(1e-5))
-    return link(fs.sample((mc_samples,))), data_sparse
+    if f_mu.ndim == 1:
+        f_mu = f_mu.unsqueeze(-1)
+        f_var = f_var.unsqueeze(-1).unsqueeze(-1).clamp(1e-10)
+    else:
+        f_var = f_var.clamp(1e-10) * torch.eye(f_var.shape[-1]).unsqueeze(0).repeat(f_var.shape[0], 1, 1)
+    fs = MultivariateNormal(f_mu, f_var)
+    samples = fs.sample((mc_samples, )).squeeze()
+    return link(samples), data_sparse
 
 
 def functional_sampling_predictive(X, model, likelihood, mu, Sigma, mc_samples=1000, no_link=False):

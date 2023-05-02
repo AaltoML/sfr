@@ -37,8 +37,8 @@ def preds_glm(X, model, likelihood, mu, Sigma_chol, samples):
     return gs.mean(dim=0)
 
 
-def preds_svgp(X, X_train, y_train, model, likelihood,prior_prec, n_sparse, sparse_points, samples=1000):
-    gs, sparse_data = svgp_sampling_predictive(X, X_train, y_train, model, likelihood, prior_prec, n_sparse,sparse_points, mc_samples=samples)
+def preds_svgp(X, X_train, y_train, model, likelihood,prior_prec, n_sparse, sparse_points, subset=False, samples=1000):
+    gs, sparse_data = svgp_sampling_predictive(X, X_train, y_train, model, likelihood, prior_prec, n_sparse,sparse_points, mc_samples=samples, subset=subset)
     return gs.mean(dim=0), sparse_data
 
 
@@ -117,6 +117,14 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
     res.update(evaluate(fs_train, y_train, lh, 'svgp_ntk', 'train'))
     res.update(evaluate(fs_test, y_test, lh, 'svgp_ntk', 'test'))
     res.update(evaluate(fs_valid, y_valid, lh, 'svgp_ntk', 'valid'))
+
+    # SVGP predictive (with GP subset, not true sparse GP)
+    fs_train, data_sparse = preds_svgp(X_train, X_train, y_train, model, likelihood,prior_prec,  n_sparse=n_sparse, samples=n_samples, sparse_points=data_sparse, subset=True)
+    fs_test, _ = preds_svgp(X_test, X_train, y_train, model, likelihood, prior_prec, n_sparse=n_sparse,  samples=n_samples, sparse_points=data_sparse, subset=True)
+    fs_valid, _ = preds_svgp(X_valid, X_train, y_train, model, likelihood, prior_prec,  n_sparse=n_sparse, samples=n_samples, sparse_points=data_sparse, subset=True)
+    res.update(evaluate(fs_train, y_train, lh, 'gp_subset', 'train'))
+    res.update(evaluate(fs_test, y_test, lh, 'gp_subset', 'test'))
+    res.update(evaluate(fs_valid, y_valid, lh, 'gp_subset', 'valid'))
 
     # LinLaplace full Cov assuming convergence
     fs_train = preds_glm(X_train, model, likelihood, theta_star, Sigma_chol, samples=n_samples)

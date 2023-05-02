@@ -13,5 +13,5 @@ SEED=${SEEDS[$SLURM_ARRAY_TASK_ID]}
 ##SEED=117
 dataset='MNIST'
 model='MLP'
-srun python -u experiments/imgclassification.py -d ${dataset} -m ${model} --root_dir . --seed ${SEED}
-srun python -u experiments/imginference.py -d ${dataset} -m ${model} --root_dir . --seed ${seed} --loginfo
+srun python -u experiments/scripts/imgclassification.py -d ${dataset} -m ${model} --root_dir . --seed ${SEED}
+srun python -u experiments/scripts/imginference.py -d ${dataset} -m ${model} --root_dir . --seed ${seed} --loginfo

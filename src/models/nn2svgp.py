@@ -49,43 +49,6 @@ def nll(f: FuncData, y: OutputData):
     return 0.5 * loss * y.shape[-1]
 
 
-def buil_ntk(network: nn.Module, num_data: int, output_dim: int) -> NTK:
-    # Detaching the parameters because we won't be calling Tensor.backward().
-    params = {k: v.detach() for k, v in network.named_parameters()}
-
-    def fnet_single(params, x, i):
-        return functional_call(network, params, (x.unsqueeze(0),))[0, ...][:, i]
-
-    def single_output_ntk(x1: InputData, x2: InputData, i):
-        func_x1 = partial(fnet_single, x=x1, i=i)
-        func_x2 = partial(fnet_single, x=x2, i=i)
-        output, vjp_fn = vjp(func_x1, params)
-
-        def get_ntk_slice(vec):
-            # This computes vec @ J(x2).T
-            # `vec` is some unit vector (a single slice of the Identity matrix)
-            vjps = vjp_fn(vec)
-            # This computes J(X1) @ vjps
-            _, jvps = jvp(func_x2, (params,), vjps)
-            return jvps
-
-        # Here's our identity matrix
-        basis = torch.eye(
-            output.numel(), dtype=output.dtype, device=output.device
-        ).view(output.numel(), -1)
-        return 1 / (delta * num_data) * vmap(get_ntk_slice)(basis)
-
-    def ntk(x1: InputData, x2: InputData) -> TensorType[""]:
-        K = torch.empty(output_dim, x1.shape[0], x2.shape[0])
-        print("K {}".format(K.shape))
-        for i in range(output_dim):
-            K[i, :, :] = single_output_ntk(x1, x2, i=i)
-        print("K {}".format(K.shape))
-        return K
-
-    return ntk
-
-
 class NTKSVGP:
     def __init__(
         self,
@@ -113,52 +76,8 @@ class NTKSVGP:
         self.Z = Z
         self.jitter = jitter
 
-        # Detaching the parameters because we won't be calling Tensor.backward().
-        params = {k: v.detach() for k, v in network.named_parameters()}
-
-        def fnet_single(params, x, i):
-            return functional_call(network, params, (x.unsqueeze(0),))[0, ...][:, i]
-
-        def kernel(x1: InputData, x2: InputData, i):
-            func_x1 = partial(fnet_single, x=x1)
-            func_x2 = partial(fnet_single, x=x2)
-
-            # def func_x1(params):
-            #     return fnet_single(params, x1, i)
-
-            # def func_x2(params):
-            #     return fnet_single(params, x2, i)
-
-            output, vjp_fn = vjp(func_x1, params)
-
-            def get_ntk_slice(vec):
-                # This computes vec @ J(x2).T
-                # `vec` is some unit vector (a single slice of the Identity matrix)
-                vjps = vjp_fn(vec)
-                # This computes J(X1) @ vjps
-                _, jvps = jvp(func_x2, (params,), vjps)
-                return jvps
-
-            # Here's our identity matrix
-            basis = torch.eye(
-                output.numel(), dtype=output.dtype, device=output.device
-            ).view(output.numel(), -1)
-            return 1 / (delta * num_data) * vmap(get_ntk_slice)(basis)
-
-        # kernels = [kernel]
-
-        def mo_kernel(x1, x2):
-            K = torch.empty(output_dim, x1.shape[0], x2.shape[0])
-            print("K {}".format(K.shape))
-            for i in range(output_dim):
-                K[i, :, :] = kernel(x1, x2, i=i)
-            print("K {}".format(K.shape))
-            return K
-
-        # TODO make multi output kernel properly
-        # self.kernel = mo_kernel
         self.kernel = buil_ntk(
-            network=network, num_data=num_data, output_dim=output_dim
+            network=network, num_data=num_data, output_dim=output_dim, delta=delta
         )
 
         self.alpha, self.beta = calc_sparse_dual_params(
@@ -218,15 +137,66 @@ class NTKSVGP:
         )
 
 
+def buil_ntk(
+    network: nn.Module, num_data: int, output_dim: int, delta: float = 1.0
+) -> NTK:
+    # Detaching the parameters because we won't be calling Tensor.backward().
+    params = {k: v.detach() for k, v in network.named_parameters()}
+
+    def fnet_single(params, x, i):
+        return functional_call(network, params, (x.unsqueeze(0),))[0, ...][:, i]
+
+    def single_output_ntk(x1: InputData, x2: InputData, i):
+        # func_x1 = partial(fnet_single, x=x1, i=i)
+        # func_x2 = partial(fnet_single, x=x2, i=i)
+        def func_x1(params):
+            return fnet_single(params, x1, i=i)
+
+        def func_x2(params):
+            return fnet_single(params, x2, i=i)
+
+        output, vjp_fn = vjp(func_x1, params)
+        # print("output {}".format(output))
+
+        def get_ntk_slice(vec):
+            # This computes vec @ J(x2).T
+            # `vec` is some unit vector (a single slice of the Identity matrix)
+            vjps = vjp_fn(vec)
+            # print("vjps {}".format(vjps))
+            # This computes J(X1) @ vjps
+            _, jvps = jvp(func_x2, (params,), vjps)
+            # print("jvps {}".format(jvps))
+            return jvps
+
+        # Here's our identity matrix
+        basis = torch.eye(
+            output.numel(), dtype=output.dtype, device=output.device
+        ).view(output.numel(), -1)
+        # print("basis {}".format(basis))
+        return 1 / (delta * num_data) * vmap(get_ntk_slice)(basis)
+
+    def ntk(x1: InputData, x2: InputData) -> TensorType[""]:
+        K = torch.empty(output_dim, x1.shape[0], x2.shape[0])
+        # print("K building {}".format(K.shape))
+        for i in range(output_dim):
+            # print("output dim {}".format(i))
+            K[i, :, :] = single_output_ntk(x1, x2, i=i)
+        # print("K {}".format(K.shape))
+        return K
+
+    return ntk
+
+
 def predict_from_duals(
     alpha: Alpha, beta: Beta, kernel: NTK, Z: InducingPoints, jitter: float = 1e-3
 ):
     print("Z {}".format(Z.shape))
     Kuu = kernel(Z, Z)
+    output_dim = Kuu.shape[0]
     print("Kuu {}".format(Kuu.shape))
-    I = torch.eye(Kuu.shape[-1])[None, ...] * jitter
-    print("I {}".format(I.shape))
-    Kuu += I
+    Iu = torch.eye(Kuu.shape[-1])[None, ...].repeat(output_dim, 1, 1)
+    print("Iu {}".format(Iu.shape))
+    Kuu += Iu * jitter
     # beta += I
     print("Kuu {}".format(Kuu.shape))
 
@@ -251,20 +221,20 @@ def predict_from_duals(
         # print("f_mean {}".format(f_mean.shape))
         # f_mean = f_mean[..., 0].T
         # print("f_mean {}".format(f_mean.shape))
-        Iu = torch.eye(Kuu.shape[-1])[None, ...].repeat(3, 1, 1)
+        # Iu = torch.eye(Kuu.shape[-1])[None, ...].repeat(ouput_dim, 1, 1)
         print("Iu {}".format(Iu.shape))
         print("V {}".format(V.shape))
-        print("alpha[...,None] {}".format(alpha[..., None].shape))
-        print(
-            "torch.eye(Kuu.shape[-1])[None, ...] {}".format(
-                torch.eye(Kuu.shape[-1])[None, ...].shape
-            )
-        )
-        print(
-            "torch.linalg.solve(Kuu, torch.eye(Kuu.shape[-1])[None, ...]) {}".format(
-                torch.linalg.solve(Kuu, torch.eye(Kuu.shape[-1])[None, ...]).shape
-            )
-        )
+        # print("alpha[...,None] {}".format(alpha[..., None].shape))
+        # print(
+        #     "torch.eye(Kuu.shape[-1])[None, ...] {}".format(
+        #         torch.eye(Kuu.shape[-1])[None, ...].shape
+        #     )
+        # )
+        # print(
+        #     "torch.linalg.solve(Kuu, torch.eye(Kuu.shape[-1])[None, ...]) {}".format(
+        #         torch.linalg.solve(Kuu, torch.eye(Kuu.shape[-1])[None, ...]).shape
+        #     )
+        # )
         m_u = (
             V
             @ torch.linalg.solve(Kuu, Iu)
@@ -273,11 +243,11 @@ def predict_from_duals(
         )
         print("m_u {}".format(m_u.shape))
 
-        print(
-            "torch.linalg.solve(Kuu, torch.eye(Kuu.shape[-1])[None, ...] {}".format(
-                torch.linalg.solve(Kuu, Iu).shape
-            )
-        )
+        # print(
+        #     "torch.linalg.solve(Kuu, torch.eye(Kuu.shape[-1])[None, ...] {}".format(
+        #         torch.linalg.solve(Kuu, Iu).shape
+        #     )
+        # )
         f_mean = Kxu @ torch.linalg.solve(Kuu, Iu) @ m_u
         print("f_mean {}".format(f_mean.shape))
         f_mean = f_mean[..., 0].T

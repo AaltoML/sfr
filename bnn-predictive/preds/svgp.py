@@ -12,22 +12,30 @@ from torch.func import vmap, jacrev, functional_call, hessian
 
 class SVGPNTK():
 
-    def __init__(self, nn_model, likelihood, data, prior_prec, n_sparse=0.25, sparse_data=None, device='cpu'):
+    def __init__(self, nn_model, likelihood, data, prior_prec, n_sparse=0.25, sparse_data=None, subset=False, device='cpu'):
         # data
         (y, x) = data
         self.n_classes = nn_model(x[0]).shape[-1]
         self.nn_model = nn_model
 
+        self.y = y
+        self.x = x
+         
         # randomly select n_sparse points
         if sparse_data is None:
             self.n_sparse = int(y.shape[0]*n_sparse)
             indices = torch.randperm(y.shape[0])[:self.n_sparse]
-            self.y = y[indices]
-            self.x = x[indices]
+            self.z = x[indices]
+            sparse_y = y[indices]
+            self.z_y = sparse_y
         else:
             (sparse_y, sparse_x) = sparse_data
+            self.z = sparse_x
+            self.z_y = sparse_y
+
+        if subset:  # makes the subset
+            self.x = self.z 
             self.y = sparse_y
-            self.x = sparse_x
 
         self.n_classes = nn_model(self.x[0]).shape[-1]
         self.delta = prior_prec
@@ -40,7 +48,7 @@ class SVGPNTK():
         self.device = device
 
         # precompute the duals
-        alpha, beta = self.estimate_duals((self.y, self.x))
+        alpha, beta = self.estimate_duals()
         self.alpha = alpha
         self.beta = beta
 
@@ -48,7 +56,7 @@ class SVGPNTK():
         return -self.likelihood.log_likelihood(y, logits)
 
     def get_sparse_data(self):
-        return (self.y, self.x)
+        return (self.z_y, self.z)
 
     def estimate_lambdas(self, lambdas_data, clip_lambda=True):
         (y, logits_train) = lambdas_data
@@ -68,26 +76,26 @@ class SVGPNTK():
             lambdas = mask*torch.diag(diag) + (1. - mask)*lambdas
         return lambdas
 
-    def estimate_duals(self, data):
+    def estimate_duals(self):
         """Estimate the duals alpha and beta."""
-        (y, x) = data
-        lambdas_data = (y, self.nn_model(x))
+        lambdas_data = (self.y, self.nn_model(self.x))
         lambdas = self.estimate_lambdas(lambdas_data)
         if self.n_classes == 2:
             n_class_idx = 1
         else:
             n_class_idx = self.n_classes
-        alpha_f = torch.zeros(n_class_idx, y.shape[0])
-        beta_f = torch.zeros(n_class_idx, y.shape[0], y.shape[0])
+        alpha_f = torch.zeros(n_class_idx, self.z.shape[0])
+        beta_f = torch.zeros(n_class_idx, self.z.shape[0], self.z.shape[0])
 
         for i_class in range(n_class_idx):
             lambdas_class = lambdas[:, i_class, i_class]
-            gram = torch.squeeze(self.kernel.empirical_ntk(self.kernel.params, x, x, class_num=i_class))
-            K = 1/(self.delta*x.shape[0]) * gram 
-            lambda_inv = lambdas_class**(-1)
-            A = lambda_inv * torch.eye(gram.shape[0]) + K
-            alpha_f[i_class] = torch.linalg.solve(A, y.float())
-            beta_f[i_class] = torch.linalg.solve(lambda_inv * torch.eye(gram.shape[0]) + K, torch.eye(K.shape[0]))
+            gram = torch.squeeze(self.kernel.empirical_ntk(self.kernel.params, self.z, self.x, class_num=i_class))    #TODO: x by z
+            K = 1/(self.delta*self.x.shape[0]) * gram 
+            K_t = torch.transpose(K, dim0=1, dim1=0)
+            lambda_inv = lambdas_class**(-1) #*torch.eye(self.x.shape[0])
+            A = K @ (lambda_inv * torch.eye(self.x.shape[0]) )@ K_t
+            alpha_f[i_class] = torch.matmul(K, self.y) #torch.linalg.solve(A, y.float())
+            beta_f[i_class] = A #torch.linalg.solve(lambda_inv * torch.eye(gram.shape[0]) + K, torch.eye(K.shape[0]))
         return alpha_f, beta_f
 
     def predict(self, x_p):
@@ -99,13 +107,18 @@ class SVGPNTK():
         var_f = torch.zeros(x_p.shape[0], n_class_idx)
         for i_class in range(n_class_idx):
             gram_pp = torch.squeeze(self.kernel.empirical_ntk(self.kernel.params, x_p, x_p, class_num=i_class))
-            gram_px = torch.squeeze(self.kernel.empirical_ntk(self.kernel.params, x_p, self.x, class_num=i_class))
+            gram_pz = torch.squeeze(self.kernel.empirical_ntk(self.kernel.params, x_p, self.z, class_num=i_class))
+            gram_zz = torch.squeeze(self.kernel.empirical_ntk(self.kernel.params, self.z, self.z, class_num=i_class))
             K_pp = 1/(self.delta*self.x.shape[0]) * gram_pp
-            K_px = 1/(self.delta*self.x.shape[0]) * gram_px
-            mean_f[:, i_class] = K_px @ self.alpha[i_class]
-            var = K_px @ self.beta[i_class] @ K_px.T
-            var = K_pp - var
-            var_f[:, i_class] = torch.diag(var)
+            K_pz = 1/(self.delta*self.x.shape[0]) * gram_pz
+            K_zz = 1/(self.delta*self.x.shape[0]) * gram_zz
+            beta_z = torch.linalg.solve(K_zz, torch.eye(K_zz.shape[0])) - torch.linalg.solve(self.beta[i_class] + K_zz, torch.eye(K_zz.shape[0]))
+            var_f_class = K_pp - K_pz @ beta_z @ K_pz.T
+            V = K_zz @ torch.linalg.solve(self.beta[i_class] + K_zz, K_zz)
+            m_u = V @ torch.linalg.solve(K_zz, torch.eye(K_zz.shape[0])) @ self.alpha[i_class]
+            m_f = K_pz @ torch.linalg.solve(K_zz, torch.eye(K_zz.shape[0])) @ m_u
+            mean_f[:, i_class] = m_f
+            var_f[:, i_class] = torch.diag(var_f_class)
         return mean_f.squeeze(), var_f.squeeze()
 
     def sample_pred(self, x_, n_samples):

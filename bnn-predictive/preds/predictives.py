@@ -52,7 +52,7 @@ def svgp_sampling_predictive(X, X_train, y_train, model, likelihood, prior_prec,
     """Returns the sparse data used for convenience."""
     link = (lambda x: x) if no_link else likelihood.inv_link
     data = (y_train, X_train)
-    svgp = SVGPNTK(model, likelihood, data, prior_prec, n_sparse=n_sparse, sparse_data=sparse_data)
+    svgp = SVGPNTK(model, likelihood, data, prior_prec, n_sparse=n_sparse, sparse_data=sparse_data, subset=False)
     f_mu, f_var = svgp.predict(X)
     f_mu = model(X) + f_mu
     data_sparse = svgp.get_sparse_data()

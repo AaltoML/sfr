@@ -137,7 +137,7 @@ class NTKSVGP:
         )
 
 
-def buil_ntk(
+def build_ntk(
     network: nn.Module, num_data: int, output_dim: int, delta: float = 1.0
 ) -> NTK:
     # Detaching the parameters because we won't be calling Tensor.backward().

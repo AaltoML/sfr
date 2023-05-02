@@ -29,4 +29,6 @@ Lambda_1 = TensorType["num_data", "num_inducing", "output_dim"]
 Lambda_2 = TensorType["num_data", "output_dim", "output_dim"]
 NTK = Callable[[InputData, InputData], TensorType[""]]
 
+NTK_single = Callable[[InputData, InputData, int], TensorType[""]]
+
 TestInput = TensorType["num_test", "input_dim"]

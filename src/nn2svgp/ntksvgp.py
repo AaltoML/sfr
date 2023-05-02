@@ -23,6 +23,7 @@ from src.nn2svgp.custom_types import (
     Lambda_1,
     Lambda_2,
     NTK,
+    NTK_single,
     OutputData,
     OutputMean,
     OutputVar,
@@ -32,7 +33,7 @@ from src.nn2svgp.likelihoods import Likelihood
 from src.nn2svgp.priors import Prior
 from torch.func import functional_call, hessian, jacrev, jvp, vjp, vmap
 from torchtyping import TensorType
-
+from torch.utils.data import DataLoader
 
 class NTKSVGP(nn.Module):
     def __init__(
@@ -50,6 +51,7 @@ class NTKSVGP(nn.Module):
         self.likelihood = likelihood
         self.train_data = train_data
         X_train, Y_train = train_data
+
         assert X_train.ndim == 2
         assert Y_train.ndim == 2
         assert X_train.shape[0] == Y_train.shape[0]
@@ -77,20 +79,30 @@ class NTKSVGP(nn.Module):
             raise NotImplementedError(
                 "what should delta be if not using Gaussian prior???"
             )
-        self.kernel = build_ntk(
+        self.kernel, self.kernel_single = build_ntk(
             network=self.network,
             num_data=self.num_data,
             output_dim=self.output_dim,
             delta=delta,
         )
 
-        self.alpha, self.beta = calc_sparse_dual_params(
+        # self.alpha, self.beta = calc_sparse_dual_params(
+        #     network=self.network,
+        #     train_data=self.train_data,
+        #     Z=self.Z,
+        #     kernel=self.kernel,
+        #     nll=self.likelihood.nn_loss,
+        # )
+
+        self.alpha, self.beta = calc_sparse_dual_params_batch(
             network=self.network,
             train_data=self.train_data,
             Z=self.Z,
-            kernel=self.kernel,
+            kernel=self.kernel_single,
             nll=self.likelihood.nn_loss,
+            out_dim=self.output_dim 
         )
+
         print("alpha {}".format(self.alpha.shape))
         print("beta {}".format(self.beta.shape))
         assert self.alpha.ndim == 2
@@ -171,7 +183,7 @@ class NTKSVGP(nn.Module):
 
 def build_ntk(
     network: nn.Module, num_data: int, output_dim: int, delta: float = 1.0
-) -> NTK:
+) -> Tuple[NTK, NTK_single]:
     # Detaching the parameters because we won't be calling Tensor.backward().
     params = {k: v.detach() for k, v in network.named_parameters()}
 
@@ -216,7 +228,7 @@ def build_ntk(
         # print("K {}".format(K.shape))
         return K
 
-    return ntk
+    return ntk, single_output_ntk
 
 
 def predict_from_duals(
@@ -235,7 +247,7 @@ def predict_from_duals(
     assert beta.shape == Kuu.shape
     # iBKuu = torch.linalg.solve(beta + Kuu, torch.eye(Kuu.shape[-1]))
     # print("iBKuu {}".format(iBKuu.shape))
-    # V = torch.matmul(torch.matmul(Kuu, iBKuu), Kuu)
+    # V = torch.matmul(torch.matmul(Kuu, iBKuu), Kuu)0
     V = torch.matmul(Kuu, torch.linalg.solve(beta + Kuu, Kuu))
     print("V {}".format(V.shape))
     # iKuuViKuu = torch.linalg.solve(torch.linalg.solve(Kuu, V), Kuu, left=False)
@@ -309,6 +321,80 @@ def predict_from_duals(
             return f_mean, f_var
 
     return predict
+
+
+def calc_sparse_dual_params_batch(
+        network: torch.nn.Module, 
+        train_data: Tuple[InputData, OutputData],
+        Z: InducingPoints,
+        kernel: NTK_single,
+        nll: Callable[[FuncData, OutputData], float],
+        batch_size: int = 1000,
+        out_dim: int = 10
+) -> Tuple[AlphaInducing, BetaInducing]:
+    from torch.utils.data import TensorDataset
+    train_loader = DataLoader(TensorDataset(*(train_data)), 
+                              batch_size=batch_size,
+                              shuffle=False)
+    
+    ################  Compute lambdas batched version START ################
+    num_train = train_data[0].shape[0]
+    print(f"***************************************************** {num_train}")
+    items_shape = (num_train, out_dim)
+    lambda_1 = torch.zeros(items_shape)
+    lambda_2_diag = torch.zeros(items_shape)
+    
+    start_idx = 0
+    end_idx = 0
+    
+    for x_i, y_i in train_loader:
+        batch_size = x_i.shape[0]
+        logits_i = network(x_i)
+        lambda_1_i, lambda_2_i = calc_lambdas(Y=y_i, F=logits_i, nll=nll)
+        lambda_2_i = torch.vmap(torch.diag)(lambda_2_i)
+        
+        end_idx = start_idx + batch_size
+        lambda_1[start_idx : end_idx] = lambda_1_i
+        lambda_2_diag[start_idx : end_idx] = lambda_2_i
+        start_idx = end_idx
+    
+    # Clip the lambdas  (?)
+    # lambda_1 = torch.clip(lambda_1, min=1e-7)
+    # lambda_2_diag = torch.clip(lambda_2_diag, min=1e-7)
+    ################  Compute lambdas batched version END ################
+
+
+    ################  Compute alpha/beta batched version START ################
+    alpha = torch.zeros((out_dim, Z.shape[0]))
+    beta = torch.zeros((out_dim, Z.shape[0], Z.shape[0]))
+
+
+
+    ## TODO: lambda2 ^ -1 ???
+    def compute_beta_i(kiu, lambda2_i):
+        # return torch.einsum('u, i, m -> um', kiu, lambda2_i**-1, kiu)
+        return torch.outer(kiu, kiu) * lambda2_i ** -1
+
+    for output_c in range(out_dim):
+        start_idx = 0
+        end_idx = 0
+        for x_i, y_i in train_loader:
+            print(x_i.shape, y_i.shape)
+            batch_size = x_i.shape[0]
+            end_idx = start_idx + batch_size
+            Kui_c = kernel(Z, x_i, output_c)
+            print(Kui_c.shape)
+            alpha[output_c] += torch.einsum('ub, b -> u',
+                                            Kui_c,
+                                            lambda_1[start_idx : end_idx, output_c])
+            beta[output_c] += (vmap(compute_beta_i)(Kui_c.T, 
+                                                     lambda_2_diag[start_idx : end_idx, output_c][:, None]
+                                                     )).sum(dim=0)
+            start_idx = end_idx
+    return alpha, beta
+    ################  Compute alpha/beta batched version END ################
+
+
 
 
 def calc_sparse_dual_params(

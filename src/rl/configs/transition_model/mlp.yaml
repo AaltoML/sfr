@@ -1,4 +1,4 @@
-_target_: src.models.transitions.mlp.init
+_target_: src.rl.models.transitions.mlp.init
 _convert_: all
 network:
   _target_: torch.nn.Sequential

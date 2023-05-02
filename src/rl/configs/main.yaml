@@ -1,23 +1,14 @@
 defaults:
-  # - model: laplace
-  # - model: svgp
-  - reward_model: svgp
-  # - transition_model: svgp
-  - transition_model: nn2svgp
-  # - reward_model: mlp
+  - reward_model: mlp
   # - transition_model: mlp
-  # - model: world_model
-  # - model_new: world_model
+  # - reward_model: svgp
+  # - transition_model: svgp
+  # - reward_model: nn2svgp
+  - transition_model: nn2svgp
   # - agent: ddpg
   - agent: mppi
   - env: cartpole_swingup
   # - env: cheetah_run
-  # - env: cartpole_balance
-  # - env: Pendulum-v1
-  # - env: CartPole-v1
-  # - planner: mppi
-  # - planner: cem
-  # - model: probabilistic_ensemble
   # Use slurm on cluster or local?
   # - override hydra/launcher: submitit_local
   # - override hydra/launcher: local

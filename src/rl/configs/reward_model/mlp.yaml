@@ -1,4 +1,4 @@
-_target_: src.models.transitions.nn2svgp.init
+_target_: src.rl.models.rewards.mlp.init
 _convert_: all
 network:
   _target_: torch.nn.Sequential
@@ -13,15 +13,12 @@ network:
     - _target_: torch.nn.ReLU
     - _target_: torch.nn.Linear
       in_features: 512
-      out_features: ${output_dim}
+      out_features: 1
 learning_rate: 1e-3
 num_iterations: 1000
 batch_size: 64
 # num_workers: 1 # TODO what should I set this to?
-num_inducing: 500
-jitter: 1e-4
-delta: 0.0001
-wandb_loss_name: "transition/loss"
+wandb_loss_name: "reward/loss"
 early_stopper:
   _target_: utils.EarlyStopper
   patience: 50

@@ -1,4 +1,4 @@
-_target_: src.agents.mppi.init
+_target_: src.rl.agents.mppi.init
 _convert_: all
 transition_model: ${transition_model}
 reward_model: ${reward_model}

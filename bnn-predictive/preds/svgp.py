@@ -90,7 +90,7 @@ class SVGPNTK():
         for i_class in range(n_class_idx):
             lambdas_class = lambdas[:, i_class, i_class]
             gram = torch.squeeze(self.kernel.empirical_ntk(self.kernel.params, self.z, self.x, class_num=i_class))    #TODO: x by z
-            K = 1/(self.delta*self.z.shape[0]) * gram # was x.shape
+            K = 1/(self.delta) * gram # was x.shape
             K_t = torch.transpose(K, dim0=1, dim1=0)
             lambda_inv = lambdas_class**(-1) #*torch.eye(self.x.shape[0])
             A = K @ (lambda_inv * torch.eye(self.x.shape[0]) )@ K_t
@@ -109,9 +109,9 @@ class SVGPNTK():
             gram_pp = torch.squeeze(self.kernel.empirical_ntk(self.kernel.params, x_p, x_p, class_num=i_class))
             gram_pz = torch.squeeze(self.kernel.empirical_ntk(self.kernel.params, x_p, self.z, class_num=i_class))
             gram_zz = torch.squeeze(self.kernel.empirical_ntk(self.kernel.params, self.z, self.z, class_num=i_class))
-            K_pp = 1/(self.delta*self.z.shape[0]) * gram_pp
-            K_pz = 1/(self.delta*self.z.shape[0]) * gram_pz
-            K_zz = 1/(self.delta*self.z.shape[0]) * gram_zz
+            K_pp = 1/(self.delta) * gram_pp
+            K_pz = 1/(self.delta) * gram_pz
+            K_zz = 1/(self.delta) * gram_zz
             beta_z = torch.linalg.solve(K_zz, torch.eye(K_zz.shape[0])) - torch.linalg.solve(self.beta[i_class] + K_zz, torch.eye(K_zz.shape[0]))
             var_f_class = K_pp - K_pz @ beta_z @ K_pz.T
             V = K_zz @ torch.linalg.solve(self.beta[i_class] + K_zz, K_zz)

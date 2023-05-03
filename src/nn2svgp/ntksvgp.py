@@ -195,7 +195,15 @@ def build_ntk(
     params = {k: v.detach() for k, v in network.named_parameters()}
 
     def fnet_single(params, x, i):
-        return functional_call(network, params, (x.unsqueeze(0),))[0, ...][:, i]
+        # print("fnet_single {}".format(x.shape))
+        # print("fnet_single {}".format(x.unsqueeze(0).shape))
+        f = functional_call(network, params, (x,))[:, i]
+        # print("f {}".format(f.shape))
+        # f = functional_call(network, params, (x.unsqueeze(0),))[0, ...]
+        # print("f {}".format(f.shape))
+        # f = functional_call(network, params, (x.unsqueeze(0),))[0, ...][:, i]
+        return f
+        # return functional_call(network, params, (x.unsqueeze(0),))[0, ...][:, i]
 
     def single_output_ntk(x1: InputData, x2: InputData, i):
         # func_x1 = partial(fnet_single, x=x1, i=i)
@@ -356,8 +364,12 @@ def calc_sparse_dual_params_batch(
     end_idx = 0
 
     for x_i, y_i in train_loader:
+        print("data loader")
+        print("x_i.shape {}".format(x_i.shape))
+        print("y_i.shape {}".format(y_i.shape))
         batch_size = x_i.shape[0]
         logits_i = network(x_i)
+        print("logits_i.shape {}".format(logits_i.shape))
         lambda_1_i, lambda_2_i = calc_lambdas(Y=y_i, F=logits_i, nll=nll)
         lambda_2_i = torch.vmap(torch.diag)(lambda_2_i)
 
@@ -478,10 +490,12 @@ def calc_lambdas(
     # nll_jacobian_fn = torch.gradient(nll)
     # lambda_1 = nll_jacobian_fn(F, Y)
     lambda_2 = nll_hessian_fn(F, Y)  # [num_data, output_dim, output_dim]
-    lambda_1 = -nll_jacobian_fn(F, Y)  # [num_data, output_dim]
+    lambda_1 = -1 * nll_jacobian_fn(F, Y)  # [num_data, output_dim]
     lambda_2_diag = torch.diagonal(lambda_2, dim1=-1, dim2=-2)  # [num_data, output_dim]
     print("lambda_2_diag {}".format(lambda_2_diag.shape))
+    print("F {}".format(F.shape))
     lambda_1 += F * lambda_2_diag
+    print("lambda_1 {}".format(lambda_1.shape))
     # lambda_1, lambda_2 = [], []
     # TODO we can do better than a for loop...
     # for y, f in zip(Y, F):
@@ -492,6 +506,6 @@ def calc_lambdas(
     # lambda_1 = torch.stack(lambda_1, dim=0)  # [num_data, output_dim]
     # TODO should lambda_1 just be Y?
     # lambda_1 = Y
-    print("lambda_2 {}".format(lambda_2))
+    print("lambda_2 {}".format(lambda_2.shape))
     # lambda_2 = torch.stack(lambda_2, dim=0)  # [num_data, output_dim, output_dim]
     return lambda_1, lambda_2

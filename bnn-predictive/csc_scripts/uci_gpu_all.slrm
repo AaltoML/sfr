@@ -1,0 +1,49 @@
+#!/bin/bash
+#SBATCH --job-name=uci_gpu
+#SBATCH --array=0-79
+#SBATCH --account=project_2004878
+#SBATCH --time=0:05:00
+#SBATCH --partition=gpusmall
+#SBATCH --gres=gpu:a100:1
+#SBATCH --cpus-per-task=10
+#SBATCH --mem-per-cpu=8000
+#SBATCH --output=/scratch/project_2004878/bnn-svgp/logs/uci/uci_all_%J_%a_run.out
+
+
+source /scratch/project_2004878/miniconda3/etc/profile.d/conda.sh
+conda activate bnn-env-torch2
+
+SEEDS=(711 1 75 359 17 420 129 666 69 36)
+case $(((SLURM_ARRAY_TASK_ID >= 10) * 1)) in
+  (0) firstdigit=0;;
+  (1) firstdigit="${SLURM_ARRAY_TASK_ID:0:1}";;
+esac
+
+echo $firstdigit
+SEED=${SEEDS[$(($SLURM_ARRAY_TASK_ID%10))]}
+case $firstdigit in
+   0)  dataset='australian';;
+   1)  dataset='breast_cancer';;
+   2)  dataset='digits' ;;
+   3)  dataset='glass';;
+   4)  dataset='ionosphere';;
+   5)  dataset='satellite';;
+   6)  dataset='vehicle';;
+   7)  dataset='waveform';;
+esac
+
+case $firstdigit in
+   0)  logmin=-2;;
+   1)  logmin=-2  ;;
+   2)  logmin=-1  ;;
+   3)  logmin=-2  ;;
+   4)  logmin=-2 ;;
+   5)  logmin=-1 ;;
+   6)  logmin=-2;;
+   7)  logmin=-2 ;;
+esac
+echo $dataset
+echo $SEED
+name='sparse_eigth'
+sparse_ratio=0.125
+srun python3 -u experiments/scripts/classification.py -d ${dataset} --root_dir . --seed ${SEED} --n_layers 2 --activation tanh --logd_min ${logmin} --refine 0 --name ${name} --n_sparse ${sparse_ratio}

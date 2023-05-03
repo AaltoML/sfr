@@ -11,6 +11,7 @@ from itertools import chain
 
 #from preds.laplace import Laplace, FunctionaLaplace
 from src import CategoricalLh, NTKSVGP
+import src as ntksvgp
 from preds.utils import nll_cls, macc, ece
 from preds.datasets import MNIST, FMNIST, SVHN
 from imgclassification import get_model, get_dataset
@@ -30,7 +31,7 @@ def get_ood_dataset(dataset):
 def get_map_predictive(loader, model):
     ys, pstar = list(), list()
     for X, y in loader:
-        X, y = X.cuda(), y.cuda()
+        X, y = X, y
         ys.append(y)
         pstar.append(torch.softmax(model(X), dim=-1).detach())
     ys = torch.cat(ys)
@@ -74,8 +75,6 @@ def get_svgp_predictive(loader, svgp, seeding=False):
     return ps, ys    
 
 
-
-
 def evaluate(lh, yte, gstar_te, yva, gstar_va):
     res = dict()
     res['nll_te'] = nll_cls(gstar_te, yte, lh)
@@ -112,8 +111,8 @@ def get_quick_loader(loader, device='cuda'):
     return [(X.to(device), y.to(device)) for X, y in loader]
 
 
-def main(dataset_name, ds_train, ds_test, model_name, rerun, batch_size, seed, n_sparse,
-         delta_min=1e-7, delta_max=1e7, res_dir='experiments/results'):
+def main(dataset_name, ds_train, ds_test, model_name, rerun, batch_size, seed, n_sparse, name,
+         delta_min=1e-7, delta_max=1e7, res_dir='experiments/results', device='cuda'):
     lh = CategoricalLh()
 
     eligible_files = list()
@@ -125,21 +124,28 @@ def main(dataset_name, ds_train, ds_test, model_name, rerun, batch_size, seed, n
                 (float(delta) >= delta_min) and (float(delta) <= delta_max):
             eligible_files.append(os.path.join(res_dir, 'models/' + file))
             deltas.append(float(delta))
+    logging.info(f'Deltas: {deltas}')
     # start with smallest delta and continue
     ixlist = np.argsort(deltas)
     deltas = np.array(deltas)[ixlist]
     eligible_files = list(np.array(eligible_files)[ixlist])
 
     train_loader = DataLoader(ds_train, batch_size=256)
+    all_train = DataLoader(ds_train, batch_size=len(ds_train))
+    (X_train, y_train) = next(iter(all_train))
+    if y_train.ndim == 1:
+        y_train = y_train.unsqueeze(-1)
     torch.manual_seed(seed)
     M = len(ds_test)
     n_inducing = int(len(ds_train)*n_sparse)
+    logging.info(f'Train set size: {len(ds_train)}')
+    logging.info(f'Num inducing points: {n_inducing}')
     perm_ixs = torch.randperm(M)
     val_ixs, test_ixs = perm_ixs[:int(M/2)], perm_ixs[int(M/2):]
     ds_val = Subset(ds_test, val_ixs)
     ds_test = Subset(ds_test, test_ixs)
-    val_loader = get_quick_loader(DataLoader(ds_val, batch_size=batch_size))
-    test_loader = get_quick_loader(DataLoader(ds_test, batch_size=batch_size))
+    val_loader = get_quick_loader(DataLoader(ds_val, batch_size=batch_size), device=device)
+    test_loader = get_quick_loader(DataLoader(ds_test, batch_size=batch_size), device=device)
 
     for f, delta in tqdm(list(zip(eligible_files, deltas))):
         logging.info(f'inference for delta={delta}')
@@ -149,7 +155,9 @@ def main(dataset_name, ds_train, ds_test, model_name, rerun, batch_size, seed, n
             continue
         model = get_model(model_name, ds_train)
         model.load_state_dict(state['model'])
-        model = model.cuda()
+
+        if device == 'cuda':
+            model = model.cuda()
 
         # MAP
         logging.info('MAP performance')
@@ -165,7 +173,7 @@ def main(dataset_name, ds_train, ds_test, model_name, rerun, batch_size, seed, n
         svgp.set_data((X_train, y_train))
         gstar_te, yte = get_svgp_predictive(test_loader, svgp)
         gstar_va, yva = get_svgp_predictive(val_loader, svgp)
-        state['svgp_ntk'] = evaluate(lh, yte, gstar_te, yva, gstar_va)
+        state[f'svgp_ntk_{name}'] = evaluate(lh, yte, gstar_te, yva, gstar_va)
 
         # Laplace Kron
     #    logging.info('Laplace Kronecker GLM performance')
@@ -420,6 +428,7 @@ if __name__ == '__main__':
     parser.add_argument('--delta_min', type=float, default=1e-7)
     parser.add_argument('--delta_max', type=float, default=1e7)
     parser.add_argument('--n_sparse', type=float, default=0.5)
+    parser.add_argument('--name', type=str, default='testlocal', help='Name of run to be saved in dict key')
     parser.add_argument('--loginfo', action='store_true', help='log info')
     parser.add_argument('--root_dir', help='Root directory', default='../')
     args = parser.parse_args()
@@ -428,13 +437,17 @@ if __name__ == '__main__':
     rerun = args.rerun
     n_sparse = args.n_sparse
     root_dir = args.root_dir
+    name = args.name
     data_dir = os.path.join(root_dir, 'data')
     res_dir = os.path.join(root_dir, 'experiments', 'results', dataset)
 
     print(f'Writing results to {res_dir}')
     print(f'Reading data from {data_dir}')
     print(f'Dataset: {dataset}')
-    print(f'Seed: {seed}')
+    print(f'Seed: {args.seed}')
+
+    device = 'cuda' if torch.cuda.is_available() else 'cpu'
+    torch.set_default_device(device)
 
     logging.basicConfig(level=logging.INFO if args.loginfo else logging.WARNING)
     ds_train, ds_test = get_dataset(dataset, False, data_dir)
@@ -450,5 +463,5 @@ if __name__ == '__main__':
         ood(dataset, ds_train, ds_test, ds_ood, model_name, args.batch_size, args.seed)
     else:
         logging.info(f'Run inference with {dataset} using {model_name}')
-        main(dataset, ds_train, ds_test, model_name, rerun, args.batch_size, args.seed, n_sparse,
-             args.delta_min, args.delta_max, res_dir)
+        main(dataset, ds_train, ds_test, model_name, rerun, args.batch_size, args.seed, n_sparse, name,
+             args.delta_min, args.delta_max, res_dir, device=device)

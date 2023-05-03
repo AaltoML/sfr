@@ -9,7 +9,7 @@ from preds.likelihoods import get_Lams_Vys, GaussianLh
 from preds.kron import Kron
 from preds.svgp import SVGPNTK
 from src import NTKSVGP
-from src import Gaussian
+import src as ntksvgp
 
 
 def nn_sampling_predictive(X, model, likelihood, mu, Sigma_chol, mc_samples=100, no_link=False):
@@ -53,9 +53,9 @@ def linear_sampling_predictive(X, model, likelihood, mu, Sigma_chol, mc_samples=
 def svgp_sampling_predictive(X, X_train, y_train, model, likelihood, prior_prec, n_sparse=100, sparse_data=None, mc_samples=100, no_link=False):
     """Returns the sparse data used for convenience."""
     link = (lambda x: x) if no_link else likelihood.inv_link
-    data = (y_train, X_train)
+    data = (X_train, y_train.unsqueeze(-1))
     num_inducing = int(n_sparse*X_train.shape[0])
-    prior = Gaussian(model, delta=prior_prec)
+    prior = ntksvgp.priors.Gaussian(model, delta=prior_prec)
     svgp = NTKSVGP(network=model, prior=prior, likelihood=likelihood, num_inducing=num_inducing)
     svgp.set_data(data)
    # svgp = SVGPNTK(model, likelihood, data, prior_prec, n_sparse=n_sparse, sparse_data=sparse_data)

@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 from typing import Optional, Union
 
+import numpy as np
 import torch
 import torch.nn as nn
-from torch.distributions import Bernoulli, Categorical
 from src.nn2svgp.custom_types import FuncData, FuncMean, FuncVar, OutputData
+from torch.distributions import Bernoulli, Categorical
 
 
 EPS = 1e-7
@@ -113,34 +114,44 @@ class Gaussian(Likelihood):
         return torch.ones_like(f).unsqueeze(-1) / (self.sigma_noise**2)
 
 
-class BernoulliLh(Likelihood):
+def inv_probit(x):
+    jitter = 1e-3  # ensures output is strictly between 0 and 1
+    return 0.5 * (1.0 + torch.erf(x / np.sqrt(2.0))) * (1 - 2 * jitter) + jitter
 
-    def log_prob(self, f:FuncData, y: OutputData):
+
+class BernoulliLh(Likelihood):
+    def log_prob(self, f: FuncData, y: OutputData):
         dist = Bernoulli(logits=f)
         return torch.sum(dist.log_prob(y))
+
+    def prob(self, f_mean: FuncMean, f_var: FuncVar):
+        return inv_probit(f_mean / torch.sqrt(1 + f_var))
+        # dist = Bernoulli(logits=f)
+        # return torch.sum(dist.log_prob(y))
 
     def Hessian(self, f):
         p = torch.clamp(self.inv_link(f), EPS, 1 - EPS)
         return p * (1 - p)
 
     def inv_link(self, f):
-        return torch.sigmoid(f)
+        return inv_probit
+        # return torch.sigmoid(f)
 
     def residual(self, y, f):
         return y - self.inv_link(f)
 
     def nn_loss(self, f: FuncData, y: OutputData):
-        log_prob = y*torch.log(f) + (1 - y)*torch.log(1-f)
+        log_prob = y * torch.log(f) + (1 - y) * torch.log(1 - f)
         return -torch.sum(log_prob)
 
     def nn_loss_func(self):
         return lambda logits, y: -torch.sum(self.log_prob(logits, y))
-       # raise ValueError('No extendable nn loss for backpack in Bernoulli case')
+
+    # raise ValueError('No extendable nn loss for backpack in Bernoulli case')
 
 
 class CategoricalLh(Likelihood):
-
-    def log_prob(self, f:FuncData, y:OutputData):
+    def log_prob(self, f: FuncData, y: OutputData):
         dist = Categorical(logits=f)
         return torch.sum(dist.log_prob(y))
 
@@ -152,19 +163,20 @@ class CategoricalLh(Likelihood):
 
     def Hessian(self, f):
         p = torch.clamp(self.inv_link(f), EPS, 1 - EPS)
-        H = torch.diag_embed(p) - torch.einsum('ij,ik->ijk', p, p)
+        H = torch.diag_embed(p) - torch.einsum("ij,ik->ijk", p, p)
         return H
 
     def inv_link(self, f):
         return torch.softmax(f, dim=-1)
 
     def nn_loss(self, f: FuncData, y: OutputData):
-    #    y_onehot = 
-        log_probs = torch.sum(y*torch.log(f), axis=-1)
+        # return torch.nn.CrossEntropyLoss(reduction="sum")(f, y)
+        #    y_onehot =
+        log_probs = torch.sum(y * torch.log(f), axis=-1)
         return -torch.sum(log_probs)
 
     def nn_loss_func(self):
-        return torch.nn.CrossEntropyLoss(reduction='sum'), 1
+        return torch.nn.CrossEntropyLoss(reduction="sum"), 1
 
 
 class Softmax(nn.Module):

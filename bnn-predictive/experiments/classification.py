@@ -7,7 +7,8 @@ from torch.nn.utils import parameters_to_vector
 
 from preds.optimizers import LaplaceGGN, get_diagonal_ggn
 from preds.models import SiMLP
-from preds.likelihoods import BernoulliLh, CategoricalLh
+from src import BernoulliLh, CategoricalLh
+#from preds.likelihoods import BernoulliLh, CategoricalLh
 from preds.predictives import nn_sampling_predictive, linear_sampling_predictive, svgp_sampling_predictive
 from preds.utils import acc, nll_cls, ece
 from preds.mfvi import run_bbb
@@ -25,7 +26,7 @@ def train(model, likelihood, X_train, y_train, optimizer, n_epochs):
         def closure():
             model.zero_grad()
             f = model(X_train)
-            return likelihood.log_likelihood(y_train, f)
+            return likelihood.log_prob(f, y_train)
         loss = optimizer.step(closure)
         losses.append(loss)
     optimizer.post_process(model, likelihood, [(X_train, y_train)])
@@ -82,12 +83,7 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
     optimizer = LaplaceGGN(model, lr=lr, prior_prec=prior_prec)
     print('Training NN...')
     res['losses'] = train(model, likelihood, X_train, y_train, optimizer, n_epochs)
-    # baseline  (needs higher lr)
-    lrv, epochsv = lr * 10, int(n_epochs/2)
-    res_bbb = run_bbb(ds_train, ds_test, ds_valid, prior_prec, device, likelihood, epochsv, lr=lrv,
-                      n_samples_train=1, n_samples_pred=n_samples, n_layers=n_layers,
-                      n_units=n_units, activation=activation)
-    res['elbos_bbb'] = res_bbb['elbos']
+    
 
     # Extract relevant variables
     theta_star = parameters_to_vector(model.parameters()).detach()
@@ -104,11 +100,7 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
     res.update(evaluate(fs_test, y_test, likelihood, 'map', 'test'))
     res.update(evaluate(fs_valid, y_valid, likelihood, 'map', 'valid'))
 
-    # BBB
-    res.update(evaluate(res_bbb['preds_train'], y_train, lh, 'bbb', 'train'))
-    res.update(evaluate(res_bbb['preds_test'], y_test, lh, 'bbb', 'test'))
-    res.update(evaluate(res_bbb['preds_valid'], y_valid, lh, 'bbb', 'valid'))
-
+    
     # SVGP predictive
     
     fs_train, data_sparse = preds_svgp(X_train, X_train, y_train, model, likelihood,prior_prec,  n_sparse=n_sparse, samples=n_samples, sparse_points=None)
@@ -117,6 +109,18 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
     res.update(evaluate(fs_train, y_train, lh, 'svgp_ntk', 'train'))
     res.update(evaluate(fs_test, y_test, lh, 'svgp_ntk', 'test'))
     res.update(evaluate(fs_valid, y_valid, lh, 'svgp_ntk', 'valid'))
+
+    # BBB
+    # baseline  (needs higher lr)
+    lrv, epochsv = lr * 10, int(n_epochs/2)
+    res_bbb = run_bbb(ds_train, ds_test, ds_valid, prior_prec, device, likelihood, epochsv, lr=lrv,
+                      n_samples_train=1, n_samples_pred=n_samples, n_layers=n_layers,
+                      n_units=n_units, activation=activation)
+    res['elbos_bbb'] = res_bbb['elbos']
+    res.update(evaluate(res_bbb['preds_train'], y_train, lh, 'bbb', 'train'))
+    res.update(evaluate(res_bbb['preds_test'], y_test, lh, 'bbb', 'test'))
+    res.update(evaluate(res_bbb['preds_valid'], y_valid, lh, 'bbb', 'valid'))
+
 
     # LinLaplace full Cov assuming convergence
     fs_train = preds_glm(X_train, model, likelihood, theta_star, Sigma_chol, samples=n_samples)

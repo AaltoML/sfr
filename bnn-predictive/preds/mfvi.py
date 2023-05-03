@@ -2,7 +2,7 @@ import torch
 from torch.optim import Adam
 
 from preds.models import SiBayesianMLP
-from preds.likelihoods import BernoulliLh, GaussianLh
+from src import BernoulliLh, Gaussian
 
 
 def preds_bbb(model, X, n_samples, likelihood):
@@ -30,7 +30,7 @@ def run_bbb(ds_train, ds_test, ds_valid, prior_prec, device, likelihood, n_epoch
     losses = []
     for i in range(n_epochs):
         optim.zero_grad()
-        neg_log_liks = [-likelihood.log_likelihood(y_train, model(X_train))
+        neg_log_liks = [-likelihood.log_prob(y_train, model(X_train))
                         for _ in range(n_samples_train)]
         neg_log_liks = torch.stack(neg_log_liks, dim=0)
         exp_neg_loglik = neg_log_liks.mean()

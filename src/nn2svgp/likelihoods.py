@@ -3,6 +3,7 @@ from typing import Optional, Union
 
 import torch
 import torch.nn as nn
+from torch.distributions import Bernoulli, Categorical
 from src.nn2svgp.custom_types import FuncData, FuncMean, FuncVar, OutputData
 
 

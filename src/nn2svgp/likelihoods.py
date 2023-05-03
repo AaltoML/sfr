@@ -110,6 +110,47 @@ class Gaussian(Likelihood):
         return torch.ones_like(f).unsqueeze(-1) / (self.sigma_noise**2)
 
 
+class BernoulliLh(Likelihood):
+
+    def log_prob(self, f:FuncData, y: OutputData):
+        dist = Bernoulli(logits=f)
+        return torch.sum(dist.log_prob(y))
+
+    def Hessian(self, f):
+        p = torch.clamp(self.inv_link(f), EPS, 1 - EPS)
+        return p * (1 - p)
+
+    def inv_link(self, f):
+        return torch.sigmoid(f)
+
+    def nn_loss(self):
+        raise ValueError('No extendable nn loss for backpack in Bernoulli case')
+
+
+class CategoricalLh(Likelihood):
+
+    def log_prob(self, f:FuncData, y:OutputData):
+        dist = Categorical(logits=f)
+        return torch.sum(dist.log_prob(y))
+
+    def residual(self, y, f):
+        y_expand = torch.zeros_like(f)
+        ixs = torch.arange(0, len(y)).long()
+        y_expand[ixs, y.long()] = 1
+        return y_expand - self.inv_link(f)
+
+    def Hessian(self, f):
+        p = torch.clamp(self.inv_link(f), EPS, 1 - EPS)
+        H = torch.diag_embed(p) - torch.einsum('ij,ik->ijk', p, p)
+        return H
+
+    def inv_link(self, f):
+        return torch.softmax(f, dim=-1)
+
+    def nn_loss(self):
+        return torch.nn.CrossEntropyLoss(reduction='sum'), 1
+
+
 class Softmax(nn.Module):
     def nll(f: FuncData, y: OutputData):
         # return 0.5 * torch.nn.MSELoss(reduction="sum")(f, y)

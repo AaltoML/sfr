@@ -7,6 +7,8 @@ from torch.distributions import Bernoulli, Categorical
 from src.nn2svgp.custom_types import FuncData, FuncMean, FuncVar, OutputData
 
 
+EPS = 1e-7
+
 # class Likelihood:
 #     # def __init__(self, network: nn.Module):
 #     #     self.network = network
@@ -123,6 +125,9 @@ class BernoulliLh(Likelihood):
 
     def inv_link(self, f):
         return torch.sigmoid(f)
+
+    def residual(self, y, f):
+        return y - self.inv_link(f)
 
     def nn_loss(self):
         return lambda logits, y: -torch.sum(self.log_prob(logits, y))

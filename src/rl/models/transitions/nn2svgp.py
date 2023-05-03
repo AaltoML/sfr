@@ -31,7 +31,7 @@ def init(
     prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
     ntksvgp = src.nn2svgp.NTKSVGP(
         network=network,
-        train_data=(X_train, Y_train),
+        # train_data=(X_train, Y_train),
         prior=prior,
         likelihood=likelihood,
         num_inducing=num_inducing,
@@ -47,11 +47,12 @@ def init(
 
     def predict_fn(state: State, action: Action) -> StatePrediction:
         state_action_input = torch.concat([state, action], -1)
-        delta_state = network.forward(state_action_input)
+        # delta_state = network.forward(state_action_input)
+        delta_state_mean, delta_state_var = ntksvgp.predict_f(state_action_input)
         # delta_state_mean, delta_state_var, noise_var = svgp_predict_fn(
         return StatePrediction(
-            state_mean=state + delta_state,
-            state_var=0,
+            state_mean=state + delta_state_mean,
+            state_var=delta_state_var,
             noise_var=0,
             # state_var=delta_state_var,
             # noise_var=noise_var,
@@ -72,7 +73,7 @@ def init(
 
             # pred = network(state_action_inputs)
             # loss = loss_fn(pred, state_diff)
-            loss = ntksvgp.loss_fn(x=state_action_inputs, y=state_diff)
+            loss = ntksvgp.loss(x=state_action_inputs, y=state_diff)
 
             optimizer.zero_grad()
             loss.backward()
@@ -87,9 +88,14 @@ def init(
                 logger.info("Early stopping criteria met, stopping training")
                 logger.info("Breaking out loop")
                 break
-        ntksvgp.build_dual_svgp()
 
-    def dummy_update_fn(x: InputData, y: OutputData):
+        data = replay_buffer.sample(batch_size=len(replay_buffer))
+        state_action_inputs = torch.concat([data["state"], data["action"]], -1)
+        state_diff = data["next_state"] - data["state"]
+        ntksvgp.set_data((state_action_inputs, state_diff))
+        # ntksvgp.build_dual_svgp()
+
+    def update_fn(x: InputData, y: OutputData):
         return ntksvgp.update(x=x, y=y)
 
-    return TransitionModel(predict=predict_fn, train=train_fn, update=dummy_update_fn)
+    return TransitionModel(predict=predict_fn, train=train_fn, update=update_fn)

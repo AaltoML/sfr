@@ -124,7 +124,8 @@ class BernoulliLh(Likelihood):
         return torch.sigmoid(f)
 
     def nn_loss(self):
-        raise ValueError('No extendable nn loss for backpack in Bernoulli case')
+        return lambda logits, y: -torch.sum(self.log_prob(logits, y))
+       # raise ValueError('No extendable nn loss for backpack in Bernoulli case')
 
 
 class CategoricalLh(Likelihood):

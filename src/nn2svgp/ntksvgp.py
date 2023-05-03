@@ -195,7 +195,8 @@ def build_ntk(
     params = {k: v.detach() for k, v in network.named_parameters()}
 
     def fnet_single(params, x, i):
-        return functional_call(network, params, (x.unsqueeze(0),))[0, ...][:, i]
+        func_res = functional_call(network, params, (x.unsqueeze(0),))
+        return func_res[0, ...][:, i]
 
     def single_output_ntk(x1: InputData, x2: InputData, i):
         # func_x1 = partial(fnet_single, x=x1, i=i)
@@ -205,7 +206,6 @@ def build_ntk(
 
         def func_x2(params):
             return fnet_single(params, x2, i=i)
-
         output, vjp_fn = vjp(func_x1, params)
         # print("output {}".format(output))
 
@@ -358,6 +358,8 @@ def calc_sparse_dual_params_batch(
     for x_i, y_i in train_loader:
         batch_size = x_i.shape[0]
         logits_i = network(x_i)
+        if logits_i.ndim == 1:
+            logits_i = logits_i.unsqueeze(-1)
         lambda_1_i, lambda_2_i = calc_lambdas(Y=y_i, F=logits_i, nll=nll)
         lambda_2_i = torch.vmap(torch.diag)(lambda_2_i)
 
@@ -387,6 +389,8 @@ def calc_sparse_dual_params_batch(
             print(x_i.shape, y_i.shape)
             batch_size = x_i.shape[0]
             end_idx = start_idx + batch_size
+            print(output_c)
+            print(Z.shape)
             Kui_c = kernel(Z, x_i, output_c)
             print(Kui_c.shape)
             alpha[output_c] += torch.einsum(
@@ -471,7 +475,7 @@ def calc_lambdas(
     assert Y.ndim == 2
     assert F.ndim == 2
     assert Y.shape[0] == F.shape[0]
-    assert Y.shape[1] == F.shape[1]
+  #  assert Y.shape[1] == F.shape[1]
     nll_jacobian_fn = jacrev(nll)
     nll_hessian_fn = torch.vmap(hessian(nll))
 

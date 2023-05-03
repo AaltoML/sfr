@@ -130,7 +130,8 @@ class BernoulliLh(Likelihood):
         return y - self.inv_link(f)
 
     def nn_loss(self, f: FuncData, y: OutputData):
-        return -torch.sum(self.log_prob(f, y))
+        log_prob = y*torch.log(f) + (1 - y)*torch.log(1-f)
+        return -torch.sum(log_prob)
 
     def nn_loss_func(self):
         return lambda logits, y: -torch.sum(self.log_prob(logits, y))
@@ -158,7 +159,9 @@ class CategoricalLh(Likelihood):
         return torch.softmax(f, dim=-1)
 
     def nn_loss(self, f: FuncData, y: OutputData):
-        return torch.nn.CrossEntropyLoss(reduction='sum')(f, y)
+    #    y_onehot = 
+        log_probs = torch.sum(y*torch.log(f), axis=-1)
+        return -torch.sum(log_probs)
 
     def nn_loss_func(self):
         return torch.nn.CrossEntropyLoss(reduction='sum'), 1

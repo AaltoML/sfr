@@ -129,7 +129,10 @@ class BernoulliLh(Likelihood):
     def residual(self, y, f):
         return y - self.inv_link(f)
 
-    def nn_loss(self):
+    def nn_loss(self, f: FuncData, y: OutputData):
+        return -torch.sum(self.log_prob(f, y))
+
+    def nn_loss_func(self):
         return lambda logits, y: -torch.sum(self.log_prob(logits, y))
        # raise ValueError('No extendable nn loss for backpack in Bernoulli case')
 
@@ -154,7 +157,10 @@ class CategoricalLh(Likelihood):
     def inv_link(self, f):
         return torch.softmax(f, dim=-1)
 
-    def nn_loss(self):
+    def nn_loss(self, f: FuncData, y: OutputData):
+        return torch.nn.CrossEntropyLoss(reduction='sum')(f, y)
+
+    def nn_loss_func(self):
         return torch.nn.CrossEntropyLoss(reduction='sum'), 1
 
 

@@ -470,14 +470,18 @@ def calc_lambdas(
 ) -> Tuple[Lambda_1, Lambda_2]:
     assert Y.ndim == 2
     assert F.ndim == 2
-    assert Y.shape[0] == F.shape[0]
-    assert Y.shape[1] == F.shape[1]
+    # assert Y.shape[0] == F.shape[0]
+    # assert Y.shape[1] == F.shape[1]
     nll_jacobian_fn = jacrev(nll)
     nll_hessian_fn = torch.vmap(hessian(nll))
 
     # nll_jacobian_fn = torch.gradient(nll)
-    lambda_1 = nll_jacobian_fn(F, Y)
-    lambda_2 = nll_hessian_fn(F, Y)
+    # lambda_1 = nll_jacobian_fn(F, Y)
+    lambda_2 = nll_hessian_fn(F, Y)  # [num_data, output_dim, output_dim]
+    lambda_1 = -nll_jacobian_fn(F, Y)  # [num_data, output_dim]
+    lambda_2_diag = torch.diagonal(lambda_2, dim1=-1, dim2=-2)  # [num_data, output_dim]
+    print("lambda_2_diag {}".format(lambda_2_diag.shape))
+    lambda_1 += F * lambda_2_diag
     # lambda_1, lambda_2 = [], []
     # TODO we can do better than a for loop...
     # for y, f in zip(Y, F):
@@ -487,7 +491,7 @@ def calc_lambdas(
     #     # TODO implement clipping for lambdas
     # lambda_1 = torch.stack(lambda_1, dim=0)  # [num_data, output_dim]
     # TODO should lambda_1 just be Y?
-    lambda_1 = Y
+    # lambda_1 = Y
     print("lambda_2 {}".format(lambda_2))
     # lambda_2 = torch.stack(lambda_2, dim=0)  # [num_data, output_dim, output_dim]
     return lambda_1, lambda_2

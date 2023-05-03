@@ -126,7 +126,7 @@ if __name__ == "__main__":
     prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
     ntksvgp = NTKSVGP(
         network=network,
-        train_data=(X_train, Y_train),
+        # train_data=(X_train, Y_train),
         prior=prior,
         likelihood=likelihood,
         num_inducing=50,
@@ -134,6 +134,7 @@ if __name__ == "__main__":
         jitter=1e-4,
     )
 
+    ntksvgp.set_data((X_train, Y_train))
     metrics = train(
         ntksvgp=ntksvgp,
         data=data,
@@ -141,6 +142,8 @@ if __name__ == "__main__":
         batch_size=batch_size,
         learning_rate=1e-2,
     )
+
+    ntksvgp.set_data((X_train, Y_train))
 
     f_mean, f_var = ntksvgp.predict_f(X_test_short)
     print("MEAN {}".format(f_mean.shape))
@@ -162,7 +165,7 @@ if __name__ == "__main__":
 
     plot_var = False
     plot_var = True
-    save_dir = "figs"
+    save_dir = "nn2svgp/figs"
 
     def plot_output(i):
         fig = plt.subplots(1, 1)

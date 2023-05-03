@@ -370,6 +370,8 @@ def calc_sparse_dual_params_batch(
         batch_size = x_i.shape[0]
         logits_i = network(x_i)
         print("logits_i.shape {}".format(logits_i.shape))
+        if logits_i.ndim == 1:
+            logits_i = logits_i.unsqueeze(-1)
         lambda_1_i, lambda_2_i = calc_lambdas(Y=y_i, F=logits_i, nll=nll)
         lambda_2_i = torch.vmap(torch.diag)(lambda_2_i)
 
@@ -399,6 +401,8 @@ def calc_sparse_dual_params_batch(
             print(x_i.shape, y_i.shape)
             batch_size = x_i.shape[0]
             end_idx = start_idx + batch_size
+            print(output_c)
+            print(Z.shape)
             Kui_c = kernel(Z, x_i, output_c)
             print(Kui_c.shape)
             alpha[output_c] += torch.einsum(
@@ -482,8 +486,8 @@ def calc_lambdas(
 ) -> Tuple[Lambda_1, Lambda_2]:
     assert Y.ndim == 2
     assert F.ndim == 2
-    # assert Y.shape[0] == F.shape[0]
-    # assert Y.shape[1] == F.shape[1]
+    assert Y.shape[0] == F.shape[0]
+    #  assert Y.shape[1] == F.shape[1]
     nll_jacobian_fn = jacrev(nll)
     nll_hessian_fn = torch.vmap(hessian(nll))
 

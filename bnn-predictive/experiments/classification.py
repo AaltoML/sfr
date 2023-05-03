@@ -51,11 +51,13 @@ def preds_nn(X, model, likelihood, mu, Sigma_chol, samples):
 def evaluate(p, y, likelihood, name, data):
     # returns are result dictionary with nll, acc, ece named
     res = dict()
-    res[f'{data}_nll_{name}'] = nll_cls(p, y, likelihood)
-    res[f'{data}_acc_{name}'] = acc(p, y, likelihood)
-    res[f'{data}_ece_{name}'] = ece(p, y, likelihood, bins=10)
+    print(y.shape)
+    print(p.shape)
+    res[f'{data}_nll_{name}'] = nll_cls(p.squeeze(), y.squeeze(), likelihood)
+    res[f'{data}_acc_{name}'] = acc(p.squeeze(), y.squeeze(), likelihood)
+    res[f'{data}_ece_{name}'] = ece(p.squeeze(), y.squeeze(), likelihood, bins=10)
     if name == 'svgp_ntk' and data == 'valid':
-        print(nll_cls(p, y, likelihood))
+        print(nll_cls(p.squeeze(), y.squeeze(), likelihood))
     return res
 
 
@@ -78,6 +80,11 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
     else:
         likelihood = CategoricalLh()
         K = ds_train.C
+
+    if y_train.ndim == 1:
+        y_train = y_train.unsqueeze(-1)
+        y_test = y_test.unsqueeze(-1)
+        y_valid = y_valid.unsqueeze(-1)
 
     model = SiMLP(D, K, n_layers, n_units, activation=activation).to(device)
     optimizer = LaplaceGGN(model, lr=lr, prior_prec=prior_prec)

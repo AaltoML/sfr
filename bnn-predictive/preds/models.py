@@ -158,7 +158,8 @@ class MLP(nn.Module):
         for layer in self.hidden_layers:
             out = self.act(layer(out))
         z = self.output_layer(out)
-        return z.flatten() if self.output_size == 1 else z
+        return z
+       # return z.flatten() if self.output_size == 1 else z
 
 
 class SiMLP(MLP):

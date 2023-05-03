@@ -59,15 +59,20 @@ if __name__ == "__main__":
     torch.set_default_dtype(torch.float64)
 
     def func(x, noise=True):
-        ys = []
+        ys, y2s = [], []
         for x_i in x:
             if x_i > 0.2 and x_i < 1.2:
                 y = 1
+                y2 = 0
             else:
                 y = 0
+                y2 = 1
             ys.append(y)
+            y2s.append(y2)
         ys = np.stack(ys, 0).reshape(-1, 1)
-        return torch.Tensor(ys)
+        y2s = np.stack(y2s, 0).reshape(-1, 1)
+        y = np.concatenate([ys, y2s], -1)
+        return torch.Tensor(y)
 
     delta = 0.0001
     network = torch.nn.Sequential(
@@ -79,7 +84,7 @@ if __name__ == "__main__":
         # torch.nn.Tanh(),
         # torch.nn.ReLU(),
         torch.nn.Sigmoid(),
-        torch.nn.Linear(64, 1),
+        torch.nn.Linear(64, 2),
     )
     print("network: {}".format(network))
     # noise_var = torch.nn.parameter.Parameter(torch.Tensor([0]), requires_grad=True)
@@ -110,7 +115,7 @@ if __name__ == "__main__":
 
     X_new = torch.linspace(-0.5, -0.2, 20, dtype=torch.float64).reshape(-1, 1)
     Y_new = func(X_new, noise=True)
-    plt.scatter(X_train, Y_train)
+    plt.scatter(X_train, Y_train[:, 0])
     plt.savefig(os.path.join(save_dir, "classification_data.pdf"))
 
     # X_new_2 = torch.linspace(3.0, 4.0, 20, dtype=torch.float64).reshape(-1, 1)
@@ -123,7 +128,9 @@ if __name__ == "__main__":
 
     batch_size = X_train.shape[0]
 
-    likelihood = src.nn2svgp.likelihoods.BernoulliLh()
+    # likelihood = src.nn2svgp.likelihoods.BernoulliLh()
+    likelihood = src.nn2svgp.likelihoods.CategoricalLh()
+    # likelihood = src.nn2svgp.likelihoods.Gaussian()
     prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
     ntksvgp = NTKSVGP(
         network=network,
@@ -141,12 +148,13 @@ if __name__ == "__main__":
     metrics = train(
         ntksvgp=ntksvgp,
         data=data,
-        num_epochs=2500,
+        num_epochs=3500,
         batch_size=batch_size,
         learning_rate=1e-2,
     )
 
-    f_mean, f_var = ntksvgp.predict_f(X_test_short)
+    # f_mean, f_var = ntksvgp.predict_f(X_test_short)
+    f_mean, f_var = ntksvgp.predict_f(X_test)
     print("MEAN {}".format(f_mean.shape))
     print("VAR {}".format(f_var.shape))
     print("X_test_short {}".format(X_test_short.shape))
@@ -173,27 +181,37 @@ if __name__ == "__main__":
             color="b",
             label=r"$f_{true}(\cdot)$",
         )
-        # plt.plot(
-        #     X_test[:, 0],
-        #     network(X_test).detach()[:, i],
-        #     color="m",
-        #     linestyle="--",
-        #     label=r"$f_{NN}(\cdot)$",
-        # )
+        plt.plot(
+            X_test[:, 0],
+            network(X_test).detach()[:, 0],
+            color="m",
+            linestyle="--",
+            label=r"$f_{NN,1}(\cdot)$",
+        )
+        plt.plot(
+            X_test[:, 0],
+            network(X_test).detach()[:, 1],
+            color="c",
+            linestyle="--",
+            label=r"$f_{NN,2}(\cdot)$",
+        )
 
-        probs = likelihood.prob(f_mean=f_mean, f_var=f_var)
-        print("probs {}".format(probs.shape))
-        plt.plot(X_test_short[:, 0], probs[:, i], color="c", label=r"$\Pr(y=1 \mid x)$")
-        # plt.plot(X_test_short[:, 0], f_mean[:, i], color="c", label=r"$\mu(\cdot)$")
+        # probs = likelihood.prob(f_mean=f_mean, f_var=f_var)
+        # print("probs {}".format(probs.shape))
+        # plt.plot(X_test[:, 0], probs[:, i], color="c", label=r"$\Pr(y=1 \mid x)$")
+        # plt.plot(X_test_short[:, 0], probs[:, i], color="c", label=r"$\Pr(y=1 \mid x)$")
+        plt.plot(X_test[:, 0], f_mean[:, 0], color="m", label=r"$\mu_1(\cdot)$")
+        plt.plot(X_test[:, 0], f_mean[:, 1], color="c", label=r"$\mu_2(\cdot)$")
         if plot_var:
             plt.fill_between(
-                X_test_short[:, 0],
-                (f_mean - 1.98 * torch.sqrt(f_var))[:, i],
+                # X_test_short[:, 0],
+                X_test[:, 0],
+                (f_mean - 1.98 * torch.sqrt(f_var))[:, 0],
                 # pred.mean[:, 0],
-                (f_mean + 1.98 * torch.sqrt(f_var))[:, i],
-                color="c",
+                (f_mean + 1.98 * torch.sqrt(f_var))[:, 0],
+                color="m",
                 alpha=0.2,
-                label=r"$\mu(\cdot) \pm 1.98\sigma(\cdot)$",
+                label=r"$\mu_1(\cdot) \pm 1.98\sigma_1(\cdot)$",
             )
         plt.scatter(
             ntksvgp.Z,

@@ -88,13 +88,14 @@ class NTKSVGP(nn.Module):
             delta=delta,
         )
 
-        # self.alpha, self.beta = calc_sparse_dual_params(
-        #     network=self.network,
-        #     train_data=self.train_data,
-        #     Z=self.Z,
-        #     kernel=self.kernel,
-        #     nll=self.likelihood.nn_loss,
-        # )
+        self.alpha, self.beta = calc_sparse_dual_params(
+            network=self.network,
+            train_data=self.train_data,
+            Z=self.Z,
+            kernel=self.kernel,
+            nll=self.likelihood.nn_loss,
+            likelihood=self.likelihood,
+        )
 
         self.alpha, self.beta = calc_sparse_dual_params_batch(
             network=self.network,
@@ -103,6 +104,7 @@ class NTKSVGP(nn.Module):
             kernel=self.kernel_single,
             nll=self.likelihood.nn_loss,
             out_dim=self.output_dim,
+            likelihood=self.likelihood,
         )
         logger.info("Finished calculating dual params")
 
@@ -294,27 +296,43 @@ def predict_from_duals(
         #         torch.linalg.solve(Kuu, torch.eye(Kuu.shape[-1])[None, ...]).shape
         #     )
         # )
-        m_u = (
-            V
-            @ torch.linalg.solve(Kuu, Iu)
-            # @ torch.linalg.solve(Kuu, torch.eye(Kuu.shape[-1])[None, ...])
-            @ alpha[..., None]
-        )
-        print("m_u {}".format(m_u.shape))
+        # Kux = torch.transpose(Kxu, -1, -2)
+        # m_u = Kux @ alpha
+        # print("m_u {}".format(m_u.shape))
 
         # print(
         #     "torch.linalg.solve(Kuu, torch.eye(Kuu.shape[-1])[None, ...] {}".format(
         #         torch.linalg.solve(Kuu, Iu).shape
         #     )
         # )
-        f_mean = Kxu @ torch.linalg.solve(Kuu, Iu) @ m_u
-        print("f_mean {}".format(f_mean.shape))
-        f_mean = f_mean[..., 0].T
-        print("f_mean {}".format(f_mean.shape))
-        beta_u = torch.linalg.solve(Kuu, Iu) - torch.linalg.solve(beta + Kuu, Iu)
+        # beta_u = torch.linalg.solve(Kuu, Iu) - torch.linalg.solve(beta + Kuu, Iu)
+        Kux = torch.transpose(Kxu, -1, -2)
+        # beta_u = Kux @ beta @ Kxu
+        beta_u = beta
         print("beta_u {}".format(beta_u.shape))
         print("Kuu {}".format(Kuu.shape))
         print("Iu {}".format(Iu.shape))
+
+        # m_u = (
+        #     V
+        #     @ torch.linalg.solve((Kuu), Iu)
+        #     # @ torch.linalg.solve(Kuu, torch.eye(Kuu.shape[-1])[None, ...])
+        #     @ alpha[..., None]
+        # )
+        # # Kux = torch.transpose(Kxu, -1, -2)
+        # print("alpha {}".format(alpha.shape))
+        # # print("Kux {}".format(Kux.shape))
+        # # m_u = Kux @ alpha[..., None]
+        # # print("m_u {}".format(m_u.shape))
+        # f_mean = Kxu @ torch.linalg.solve((Kuu), Iu) @ m_u
+        # f_mean = f_mean[..., 0].T
+
+        f_mean = Kxu @ torch.linalg.solve((Kuu + beta_u), Iu)
+        print("f_mean {}".format(f_mean.shape))
+        f_mean = f_mean @ alpha[..., None]
+        print("f_mean {}".format(f_mean.shape))
+        f_mean = f_mean[..., 0].T
+        print("f_mean {}".format(f_mean.shape))
 
         if full_cov:
             f_cov = Kxx - torch.matmul(
@@ -327,9 +345,14 @@ def predict_from_duals(
             # f_cov = Kxx - torch.matmul(
             #     torch.matmul(Kxu, iBKuu), torch.transpose(Kxu, -1, -2)
             # )
+            # beta_u = torch.linalg.solve(Kuu, Iu) - torch.linalg.solve(beta + Kuu, Iu)
+            tmp = torch.linalg.solve(Kuu, Iu) - torch.linalg.solve(beta_u + Kuu, Iu)
             f_cov = Kxx - torch.matmul(
-                torch.matmul(Kxu, beta_u), torch.transpose(Kxu, -1, -2)
+                torch.matmul(Kxu, tmp), torch.transpose(Kxu, -1, -2)
             )
+            # f_cov = Kxx - torch.matmul(
+            #     Kxu, torch.matmul(beta_u, torch.transpose(Kxu, -1, -2))
+            # )
             print("f_cov {}".format(f_cov.shape))
             f_var = torch.diagonal(f_cov, dim1=-2, dim2=-1).T
             print("f_var {}".format(f_var.shape))
@@ -344,6 +367,7 @@ def calc_sparse_dual_params_batch(
     Z: InducingPoints,
     kernel: NTK_single,
     nll: Callable[[FuncData, OutputData], float],
+    likelihood,
     batch_size: int = 1000,
     out_dim: int = 10,
 ) -> Tuple[AlphaInducing, BetaInducing]:
@@ -372,7 +396,9 @@ def calc_sparse_dual_params_batch(
         print("logits_i.shape {}".format(logits_i.shape))
         if logits_i.ndim == 1:
             logits_i = logits_i.unsqueeze(-1)
-        lambda_1_i, lambda_2_i = calc_lambdas(Y=y_i, F=logits_i, nll=nll)
+        lambda_1_i, lambda_2_i = calc_lambdas(
+            Y=y_i, F=logits_i, nll=nll, likelihood=likelihood
+        )
         lambda_2_i = torch.vmap(torch.diag)(lambda_2_i)
 
         end_idx = start_idx + batch_size
@@ -392,7 +418,7 @@ def calc_sparse_dual_params_batch(
     ## TODO: lambda2 ^ -1 ???
     def compute_beta_i(kiu, lambda2_i):
         # return torch.einsum('u, i, m -> um', kiu, lambda2_i**-1, kiu)
-        return torch.outer(kiu, kiu) * lambda2_i**-1
+        return torch.outer(kiu, kiu) * lambda2_i
 
     for output_c in range(out_dim):
         start_idx = 0
@@ -424,6 +450,7 @@ def calc_sparse_dual_params(
     Z: InducingPoints,
     kernel: NTK,
     nll: Callable[[FuncData, OutputData], float],
+    likelihood,
 ) -> Tuple[AlphaInducing, BetaInducing]:
     num_inducing, input_dim = Z.shape
     X, Y = train_data
@@ -435,7 +462,7 @@ def calc_sparse_dual_params(
     print("Kuf {}".format(Kuf.shape))
     F = network(X)
     print("F {}".format(F.shape))
-    lambda_1, lambda_2 = calc_lambdas(Y=Y, F=F, nll=nll)
+    lambda_1, lambda_2 = calc_lambdas(Y=Y, F=F, nll=nll, likelihood=likelihood)
     print("lambda_1 {}".format(lambda_1.shape))
     print("lambda_2 {}".format(lambda_2.shape))
     alpha, beta = calc_sparse_dual_params_from_lambdas(
@@ -468,7 +495,7 @@ def calc_sparse_dual_params_from_lambdas(
     #     torch.transpose(lambda_2_diag, -1, -2) ** -1 * torch.repeat(torch.eye(num_data)[None, ...]
     # )  # [output_dim, num_data, num_data]
     # print("inv_lambda_2 {}".format(inv_lambda_2.shape))
-    inv_lambda_2 = torch.diag_embed(lambda_2_diag.T**-1)
+    inv_lambda_2 = torch.diag_embed(lambda_2_diag.T)
     print("inv_lambda_2 {}".format(inv_lambda_2.shape))
     print("inv_lambda_2 {}".format(inv_lambda_2))
     beta_u = torch.matmul(
@@ -483,6 +510,7 @@ def calc_lambdas(
     Y: OutputData,  # [num_data, output_dim]
     F: FuncData,  # [num_data, output_dim]
     nll: Callable[[FuncData, OutputData], float],
+    likelihood,
 ) -> Tuple[Lambda_1, Lambda_2]:
     assert Y.ndim == 2
     assert F.ndim == 2
@@ -493,13 +521,25 @@ def calc_lambdas(
 
     # nll_jacobian_fn = torch.gradient(nll)
     # lambda_1 = nll_jacobian_fn(F, Y)
-    lambda_2 = nll_hessian_fn(F, Y)  # [num_data, output_dim, output_dim]
-    lambda_1 = -1 * nll_jacobian_fn(F, Y)  # [num_data, output_dim]
+    # lambda_2 = nll_hessian_fn(F, Y)  # [num_data, output_dim, output_dim]
+    # lambda_1 = -1 * nll_jacobian_fn(F, Y)  # [num_data, output_dim]
+    # lambda_2 = torch.vmap(likelihood.Hessian, in_dims=0)(F)
+    # lambda_1 = -torch.vmap(likelihood.residual, in_dims=0)(F)
+    lambda_2 = likelihood.Hessian(f=F)
+    lambda_1 = -likelihood.residual(y=Y, f=F)
+    # lambda_1 = -likelihood.residual(F)
+    print("lambda_1 {}".format(lambda_1.shape))
+    print("lambda_2 {}".format(lambda_2.shape))
+    # exit()
     lambda_2_diag = torch.diagonal(lambda_2, dim1=-1, dim2=-2)  # [num_data, output_dim]
+    print("Y-lambda_1 {}".format(Y - lambda_1))
     print("lambda_2_diag {}".format(lambda_2_diag.shape))
     print("F {}".format(F.shape))
     lambda_1 += F * lambda_2_diag
-    print("lambda_1 {}".format(lambda_1.shape))
+    # print("lambda_1 {}".format(lambda_1.shape))
+    # print("lambda_1 {}".format(lambda_1))
+    # print("Y {}".format(Y))
+    print("Y-lambda_1 {}".format(Y - lambda_1))
     # lambda_1, lambda_2 = [], []
     # TODO we can do better than a for loop...
     # for y, f in zip(Y, F):

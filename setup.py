@@ -46,6 +46,9 @@ install_requires = [
     "matplotlib==3.7.1",
     "numpy==1.24.2",
     "torch==2.0.0",
+    "torchvision==0.15.1",
+    "onedrivedownloader",   # from mammoth cl framework
+    "av",                   # 
     # functorch  # needed for vmap
     "torchtyping==0.1.4",
     # laplace-torch

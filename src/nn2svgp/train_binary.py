@@ -79,6 +79,7 @@ if __name__ == "__main__":
         return torch.Tensor(ys)
 
     delta = 0.0002
+    delta = 0.002
     # delta = 0.005
     # delta = 0.01
     # delta = 1.0
@@ -241,12 +242,22 @@ if __name__ == "__main__":
         #     label=r"$f_{NN,2}(\cdot)$",
         # )
 
+        # nn_probs = likelihood.inv_link(network(X_test)).detach()
+        # print("nn_probs {}".format(nn_probs.shape))
+        # plt.plot(
+        #     X_test[:, 0],
+        #     nn_probs[:, i],
+        #     color="m",
+        #     linestyle="--",
+        #     label=r"$\Pr_{NN}(y=1 \mid x)$",
+        # )
         # probs = likelihood.prob(f_mean=f_mean, f_var=f_var)
         # print("probs {}".format(probs.shape))
         # plt.plot(X_test[:, 0], probs[:, i], color="c", label=r"$\Pr(y=1 \mid x)$")
+        #
         # plt.plot(X_test_short[:, 0], probs[:, i], color="c", label=r"$\Pr(y=1 \mid x)$")
         plt.plot(X_test[:, 0], f_mean[:, 0], color="m", label=r"$\mu_1(\cdot)$")
-        # plt.plot(X_test[:, 0], f_mean[:, 1], color="c", label=r"$\mu_2(\cdot)$")
+        # # plt.plot(X_test[:, 0], f_mean[:, 1], color="c", label=r"$\mu_2(\cdot)$")
         if plot_var:
             plt.fill_between(
                 # X_test_short[:, 0],

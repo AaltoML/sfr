@@ -106,15 +106,15 @@ class NTKSVGP(nn.Module):
             likelihood=self.likelihood,
         )
 
-        # self.alpha, self.beta = calc_sparse_dual_params_batch(
-        #     network=self.network,
-        #     train_data=self.train_data,
-        #     Z=self.Z,
-        #     kernel=self.kernel_single,
-        #     nll=self.likelihood.nn_loss,
-        #     out_dim=self.output_dim,
-        #     likelihood=self.likelihood,
-        # )
+        self.alpha, self.beta = calc_sparse_dual_params_batch(
+            network=self.network,
+            train_data=self.train_data,
+            Z=self.Z,
+            kernel=self.kernel_single,
+            nll=self.likelihood.nn_loss,
+            out_dim=self.output_dim,
+            likelihood=self.likelihood,
+        )
         logger.info("Finished calculating dual params")
 
         print("alpha {}".format(self.alpha.shape))
@@ -185,7 +185,7 @@ class NTKSVGP(nn.Module):
 
         # lambda_1, lambda_2 = calc_lambdas(Y=Y, F=F, nll=nll)
 
-        # TODO only works for regression
+        # TODO only works for regression (should be lambda_1)
         self.alpha += (Kzx @ y.T[..., None])[..., 0]
         self.beta += (
             Kzx
@@ -497,7 +497,7 @@ def calc_sparse_dual_params(
     assert X.shape[0] == Y.shape[0]
     assert X.shape[1] == input_dim
     Kzx = kernel(Z, X)
-    print("Kuf {}".format(Kuf.shape))
+    print("Kzx {}".format(Kzx.shape))
     F = network(X)
     print("F {}".format(F.shape))
     lambda_1, lambda_2 = calc_lambdas(Y=Y, F=F, nll=nll, likelihood=likelihood)
@@ -564,8 +564,8 @@ def calc_lambdas(
     lambda_1 = -1 * nll_jacobian_fn(F, Y)  # [num_data, output_dim]
     # lambda_2 = torch.vmap(likelihood.Hessian, in_dims=0)(F)
     # lambda_1 = -torch.vmap(likelihood.residual, in_dims=0)(F)
-    lambda_2 = likelihood.Hessian(f=F)
-    # lambda_1 = likelihood.residual(y=Y, f=F)
+    lambda_2 = 2 * likelihood.Hessian(f=F)
+    lambda_1 = -likelihood.residual(y=Y, f=F)
     # lambda_1 = likelihood.residual(y=Y, f=F)
     print("lambda_1 {}".format(lambda_1.shape))
     print("lambda_2 {}".format(lambda_2.shape))
@@ -577,6 +577,7 @@ def calc_lambdas(
     print("lambda_2_diag {}".format(lambda_2_diag.shape))
     print("F {}".format(F.shape))
     lambda_1 += F * lambda_2_diag
+    # lambda_1 = F * lambda_2_diag
     # lambda_1 = F * lambda_2_diag
     # print("lambda_1 {}".format(lambda_1.shape))
     # print("lambda_1 {}".format(lambda_1))

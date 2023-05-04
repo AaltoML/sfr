@@ -104,10 +104,11 @@ class Gaussian(Likelihood):
     def nn_loss(self, f: FuncData, y: OutputData):
         # loss = torch.nn.MSELoss()(f, y)
         # loss = torch.nn.MSELoss(reduction="sum")(f, y)
-        # loss = torch.nn.MSELoss(reduction="mean")(f, y)
+        loss = 0.5 * torch.nn.MSELoss(reduction="mean")(f, y)
+        return loss
         # return 0.5 * loss * y.shape[-1]
         # return -torch.sum(self.log_prob(f=f, y=y))
-        return -torch.mean(self.log_prob(f=f, y=y))
+        # return -torch.mean(self.log_prob(f=f, y=y))
 
     def residual(self, y, f):
         # TODO should this just be y?
@@ -147,7 +148,7 @@ class BernoulliLh(Likelihood):
         # return torch.sigmoid(f)
 
     def residual(self, y, f):
-        return y - self.inv_link(f)
+        return self.inv_link(f) - y
 
     def nn_loss(self, f: FuncData, y: OutputData):
         print("calling nn_loss")
@@ -206,7 +207,7 @@ class CategoricalLh(Likelihood):
         # y_expand[:, y.long()] = 1
         print("y_expand {}".format(y_expand))
         print("self.inv_link(f) {}".format(self.inv_link(f).shape))
-        return y_expand - self.inv_link(f)
+        return self.inv_link(f) - y_expand
 
     def Hessian(self, f):
         print("self.inv_link(f) {}".format(self.inv_link(f)))

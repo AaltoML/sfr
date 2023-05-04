@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import logging
-from typing import Callable, Tuple
+from typing import Callable, Tuple, Optional, List
 
 
 logging.basicConfig(level=logging.INFO)
@@ -33,7 +33,7 @@ from src.nn2svgp.likelihoods import Likelihood
 from src.nn2svgp.priors import Prior
 from torch.func import functional_call, hessian, jacrev, jvp, vjp, vmap
 from torchtyping import TensorType
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, TensorDataset
 
 
 class NTKSVGP(nn.Module):
@@ -97,18 +97,21 @@ class NTKSVGP(nn.Module):
             delta=delta,
         )
 
-        self.alpha, self.beta = calc_sparse_dual_params(
-            network=self.network,
-            train_data=self.train_data,
-            Z=self.Z,
-            kernel=self.kernel,
-            nll=self.likelihood.nn_loss,
-            likelihood=self.likelihood,
-        )
+        # self.alpha, self.beta = calc_sparse_dual_params(
+        #     network=self.network,
+        #     train_data=self.train_data,
+        #     Z=self.Z,
+        #     kernel=self.kernel,
+        #     nll=self.likelihood.nn_loss,
+        #     likelihood=self.likelihood,
+        # )
 
+        batch_size = 1000
         self.alpha, self.beta = calc_sparse_dual_params_batch(
             network=self.network,
-            train_data=self.train_data,
+            train_loader = DataLoader(TensorDataset(*(self.train_data)), 
+                                      batch_size=batch_size, 
+                                      shuffle=False),
             Z=self.Z,
             kernel=self.kernel_single,
             nll=self.likelihood.nn_loss,
@@ -154,7 +157,7 @@ class NTKSVGP(nn.Module):
     def loss(self, x: InputData, y: OutputData):
         f = self.network(x)
         neg_log_likelihood = self.likelihood.nn_loss(f=f, y=y)
-        neg_log_prior = self.prior.nn_loss()
+        neg_log_prior = self.prior.nn_loss(self.network.parameters)
         return neg_log_likelihood + neg_log_prior
 
     def update(self, x: InputData, y: OutputData):
@@ -399,31 +402,30 @@ def predict_from_duals(
 
 def calc_sparse_dual_params_batch(
     network: torch.nn.Module,
-    train_data: Tuple[InputData, OutputData],
+    train_loader: DataLoader, 
+    #train_data: Tuple[InputData, OutputData],
     Z: InducingPoints,
     kernel: NTK_single,
     nll: Callable[[FuncData, OutputData], float],
     likelihood,
     batch_size: int = 1000,
     out_dim: int = 10,
+    subset_out_dim: Optional[List] = None,
+    device: str = "cpu"
 ) -> Tuple[AlphaInducing, BetaInducing]:
     from torch.utils.data import TensorDataset
-
-    train_loader = DataLoader(
-        TensorDataset(*(train_data)), batch_size=batch_size, shuffle=False
-    )
-
     ################  Compute lambdas batched version START ################
-    num_train = train_data[0].shape[0]
-    print(f"***************************************************** {num_train}")
+    num_train = len(train_loader.dataset)
     items_shape = (num_train, out_dim)
-    lambda_1 = torch.zeros(items_shape)
-    lambda_2_diag = torch.zeros(items_shape)
+    lambda_1 = torch.zeros(items_shape).to(device)
+    lambda_2_diag = torch.zeros(items_shape).to(device)
 
     start_idx = 0
     end_idx = 0
 
-    for x_i, y_i in train_loader:
+    for batch in train_loader:
+        x_i, y_i =  batch[0], batch[1]
+        x_i, y_i = x_i.to(device), y_i.to(device)
         print("data loader")
         print("x_i.shape {}".format(x_i.shape))
         print("y_i.shape {}".format(y_i.shape))
@@ -448,25 +450,32 @@ def calc_sparse_dual_params_batch(
     ################  Compute lambdas batched version END ################
 
     ################  Compute alpha/beta batched version START ################
-    alpha = torch.zeros((out_dim, Z.shape[0]))
-    beta = torch.zeros((out_dim, Z.shape[0], Z.shape[0]))
+    alpha = torch.zeros((out_dim, Z.shape[0])).to(device)
+    beta = torch.zeros((out_dim, Z.shape[0], Z.shape[0])).to(device)
 
     ## TODO: lambda2 ^ -1 ???
     def compute_beta_i(kiu, lambda2_i):
         # return torch.einsum('u, i, m -> um', kiu, lambda2_i**-1, kiu)
         return torch.outer(kiu, kiu) * lambda2_i
+    
+    if subset_out_dim is not None:
+        out_dim_range = subset_out_dim
+    else:
+        out_dim_range = list(range(out_dim))
 
-    for output_c in range(out_dim):
+    for output_c in out_dim_range:
         start_idx = 0
         end_idx = 0
-        for x_i, y_i in train_loader:
+        for batch in train_loader:
+            x_i, y_i =  batch[0], batch[1]
+            x_i, y_i = x_i.to(device), y_i.to(device)
             print(x_i.shape, y_i.shape)
             batch_size = x_i.shape[0]
             end_idx = start_idx + batch_size
             print(output_c)
             print(Z.shape)
             Kui_c = kernel(Z, x_i, output_c)
-            print(Kui_c.shape)
+            print(Kui_c.shape, Kui_c.device)
             alpha[output_c] += torch.einsum(
                 "ub, b -> u", Kui_c, lambda_1[start_idx:end_idx, output_c]
             )
@@ -596,3 +605,15 @@ def calc_lambdas(
     print("lambda_2 {}".format(lambda_2.shape))
     # lambda_2 = torch.stack(lambda_2, dim=0)  # [num_data, output_dim, output_dim]
     return lambda_1, lambda_2
+
+
+# TODO: need that to be out of the function
+def loss_cl(x: InputData, 
+         y: OutputData,
+         network: nn.Module, 
+         likelihood: Likelihood,  
+         prior: Prior):
+    f = network(x)
+    neg_log_likelihood = likelihood.nn_loss(f=f, y=y)
+    neg_log_prior = prior.nn_loss()
+    return neg_log_likelihood + neg_log_prior

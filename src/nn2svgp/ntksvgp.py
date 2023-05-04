@@ -43,6 +43,7 @@ class NTKSVGP(nn.Module):
         # train_data: Data,
         prior: Prior,
         likelihood: Likelihood,
+        output_dim: int,
         num_inducing: int = 30,
         jitter: float = 1e-6,
     ):
@@ -50,20 +51,28 @@ class NTKSVGP(nn.Module):
         self.network = network
         self.prior = prior
         self.likelihood = likelihood
+        self.output_dim = output_dim
         self.num_inducing = num_inducing
         self.jitter = jitter
 
     def set_data(self, train_data: Data):
         """Sets training data, samples inducing points, calcs dual parameters, builds predict fn"""
-        self.train_data = train_data
         X_train, Y_train = train_data
+        if X_train.ndim > 2:
+            # TODO flatten dims for images
+            print("X_train before flatten {}".format(X_train.shape))
+            X_train = torch.flatten(X_train, 1, -1)
+            print("X_train AFTER flatten {}".format(X_train.shape))
         assert X_train.ndim == 2
-        assert Y_train.ndim == 2
+        # assert X_train.ndim >= 2
+        # assert Y_train.ndim == 2
         assert X_train.shape[0] == Y_train.shape[0]
-        num_data, input_dim = X_train.shape
-        num_data, output_dim = Y_train.shape
+        self.train_data = train_data
+        # num_data, input_dim = X_train.shape
+        num_data = Y_train.shape[0]
         print("Y_train.shape {}".format(Y_train.shape))
         indices = torch.randperm(num_data)[: self.num_inducing]
+        # TODO will this work for image classification??
         self.Z = X_train[indices]
         assert self.Z.ndim == 2
         # num_inducing = 100
@@ -97,15 +106,15 @@ class NTKSVGP(nn.Module):
             likelihood=self.likelihood,
         )
 
-        self.alpha, self.beta = calc_sparse_dual_params_batch(
-            network=self.network,
-            train_data=self.train_data,
-            Z=self.Z,
-            kernel=self.kernel_single,
-            nll=self.likelihood.nn_loss,
-            out_dim=self.output_dim,
-            likelihood=self.likelihood,
-        )
+        # self.alpha, self.beta = calc_sparse_dual_params_batch(
+        #     network=self.network,
+        #     train_data=self.train_data,
+        #     Z=self.Z,
+        #     kernel=self.kernel_single,
+        #     nll=self.likelihood.nn_loss,
+        #     out_dim=self.output_dim,
+        #     likelihood=self.likelihood,
+        # )
         logger.info("Finished calculating dual params")
 
         print("alpha {}".format(self.alpha.shape))
@@ -151,10 +160,24 @@ class NTKSVGP(nn.Module):
     def update(self, x: InputData, y: OutputData):
         logger.info("Updating dual params...")
         # TODO what about classificatin
-        assert x.ndim == 2 and y.ndim == 2
+        # assert x.ndim == 2 and y.ndim == 2
+        if x.ndim > 2:
+            print("x before flatten {}".format(x.shape))
+            x = torch.flatten(x, 1, -1)
+            print("x AFTER flatten {}".format(x.shape))
+        assert x.ndim == 2
+        if y.ndim == 1:
+            # TODO should this be somewhere else?
+            print("y.shape {}".format(y.shape))
+            y = torch.nn.functional.one_hot(y, num_classes=2)
+            y = y.to(torch.double)
+            print("y.shape {}".format(y.shape))
+            print("y.shape {}".format(y))
+            # y = y[:, None]
+        # assert x.ndim == 2 and y.ndim == 2
         num_new_data, input_dim = x.shape
-        Kui = self.kernel(self.Z, x)
-        print("Kui {}".format(Kui.shape))
+        Kzx = self.kernel(self.Z, x)
+        print("Kzx {}".format(Kzx.shape))
         print("alpha {}".format(self.alpha.shape))
         print("beta {}".format(self.beta.shape))
         print("x {}".format(x.shape))
@@ -162,11 +185,12 @@ class NTKSVGP(nn.Module):
 
         # lambda_1, lambda_2 = calc_lambdas(Y=Y, F=F, nll=nll)
 
-        self.alpha += (Kui @ y.T[..., None])[..., 0]
+        # TODO only works for regression
+        self.alpha += (Kzx @ y.T[..., None])[..., 0]
         self.beta += (
-            Kui
+            Kzx
             @ (1**-1 * torch.eye(num_new_data)[None, ...])
-            @ torch.transpose(Kui, -1, -2)
+            @ torch.transpose(Kzx, -1, -2)
         )
         print("ALPHA {}".format(self.alpha.shape))
         print("BETA {}".format(self.beta.shape))
@@ -185,9 +209,9 @@ class NTKSVGP(nn.Module):
     def num_data(self):
         return self.train_data[0].shape[0]
 
-    @property
-    def output_dim(self):
-        return self.train_data[1].shape[1]
+    # @property
+    # def output_dim(self):
+    #     return self.train_data[1].shape[1]
 
 
 def build_ntk(
@@ -207,7 +231,9 @@ def build_ntk(
         return f
         # return functional_call(network, params, (x.unsqueeze(0),))[0, ...][:, i]
 
-    def single_output_ntk(x1: InputData, x2: InputData, i):
+    # @torch.compile(backend="eager")
+    def single_output_ntk(x1, x2, i):
+        # def single_output_ntk(x1: InputData, x2: InputData, i):
         # func_x1 = partial(fnet_single, x=x1, i=i)
         # func_x2 = partial(fnet_single, x=x2, i=i)
         def func_x1(params):
@@ -235,13 +261,19 @@ def build_ntk(
         ).view(output.numel(), -1)
         # print("basis {}".format(basis))
         return 1 / (delta * num_data) * vmap(get_ntk_slice)(basis)
+        # return 1 / (delta) * vmap(get_ntk_slice)(basis)
 
-    def ntk(x1: InputData, x2: InputData) -> TensorType[""]:
+    def ntk(x1, x2):
+        print("INSIDE kernel {}".format(output_dim))
+        # def ntk(x1: InputData, x2: InputData) -> TensorType[""]:
         K = torch.empty(output_dim, x1.shape[0], x2.shape[0])
         # print("K building {}".format(K.shape))
+        # Ks = []
         for i in range(output_dim):
             # print("output dim {}".format(i))
+            # Ks.append(single_output_ntk(x1, x2, i=i))
             K[i, :, :] = single_output_ntk(x1, x2, i=i)
+        # K = torch.stack(Ks, 0)
         # print("K {}".format(K.shape))
         return K
 
@@ -252,39 +284,42 @@ def predict_from_duals(
     alpha: Alpha, beta: Beta, kernel: NTK, Z: InducingPoints, jitter: float = 1e-3
 ):
     print("Z {}".format(Z.shape))
-    Kuu = kernel(Z, Z)
-    output_dim = Kuu.shape[0]
-    print("Kuu {}".format(Kuu.shape))
-    Iu = torch.eye(Kuu.shape[-1])[None, ...].repeat(output_dim, 1, 1)
-    print("Iu {}".format(Iu.shape))
-    Kuu += Iu * jitter
+    Kzz = kernel(Z, Z)
+    output_dim = Kzz.shape[0]
+    print("Kuu {}".format(Kzz.shape))
+    Iz = torch.eye(Kzz.shape[-1])[None, ...].repeat(output_dim, 1, 1)
+    print("Iu {}".format(Iz.shape))
+    Kzz += Iz * jitter
     # beta += I
-    print("Kuu {}".format(Kuu.shape))
+    print("Kuu {}".format(Kzz.shape))
 
-    assert beta.shape == Kuu.shape
+    assert beta.shape == Kzz.shape
     # iBKuu = torch.linalg.solve(beta + Kuu, torch.eye(Kuu.shape[-1]))
     # print("iBKuu {}".format(iBKuu.shape))
     # V = torch.matmul(torch.matmul(Kuu, iBKuu), Kuu)0
-    V = torch.matmul(Kuu, torch.linalg.solve(beta + Kuu, Kuu))
-    print("V {}".format(V.shape))
+    # V = torch.matmul(Kzz, torch.linalg.solve(beta + Kzz, Kzz))
+    # print("V {}".format(V.shape))
     # iKuuViKuu = torch.linalg.solve(torch.linalg.solve(Kuu, V), Kuu, left=False)
     # print("iKuuViKuu {}".format(iKuuViKuu.shape))
     # iKuuViKuua = torch.matmul(iKuuViKuu, alpha[..., None])
     # print("iKuuVKuua {}".format(iKuuViKuua.shape))
 
-    def predict(x: TestInput, full_cov: bool = False) -> Tuple[OutputMean, OutputVar]:
+    # @torch.compile(backend="aot_eager")
+    # @torch.jit.script
+    def predict(x, full_cov: bool = False):
+        # def predict(x: TestInput, full_cov: bool = False) -> Tuple[OutputMean, OutputVar]:
         Kxx = kernel(x, x)
         print("Kxx {}".format(Kxx.shape))
-        Kxu = kernel(x, Z)
-        print("Kxu {}".format(Kxu.shape))
+        Kxz = kernel(x, Z)
+        print("Kxz {}".format(Kxz.shape))
 
         # f_mean = torch.matmul(Kxu, iKuuViKuua)
         # print("f_mean {}".format(f_mean.shape))
         # f_mean = f_mean[..., 0].T
         # print("f_mean {}".format(f_mean.shape))
         # Iu = torch.eye(Kuu.shape[-1])[None, ...].repeat(ouput_dim, 1, 1)
-        print("Iu {}".format(Iu.shape))
-        print("V {}".format(V.shape))
+        # print("Iu {}".format(Iz.shape))
+        # print("V {}".format(V.shape))
         # print("alpha[...,None] {}".format(alpha[..., None].shape))
         # print(
         #     "torch.eye(Kuu.shape[-1])[None, ...] {}".format(
@@ -306,12 +341,12 @@ def predict_from_duals(
         #     )
         # )
         # beta_u = torch.linalg.solve(Kuu, Iu) - torch.linalg.solve(beta + Kuu, Iu)
-        Kux = torch.transpose(Kxu, -1, -2)
+        # Kzx = torch.transpose(Kxz, -1, -2)
         # beta_u = Kux @ beta @ Kxu
         beta_u = beta
         print("beta_u {}".format(beta_u.shape))
-        print("Kuu {}".format(Kuu.shape))
-        print("Iu {}".format(Iu.shape))
+        print("Kzz {}".format(Kzz.shape))
+        print("Iz {}".format(Iz.shape))
 
         # m_u = (
         #     V
@@ -327,7 +362,7 @@ def predict_from_duals(
         # f_mean = Kxu @ torch.linalg.solve((Kuu), Iu) @ m_u
         # f_mean = f_mean[..., 0].T
 
-        f_mean = Kxu @ torch.linalg.solve((Kuu + beta_u), Iu)
+        f_mean = Kxz @ torch.linalg.solve((Kzz + beta_u), Iz)
         print("f_mean {}".format(f_mean.shape))
         f_mean = f_mean @ alpha[..., None]
         print("f_mean {}".format(f_mean.shape))
@@ -335,8 +370,9 @@ def predict_from_duals(
         print("f_mean {}".format(f_mean.shape))
 
         if full_cov:
+            raise NotImplementedError
             f_cov = Kxx - torch.matmul(
-                torch.matmul(Kxu, iBKuu), torch.transpose(Kxu, -1, -2)
+                torch.matmul(Kxz, iBKuu), torch.transpose(Kxz, -1, -2)
             )
             print("f_cov full_cov {}".format(f_cov.shape))
             return f_mean, f_cov
@@ -346,9 +382,9 @@ def predict_from_duals(
             #     torch.matmul(Kxu, iBKuu), torch.transpose(Kxu, -1, -2)
             # )
             # beta_u = torch.linalg.solve(Kuu, Iu) - torch.linalg.solve(beta + Kuu, Iu)
-            tmp = torch.linalg.solve(Kuu, Iu) - torch.linalg.solve(beta_u + Kuu, Iu)
+            tmp = torch.linalg.solve(Kzz, Iz) - torch.linalg.solve(beta_u + Kzz, Iz)
             f_cov = Kxx - torch.matmul(
-                torch.matmul(Kxu, tmp), torch.transpose(Kxu, -1, -2)
+                torch.matmul(Kxz, tmp), torch.transpose(Kxz, -1, -2)
             )
             # f_cov = Kxx - torch.matmul(
             #     Kxu, torch.matmul(beta_u, torch.transpose(Kxu, -1, -2))
@@ -454,11 +490,13 @@ def calc_sparse_dual_params(
 ) -> Tuple[AlphaInducing, BetaInducing]:
     num_inducing, input_dim = Z.shape
     X, Y = train_data
+    # if Y.ndim == 1:
+    #     Y = Y[..., None]
     assert X.ndim == 2
-    assert Y.ndim == 2
+    # assert Y.ndim == 2
     assert X.shape[0] == Y.shape[0]
     assert X.shape[1] == input_dim
-    Kuf = kernel(Z, X)
+    Kzx = kernel(Z, X)
     print("Kuf {}".format(Kuf.shape))
     F = network(X)
     print("F {}".format(F.shape))
@@ -466,7 +504,7 @@ def calc_sparse_dual_params(
     print("lambda_1 {}".format(lambda_1.shape))
     print("lambda_2 {}".format(lambda_2.shape))
     alpha, beta = calc_sparse_dual_params_from_lambdas(
-        lambda_1=lambda_1, lambda_2=lambda_2, Kuf=Kuf
+        lambda_1=lambda_1, lambda_2=lambda_2, Kzx=Kzx
     )
     print("alpha {}".format(alpha.shape))
     print("beta {}".format(beta.shape))
@@ -476,17 +514,17 @@ def calc_sparse_dual_params(
 def calc_sparse_dual_params_from_lambdas(
     lambda_1: Lambda_1,
     lambda_2: Lambda_2,
-    Kuf: TensorType["output_dim", "num_inducing", "num_data"],
+    Kzx: TensorType["output_dim", "num_inducing", "num_data"],
 ) -> Tuple[AlphaInducing, BetaInducing]:
     assert lambda_1.ndim == 2
     num_data, output_dim = lambda_1.shape
     assert lambda_2.ndim == 3
     assert lambda_2.shape[0] == num_data
     assert lambda_2.shape[1] == lambda_2.shape[2] == output_dim
-    assert Kuf.ndim == 3
-    assert Kuf.shape[0] == output_dim
-    assert Kuf.shape[2] == num_data
-    alpha_u = torch.matmul(Kuf, torch.transpose(lambda_1, -1, -2)[..., None])[..., 0]
+    assert Kzx.ndim == 3
+    assert Kzx.shape[0] == output_dim
+    assert Kzx.shape[2] == num_data
+    alpha_u = torch.matmul(Kzx, torch.transpose(lambda_1, -1, -2)[..., None])[..., 0]
     print("alpha_u {}".format(alpha_u.shape))
     lambda_2_diag = torch.diagonal(lambda_2, dim1=-2, dim2=-1)  # [num_data, output_dim]
     # TODO broadcast lambda_2 correctly for multiple output dims
@@ -495,12 +533,12 @@ def calc_sparse_dual_params_from_lambdas(
     #     torch.transpose(lambda_2_diag, -1, -2) ** -1 * torch.repeat(torch.eye(num_data)[None, ...]
     # )  # [output_dim, num_data, num_data]
     # print("inv_lambda_2 {}".format(inv_lambda_2.shape))
-    inv_lambda_2 = torch.diag_embed(lambda_2_diag.T)
-    print("inv_lambda_2 {}".format(inv_lambda_2.shape))
-    print("inv_lambda_2 {}".format(inv_lambda_2))
+    lambda_2 = torch.diag_embed(lambda_2_diag.T)
+    print("lambda_2 {}".format(lambda_2.shape))
+    # print("lambda_2 {}".format(lambda_2))
     beta_u = torch.matmul(
-        torch.matmul(Kuf, inv_lambda_2),
-        torch.transpose(Kuf, -1, -2),
+        torch.matmul(Kzx, lambda_2),
+        torch.transpose(Kzx, -1, -2),
     )
     print("beta_u {}".format(beta_u.shape))
     return alpha_u, beta_u
@@ -512,34 +550,38 @@ def calc_lambdas(
     nll: Callable[[FuncData, OutputData], float],
     likelihood,
 ) -> Tuple[Lambda_1, Lambda_2]:
-    assert Y.ndim == 2
+    # assert Y.ndim == 2
     assert F.ndim == 2
     assert Y.shape[0] == F.shape[0]
+    nll = likelihood.nn_loss
     #  assert Y.shape[1] == F.shape[1]
     nll_jacobian_fn = jacrev(nll)
     nll_hessian_fn = torch.vmap(hessian(nll))
 
     # nll_jacobian_fn = torch.gradient(nll)
     # lambda_1 = nll_jacobian_fn(F, Y)
-    # lambda_2 = nll_hessian_fn(F, Y)  # [num_data, output_dim, output_dim]
-    # lambda_1 = -1 * nll_jacobian_fn(F, Y)  # [num_data, output_dim]
+    lambda_2 = 2 * nll_hessian_fn(F, Y)  # [num_data, output_dim, output_dim]
+    lambda_1 = -1 * nll_jacobian_fn(F, Y)  # [num_data, output_dim]
     # lambda_2 = torch.vmap(likelihood.Hessian, in_dims=0)(F)
     # lambda_1 = -torch.vmap(likelihood.residual, in_dims=0)(F)
     lambda_2 = likelihood.Hessian(f=F)
-    lambda_1 = -likelihood.residual(y=Y, f=F)
-    # lambda_1 = -likelihood.residual(F)
+    # lambda_1 = likelihood.residual(y=Y, f=F)
+    # lambda_1 = likelihood.residual(y=Y, f=F)
     print("lambda_1 {}".format(lambda_1.shape))
     print("lambda_2 {}".format(lambda_2.shape))
+    print("lambda_1 {}".format(lambda_1))
+    print("lambda_2 {}".format(lambda_2))
     # exit()
-    lambda_2_diag = torch.diagonal(lambda_2, dim1=-1, dim2=-2)  # [num_data, output_dim]
-    print("Y-lambda_1 {}".format(Y - lambda_1))
+    lambda_2_diag = torch.diagonal(lambda_2, dim1=-2, dim2=-1)  # [num_data, output_dim]
+    # print("Y-lambda_1 {}".format(Y - lambda_1))
     print("lambda_2_diag {}".format(lambda_2_diag.shape))
     print("F {}".format(F.shape))
     lambda_1 += F * lambda_2_diag
+    # lambda_1 = F * lambda_2_diag
     # print("lambda_1 {}".format(lambda_1.shape))
     # print("lambda_1 {}".format(lambda_1))
     # print("Y {}".format(Y))
-    print("Y-lambda_1 {}".format(Y - lambda_1))
+    # print("Y-lambda_1 {}".format(Y - lambda_1))
     # lambda_1, lambda_2 = [], []
     # TODO we can do better than a for loop...
     # for y, f in zip(Y, F):

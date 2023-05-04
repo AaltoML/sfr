@@ -95,15 +95,19 @@ class Gaussian(Likelihood):
     ):
         if f_var is None:
             f_var = torch.zeros_like(f_mean)
-        return f_mean, f_var + self.sigma_noise
+        return f_mean, f_var + self.sigma_noise**2
 
     def log_prob(self, f: FuncData, y: OutputData):
         # TODO check this works
         return torch.distributions.Normal(f, self.sigma_noise).log_prob(y)
 
     def nn_loss(self, f: FuncData, y: OutputData):
-        loss = torch.nn.MSELoss()(f, y)
-        return 0.5 * loss * y.shape[-1]
+        # loss = torch.nn.MSELoss()(f, y)
+        # loss = torch.nn.MSELoss(reduction="sum")(f, y)
+        # loss = torch.nn.MSELoss(reduction="mean")(f, y)
+        # return 0.5 * loss * y.shape[-1]
+        # return -torch.sum(self.log_prob(f=f, y=y))
+        return -torch.mean(self.log_prob(f=f, y=y))
 
     def residual(self, y, f):
         # TODO should this just be y?
@@ -124,7 +128,8 @@ def inv_probit(x):
 class BernoulliLh(Likelihood):
     def log_prob(self, f: FuncData, y: OutputData):
         dist = Bernoulli(logits=f)
-        return torch.sum(dist.log_prob(y))
+        return dist.log_prob(y)
+        # return torch.sum(dist.log_prob(y))
 
     def prob(self, f_mean: FuncMean, f_var: FuncVar):
         return inv_probit(f_mean / torch.sqrt(1 + f_var))
@@ -132,7 +137,8 @@ class BernoulliLh(Likelihood):
         # return torch.sum(dist.log_prob(y))
 
     def Hessian(self, f):
-        p = torch.clamp(self.inv_link(f), EPS, 1 - EPS)
+        p = self.inv_link(f)
+        # p = torch.clamp(self.inv_link(f), EPS, 1 - EPS)
         H = p * (1 - p)
         return torch.diag_embed(H)
 
@@ -144,20 +150,28 @@ class BernoulliLh(Likelihood):
         return y - self.inv_link(f)
 
     def nn_loss(self, f: FuncData, y: OutputData):
+        print("calling nn_loss")
         # print("nn_l9oss")
-        # print("f {}".format(f.shape))
-        # print("y {}".format(y.shape))
+        print("f {}".format(f.shape))
+        print("y {}".format(y.shape))
+        # print("f {}".format(f))
+        # print("y {}".format(y))
         # print("f {}".format(f))
         # torch.math.log(torch.where(torch.equal(x, 1), p, 1 - p))
         # print("log(f) {}".format(torch.log(f)))
         # log_prob = y * torch.log(f) + (1 - y) * torch.log(1 - f)
         # log_prob = (1 - y) * torch.log(f) + (y) * torch.log(1 - f)
         # return -torch.sum(log_prob)
-        return self.nn_loss_func()(f, y)
+        # return self.nn_loss_func()(f, y)
+        # return -torch.sum(self.log_prob(f=f, y=y))
+        return torch.nn.functional.binary_cross_entropy(
+            self.inv_link(f), y, reduction="mean"
+        )
 
     def nn_loss_func(self):
-        # return lambda logits, y: -torch.sum(self.log_prob(logits, y))
-        return lambda logits, y: -torch.mean(self.log_prob(logits, y))
+        return lambda logits, y: -torch.sum(self.log_prob(logits, y))
+        # return lambda logits, y: -torch.mean(self.log_prob(logits, y))
+        # return lambda logits, y: -torch.mean(self.log_prob(logits, y))
 
     # raise ValueError('No extendable nn loss for backpack in Bernoulli case')
 
@@ -165,43 +179,70 @@ class BernoulliLh(Likelihood):
 class CategoricalLh(Likelihood):
     def log_prob(self, f: FuncData, y: OutputData):
         dist = Categorical(logits=f)
-        return torch.sum(dist.log_prob(y))
+        return dist.log_prob(y)
+        # return torch.sum(dist.log_prob(y))
 
     def residual(self, y, f):
+        print("RESIDUAL")
         print("y {}".format(y.shape))
         print("f {}".format(f.shape))
+        print("f {}".format(f))
         y_expand = torch.zeros_like(f)
-        print("y_expand {}".format(y_expand.shape))
+        # y_expand = torch.ones_like(f)
+        # print("y_expand {}".format(y_expand.shape))
+        # print("len(y) {}".format(len(y)))
         ixs = torch.arange(0, len(y)).long()
-        print("ixs {}".format(ixs.shape))
-        # y_expand[ixs, y.long()] = 1
-        y_expand[:, y.long()] = 1
-        print("y_expand {}".format(y_expand.shape))
+        # print("y.long {}".format(y))
+        # print("ixs {}".format(ixs.shape))
+        # ixs = self.inv_link(f) < 0.5
+        # print("ixs {}".format(ixs.shape))
+        # y_expand[ixs] = 1
+        y_expand[ixs, y.long()] = 1
+        # y_expand[ixs, y.long()] = 0
+        # y_expand = torch.ones_like(f)
+        # y_expand[y.long()] = 0
+        # y_expand[..., y[:, 0].long()] = 1
+        # y_expand = torch.ones_like(f)
+        # y_expand[:, y.long()] = 1
+        print("y_expand {}".format(y_expand))
         print("self.inv_link(f) {}".format(self.inv_link(f).shape))
         return y_expand - self.inv_link(f)
 
     def Hessian(self, f):
         print("self.inv_link(f) {}".format(self.inv_link(f)))
         p = torch.clamp(self.inv_link(f), EPS, 1 - EPS)
+        # p = self.inv_link(f)
+        print("p {}".format(p.shape))
         H = torch.diag_embed(p) - torch.einsum("ij,ik->ijk", p, p)
+        print("H {}".format(H.shape))
         return H
 
     def inv_link(self, f):
-        return torch.nn.Softmax(dim=-1)(f)
+        return torch.nn.functional.softmax(f, dim=-1)
+        # return torch.nn.Softmax(dim=-1)(f)
 
     def nn_loss(self, f: FuncData, y: OutputData):
-        # return torch.nn.CrossEntropyLoss(reduction="sum")(f, y)
-        #    y_onehot =
+        # if f.ndim == 1:
+        #     f = f[None, ...]
+        # if y.ndim == 1:
+        #     y = y[None, ...]
+        print("YOYOYO")
+        print("f {}".format(f.shape))
+        print("y {}".format(y.shape))
+        # # return torch.nn.CrossEntropyLoss(reduction="sum")(f, y)
+        # #    y_onehot =
         # log_probs = torch.sum(y * torch.log(f), axis=-1)
+        # # print("log_probs {}".format(log_probs.shape))
+        # return -torch.mean(log_probs)
         # return -torch.sum(log_probs)
+        # return torch.nn.CrossEntropyLoss(reduction="sum")(f, y)
+        # return -torch.sum(self.log_prob(f=f, y=y))
+        # print("self.log_prob(f=f, y=y) {}".format(self.log_prob(f=f, y=y).shape))
+        # return -torch.mean(self.log_prob(f=f, y=y))
         return torch.nn.CrossEntropyLoss(reduction="mean")(f, y)
+        # return torch.nn.CrossEntropyLoss(reduction="mean")(f, y)
+        # return torch.nn.functional.cross_entropy(f, y)
+        # return torch.nn.CrossEntropyLoss(reduction="mean")
 
-    def nn_loss_func(self):
-        return torch.nn.CrossEntropyLoss(reduction="sum"), 1
-
-
-class Softmax(nn.Module):
-    def nll(f: FuncData, y: OutputData):
-        # return 0.5 * torch.nn.MSELoss(reduction="sum")(f, y)
-        loss = torch.nn.MSELoss()(f, y)
-        return 0.5 * loss * y.shape[-1]
+    # def nn_loss_func(self):
+    #     return torch.nn.CrossEntropyLoss(reduction="mean"), 1

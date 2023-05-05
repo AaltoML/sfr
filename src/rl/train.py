@@ -157,6 +157,7 @@ def train(cfg: DictConfig):
                         reset_updates = True
                     else:
                         reset_updates = False
+                        logger.info("Not updating models")
                     #     # if cfg.online_updates and t > 1:
                     #     # transition_data_new = (state_action_inputs, state_diff_outputs)
                     #     # reward_data_new = (state_action_inputs, reward_outputs)

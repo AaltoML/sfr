@@ -77,8 +77,6 @@ class NTKSVGP(nn.Module):
         indices = torch.randperm(num_data)[: self.num_inducing]
         # TODO will this work for image classification??
         self.Z = X_train[indices].to(X_train.device)
-        print("DEVICE X_train {}".format(X_train.device))
-        print("DEVICE self.Z {}".format(self.Z.device))
         # self.Z = X_train
         assert self.Z.ndim == 2
         # num_inducing = 100
@@ -164,9 +162,7 @@ class NTKSVGP(nn.Module):
 
     @torch.no_grad()
     def predict_mean(self, x: TestInput) -> FuncMean:
-        print("DEVICE x {}".format(x.device))
         x = x.to(self.Z.device)
-        print("DEVICE x {}".format(x.device))
         # Kxx = self.kernel(x, x)
         # print("Kxx {}".format(Kxx.shape))
         Kxz = self.kernel(x, self.Z)
@@ -600,19 +596,13 @@ def calc_sparse_dual_params(
     # assert Y.ndim == 2
     assert X.shape[0] == Y.shape[0]
     assert X.shape[1] == input_dim
-    print("DEVICE Z {}".format(Z.device))
-    print("DEVICE X {}".format(X.device))
     Kzx = kernel(Z, X)
-    print("DEVICE hm Kzx {}".format(Kzx.device))
     # print("Kzx {}".format(Kzx.shape))
     F = network(X)
-    print("DEVICE F {}".format(F.device))
     # print("F {}".format(F.shape))
     lambda_1, lambda_2 = calc_lambdas(Y=Y, F=F, nll=nll, likelihood=likelihood)
     # print("lambda_1 {}".format(lambda_1.shape))
     # print("lambda_2 {}".format(lambda_2.shape))
-    print("DEVICE hm lambda_1 {}".format(lambda_1.device))
-    print("DEVICE hm lambda_2 {}".format(lambda_2.device))
     alpha, beta = calc_sparse_dual_params_from_lambdas(
         lambda_1=lambda_1, lambda_2=lambda_2, Kzx=Kzx
     )
@@ -634,9 +624,6 @@ def calc_sparse_dual_params_from_lambdas(
     assert Kzx.ndim == 3
     assert Kzx.shape[0] == output_dim
     assert Kzx.shape[2] == num_data
-    print("hello")
-    print(Kzx.device)
-    print(lambda_1.device)
     alpha_u = torch.matmul(Kzx, torch.transpose(lambda_1, -1, -2)[..., None])[..., 0]
     # print("alpha_u {}".format(alpha_u.shape))
     lambda_2_diag = torch.diagonal(lambda_2, dim1=-2, dim2=-1)  # [num_data, output_dim]

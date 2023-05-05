@@ -69,7 +69,7 @@ def create_ntksvgp(X_train, y_train, model, likelihood, prior_prec, n_sparse=0.5
     print(f'Prior prec: {prior_prec}')
  #   if n_classes == 1:
   #      n_classes = 2
-    prior = ntksvgp.priors.Gaussian(model, delta=prior_prec) 
+    prior = ntksvgp.priors.Gaussian(params=model.parameters, delta=prior_prec) 
     svgp = NTKSVGP(network=model, prior=prior, output_dim=n_classes, likelihood=likelihood, num_inducing=num_inducing)
     svgp.set_data(data)
     return svgp

@@ -9,6 +9,9 @@ from torch.distributions import Bernoulli, Categorical
 
 
 EPS = 1e-7
+# EPS = 0.01
+EPS = 0.01
+# print(EPS)
 
 # class Likelihood:
 #     # def __init__(self, network: nn.Module):
@@ -138,8 +141,8 @@ class BernoulliLh(Likelihood):
         # return torch.sum(dist.log_prob(y))
 
     def Hessian(self, f):
-        p = self.inv_link(f)
-        # p = torch.clamp(self.inv_link(f), EPS, 1 - EPS)
+        # p = self.inv_link(f)
+        p = torch.clamp(self.inv_link(f), EPS, 1 - EPS)
         H = p * (1 - p)
         return torch.diag_embed(H)
 

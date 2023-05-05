@@ -95,8 +95,8 @@ if __name__ == "__main__":
     network = torch.nn.Sequential(
         torch.nn.Linear(1, width),
         # torch.nn.ReLU(),
-        # torch.nn.Tanh(),
-        # torch.nn.Linear(width, width),
+        torch.nn.Tanh(),
+        torch.nn.Linear(width, width),
         torch.nn.Tanh(),
         # torch.nn.Sigmoid(),
         torch.nn.Linear(width, 2),
@@ -167,7 +167,8 @@ if __name__ == "__main__":
         prior=prior,
         likelihood=likelihood,
         output_dim=2,
-        num_inducing=50,
+        num_inducing=X_train.shape[0],
+        # num_inducing=50,
         # jitter=1e-6,
         jitter=1e-4,
     )
@@ -184,19 +185,19 @@ if __name__ == "__main__":
     )
 
     # f_mean, f_var = ntksvgp.predict_f(X_test_short)
-    f_mean, f_var = ntksvgp.predict_f(X_test)
+    f_mean, f_var, _ = ntksvgp.predict_f(X_test)
     print("MEAN {}".format(f_mean.shape))
     print("VAR {}".format(f_var.shape))
     print("X_test_short {}".format(X_test_short.shape))
     print(X_test_short.shape)
 
     ntksvgp.update(x=X_new, y=Y_new)
-    f_mean_new, f_var_new = ntksvgp.predict_f(X_test)
+    f_mean_new, f_var_new, _ = ntksvgp.predict_f(X_test)
     print("MEAN NEW_2 {}".format(f_mean_new.shape))
     print("VAR NEW_2 {}".format(f_var_new.shape))
 
     ntksvgp.update(x=X_new_2, y=Y_new_2)
-    f_mean_new_2, f_var_new_2 = ntksvgp.predict_f(X_test)
+    f_mean_new_2, f_var_new_2, _ = ntksvgp.predict_f(X_test)
     print("MEAN NEW_2 {}".format(f_mean_new_2.shape))
     print("VAR NEW_2 {}".format(f_var_new_2.shape))
 

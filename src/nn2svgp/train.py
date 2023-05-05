@@ -95,6 +95,7 @@ if __name__ == "__main__":
     # X_train = torch.rand((50, 1)) * 2 - 1
     # X_train = torch.rand((50, 1)) * 2
     X_train = torch.rand((100, 1)) * 2
+    X_train = torch.rand((2000, 1)) * 2
     print("X_train {}".format(X_train.shape))
     X_train_clipped_1 = X_train[X_train < 1.5].reshape(-1, 1)
     X_train_clipped_2 = X_train[X_train > 1.9].reshape(-1, 1)
@@ -141,7 +142,8 @@ if __name__ == "__main__":
         prior=prior,
         likelihood=likelihood,
         output_dim=3,
-        num_inducing=50,
+        num_inducing=500,
+        # num_inducing=50,
         # jitter=1e-6,
         jitter=1e-4,
     )
@@ -151,6 +153,7 @@ if __name__ == "__main__":
         ntksvgp=ntksvgp,
         data=data,
         num_epochs=2500,
+        # num_epochs=1,
         batch_size=batch_size,
         learning_rate=1e-2,
     )

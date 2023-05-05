@@ -167,8 +167,9 @@ def main(dataset_name, ds_train, ds_test, model_name, rerun, batch_size, seed, n
         # SVGP
         logging.info('SVGP performance')
         data = (X_train, y_train)
-        prior = ntksvgp.priors.Gaussian(model, delta=delta)
-        svgp = NTKSVGP(network=model, prior=prior, likelihood=lh, num_inducing=n_inducing)
+        prior = ntksvgp.priors.Gaussian(params=model.parameters, delta=delta)
+        output_dim = model(X_train[:10].shape[-1])
+        svgp = NTKSVGP(network=model, prior=prior, output_dim=output_dim, likelihood=lh, num_inducing=n_inducing)
         svgp.set_data((X_train, y_train))
         gstar_te, yte = get_svgp_predictive(test_loader, svgp)
         gstar_va, yva = get_svgp_predictive(val_loader, svgp)

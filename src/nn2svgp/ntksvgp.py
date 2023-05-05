@@ -77,6 +77,8 @@ class NTKSVGP(nn.Module):
         indices = torch.randperm(num_data)[: self.num_inducing]
         # TODO will this work for image classification??
         self.Z = X_train[indices].to(X_train.device)
+        print("DEVICE X_train {}".format(X_train.device))
+        print("DEVICE self.Z {}".format(self.Z.device))
         # self.Z = X_train
         assert self.Z.ndim == 2
         # num_inducing = 100

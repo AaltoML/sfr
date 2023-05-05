@@ -69,7 +69,7 @@ class NTKSVGP(nn.Module):
         # assert X_train.ndim >= 2
         # assert Y_train.ndim == 2
         assert X_train.shape[0] == Y_train.shape[0]
-        self.train_data = train_data
+        self.train_data = (X_train, Y_train)
         # num_data, input_dim = X_train.shape
         num_data = Y_train.shape[0]
         # print("Y_train.shape {}".format(Y_train.shape))

@@ -43,7 +43,8 @@ def train(
                 "Epoch: {} | Batch: {} | Loss: {}".format(epoch_idx, batch_idx, loss)
             )
 
-    ntksvgp.build_dual_svgp()
+    ntksvgp.set_data(data)
+    # ntksvgp.build_dual_svgp()
     return {"loss": loss_history}
 
 
@@ -69,24 +70,26 @@ if __name__ == "__main__":
             return torch.stack([f1[:, 0], f2[:, 0], f3[:, 0]], -1)
 
     delta = 0.00005
+    # delta = 0.00001
+    # delta = 0.000005
     # delta = 0.001
     # delta = 1.0
     # delta = 0.01
+    # network = torch.nn.Sequential(
+    #     torch.nn.Linear(1, 64),
+    #     # torch.nn.Sigmoid(),
+    #     torch.nn.ReLU(),
+    #     torch.nn.Linear(64, 3),
+    # )
     network = torch.nn.Sequential(
         torch.nn.Linear(1, 64),
+        # torch.nn.ReLU(),
         # torch.nn.Sigmoid(),
-        torch.nn.ReLU(),
-        torch.nn.Linear(64, 3),
-    )
-    network = torch.nn.Sequential(
-        torch.nn.Linear(1, 64),
-        # torch.nn.ReLU(),
-        torch.nn.Sigmoid(),
-        # torch.nn.Tanh(),
+        torch.nn.Tanh(),
         torch.nn.Linear(64, 64),
-        # torch.nn.Tanh(),
+        torch.nn.Tanh(),
         # torch.nn.ReLU(),
-        torch.nn.Sigmoid(),
+        # torch.nn.Sigmoid(),
         torch.nn.Linear(64, 3),
     )
     print("network: {}".format(network))
@@ -95,6 +98,7 @@ if __name__ == "__main__":
     # X_train = torch.rand((50, 1)) * 2 - 1
     # X_train = torch.rand((50, 1)) * 2
     X_train = torch.rand((100, 1)) * 2
+    X_train = torch.rand((200, 1)) * 2
     print("X_train {}".format(X_train.shape))
     X_train_clipped_1 = X_train[X_train < 1.5].reshape(-1, 1)
     X_train_clipped_2 = X_train[X_train > 1.9].reshape(-1, 1)
@@ -141,21 +145,22 @@ if __name__ == "__main__":
         prior=prior,
         likelihood=likelihood,
         output_dim=3,
+        # num_inducing=500,
         num_inducing=50,
+        # num_inducing=20,
         # jitter=1e-6,
         jitter=1e-4,
     )
 
-    ntksvgp.set_data((X_train, Y_train))
+    # ntksvgp.set_data((X_train, Y_train))
     metrics = train(
         ntksvgp=ntksvgp,
         data=data,
         num_epochs=2500,
+        # num_epochs=1,
         batch_size=batch_size,
         learning_rate=1e-2,
     )
-
-    ntksvgp.set_data((X_train, Y_train))
 
     f_mean, f_var = ntksvgp.predict_f(X_test_short)
     print("MEAN {}".format(f_mean.shape))
@@ -176,7 +181,7 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     plot_var = False
-    plot_var = True
+    # plot_var = True
     save_dir = "figs"
 
     def plot_output(i):

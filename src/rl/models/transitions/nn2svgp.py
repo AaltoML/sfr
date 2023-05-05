@@ -16,6 +16,7 @@ from .base import TransitionModel
 
 def init(
     network: torch.nn.Module,
+    state_dim: int,
     learning_rate: float = 1e-2,
     num_iterations: int = 1000,
     batch_size: int = 64,
@@ -34,6 +35,7 @@ def init(
         # train_data=(X_train, Y_train),
         prior=prior,
         likelihood=likelihood,
+        output_dim=state_dim,
         num_inducing=num_inducing,
         # jitter=1e-6,
         jitter=jitter,
@@ -48,11 +50,13 @@ def init(
     def predict_fn(state: State, action: Action) -> StatePrediction:
         state_action_input = torch.concat([state, action], -1)
         # delta_state = network.forward(state_action_input)
-        delta_state_mean, delta_state_var = ntksvgp.predict_f(state_action_input)
+        # delta_state_mean, delta_state_var = ntksvgp.predict_f(state_action_input)
+        delta_state_mean = ntksvgp.predict_mean(state_action_input)
         # delta_state_mean, delta_state_var, noise_var = svgp_predict_fn(
         return StatePrediction(
             state_mean=state + delta_state_mean,
-            state_var=delta_state_var,
+            state_var=0,
+            # state_var=delta_state_var,
             noise_var=0,
             # state_var=delta_state_var,
             # noise_var=noise_var,

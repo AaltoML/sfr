@@ -164,6 +164,9 @@ class NTKSVGP(nn.Module):
 
     @torch.no_grad()
     def predict_mean(self, x: TestInput) -> FuncMean:
+        print("DEVICE x {}".format(x.device))
+        x = x.to(self.Z.device)
+        print("DEVICE x {}".format(x.device))
         # Kxx = self.kernel(x, x)
         # print("Kxx {}".format(Kxx.shape))
         Kxz = self.kernel(x, self.Z)

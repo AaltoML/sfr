@@ -77,7 +77,7 @@ extras_require = {
         "moviepy==1.0.3",  # rendering
         "tikzplotlib==0.10.1",
         "tabulate==0.9.0",
-        # "gym[classic_control]==0.26.2",
+        "gym[classic_control]==0.26.2",
     ],
 }
 

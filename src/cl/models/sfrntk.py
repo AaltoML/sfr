@@ -46,6 +46,7 @@ class SFRNTK(ContinualModel):
 
     def __init__(self, backbone, loss, args, transform, dataset):
         # Note: this overrides dataset.loss
+        # python utils/main.py  --model=sfrntk --dataset=seq-mnist --optimizer=adam --lr=3e-4 --buffer_size=200 --tau=0.1 --delta=1e-4 --jitter=1e-4 --nowand=1 --seed=32
         super().__init__(backbone, loss_cl, args, transform)
         self.nll_fn = CategoricalLh()
         self.prior_fn = Gaussian(self.net.parameters, delta=args.delta)
@@ -171,7 +172,6 @@ class SFRNTK(ContinualModel):
                 subset_out_dim=np.unique(train_loader.dataset.targets),
                 device=self.device
             ) 
-            print(beta.shape)
 
             z_inputs = z_inputs.to(self.device)
             for class_out in range(self.n_classes):
@@ -179,11 +179,9 @@ class SFRNTK(ContinualModel):
 
             print(f"Classes task {self.task_cnt}: {np.unique(train_loader.dataset.targets)}")
             for class_out in  np.unique(train_loader.dataset.targets):# range(self.n_classes): #
-
+            # for class_out in range(self.n_classes):
                 Kzz = ntk_single(z_inputs, z_inputs, class_out)
-                print(Kzz.shape)
                 
-
                 A_k = beta[class_out].cpu()
                 self.A_matrix[self.task_cnt, class_out] = A_k
 
@@ -192,11 +190,11 @@ class SFRNTK(ContinualModel):
                 Kzz = Kzz.cpu().to(torch.float64)
                 Kzz = (Kzz + Kzz.T)/2 + torch.eye(Kzz.shape[0]) * self.jitter
                 det_Kzz = 2 * np.sum(np.log(np.diag(np.linalg.cholesky(Kzz))))
-                print(f"det Kzz: {det_Kzz}")
+                # print(f"det Kzz: {det_Kzz}")
 
                 A_k = (A_k + torch.eye(Kzz.shape[0]) * self.jitter).numpy()
                 det_A = 2 * np.sum(np.log(np.diag(np.linalg.cholesky(A_k))))
-                print(f"det A_k: {det_A}")
+                # print(f"det A_k: {det_A}")
 
                 Lz = scipy.linalg.cho_factor(Kzz)
                 iKA = scipy.linalg.cho_solve(Lz, A_k)
@@ -208,6 +206,8 @@ class SFRNTK(ContinualModel):
 
                 self.Sigma_inv[self.task_cnt, class_out] = torch.from_numpy(Sigma_inv_k)
                 print(torch.diag(self.Sigma_inv[self.task_cnt, class_out]))
+                print(torch.max(self.Sigma_inv[self.task_cnt, class_out]))
+                print(torch.min(self.Sigma_inv[self.task_cnt, class_out]))
 
                 # torch.set_default_dtype(torch.float64)
                 # A_k = A_k.to(torch.float64).to(self.device)

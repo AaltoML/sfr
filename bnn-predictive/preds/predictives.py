@@ -54,6 +54,11 @@ def svgp_sampling_predictive(X, svgp, likelihood, mc_samples=100, no_link=False)
     """Returns the sparse data used for convenience."""
     link = (lambda x: x) if no_link else likelihood.inv_link
     f_mu, f_var = svgp.predict_f(X)
+    print('Inside SVGP predictive')
+    print(svgp.network(X).mean())
+    print(f_mu.mean())
+    print(f_var.mean())
+    print(f_var.shape)
     fs = Normal(f_mu, torch.sqrt(f_var.clamp(1e-5)))
     return link(fs.sample((mc_samples,)))
 

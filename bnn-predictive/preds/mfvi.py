@@ -2,12 +2,13 @@ import torch
 from torch.optim import Adam
 
 from preds.models import SiBayesianMLP
-from src import BernoulliLh, Gaussian
+from src import BernoulliLh
+import src as ntksvgp
 
 
 def preds_bbb(model, X, n_samples, likelihood):
     gs = torch.stack([likelihood.inv_link(model(X)) for _ in range(n_samples)])
-    if type(likelihood) is GaussianLh:
+    if type(likelihood) is ntksvgp.likelihoods.Gaussian:
         f_mu = gs.mean(dim=0)
         f_var = gs.var(dim=0)
         return f_mu, f_var
@@ -19,7 +20,7 @@ def preds_bbb(model, X, n_samples, likelihood):
 def run_bbb(ds_train, ds_test, ds_valid, prior_prec, device, likelihood, n_epochs, lr,
             n_samples_train=10, n_samples_pred=1000, n_layers=2, n_units=50, activation='tanh'):
     D = ds_train.data.shape[1]
-    if type(likelihood) is BernoulliLh or type(likelihood) is GaussianLh:
+    if type(likelihood) is BernoulliLh or type(likelihood) is ntksvgp.likelihoods.Gaussian:
         K = 1
     else:
         K = ds_train.C
@@ -30,7 +31,7 @@ def run_bbb(ds_train, ds_test, ds_valid, prior_prec, device, likelihood, n_epoch
     losses = []
     for i in range(n_epochs):
         optim.zero_grad()
-        neg_log_liks = [-likelihood.log_prob(y_train, model(X_train))
+        neg_log_liks = [-likelihood.log_prob(model(X_train), y_train)
                         for _ in range(n_samples_train)]
         neg_log_liks = torch.stack(neg_log_liks, dim=0)
         exp_neg_loglik = neg_log_liks.mean()

@@ -7,7 +7,8 @@ from torch.nn.utils import parameters_to_vector
 
 from preds.optimizers import LaplaceGGN, get_diagonal_ggn
 from preds.models import SiMLP
-from src import BernoulliLh, CategoricalLh
+from src import BernoulliLh, CategoricalLh, NTKSVGP
+import src as ntksvgp
 #from preds.likelihoods import BernoulliLh, CategoricalLh
 from preds.predictives import nn_sampling_predictive, linear_sampling_predictive, svgp_sampling_predictive
 from preds.utils import acc, nll_cls, ece
@@ -38,9 +39,9 @@ def preds_glm(X, model, likelihood, mu, Sigma_chol, samples):
     return gs.mean(dim=0)
 
 
-def preds_svgp(X, X_train, y_train, model, likelihood,prior_prec, n_sparse, sparse_points, samples=1000):
-    gs, sparse_data = svgp_sampling_predictive(X, X_train, y_train, model, likelihood, prior_prec, n_sparse,sparse_points, mc_samples=samples)
-    return gs.mean(dim=0), sparse_data
+def preds_svgp(X, svgp, likelihood,  samples=1000):
+    gs = svgp_sampling_predictive(X, svgp,likelihood, mc_samples=samples)
+    return gs.mean(dim=0)
 
 
 def preds_nn(X, model, likelihood, mu, Sigma_chol, samples):
@@ -51,15 +52,21 @@ def preds_nn(X, model, likelihood, mu, Sigma_chol, samples):
 def evaluate(p, y, likelihood, name, data):
     # returns are result dictionary with nll, acc, ece named
     res = dict()
-    print(y.shape)
-    print(p.shape)
     res[f'{data}_nll_{name}'] = nll_cls(p.squeeze(), y.squeeze(), likelihood)
     res[f'{data}_acc_{name}'] = acc(p.squeeze(), y.squeeze(), likelihood)
     res[f'{data}_ece_{name}'] = ece(p.squeeze(), y.squeeze(), likelihood, bins=10)
-    if name == 'svgp_ntk' and data == 'valid':
+    if name in ['svgp_ntk', 'map'] and data == 'valid':
+        print(f'Val result for: {name}')
         print(nll_cls(p.squeeze(), y.squeeze(), likelihood))
     return res
 
+def create_ntksvgp(X_train, y_train, model, likelihood, prior_prec, n_sparse=100):
+    data = (X_train, y_train)
+    num_inducing = int(n_sparse*X_train.shape[0])
+    prior = ntksvgp.priors.Gaussian(model, delta=prior_prec) # /X_train.shape[0])
+    svgp = NTKSVGP(network=model, prior=prior, likelihood=likelihood, num_inducing=num_inducing)
+    svgp.set_data(data)
+    return svgp
 
 def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, seed,
               n_layers=2, n_units=50, activation='tanh', n_sparse=0.25, n_samples=1000, refine=True):
@@ -109,10 +116,10 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
 
     
     # SVGP predictive
-    
-    fs_train, data_sparse = preds_svgp(X_train, X_train, y_train, model, likelihood,prior_prec,  n_sparse=n_sparse, samples=n_samples, sparse_points=None)
-    fs_test, _ = preds_svgp(X_test, X_train, y_train, model, likelihood, prior_prec, n_sparse=n_sparse,  samples=n_samples, sparse_points=data_sparse)
-    fs_valid, _ = preds_svgp(X_valid, X_train, y_train, model, likelihood, prior_prec,  n_sparse=n_sparse, samples=n_samples, sparse_points=data_sparse)
+    svgp = create_ntksvgp(X_train, y_train, model, likelihood, prior_prec, n_sparse=n_sparse)
+    fs_train = preds_svgp(X_train, svgp, likelihood, samples=n_samples)
+    fs_test = preds_svgp(X_test, svgp, likelihood, samples=n_samples)
+    fs_valid = preds_svgp(X_valid, svgp,  likelihood, samples=n_samples)
     res.update(evaluate(fs_train, y_train, lh, 'svgp_ntk', 'train'))
     res.update(evaluate(fs_test, y_test, lh, 'svgp_ntk', 'test'))
     res.update(evaluate(fs_valid, y_valid, lh, 'svgp_ntk', 'valid'))

@@ -36,7 +36,7 @@ def linear_sampling_predictive(X, model, likelihood, mu, Sigma_chol, mc_samples=
     Js, f = Jacobians_naive(model, X)
     if len(Js.shape) > 2:
         Js = Js.transpose(1, 2)
-    offset = f - Js @ theta_star
+    offset = f.squeeze()- Js @ theta_star
     if len(Sigma_chol.shape) == 2:
         covs = (Sigma_chol @ torch.randn(len(mu), mc_samples, device=mu.device)).t()
     elif len(Sigma_chol.shape) == 1:
@@ -50,21 +50,18 @@ def linear_sampling_predictive(X, model, likelihood, mu, Sigma_chol, mc_samples=
     return torch.stack(predictions)
 
 
-def svgp_sampling_predictive(X, X_train, y_train, model, likelihood, prior_prec, n_sparse=100, sparse_data=None, mc_samples=100, no_link=False):
+def svgp_sampling_predictive(X, svgp, likelihood, mc_samples=100, no_link=False):
     """Returns the sparse data used for convenience."""
     link = (lambda x: x) if no_link else likelihood.inv_link
-    data = (X_train, y_train)
-    num_inducing = int(n_sparse*X_train.shape[0])
-    prior = ntksvgp.priors.Gaussian(model, delta=prior_prec)
-    svgp = NTKSVGP(network=model, prior=prior, likelihood=likelihood, num_inducing=num_inducing)
-    svgp.set_data(data)
-    
-   # svgp = SVGPNTK(model, likelihood, data, prior_prec, n_sparse=n_sparse, sparse_data=sparse_data)
-    f_mu, f_var = svgp.predict(X)
-    f_mu = model(X) + f_mu
-    data_sparse = svgp.Z
-    fs = Normal(f_mu, f_var.clamp(1e-5))
-    return link(fs.sample((mc_samples,))), data_sparse
+    f_mu, f_var = svgp.predict_f(X)
+    print('Inside svgp:')
+    print(f_mu.shape)
+    print(f_var.shape)
+    print(f_mu.mean())
+    print(svgp.network(X).mean())
+    print(f_var.mean())
+    fs = Normal(f_mu, torch.sqrt(f_var.clamp(1e-5)))
+    return link(fs.sample((mc_samples,)))
 
 
 def functional_sampling_predictive(X, model, likelihood, mu, Sigma, mc_samples=1000, no_link=False):

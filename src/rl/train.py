@@ -19,7 +19,6 @@ torch.set_default_dtype(torch.float64)
 
 import src
 import torchrl
-import utils
 import wandb
 from dm_env import specs, StepType
 from omegaconf import DictConfig, OmegaConf
@@ -79,7 +78,7 @@ def train(cfg: DictConfig):
         )
 
     print("Making recorder")
-    video_recorder = utils.VideoRecorder(work_dir) if cfg.save_video else None
+    video_recorder = src.rl.utils.VideoRecorder(work_dir) if cfg.save_video else None
     print("Made recorder")
 
     # Create replay buffer

@@ -27,7 +27,7 @@ def train(model, likelihood, X_train, y_train, optimizer, n_epochs):
         def closure():
             model.zero_grad()
             f = model(X_train)
-            return torch.sum(likelihood.log_prob(f, y_train))
+            return torch.mean(likelihood.log_prob(f, y_train)), X_train.shape[0]
         loss = optimizer.step(closure)
         losses.append(loss)
     optimizer.post_process(model, likelihood, [(X_train, y_train)])

@@ -70,10 +70,10 @@ class LaplaceGGN(Adam):
 
     def step(self, closure):
         # compute gradients on network using our standard closures
-        log_lik = closure()
+        log_lik, n_data = closure()
         params = parameters_to_vector(self.param_groups[0]['params'])
         prior_prec = self.state['prior_prec']
-        weight_loss = 0.5 * params @ prior_prec @ params
+        weight_loss = 0.5 * params @ prior_prec @ params / n_data
         loss = - log_lik + weight_loss
         loss.backward()
         super(LaplaceGGN, self).step()

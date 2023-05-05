@@ -78,6 +78,9 @@ def inv_probit(x):
 
 
 class BernoulliLh(Likelihood):
+    def __init__(self, EPS: float = 0.01):
+        self.EPS = EPS
+
     def log_prob(self, f: FuncData, y: OutputData):
         dist = Bernoulli(logits=f)
         return dist.log_prob(y)
@@ -90,7 +93,7 @@ class BernoulliLh(Likelihood):
 
     def Hessian(self, f):
         # p = self.inv_link(f)
-        p = torch.clamp(self.inv_link(f), EPS, 1 - EPS)
+        p = torch.clamp(self.inv_link(f), self.EPS, 1 - self.EPS)
         H = p * (1 - p)
         return torch.diag_embed(H)
 
@@ -126,6 +129,9 @@ class BernoulliLh(Likelihood):
 
 
 class CategoricalLh(Likelihood):
+    def __init__(self, EPS: float = 0.01):
+        self.EPS = EPS
+
     def log_prob(self, f: FuncData, y: OutputData):
         dist = Categorical(logits=f)
         return dist.log_prob(y)
@@ -137,7 +143,7 @@ class CategoricalLh(Likelihood):
         return self.inv_link(f) - y_expand
 
     def Hessian(self, f):
-        p = torch.clamp(self.inv_link(f), EPS, 1 - EPS)
+        p = torch.clamp(self.inv_link(f), self.EPS, 1 - self.EPS)
         H = torch.diag_embed(p) - torch.einsum("ij,ik->ijk", p, p)
         return H
 

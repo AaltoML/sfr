@@ -600,13 +600,19 @@ def calc_sparse_dual_params(
     # assert Y.ndim == 2
     assert X.shape[0] == Y.shape[0]
     assert X.shape[1] == input_dim
+    print("DEVICE Z {}".format(Z.device))
+    print("DEVICE X {}".format(X.device))
     Kzx = kernel(Z, X)
+    print("DEVICE hm Kzx {}".format(Kzx.device))
     # print("Kzx {}".format(Kzx.shape))
     F = network(X)
+    print("DEVICE F {}".format(F.device))
     # print("F {}".format(F.shape))
     lambda_1, lambda_2 = calc_lambdas(Y=Y, F=F, nll=nll, likelihood=likelihood)
     # print("lambda_1 {}".format(lambda_1.shape))
     # print("lambda_2 {}".format(lambda_2.shape))
+    print("DEVICE hm lambda_1 {}".format(lambda_1.device))
+    print("DEVICE hm lambda_2 {}".format(lambda_2.device))
     alpha, beta = calc_sparse_dual_params_from_lambdas(
         lambda_1=lambda_1, lambda_2=lambda_2, Kzx=Kzx
     )

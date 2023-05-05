@@ -30,8 +30,8 @@ def train(model, likelihood, X_train, y_train, optimizer, n_epochs):
             return likelihood.nn_loss(f=f, y=y_train), X_train.shape[0]
         loss = optimizer.step(closure)
         losses.append(loss)
-    if not isinstance(likelihood, ntksvgp.likelihoods.Likelihood):
-        optimizer.post_process(model, likelihood, [(X_train, y_train)])
+#    if not isinstance(likelihood, ntksvgp.likelihoods.Likelihood):
+    optimizer.post_process(model, likelihood, [(X_train, y_train)])
     return losses
 
 
@@ -139,7 +139,7 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
     res.update(evaluate(res_bbb['preds_test'], y_test, lh, 'bbb', 'test'))
     res.update(evaluate(res_bbb['preds_valid'], y_valid, lh, 'bbb', 'valid'))
 
-    return res
+   # return res
 
     # Extract relevant variables
     theta_star = parameters_to_vector(model.parameters()).detach()

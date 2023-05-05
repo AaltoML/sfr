@@ -28,6 +28,8 @@ def init(
     early_stopper: EarlyStopper = None,
     device: str = "cuda",
 ) -> RewardModel:
+    if "cuda" in device:
+        network.cuda()
     likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=sigma_noise)
     prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
     ntksvgp = src.nn2svgp.NTKSVGP(
@@ -40,11 +42,10 @@ def init(
     )
 
     # loss_fn = torch.nn.MSELoss()
-    print("trans device {}".format(device))
-    print("after svgp cuda")
+    # print("trans device {}".format(device))
     if "cuda" in device:
-        network.cuda()
         ntksvgp.cuda()
+        print("put reward ntksvgp on cuda")
 
     def predict_fn(state: State, action: Action) -> RewardPrediction:
         state_action_input = torch.concat([state, action], -1)

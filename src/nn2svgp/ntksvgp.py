@@ -47,6 +47,7 @@ class NTKSVGP(nn.Module):
         num_inducing: int = 30,
         dual_batch_size: Optional[int] = None,
         jitter: float = 1e-6,
+        device: str = "cuda",
     ):
         super().__init__()
         self.network = network
@@ -56,6 +57,7 @@ class NTKSVGP(nn.Module):
         self.num_inducing = num_inducing
         self.dual_batch_size = dual_batch_size
         self.jitter = jitter
+        self.device = device
 
     def set_data(self, train_data: Data):
         """Sets training data, samples inducing points, calcs dual parameters, builds predict fn"""
@@ -69,13 +71,13 @@ class NTKSVGP(nn.Module):
         # assert X_train.ndim >= 2
         # assert Y_train.ndim == 2
         assert X_train.shape[0] == Y_train.shape[0]
-        self.train_data = (X_train, Y_train)
+        self.train_data = (X_train.to(self.device), Y_train.to(self.device))
         # num_data, input_dim = X_train.shape
         num_data = Y_train.shape[0]
         # print("Y_train.shape {}".format(Y_train.shape))
         indices = torch.randperm(num_data)[: self.num_inducing]
         # TODO will this work for image classification??
-        self.Z = X_train[indices]
+        self.Z = X_train[indices].to(self.device)
         # self.Z = X_train
         assert self.Z.ndim == 2
         # num_inducing = 100

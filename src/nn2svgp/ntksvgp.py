@@ -623,6 +623,9 @@ def calc_sparse_dual_params_from_lambdas(
     assert Kzx.ndim == 3
     assert Kzx.shape[0] == output_dim
     assert Kzx.shape[2] == num_data
+    print("hello")
+    print(Kzx.device)
+    print(lambda_1.device)
     alpha_u = torch.matmul(Kzx, torch.transpose(lambda_1, -1, -2)[..., None])[..., 0]
     # print("alpha_u {}".format(alpha_u.shape))
     lambda_2_diag = torch.diagonal(lambda_2, dim1=-2, dim2=-1)  # [num_data, output_dim]

@@ -23,12 +23,13 @@ def init(
     # num_workers: int = 1,
     num_inducing: int = 100,
     delta: float = 0.0001,  # weight decay
+    sigma_noise: float = 1.0,
     jitter: float = 1e-4,
     wandb_loss_name: str = "Transition model loss",
     early_stopper: EarlyStopper = None,
     device: str = "cuda",
 ) -> TransitionModel:
-    likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=1)
+    likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=sigma_noise)
     prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
     ntksvgp = src.nn2svgp.NTKSVGP(
         network=network,
@@ -99,7 +100,7 @@ def init(
         ntksvgp.set_data((state_action_inputs, state_diff))
         # ntksvgp.build_dual_svgp()
 
-    def update_fn(x: InputData, y: OutputData):
-        return ntksvgp.update(x=x, y=y)
+    def update_fn(data_new):
+        return ntksvgp.update(x=data_new[0], y=data_new[1])
 
     return TransitionModel(predict=predict_fn, train=train_fn, update=update_fn)

@@ -16,14 +16,15 @@ import torch
 
 
 torch.set_default_dtype(torch.float64)
+
 import src
 import torchrl
 import utils
 import wandb
 from dm_env import specs, StepType
 from omegaconf import DictConfig, OmegaConf
+from src.rl.utils import EarlyStopper, set_seed_everywhere
 from tensordict import TensorDict
-from utils import EarlyStopper, set_seed_everywhere
 
 
 @hydra.main(version_base="1.3", config_path="./configs", config_name="main")

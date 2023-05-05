@@ -133,13 +133,12 @@ def main(dataset_name, ds_train, ds_test, model_name, rerun, batch_size, seed, n
     train_loader = DataLoader(ds_train, batch_size=256)
     all_train = DataLoader(ds_train, batch_size=len(ds_train))
     (X_train, y_train) = next(iter(all_train))
-    if y_train.ndim == 1:
-        y_train = y_train.unsqueeze(-1)
     torch.manual_seed(seed)
     M = len(ds_test)
     n_inducing = int(len(ds_train)*n_sparse)
     logging.info(f'Train set size: {len(ds_train)}')
     logging.info(f'Num inducing points: {n_inducing}')
+    print(X_train.shape)
     perm_ixs = torch.randperm(M)
     val_ixs, test_ixs = perm_ixs[:int(M/2)], perm_ixs[int(M/2):]
     ds_val = Subset(ds_test, val_ixs)

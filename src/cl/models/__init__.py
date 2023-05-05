@@ -17,7 +17,7 @@ for model in get_all_models():
     names[model] = getattr(mod, class_name)
 
 def get_model(args, backbone, loss, transform, dataset):
-    if args.model == "sfr":
+    if args.model == "sfr" or args.model == "sfrntk":
         return names[args.model](backbone, loss, args,  transform, dataset)
     else:
         return names[args.model](backbone, loss, args, transform)

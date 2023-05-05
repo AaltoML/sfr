@@ -505,8 +505,6 @@ def calc_sparse_dual_params_batch(
     subset_out_dim: Optional[List] = None,
     device: str = "cpu",
 ) -> Tuple[AlphaInducing, BetaInducing]:
-    from torch.utils.data import TensorDataset
-
     ################  Compute lambdas batched version START ################
     num_train = len(train_loader.dataset)
     items_shape = (num_train, out_dim)
@@ -519,12 +517,8 @@ def calc_sparse_dual_params_batch(
     for batch in train_loader:
         x_i, y_i = batch[0], batch[1]
         x_i, y_i = x_i.to(device), y_i.to(device)
-        print("data loader")
-        print("x_i.shape {}".format(x_i.shape))
-        print("y_i.shape {}".format(y_i.shape))
         batch_size = x_i.shape[0]
         logits_i = network(x_i)
-        print("logits_i.shape {}".format(logits_i.shape))
         if logits_i.ndim == 1:
             logits_i = logits_i.unsqueeze(-1)
         lambda_1_i, lambda_2_i = calc_lambdas(
@@ -562,13 +556,9 @@ def calc_sparse_dual_params_batch(
         for batch in train_loader:
             x_i, y_i = batch[0], batch[1]
             x_i, y_i = x_i.to(device), y_i.to(device)
-            print(x_i.shape, y_i.shape)
             batch_size = x_i.shape[0]
             end_idx = start_idx + batch_size
-            print(output_c)
-            print(Z.shape)
             Kui_c = kernel(Z, x_i, output_c)
-            print(Kui_c.shape, Kui_c.device)
             alpha[output_c] += torch.einsum(
                 "ub, b -> u", Kui_c, lambda_1[start_idx:end_idx, output_c]
             )

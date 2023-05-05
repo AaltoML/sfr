@@ -19,11 +19,12 @@ tau: 0.005
 horizon: 2
 # horizon: 1
 num_mppi_iterations: 5
-num_samples: 512
-# num_samples: 256
+# num_samples: 512
+num_samples: 256
 # num_samples: 16
 mixture_coef: 0.05
-num_topk: 64
+num_topk: 32
+# num_topk: 64
 # num_topk: 4
 temperature: 0.5
 momentum: 0.1

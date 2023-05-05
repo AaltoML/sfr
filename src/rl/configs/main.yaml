@@ -1,19 +1,19 @@
 defaults:
-  - reward_model: mlp
+  # - reward_model: mlp
   # - transition_model: mlp
   # - reward_model: svgp
   # - transition_model: svgp
-  # - reward_model: nn2svgp
+  - reward_model: nn2svgp
   - transition_model: nn2svgp
   # - agent: ddpg
   - agent: mppi
   - env: cartpole_swingup
   # - env: cheetah_run
   # Use slurm on cluster or local?
-  - override hydra/launcher: submitit_local
+  # - override hydra/launcher: submitit_local
   # - override hydra/launcher: local
   # - override hydra/launcher: lumi
-  # - override hydra/launcher: slurm
+  - override hydra/launcher: slurm
   # Disable logging by Hydra
   - override hydra/job_logging: none
   - override hydra/hydra_logging: none
@@ -25,13 +25,13 @@ input_dim: ???
 output_dim: ???
 device: ???
 
-# online_updates: false
-online_updates: true
+online_updates: false
+# online_updates: true
 # online_update_freq: 2
 online_update_freq: 20
 # online_update_freq: 50
 
-alg_name: "mppi-svgp"
+alg_name: "mlp-mppi"
 random_seed: 42
 
 # init_random_episodes: 10
@@ -55,9 +55,9 @@ wandb:
   group: ${env.env_name}-${env.task_name}
   # group: ${env.env_name}
   entity: "aidanscannell"
-  project: "bayesian-model-based-rl-with-fast-updates"
+  project: "nn2svgp"
   use_wandb: True
-  run_name: ${alg_name}-${online_update_freq}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
+  run_name: ${alg_name}-updates=${online_updates}-h=${online_update_freq}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   # run_name: ${alg_name}-${online_update_freq}-${agent.horizon}-${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   tags:
     - "random_seed=${random_seed}"

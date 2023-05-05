@@ -7,11 +7,11 @@ logger = logging.getLogger(__name__)
 
 import torch
 import wandb
-from src.rl.custom_types import Action, InputData, OutputData, State, StatePrediction
+from src.rl.custom_types import Action, InputData, OutputData, State, RewardPrediction
 from src.rl.utils import EarlyStopper
 from torchrl.data import ReplayBuffer
-
-from .base import TransitionModel
+import src
+from .base import RewardModel
 
 
 def init(
@@ -20,26 +20,39 @@ def init(
     num_iterations: int = 1000,
     batch_size: int = 64,
     # num_workers: int = 1,
+    num_inducing: int = 100,
+    delta: float = 0.0001,  # weight decay
+    sigma_noise: float = 1.0,
+    jitter: float = 1e-4,
     wandb_loss_name: str = "Transition model loss",
     early_stopper: EarlyStopper = None,
     device: str = "cuda",
-) -> TransitionModel:
-    loss_fn = torch.nn.MSELoss()
+) -> RewardModel:
+    likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=sigma_noise)
+    prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
+    ntksvgp = src.nn2svgp.NTKSVGP(
+        network=network,
+        prior=prior,
+        likelihood=likelihood,
+        output_dim=1,
+        num_inducing=num_inducing,
+        jitter=jitter,
+    )
+
+    # loss_fn = torch.nn.MSELoss()
     print("trans device {}".format(device))
     print("after svgp cuda")
     if "cuda" in device:
         network.cuda()
 
-    def predict_fn(state: State, action: Action) -> StatePrediction:
+    def predict_fn(state: State, action: Action) -> RewardPrediction:
         state_action_input = torch.concat([state, action], -1)
-        delta_state = network.forward(state_action_input)
+        reward_mean = ntksvgp.predict_mean(state_action_input)
+        # print("reward_mean {}".format(reward_mean.shape))
+        # TODO use reward_var??
         # delta_state_mean, delta_state_var, noise_var = svgp_predict_fn(
-        return StatePrediction(
-            state_mean=state + delta_state,
-            state_var=0,
-            noise_var=0,
-            # state_var=delta_state_var,
-            # noise_var=noise_var,
+        return RewardPrediction(
+            reward_mean=reward_mean[:, 0], reward_var=0, noise_var=0
         )
 
     def train_fn(replay_buffer: ReplayBuffer):
@@ -53,10 +66,8 @@ def init(
             state_action_inputs = torch.concat(
                 [samples["state"], samples["action"]], -1
             )
-            state_diff = samples["next_state"] - samples["state"]
 
-            pred = network(state_action_inputs)
-            loss = loss_fn(pred, state_diff)
+            loss = ntksvgp.loss(x=state_action_inputs, y=samples["reward"])
 
             optimizer.zero_grad()
             loss.backward()
@@ -72,7 +83,14 @@ def init(
                 logger.info("Breaking out loop")
                 break
 
-    def dummy_update_fn(data_new):
-        pass
+        data = replay_buffer.sample(batch_size=len(replay_buffer))
+        state_action_inputs = torch.concat([data["state"], data["action"]], -1)
+        reward = data["reward"]
+        # print("reward {}".format(reward.shape))
+        ntksvgp.set_data((state_action_inputs, reward))
 
-    return TransitionModel(predict=predict_fn, train=train_fn, update=dummy_update_fn)
+    def update_fn(data_new):
+        # ntksvgp.set_data((x, y))
+        return ntksvgp.update(x=data_new[0], y=data_new[1])
+
+    return RewardModel(predict=predict_fn, train=train_fn, update=update_fn)

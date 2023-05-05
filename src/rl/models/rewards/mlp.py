@@ -65,7 +65,7 @@ def init(
                 logger.info("Breaking out loop")
                 break
 
-    def dummy_update_fn(x: InputData, y: OutputData):
+    def dummy_update_fn(data_new):
         pass
 
     return RewardModel(predict=predict_fn, train=train_fn, update=dummy_update_fn)

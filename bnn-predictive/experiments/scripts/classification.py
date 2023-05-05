@@ -27,10 +27,11 @@ def train(model, likelihood, X_train, y_train, optimizer, n_epochs):
         def closure():
             model.zero_grad()
             f = model(X_train)
-            return torch.mean(likelihood.log_prob(f, y_train)), X_train.shape[0]
+            return likelihood.nn_loss(f=f, y=y_train), X_train.shape[0]
         loss = optimizer.step(closure)
         losses.append(loss)
-    optimizer.post_process(model, likelihood, [(X_train, y_train)])
+    if not isinstance(likelihood, ntksvgp.likelihoods.Likelihood):
+        optimizer.post_process(model, likelihood, [(X_train, y_train)])
     return losses
 
 
@@ -64,6 +65,10 @@ def create_ntksvgp(X_train, y_train, model, likelihood, prior_prec, n_sparse=0.5
     data = (X_train, y_train)
     num_inducing = int(n_sparse*X_train.shape[0])
     n_classes = model(X_train).shape[-1]
+    print(f'N classes: {n_classes}')
+    print(f'Prior prec: {prior_prec}')
+ #   if n_classes == 1:
+  #      n_classes = 2
     prior = ntksvgp.priors.Gaussian(model, delta=prior_prec) 
     svgp = NTKSVGP(network=model, prior=prior, output_dim=n_classes, likelihood=likelihood, num_inducing=num_inducing)
     svgp.set_data(data)
@@ -83,7 +88,7 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
     res = dict()
     torch.manual_seed(seed)
     if ds_train.C == 2:
-        likelihood = BernoulliLh()
+        likelihood = BernoulliLh(EPS=0.1)
         K = 1
     else:
         likelihood = CategoricalLh()
@@ -94,16 +99,13 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
         y_test = y_test.unsqueeze(-1)
         y_valid = y_valid.unsqueeze(-1)
 
+    prior_prec_n = prior_prec / y_train.shape[0]
+
     model = SiMLP(D, K, n_layers, n_units, activation=activation).to(device)
-    optimizer = LaplaceGGN(model, lr=lr, prior_prec=prior_prec)
+    optimizer = LaplaceGGN(model, lr=lr, prior_prec=prior_prec_n)
     print('Training NN...')
     res['losses'] = train(model, likelihood, X_train, y_train, optimizer, n_epochs)
     
-
-    # Extract relevant variables
-    theta_star = parameters_to_vector(model.parameters()).detach()
-    Sigmad, Sigma_chold = get_diagonal_ggn(optimizer)
-    Sigma_chol = optimizer.state['Sigma_chol']
 
     """Prediction"""
     lh = likelihood
@@ -117,13 +119,14 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
 
     
     # SVGP predictive
-    svgp = create_ntksvgp(X_train, y_train, model, likelihood, prior_prec, n_sparse=n_sparse)
+    svgp = create_ntksvgp(X_train, y_train, model, likelihood, prior_prec_n, n_sparse=n_sparse)
     fs_train = preds_svgp(X_train, svgp, likelihood, samples=n_samples)
     fs_test = preds_svgp(X_test, svgp, likelihood, samples=n_samples)
     fs_valid = preds_svgp(X_valid, svgp,  likelihood, samples=n_samples)
     res.update(evaluate(fs_train, y_train, lh, 'svgp_ntk', 'train'))
     res.update(evaluate(fs_test, y_test, lh, 'svgp_ntk', 'test'))
     res.update(evaluate(fs_valid, y_valid, lh, 'svgp_ntk', 'valid'))
+
 
     # BBB
     # baseline  (needs higher lr)
@@ -136,6 +139,12 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
     res.update(evaluate(res_bbb['preds_test'], y_test, lh, 'bbb', 'test'))
     res.update(evaluate(res_bbb['preds_valid'], y_valid, lh, 'bbb', 'valid'))
 
+    return res
+
+    # Extract relevant variables
+    theta_star = parameters_to_vector(model.parameters()).detach()
+    Sigmad, Sigma_chold = get_diagonal_ggn(optimizer)
+    Sigma_chol = optimizer.state['Sigma_chol']
 
     # LinLaplace full Cov assuming convergence
     fs_train = preds_glm(X_train, model, likelihood, theta_star, Sigma_chol, samples=n_samples)

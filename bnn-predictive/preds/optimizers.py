@@ -1,6 +1,7 @@
 import torch
 from torch.nn.utils import parameters_to_vector
 from torch.optim import Adam
+from torch.func import vmap
 
 from preds.gradients import Jacobians_naive
 
@@ -8,7 +9,7 @@ from preds.gradients import Jacobians_naive
 def GGN(model, likelihood, data, target=None, ret_f=False):
     Js, f = Jacobians_naive(model, data)
     if target is not None:
-        rs = likelihood.residual(target, f)
+        rs = -likelihood.residual(y=target, f=f)    # TODO: changed from original
     Hess = likelihood.Hessian(f)
     m, p = Js.shape[:2]
     if len(Js.shape) == 2:
@@ -73,7 +74,7 @@ class LaplaceGGN(Adam):
         log_lik, n_data = closure()
         params = parameters_to_vector(self.param_groups[0]['params'])
         prior_prec = self.state['prior_prec']
-        weight_loss = 0.5 * params @ prior_prec @ params / n_data
+        weight_loss = 0.5 * params @ prior_prec @ params
         loss = - log_lik + weight_loss
         loss.backward()
         super(LaplaceGGN, self).step()
@@ -91,6 +92,8 @@ class LaplaceGGN(Adam):
         for data, target in train_loader:
             data, target = data.to(device), target.to(device)
             Js, Hess, rs = GGN(model, likelihood, data, target)
+            print(Hess.shape)
+         #   Hess = vmap(torch.diag)(Hess)
             JLJ += torch.einsum('mpk,mkl,mql->pq', Js, Hess, Js)
             G += torch.einsum('mpk,mk->p', Js, rs)
         # compute posterior covariance and precision

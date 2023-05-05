@@ -68,9 +68,10 @@ if __name__ == "__main__":
         else:
             return torch.stack([f1[:, 0], f2[:, 0], f3[:, 0]], -1)
 
-    delta = 0.0001
-    # delta = 0.01
+    delta = 0.00005
+    # delta = 0.001
     # delta = 1.0
+    # delta = 0.01
     network = torch.nn.Sequential(
         torch.nn.Linear(1, 64),
         # torch.nn.Sigmoid(),
@@ -130,15 +131,16 @@ if __name__ == "__main__":
 
     batch_size = X_train.shape[0]
 
-    # likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=1)
-    likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=2)
-    likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=0.8)
+    likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=1)
+    # likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=2)
+    # likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=0.8)
     prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
     ntksvgp = NTKSVGP(
         network=network,
         # train_data=(X_train, Y_train),
         prior=prior,
         likelihood=likelihood,
+        output_dim=3,
         num_inducing=50,
         # jitter=1e-6,
         jitter=1e-4,

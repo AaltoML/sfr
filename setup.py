@@ -47,8 +47,8 @@ install_requires = [
     "numpy==1.24.2",
     "torch==2.0.0",
     "torchvision==0.15.1",
-    "onedrivedownloader",   # from mammoth cl framework
-    "av",                   # 
+    "onedrivedownloader",  # from mammoth cl framework
+    "av",  #
     # functorch  # needed for vmap
     "torchtyping==0.1.4",
     # laplace-torch
@@ -77,7 +77,7 @@ extras_require = {
         "moviepy==1.0.3",  # rendering
         "tikzplotlib==0.10.1",
         "tabulate==0.9.0",
-        "gym[classic_control]==0.26.2",
+        # "gym[classic_control]==0.26.2",
     ],
 }
 

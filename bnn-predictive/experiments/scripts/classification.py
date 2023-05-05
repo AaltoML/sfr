@@ -27,7 +27,7 @@ def train(model, likelihood, X_train, y_train, optimizer, n_epochs):
         def closure():
             model.zero_grad()
             f = model(X_train)
-            return likelihood.log_prob(f, y_train)
+            return torch.sum(likelihood.log_prob(f, y_train))
         loss = optimizer.step(closure)
         losses.append(loss)
     optimizer.post_process(model, likelihood, [(X_train, y_train)])
@@ -60,11 +60,12 @@ def evaluate(p, y, likelihood, name, data):
         print(nll_cls(p.squeeze(), y.squeeze(), likelihood))
     return res
 
-def create_ntksvgp(X_train, y_train, model, likelihood, prior_prec, n_sparse=100):
+def create_ntksvgp(X_train, y_train, model, likelihood, prior_prec, n_sparse=0.5):
     data = (X_train, y_train)
     num_inducing = int(n_sparse*X_train.shape[0])
-    prior = ntksvgp.priors.Gaussian(model, delta=prior_prec) # /X_train.shape[0])
-    svgp = NTKSVGP(network=model, prior=prior, likelihood=likelihood, num_inducing=num_inducing)
+    n_classes = model(X_train).shape[-1]
+    prior = ntksvgp.priors.Gaussian(model, delta=prior_prec) 
+    svgp = NTKSVGP(network=model, prior=prior, output_dim=n_classes, likelihood=likelihood, num_inducing=num_inducing)
     svgp.set_data(data)
     return svgp
 

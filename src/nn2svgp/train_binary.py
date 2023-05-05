@@ -202,21 +202,21 @@ if __name__ == "__main__":
     # ntksvgp.update(X_train, Y_train)
 
     # f_mean, f_var = ntksvgp.predict_f(X_test_short)
-    f_mean, f_var, y_tilde = ntksvgp.predict_f(X_test)
+    f_mean, f_var = ntksvgp.predict_f(X_test)
     print("MEAN {}".format(f_mean.shape))
     print("VAR {}".format(f_var.shape))
     print("X_test_short {}".format(X_test_short.shape))
     print(X_test_short.shape)
 
-    ntksvgp.update(x=X_new, y=Y_new)
-    f_mean_new, f_var_new, _ = ntksvgp.predict_f(X_test)
-    print("MEAN NEW_2 {}".format(f_mean_new.shape))
-    print("VAR NEW_2 {}".format(f_var_new.shape))
+    # ntksvgp.update(x=X_new, y=Y_new)
+    # f_mean_new, f_var_new = ntksvgp.predict_f(X_test)
+    # print("MEAN NEW_2 {}".format(f_mean_new.shape))
+    # print("VAR NEW_2 {}".format(f_var_new.shape))
 
-    ntksvgp.update(x=X_new_2, y=Y_new_2)
-    f_mean_new_2, f_var_new_2, _ = ntksvgp.predict_f(X_test)
-    print("MEAN NEW_2 {}".format(f_mean_new_2.shape))
-    print("VAR NEW_2 {}".format(f_var_new_2.shape))
+    # ntksvgp.update(x=X_new_2, y=Y_new_2)
+    # f_mean_new_2, f_var_new_2 = ntksvgp.predict_f(X_test)
+    # print("MEAN NEW_2 {}".format(f_mean_new_2.shape))
+    # print("VAR NEW_2 {}".format(f_var_new_2.shape))
 
     def plot_output(i):
         fig = plt.subplots(1, 1)
@@ -271,15 +271,15 @@ if __name__ == "__main__":
                 alpha=0.2,
                 label=r"$\mu_1(\cdot) \pm 1.98\sigma_1(\cdot)$",
             )
-        print("y_tilde {}".format(y_tilde.shape))
-        print("X_tset {}".format(X_test.shape))
-        plt.scatter(
-            X_train[:, 0],
-            y_tilde[:, 0],
-            marker="o",
-            color="r",
-            label="y_tilde",
-        )
+        # print("y_tilde {}".format(y_tilde.shape))
+        # print("X_tset {}".format(X_test.shape))
+        # plt.scatter(
+        #     X_train[:, 0],
+        #     y_tilde[:, 0],
+        #     marker="o",
+        #     color="r",
+        #     label="y_tilde",
+        # )
         plt.scatter(
             ntksvgp.Z,
             torch.ones_like(ntksvgp.Z) * -1.0,

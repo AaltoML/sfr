@@ -60,9 +60,9 @@ class NTKSVGP(nn.Module):
         X_train, Y_train = train_data
         if X_train.ndim > 2:
             # TODO flatten dims for images
-            print("X_train before flatten {}".format(X_train.shape))
+            logger.info("X_train.ndim>2 so flattening {}".format(X_train.shape))
             X_train = torch.flatten(X_train, 1, -1)
-            print("X_train AFTER flatten {}".format(X_train.shape))
+            logger.info("X_train shape after flattening {}".format(X_train.shape))
         assert X_train.ndim == 2
         # assert X_train.ndim >= 2
         # assert Y_train.ndim == 2
@@ -70,14 +70,14 @@ class NTKSVGP(nn.Module):
         self.train_data = train_data
         # num_data, input_dim = X_train.shape
         num_data = Y_train.shape[0]
-        print("Y_train.shape {}".format(Y_train.shape))
+        # print("Y_train.shape {}".format(Y_train.shape))
         indices = torch.randperm(num_data)[: self.num_inducing]
         # TODO will this work for image classification??
-        # self.Z = X_train[indices]
-        self.Z = X_train
+        self.Z = X_train[indices]
+        # self.Z = X_train
         assert self.Z.ndim == 2
         # num_inducing = 100
-        # Z = torch.linspace(0, 3, num_inducing).reshape(-1, 1)
+        # self.Z = torch.linspace(-1, 3, self.num_inducing).reshape(self.num_inducing, -1)
         # Z = torch.rand(num_inducing, 1) * 3
         # self.num_inducing, self.input_dim = Z.shape
 
@@ -181,64 +181,65 @@ class NTKSVGP(nn.Module):
     def predict_f(self, x: TestInput) -> Tuple[FuncMean, FuncVar]:
         # TODO implement full_cov=True
         # TODO implement noise_var correctly
-        F = self.network(self.train_data[0])
-        lambda_1, lambda_2 = calc_lambdas(
-            Y=self.train_data[1], F=F, nll=None, likelihood=self.likelihood
-        )
-        lambda_2_diag = torch.diagonal(
-            lambda_2, dim1=-2, dim2=-1
-        )  # [num_data, output_dim]
-        print("lambda_2_diag {}".format(lambda_2_diag.shape))
-        # lambda_2_diag = torch.ones_like(lambda_2_diag) * 0.1
-        y_tilde = lambda_1 / lambda_2_diag
-        Kxx = self.kernel(self.train_data[0], self.train_data[0])
-        Ksx = self.kernel(x, self.train_data[0])
-        print("Ksx {}".format(Ksx.shape))
-        print("y_tilde {}".format(y_tilde))
-        print(
-            "torch.diag_embed(lambda_2_diag.T) {}".format(
-                torch.diag_embed(lambda_2_diag.T).shape
-            )
-        )
+        # F = self.network(self.train_data[0])
+        # lambda_1, lambda_2 = calc_lambdas(
+        #     Y=self.train_data[1], F=F, nll=None, likelihood=self.likelihood
+        # )
+        # lambda_2_diag = torch.diagonal(
+        #     lambda_2, dim1=-2, dim2=-1
+        # )  # [num_data, output_dim]
+        # print("lambda_2_diag {}".format(lambda_2_diag.shape))
+        # # lambda_2_diag = torch.ones_like(lambda_2_diag) * 0.1
+        # y_tilde = lambda_1 / lambda_2_diag
+        # Kxx = self.kernel(self.train_data[0], self.train_data[0])
+        # Ksx = self.kernel(x, self.train_data[0])
+        # print("Ksx {}".format(Ksx.shape))
+        # print("y_tilde {}".format(y_tilde))
+        # print(
+        #     "torch.diag_embed(lambda_2_diag.T) {}".format(
+        #         torch.diag_embed(lambda_2_diag.T).shape
+        #     )
+        # )
 
-        # print("Iu {}".format(Iz.shape))
+        # # print("Iu {}".format(Iz.shape))
 
-        output_dim = 1
-        print(
-            "torch.diag_embed(lambda_2_diag.T) {}".format(
-                torch.diag_embed(lambda_2_diag.T**-1)
-            )
-        )
-        # lambda_2_diag = torch.ones_like(lambda_2_diag) * 1.0
-        Kxxlamb = Kxx + torch.diag_embed(lambda_2_diag.T**-1)
-        Ix = torch.eye(Kxx.shape[-1])[None, ...].repeat(output_dim, 1, 1)
-        # Kxxlamb += Ix * self.jitter
-        # Kxxlamb += torch.eye(Kxxlamb.shape[-1])
-        print("lambda_2 {}".format(lambda_2))
-        print("Kxx {}".format(Kxx))
-        print("Kxxlamb {}".format(Kxxlamb.shape))
-        print("y_tilde {}".format(y_tilde.shape))
-        f_mean = Ksx @ torch.linalg.solve(Kxxlamb, y_tilde[None, ...])
-        # f_mean = Ksx @ torch.linalg.solve(Kxx + lambda_2 ** (-1), y_tilde[None, ...])
+        # output_dim = 1
+        # print(
+        #     "torch.diag_embed(lambda_2_diag.T) {}".format(
+        #         torch.diag_embed(lambda_2_diag.T**-1)
+        #     )
+        # )
+        # # lambda_2_diag = torch.ones_like(lambda_2_diag) * 1.0
+        # Kxxlamb = Kxx + torch.diag_embed(lambda_2_diag.T**-1)
+        # Ix = torch.eye(Kxx.shape[-1])[None, ...].repeat(output_dim, 1, 1)
+        # # Kxxlamb += Ix * self.jitter
+        # # Kxxlamb += torch.eye(Kxxlamb.shape[-1])
+        # print("lambda_2 {}".format(lambda_2))
+        # print("Kxx {}".format(Kxx))
+        # print("Kxxlamb {}".format(Kxxlamb.shape))
+        # print("y_tilde {}".format(y_tilde.shape))
+        # f_mean = Ksx @ torch.linalg.solve(Kxxlamb, y_tilde[None, ...])
+        # # f_mean = Ksx @ torch.linalg.solve(Kxx + lambda_2 ** (-1), y_tilde[None, ...])
 
-        # self.alpha += (Kzx @ lambda_1.T[..., None])[..., 0]
-        print("f_mean yo yo {}".format(f_mean.shape))
-        f_mean = f_mean[..., 0].T
-        print("f_mean yo yo {}".format(f_mean.shape))
-        # f_var = torch.ones_like(f_mean)
-        # print("f_var yo yo {}".format(f_var.shape))
+        # # self.alpha += (Kzx @ lambda_1.T[..., None])[..., 0]
+        # print("f_mean yo yo {}".format(f_mean.shape))
+        # f_mean = f_mean[..., 0].T
+        # print("f_mean yo yo {}".format(f_mean.shape))
+        # # f_var = torch.ones_like(f_mean)
+        # # print("f_var yo yo {}".format(f_var.shape))
 
-        Kss = self.kernel(x, x)
-        # tmp = torch.linalg.solve(Kzz, Iz) - torch.linalg.solve(beta_u + Kzz, Iz)
-        f_cov = Kss - torch.matmul(
-            Ksx, torch.linalg.solve(Kxxlamb, torch.transpose(Ksx, -1, -2))
-        )
-        print("f_cov {}".format(f_cov.shape))
-        f_var = torch.diagonal(f_cov, dim1=-2, dim2=-1).T
-        print("f_var {}".format(f_var.shape))
+        # Kss = self.kernel(x, x)
+        # # tmp = torch.linalg.solve(Kzz, Iz) - torch.linalg.solve(beta_u + Kzz, Iz)
+        # f_cov = Kss - torch.matmul(
+        #     Ksx, torch.linalg.solve(Kxxlamb, torch.transpose(Ksx, -1, -2))
+        # )
+        # print("f_cov {}".format(f_cov.shape))
+        # f_var = torch.diagonal(f_cov, dim1=-2, dim2=-1).T
+        # print("f_var {}".format(f_var.shape))
 
-        # f_mean, f_var = self._predict_fn(x, full_cov=False)
-        return f_mean, f_var, y_tilde
+        f_mean, f_var = self._predict_fn(x, full_cov=False)
+        # y_tilde = 0.0
+        return f_mean, f_var
 
     def loss(self, x: InputData, y: OutputData):
         f = self.network(x)
@@ -247,6 +248,8 @@ class NTKSVGP(nn.Module):
         return neg_log_likelihood + neg_log_prior
 
     def update(self, x: InputData, y: OutputData):
+        if not isinstance(self.likelihood, src.nn2svgp.likelihoods.Gaussian):
+            raise NotImplementedError
         logger.info("Updating dual params...")
         # TODO what about classificatin
         # assert x.ndim == 2 and y.ndim == 2
@@ -276,11 +279,12 @@ class NTKSVGP(nn.Module):
 
         # TODO only works for regression (should be lambda_1)
 
-        f = self.network(x)
-        lambda_1, _ = calc_lambdas(Y=y, F=f, nll=None, likelihood=self.likelihood)
-        print(" hereh lambda_1 {}".format(lambda_1.shape))
-        self.alpha += (Kzx @ lambda_1.T[..., None])[..., 0]
-        # self.alpha += (Kzx @ y.T[..., None])[..., 0]
+        # f = self.network(x)
+        # lambda_1, _ = calc_lambdas(Y=y, F=f, nll=None, likelihood=self.likelihood)
+        # lambda_1_minus_y = y-lambda_1
+        # print(" hereh lambda_1 {}".format(lambda_1.shape))
+        # self.alpha += (Kzx @ lambda_1_minus_y.T[..., None])[..., 0]
+        self.alpha += (Kzx @ y.T[..., None])[..., 0]
         self.beta += (
             Kzx
             @ (1**-1 * torch.eye(num_new_data)[None, ...])
@@ -302,6 +306,12 @@ class NTKSVGP(nn.Module):
     @property
     def num_data(self):
         return self.train_data[0].shape[0]
+
+    # @property
+    # def num_inducing(self):
+    #     try:
+    #         self._num_in
+    #     return self.Z.shape[0]
 
     # @property
     # def output_dim(self):
@@ -426,7 +436,7 @@ def build_ntk(
 def predict_from_duals(
     alpha: Alpha, beta: Beta, kernel: NTK, Z: InducingPoints, jitter: float = 1e-3
 ):
-    print("Z {}".format(Z.shape))
+    # print("Z {}".format(Z.shape))
     Kzz = kernel(Z, Z)
     output_dim = Kzz.shape[0]
     print("Kuu {}".format(Kzz.shape))
@@ -710,11 +720,10 @@ def calc_lambdas(
     # lambda_1 = -torch.vmap(likelihood.residual, in_dims=0)(F)
     lambda_2 = 2 * likelihood.Hessian(f=F)
     # lambda_1 = -likelihood.residual(y=Y, f=F)
-    # lambda_1 = -likelihood.residual(y=Y, f=F)
     print("lambda_1 {}".format(lambda_1.shape))
     print("lambda_2 {}".format(lambda_2.shape))
-    print("lambda_1 {}".format(lambda_1))
-    print("lambda_2 {}".format(lambda_2))
+    # print("lambda_1 {}".format(lambda_1))
+    # print("lambda_2 {}".format(lambda_2))
     # exit()
     lambda_2_diag = torch.diagonal(lambda_2, dim1=-2, dim2=-1)  # [num_data, output_dim]
     # print("Y-lambda_1 {}".format(Y - lambda_1))

@@ -34,7 +34,7 @@ def train(
     for epoch_idx in range(num_epochs):
         for batch_idx, batch in enumerate(data_loader):
             x, y = batch
-            print("batch {} {}".format(x.shape, y.shape))
+            # print("batch {} {}".format(x.shape, y.shape))
             loss = ntksvgp.loss(x, y)
 
             optimizer.zero_grad()
@@ -167,8 +167,10 @@ if __name__ == "__main__":
         prior=prior,
         likelihood=likelihood,
         output_dim=2,
-        num_inducing=X_train.shape[0],
+        # num_inducing=X_train.shape[0],
+        # num_inducing=X_train.shape[0] - 10,
         # num_inducing=50,
+        num_inducing=30,
         # jitter=1e-6,
         jitter=1e-4,
     )
@@ -185,21 +187,21 @@ if __name__ == "__main__":
     )
 
     # f_mean, f_var = ntksvgp.predict_f(X_test_short)
-    f_mean, f_var, _ = ntksvgp.predict_f(X_test)
+    f_mean, f_var = ntksvgp.predict_f(X_test)
     print("MEAN {}".format(f_mean.shape))
     print("VAR {}".format(f_var.shape))
     print("X_test_short {}".format(X_test_short.shape))
     print(X_test_short.shape)
 
-    ntksvgp.update(x=X_new, y=Y_new)
-    f_mean_new, f_var_new, _ = ntksvgp.predict_f(X_test)
-    print("MEAN NEW_2 {}".format(f_mean_new.shape))
-    print("VAR NEW_2 {}".format(f_var_new.shape))
+    # ntksvgp.update(x=X_new, y=Y_new)
+    # f_mean_new, f_var_new = ntksvgp.predict_f(X_test)
+    # print("MEAN NEW_2 {}".format(f_mean_new.shape))
+    # print("VAR NEW_2 {}".format(f_var_new.shape))
 
-    ntksvgp.update(x=X_new_2, y=Y_new_2)
-    f_mean_new_2, f_var_new_2, _ = ntksvgp.predict_f(X_test)
-    print("MEAN NEW_2 {}".format(f_mean_new_2.shape))
-    print("VAR NEW_2 {}".format(f_var_new_2.shape))
+    # ntksvgp.update(x=X_new_2, y=Y_new_2)
+    # f_mean_new_2, f_var_new_2 = ntksvgp.predict_f(X_test)
+    # print("MEAN NEW_2 {}".format(f_mean_new_2.shape))
+    # print("VAR NEW_2 {}".format(f_var_new_2.shape))
 
     def plot_output(i):
         fig = plt.subplots(1, 1)

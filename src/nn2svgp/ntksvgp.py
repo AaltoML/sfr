@@ -366,7 +366,7 @@ def build_ntk(
     def ntk(x1, x2):
         # print("INSIDE kernel {}".format(output_dim))
         # def ntk(x1: InputData, x2: InputData) -> TensorType[""]:
-        K = torch.empty(output_dim, x1.shape[0], x2.shape[0])
+        K = torch.empty(output_dim, x1.shape[0], x2.shape[0]).to(x1.device)
         # print("K building {}".format(K.shape))
         # print("x1 {}".format(x1.shape))
         # print("x2 {}".format(x2.shape))

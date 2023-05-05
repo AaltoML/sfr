@@ -86,7 +86,7 @@ class NTKSVGP(nn.Module):
         self.build_dual_svgp()
 
     def build_dual_svgp(self):
-        logger.info("Calculating dual params and build prediction fn...")
+        logger.info("Calculating dual params and building prediction fn...")
         if isinstance(self.prior, src.nn2svgp.priors.Gaussian):
             delta = self.prior.delta
         else:
@@ -199,14 +199,15 @@ class NTKSVGP(nn.Module):
             x = torch.flatten(x, 1, -1)
             print("x AFTER flatten {}".format(x.shape))
         assert x.ndim == 2
-        if y.ndim == 1:
-            # TODO should this be somewhere else?
-            print("y.shape {}".format(y.shape))
-            y = torch.nn.functional.one_hot(y, num_classes=2)
-            y = y.to(torch.double)
-            print("y.shape {}".format(y.shape))
-            print("y.shape {}".format(y))
-            # y = y[:, None]
+        # if y.ndim == 1:
+        #     y = y[None, ...]
+        #     # TODO should this be somewhere else?
+        #     print("y.shape {}".format(y.shape))
+        #     y = torch.nn.functional.one_hot(y, num_classes=2)
+        #     y = y.to(torch.double)
+        #     print("y.shape {}".format(y.shape))
+        #     print("y.shape {}".format(y))
+        # y = y[:, None]
         # assert x.ndim == 2 and y.ndim == 2
         num_new_data, input_dim = x.shape
         Kzx = self.kernel(self.Z, x)

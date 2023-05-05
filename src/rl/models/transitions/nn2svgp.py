@@ -47,6 +47,7 @@ def init(
     print("after svgp cuda")
     if "cuda" in device:
         network.cuda()
+        ntksvgp.cuda()
 
     def predict_fn(state: State, action: Action) -> StatePrediction:
         state_action_input = torch.concat([state, action], -1)

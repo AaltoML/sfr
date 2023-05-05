@@ -23,7 +23,7 @@ batch_size: 64
 # num_workers: 1 # TODO what should I set this to?
 num_inducing: 128
 jitter: 1e-4
-delta: 0.0001
+delta: 1e-6
 sigma_noise: 1.0
 wandb_loss_name: "reward/loss"
 # early_stopper:

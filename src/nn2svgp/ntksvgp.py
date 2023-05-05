@@ -109,6 +109,7 @@ class NTKSVGP(nn.Module):
                     shuffle=False,
                 ),
                 Z=self.Z,
+                likelihood=self.likelihood,
                 kernel=self.kernel_single,
                 nll=self.likelihood.nn_loss,
                 out_dim=self.output_dim,

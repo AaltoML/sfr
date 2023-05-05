@@ -71,11 +71,11 @@ class LaplaceGGN(Adam):
 
     def step(self, closure):
         # compute gradients on network using our standard closures
-        log_lik, n_data = closure()
+        loss_nll, n_data = closure()
         params = parameters_to_vector(self.param_groups[0]['params'])
         prior_prec = self.state['prior_prec']
         weight_loss = 0.5 * params @ prior_prec @ params
-        loss = - log_lik + weight_loss
+        loss = loss_nll + weight_loss
         loss.backward()
         super(LaplaceGGN, self).step()
         return loss.item()

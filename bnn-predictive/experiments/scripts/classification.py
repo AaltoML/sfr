@@ -88,7 +88,7 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
     res = dict()
     torch.manual_seed(seed)
     if ds_train.C == 2:
-        likelihood = BernoulliLh(EPS=0.1)
+        likelihood = BernoulliLh(EPS=0.000001)
         K = 1
     else:
         likelihood = CategoricalLh()
@@ -293,6 +293,7 @@ if __name__ == '__main__':
     print(f'Reading data from {data_dir}')
     print(f'Dataset: {dataset}')
     print(f'Seed: {seed}')
+    print(double)
 
     if double:
         torch.set_default_dtype(torch.double)

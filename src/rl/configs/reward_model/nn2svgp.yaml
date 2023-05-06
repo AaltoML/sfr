@@ -18,12 +18,12 @@ network:
       in_features: 64
       out_features: 1
 learning_rate: 1e-3
-num_iterations: 1000
+num_iterations: 5000
 batch_size: 64
 # num_workers: 1 # TODO what should I set this to?
 num_inducing: 128
 jitter: 1e-4
-delta: 1e-6
+delta: 1e-5
 sigma_noise: 1.0
 wandb_loss_name: "reward/loss"
 # early_stopper:

@@ -12,11 +12,12 @@ max_ddpg_iterations: 500
 std: 0.1
 std_clip: 0.3
 # nstep: 1 # TODO always 1 to make it work with SVGP training?
-gamma: 0.99
+gamma: 0.9
+# gamma: 0.99
 tau: 0.005
 # MPPI config
-# horizon: 5
-horizon: 2
+horizon: 5
+# horizon: 2
 # horizon: 1
 num_mppi_iterations: 5
 # num_samples: 512

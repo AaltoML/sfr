@@ -81,6 +81,14 @@ class BernoulliLh(Likelihood):
     def __init__(self, EPS: float = 0.01):
         self.EPS = EPS
 
+    def __call__(
+        self, f_mean: Union[FuncData, FuncMean], f_var: Optional[FuncVar] = None
+    ):
+        p = self.prob(f_mean=f_mean, f_var=f_var)
+        mean = p
+        var = p - torch.square(p)
+        return mean, var
+
     def log_prob(self, f: FuncData, y: OutputData):
         dist = Bernoulli(logits=f)
         return dist.log_prob(y)
@@ -131,6 +139,14 @@ class BernoulliLh(Likelihood):
 class CategoricalLh(Likelihood):
     def __init__(self, EPS: float = 0.01):
         self.EPS = EPS
+
+    def __call__(
+        self, f_mean: Union[FuncData, FuncMean], f_var: Optional[FuncVar] = None
+    ):
+        p = self.prob(f_mean=f_mean, f_var=f_var)
+        mean = p
+        var = p - torch.square(p)
+        return mean, var
 
     def log_prob(self, f: FuncData, y: OutputData):
         dist = Categorical(logits=f)

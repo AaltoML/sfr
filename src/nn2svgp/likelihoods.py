@@ -45,16 +45,20 @@ class Gaussian(Likelihood):
 
     def log_prob(self, f: FuncData, y: OutputData):
         # TODO check this works
-        return torch.distributions.Normal(f, self.sigma_noise).log_prob(y)
+        log_prob = torch.distributions.Normal(loc=f, scale=self.sigma_noise).log_prob(y)
+        if log_prob.ndim > 1:
+            # sum over independent output dimensions
+            log_prob = torch.sum(log_prob, -1)
+        return log_prob
 
     def nn_loss(self, f: FuncData, y: OutputData):
         # loss = torch.nn.MSELoss()(f, y)
         # loss = torch.nn.MSELoss(reduction="sum")(f, y)
-        loss = 0.5 * torch.nn.MSELoss(reduction="mean")(f, y)
-        return loss
+        # loss = 0.5 * torch.nn.MSELoss(reduction="mean")(f, y)
+        # return loss
         # return 0.5 * loss * y.shape[-1]
         # return -torch.sum(self.log_prob(f=f, y=y))
-        # return -torch.mean(self.log_prob(f=f, y=y))
+        return -torch.mean(self.log_prob(f=f, y=y))
 
     def residual(self, y, f):
         # TODO should this just be y?

@@ -1,19 +1,6 @@
 _target_: src.rl.models.transitions.mlp.init
 _convert_: all
-network:
-  _target_: torch.nn.Sequential
-  _args_:
-    - _target_: torch.nn.Linear
-      in_features: ${input_dim}
-      out_features: 512
-    - _target_: torch.nn.ReLU
-    - _target_: torch.nn.Linear
-      in_features: 512
-      out_features: 512
-    - _target_: torch.nn.ReLU
-    - _target_: torch.nn.Linear
-      in_features: 512
-      out_features: ${output_dim}
+network: ${transition_network}
 learning_rate: 1e-3
 num_iterations: 5000
 batch_size: 64

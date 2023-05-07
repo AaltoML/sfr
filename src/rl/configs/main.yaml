@@ -1,12 +1,12 @@
 defaults:
-  # - reward_model: mlp
-  # - transition_model: mlp
+  - reward_model: mlp
+  - transition_model: mlp
   # - reward_model: svgp
   # - transition_model: svgp
   # - reward_model: mlp_new
   # - transition_model: mlp_new
-  - reward_model: nn2svgp
-  - transition_model: nn2svgp
+  # - reward_model: nn2svgp
+  # - transition_model: nn2svgp
   # - agent: ddpg
   - agent: mppi
   - env: cartpole_swingup
@@ -29,7 +29,7 @@ device: ???
 
 online_updates: false
 # online_updates: true
-online_update_freq: 1
+online_update_freq: 2
 # online_update_freq: 20
 # online_update_freq: 50
 

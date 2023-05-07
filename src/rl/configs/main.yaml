@@ -29,7 +29,7 @@ device: ???
 
 online_updates: false
 # online_updates: true
-online_update_freq: 2
+online_update_freq: 1
 # online_update_freq: 20
 # online_update_freq: 50
 

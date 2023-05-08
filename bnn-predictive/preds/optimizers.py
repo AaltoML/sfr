@@ -10,7 +10,7 @@ def GGN(model, likelihood, data, target=None, ret_f=False):
     Js, f = Jacobians_naive(model, data)
     if target is not None:
         rs = -likelihood.residual(y=target, f=f)    # TODO: changed from original
-    Hess = likelihood.Hessian(f)
+    Hess = likelihood.Hessian(f.unsqueeze(-1))
     m, p = Js.shape[:2]
     if len(Js.shape) == 2:
         k = 1

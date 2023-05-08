@@ -5,12 +5,13 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+import src
 import torch
 import wandb
 from src.rl.custom_types import Action, InputData, OutputData, State, StatePrediction
 from src.rl.utils import EarlyStopper
 from torchrl.data import ReplayBuffer
-import src
+
 from .base import TransitionModel
 
 

@@ -37,7 +37,8 @@ def init(
         return RewardPrediction(reward_mean=reward, reward_var=0, noise_var=0)
 
     def train_fn(replay_buffer: ReplayBuffer):
-        early_stopper.reset()
+        if early_stopper is not None:
+            early_stopper.reset()
         network.train()
         optimizer = torch.optim.Adam(
             [{"params": network.parameters()}], lr=learning_rate
@@ -59,11 +60,12 @@ def init(
                 wandb.log({wandb_loss_name: loss})
 
             logger.info("Iteration : {} | Loss: {}".format(i, loss))
-            stop_flag = early_stopper(loss)
-            if stop_flag:
-                logger.info("Early stopping criteria met, stopping training")
-                logger.info("Breaking out loop")
-                break
+            if early_stopper is not None:
+                stop_flag = early_stopper(loss)
+                if stop_flag:
+                    logger.info("Early stopping criteria met, stopping training")
+                    logger.info("Breaking out loop")
+                    break
 
     def dummy_update_fn(data_new):
         pass

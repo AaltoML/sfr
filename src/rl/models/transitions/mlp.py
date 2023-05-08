@@ -46,6 +46,8 @@ class MLPTransitionModel(TransitionModel):
         early_stopper: EarlyStopper = None,
         device: str = "cuda",
     ):
+        if "cuda" in device:
+            network.cuda()
         self.network = network
         self.learning_rate = learning_rate
         self.num_iterations = num_iterations
@@ -56,8 +58,6 @@ class MLPTransitionModel(TransitionModel):
         self.early_stopper = early_stopper
         self.device = device
 
-        if "cuda" in device:
-            network.cuda()
         likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=sigma_noise)
         prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
         self.ntksvgp = src.nn2svgp.NTKSVGP(

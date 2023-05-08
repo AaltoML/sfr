@@ -45,6 +45,8 @@ class MLPRewardModel(RewardModel):
         early_stopper: EarlyStopper = None,
         device: str = "cuda",
     ):
+        if "cuda" in device:
+            network.cuda()
         self.network = network
         self.learning_rate = learning_rate
         self.num_iterations = num_iterations

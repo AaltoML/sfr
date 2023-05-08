@@ -116,7 +116,7 @@ class NTKSVGP(nn.Module):
             )
         else:
             print("using aidans predict")
-            self.alpha_u, self.beta_u = calc_sparse_dual_params(
+            self.alpha_u, self.beta_u, self.Lambda_u = calc_sparse_dual_params(
                 network=self.network,
                 train_data=self.train_data,
                 Z=self.Z,
@@ -199,11 +199,19 @@ class NTKSVGP(nn.Module):
         # lambda_1_minus_y = y-lambda_1
         # print(" hereh lambda_1 {}".format(lambda_1.shape))
         # self.alpha += (Kzx @ lambda_1_minus_y.T[..., None])[..., 0]
-        self.alpha_u += (Kzx @ y.T[..., None])[..., 0]
+        # self.alpha_u += (Kzx @ y.T[..., None])[..., 0]
         self.beta_u += (
             Kzx
             @ (1**-1 * torch.eye(num_new_data).to(self.Z)[None, ...])
             @ torch.transpose(Kzx, -1, -2)
+        )
+        self.Lambda_u += (Kzx @ y.T[..., None])[..., 0]
+        self.alpha_u = calc_alpha_u_from_lambda(
+            beta_u=self.beta_u,
+            Lambda_u=self.Lambda_u,
+            Z=self.Z,
+            kernel=self.kernel,
+            jitter=self.jitter,
         )
 
         logger.info("Building predict fn...")
@@ -442,21 +450,13 @@ def calc_sparse_dual_params(
     kernel: NTK,
     likelihood: Likelihood,
     jitter: float = 1e-3,
-) -> Tuple[AlphaInducing, BetaInducing]:
+) -> Tuple[AlphaInducing, BetaInducing, Lambda]:
     num_inducing, input_dim = Z.shape
     X, Y = train_data
     assert X.ndim == 2
     assert X.shape[0] == Y.shape[0]
     assert X.shape[1] == input_dim
     Kzx = kernel(Z, X)
-    Kzz = kernel(Z, Z)
-    output_dim = Kzz.shape[0]
-    Iz = (
-        torch.eye(Kzz.shape[-1], dtype=torch.float64)
-        .to(Z.device)[None, ...]
-        .repeat(output_dim, 1, 1)
-    )
-    Kzz += Iz * jitter
 
     F = network(X)
     Lambda, beta = calc_lambdas(Y=Y, F=F, likelihood=likelihood)
@@ -477,12 +477,35 @@ def calc_sparse_dual_params(
     Lambda_u = torch.matmul(Kzx, torch.transpose(Lambda, -1, -2)[..., None])[..., 0]
     # print("Lambda_u {}".format(Lambda_u.shape))
 
+    alpha_u = calc_alpha_u_from_lambda(
+        beta_u=beta_u, Lambda_u=Lambda_u, Z=Z, kernel=kernel, jitter=jitter
+    )
     # print("(Kzz + beta_u) {}".format(Kzz + beta_u))
-    KzzplusBeta = (Kzz + beta_u) + Iz * jitter
-    alpha_u = torch.linalg.solve(KzzplusBeta, Lambda_u[..., None])[..., 0]
+    # KzzplusBeta = (Kzz + beta_u) + Iz * jitter
+    # alpha_u = torch.linalg.solve(KzzplusBeta, Lambda_u[..., None])[..., 0]
     # alpha_u = torch.linalg.solve((Kzz + beta_u), Lambda_u[..., None])[..., 0]
     # print("alpha_u {}".format(alpha_u.shape))
-    return alpha_u, beta_u
+    return alpha_u, beta_u, Lambda_u
+
+
+def calc_alpha_u_from_lambda(
+    beta_u: BetaInducing,
+    Lambda_u: Lambda,
+    Z: InducingPoints,
+    kernel: NTK,
+    jitter: float = 1e-3,
+) -> AlphaInducing:
+    Kzz = kernel(Z, Z)
+    output_dim = Kzz.shape[0]
+    Iz = (
+        torch.eye(Kzz.shape[-1], dtype=torch.float64)
+        .to(Z.device)[None, ...]
+        .repeat(output_dim, 1, 1)
+    )
+    Kzz += Iz * jitter
+    KzzplusBeta = (Kzz + beta_u) + Iz * jitter
+    alpha_u = torch.linalg.solve(KzzplusBeta, Lambda_u[..., None])[..., 0]
+    return alpha_u
 
 
 def calc_lambdas(

@@ -23,11 +23,15 @@ torch.backends.cudnn.benchmark = False
 def train(model, likelihood, X_train, y_train, optimizer, n_epochs):
     """Train model with given optimizer and run postprocessing"""
     losses = list()
+    is_bernoulli = isinstance(likelihood, BernoulliLh)
     for i in range(n_epochs):
         def closure():
             model.zero_grad()
             f = model(X_train)
-            return likelihood.nn_loss(f=f, y=y_train), X_train.shape[0]
+            if not is_bernoulli:
+                return likelihood.nn_loss(f=f, y=y_train.squeeze()), X_train.shape[0]
+            else:
+                return likelihood.nn_loss(f=f, y=y_train), X_train.shape[0]
         loss = optimizer.step(closure)
         losses.append(loss)
 #    if not isinstance(likelihood, ntksvgp.likelihoods.Likelihood):
@@ -91,15 +95,16 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
         likelihood = BernoulliLh(EPS=0.000001)
         K = 1
     else:
-        likelihood = CategoricalLh()
+        likelihood = CategoricalLh(EPS=0.0000001)
         K = ds_train.C
 
-    if y_train.ndim == 1:
+    if y_train.ndim == 1: #isinstance(likelihood, BernoulliLh):
         y_train = y_train.unsqueeze(-1)
         y_test = y_test.unsqueeze(-1)
         y_valid = y_valid.unsqueeze(-1)
 
     prior_prec_n = prior_prec / y_train.shape[0]
+    print(f'prior precision: {prior_prec_n}')
 
     model = SiMLP(D, K, n_layers, n_units, activation=activation).to(device)
     optimizer = LaplaceGGN(model, lr=lr, prior_prec=prior_prec_n)
@@ -119,7 +124,12 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
 
     
     # SVGP predictive
-    svgp = create_ntksvgp(X_train, y_train, model, likelihood, prior_prec_n, n_sparse=n_sparse)
+    if isinstance(likelihood, CategoricalLh):
+        likelihood = CategoricalLh(EPS=0.1)
+        y_input = y_train.squeeze()
+    else:
+        y_input = y_train
+    svgp = create_ntksvgp(X_train, y_input, model, likelihood, prior_prec_n, n_sparse=n_sparse)
     fs_train = preds_svgp(X_train, svgp, likelihood, samples=n_samples)
     fs_test = preds_svgp(X_test, svgp, likelihood, samples=n_samples)
     fs_valid = preds_svgp(X_valid, svgp,  likelihood, samples=n_samples)

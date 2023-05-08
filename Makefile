@@ -24,6 +24,7 @@ run: $(VENV)/bin/activate
 
 $(VENV)/bin/activate: setup.py
 	python3 -m venv $(VENV)
+	python3 -m pip install --upgrade pip
 	$(PIP) install -e ".[experiments, dev]"
 
 # $(VENV)/bin/activate: requirements.txt

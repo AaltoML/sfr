@@ -446,7 +446,9 @@ def train(cfg: DictConfig):
             # print("state_diff_var {}".format(state_diff_var.shape))
             # print("state_diff_pred {}".format(state_diff_pred))
             # print("state_diff_output {}".format(state_diff_output.shape))
-            mse_transition_model = torch.sum((state_diff_mean - state_diff_output) ** 2)
+            mse_transition_model = torch.mean(
+                (state_diff_mean - state_diff_output) ** 2
+            )
             nlpd_transition_model = -torch.sum(
                 torch.distributions.Normal(
                     state_diff_mean, torch.sqrt(state_diff_var)
@@ -457,7 +459,7 @@ def train(cfg: DictConfig):
                 state_action_inputs
                 # state=state[None, ...], action=action_input[None, ...]
             )
-            mse_reward_model = torch.sum((reward_mean - reward_output) ** 2)
+            mse_reward_model = torch.mean((reward_mean - reward_output) ** 2)
             # print("mse_trans {}".format(mse_transition_model))
             # print("mse_reward {}".format(mse_reward_model))
             wandb.log({"mse_transition_model": mse_transition_model})

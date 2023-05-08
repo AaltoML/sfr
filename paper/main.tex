@@ -186,8 +186,10 @@
 \maketitle
 
 \begin{abstract}
-Under sequential learning paradigms, such as Continual Learning (CL) or Reinforcement Learning (RL), deep learning training techniques show shortcomings, given limited access to previous data.
-In many scenarios, retraining the model to incorporate new data or avoiding forgetting can be inefficient or impossible. Existing techniques for converting trained neural networks from weight to function space allow a principled approach for CL but resort to unprincipled subset approaches. Whilst adaptivity in RL is typically ignored. In this paper, we present a method for sparsifying the representation of the neural networks in function space, which enables fast adaptation and compact representation that solves the limitations of the weight space formulation without the well-known flaws associated with nonparametric models. Furthermore, we show experiments on how our method can be a general approach to help solve exploration and retention in CL and RL.
+Sequential learning paradigms such as Continual Learning (CL) or Reinforcement Learning (RL) pose a challenge for gradient-based deep learning techniques as they struggle to incorporate new data and retain previous knowledge.
+Existing methods for converting neural networks from weight to function space allow a probabilistic treatment of the distribution over the function learned by the neural networks but are computationally expensive.
+We propose a method that converts a neural network to a low-rank functional representation as a sparse Gaussian process. 
+With this approach, we can build a compact representation of the function encoded by the neural network that can replace previous data in continual settings and be used for fast adaptation in RL, avoiding full retraining of the model. 
 \end{abstract}
 
 \section{Introduction}

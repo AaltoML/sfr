@@ -44,8 +44,8 @@ def preds_glm(X, model, likelihood, mu, Sigma_chol, samples):
     return gs.mean(dim=0)
 
 
-def preds_svgp(X, svgp, likelihood,  samples=1000):
-    gs = svgp_sampling_predictive(X, svgp,likelihood, mc_samples=samples)
+def preds_svgp(X, model, svgp, likelihood,  samples=1000):
+    gs = svgp_sampling_predictive(X, model, svgp,likelihood, mc_samples=samples)
     return gs.mean(dim=0)
 
 
@@ -93,7 +93,8 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
         likelihood = BernoulliLh(EPS=0.000001)
         K = 1
     else:
-        likelihood = CategoricalLh(EPS=0.0000001)
+        eps = 0.00000001
+        likelihood = CategoricalLh(EPS=eps)
         K = ds_train.C
 
     if y_train.ndim == 1: #isinstance(likelihood, BernoulliLh):
@@ -123,15 +124,16 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
     
     # SVGP predictive
     if isinstance(likelihood, CategoricalLh):
-        likelihood_svgp = CategoricalLh(EPS=0.1)
+        eps_2 = eps
+        likelihood_svgp = CategoricalLh(EPS=eps_2)
         y_input = y_train.squeeze()
     else:
-        y_input = y_train
+        y_input = y_trains
         likelihood_svgp = likelihood
     svgp = create_ntksvgp(X_train, y_input, model, likelihood_svgp, prior_prec_n, n_sparse=n_sparse)
-    fs_train = preds_svgp(X_train, svgp, likelihood_svgp, samples=n_samples)
-    fs_test = preds_svgp(X_test, svgp, likelihood_svgp, samples=n_samples)
-    fs_valid = preds_svgp(X_valid, svgp,  likelihood_svgp, samples=n_samples)
+    fs_train = preds_svgp(X_train, model, svgp, likelihood_svgp, samples=n_samples)
+    fs_test = preds_svgp(X_test, model, svgp, likelihood_svgp, samples=n_samples)
+    fs_valid = preds_svgp(X_valid, model, svgp,  likelihood_svgp, samples=n_samples)
     res.update(evaluate(fs_train, y_train, lh, 'svgp_ntk', 'train'))
     res.update(evaluate(fs_test, y_test, lh, 'svgp_ntk', 'test'))
     res.update(evaluate(fs_valid, y_valid, lh, 'svgp_ntk', 'valid'))
@@ -141,12 +143,12 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
     sparse_idx = torch.randperm(X_train.shape[0])[:int(n_sparse*X_train.shape[0])]
     sparse_x = X_train[sparse_idx]
     sparse_y = y_train[sparse_idx]
-    if isinstance(likelihood, CategoricalLh):
+    if isinstance(likelihood_svgp, CategoricalLh):
         sparse_y = sparse_y.squeeze()
     svgp_subset = create_ntksvgp(sparse_x, sparse_y, model, likelihood_svgp, prior_prec_n, n_sparse=1)
-    fs_train = preds_svgp(X_train, svgp_subset, likelihood_svgp, samples=n_samples)
-    fs_test = preds_svgp(X_test, svgp_subset, likelihood_svgp, samples=n_samples)
-    fs_valid = preds_svgp(X_valid, svgp_subset,  likelihood_svgp, samples=n_samples)
+    fs_train = preds_svgp(X_train, model,  svgp_subset, likelihood_svgp, samples=n_samples)
+    fs_test = preds_svgp(X_test, model,  svgp_subset, likelihood_svgp, samples=n_samples)
+    fs_valid = preds_svgp(X_valid, model, svgp_subset,  likelihood_svgp, samples=n_samples)
     res.update(evaluate(fs_train, y_train, lh, 'gp_subset', 'train'))
     res.update(evaluate(fs_test, y_test, lh, 'gp_subset', 'test'))
     res.update(evaluate(fs_valid, y_valid, lh, 'gp_subset', 'valid'))
@@ -267,7 +269,7 @@ def main(ds_train, ds_test, ds_valid, deltas, device, dataset, name, seed, res_d
     resdict['K'] = ds_train.C
 
     res_file = f'classification_{dataset}_{name}_{seed}.pkl'
-    with open(os.path.join(res_dir, res_folder,  res_file), 'wb') as f:
+    with open(os.path.join(res_dir,  res_file), 'wb') as f:
         pickle.dump(resdict, f)
     print(f'Wrote results to {res_file}')
 

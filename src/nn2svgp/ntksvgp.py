@@ -48,6 +48,7 @@ class NTKSVGP(nn.Module):
         num_inducing: int = 30,
         dual_batch_size: Optional[int] = None,
         jitter: float = 1e-6,
+        device: str = "cpu"
     ):
         super().__init__()
         self.network = network
@@ -57,16 +58,17 @@ class NTKSVGP(nn.Module):
         self.num_inducing = num_inducing
         self.dual_batch_size = dual_batch_size
         self.jitter = jitter
+        self.device = device
 
     def set_data(self, train_data: Data):
         """Sets training data, samples inducing points, calcs dual parameters, builds predict fn"""
         X_train, Y_train = train_data
-        if X_train.ndim > 2:
-            # TODO flatten dims for images
-            logger.info("X_train.ndim>2 so flattening {}".format(X_train.shape))
-            X_train = torch.flatten(X_train, 1, -1)
-            logger.info("X_train shape after flattening {}".format(X_train.shape))
-        assert X_train.ndim == 2
+        # if X_train.ndim > 2:
+        #     # TODO flatten dims for images
+        #     logger.info("X_train.ndim>2 so flattening {}".format(X_train.shape))
+        #     X_train = torch.flatten(X_train, 1, -1)
+        #     logger.info("X_train shape after flattening {}".format(X_train.shape))
+        # assert X_train.ndim == 2
         # assert X_train.ndim >= 2
         # assert Y_train.ndim == 2
         assert X_train.shape[0] == Y_train.shape[0]
@@ -76,9 +78,9 @@ class NTKSVGP(nn.Module):
         num_data = Y_train.shape[0]
         indices = torch.randperm(num_data)[: self.num_inducing]
         # TODO will this work for image classification??
-        self.Z = X_train[indices].to(X_train.device)
+        self.Z = X_train[indices.to(X_train.device)].to(self.device)
         # self.Z = X_train
-        assert self.Z.ndim == 2
+        # assert self.Z.ndim == 2
         # num_inducing = 100
         # self.Z = torch.linspace(-1, 3, self.num_inducing).reshape(self.num_inducing, -1)
         # Z = torch.rand(num_inducing, 1) * 3
@@ -112,7 +114,9 @@ class NTKSVGP(nn.Module):
                 Z=self.Z,
                 likelihood=self.likelihood,
                 kernel=self.kernel_single,
+                jitter=self.jitter,
                 out_dim=self.output_dim,
+                device=self.device
             )
         else:
             print("using aidans predict")
@@ -232,6 +236,8 @@ class NTKSVGP(nn.Module):
 def build_ntk(
     network: nn.Module, num_data: int, output_dim: int, delta: float = 1.0
 ) -> Tuple[NTK, NTK_single]:
+
+    network = network.eval()
     # Detaching the parameters because we won't be calling Tensor.backward().
     params = {k: v.detach() for k, v in network.named_parameters()}
 
@@ -313,7 +319,7 @@ def build_ntk(
             K[i, ...] = single_output_ntk_contraction(X1, X2, i=i, full_cov=full_cov)
         return K
 
-    return ntk, single_output_ntk
+    return ntk, single_output_ntk_contraction
 
 
 def predict_from_sparse_duals(
@@ -365,24 +371,25 @@ def predict_from_sparse_duals(
 
     return predict
 
-
+@torch.no_grad()
 def calc_sparse_dual_params_batch(
     network: torch.nn.Module,
     train_loader: DataLoader,
-    # train_data: Tuple[InputData, OutputData],
     Z: InducingPoints,
     kernel: NTK_single,
     likelihood,
-    batch_size: int = 1000,
     out_dim: int = 10,
+    jitter: float = 1e-4,
     subset_out_dim: Optional[List] = None,
     device: str = "cpu",
 ) -> Tuple[AlphaInducing, BetaInducing]:
     ################  Compute lambdas batched version START ################
     num_train = len(train_loader.dataset)
     items_shape = (num_train, out_dim)
-    lambda_1 = torch.zeros(items_shape).to(device)
-    lambda_2_diag = torch.zeros(items_shape).to(device)
+
+    # rename lambda_1 is Lambda, lamba2 is beta
+    Lambda = torch.zeros(items_shape).cpu()
+    beta_diag = torch.zeros(items_shape).cpu()
 
     start_idx = 0
     end_idx = 0
@@ -394,13 +401,16 @@ def calc_sparse_dual_params_batch(
         logits_i = network(x_i)
         if logits_i.ndim == 1:
             logits_i = logits_i.unsqueeze(-1)
-        lambda_1_i, lambda_2_i = calc_lambdas(Y=y_i, F=logits_i, likelihood=likelihood)
-        lambda_2_i = torch.vmap(torch.diag)(lambda_2_i)
+        Lambda_i, beta_i = calc_lambdas(
+            Y=y_i, F=logits_i, likelihood=likelihood
+        )
+        beta_i = torch.vmap(torch.diag)(beta_i)
 
         end_idx = start_idx + batch_size
-        lambda_1[start_idx:end_idx] = lambda_1_i
-        lambda_2_diag[start_idx:end_idx] = lambda_2_i
+        Lambda[start_idx:end_idx] = Lambda_i
+        beta_diag[start_idx:end_idx] = beta_i
         start_idx = end_idx
+
 
     # Clip the lambdas  (?)
     # lambda_1 = torch.clip(lambda_1, min=1e-7)
@@ -408,13 +418,8 @@ def calc_sparse_dual_params_batch(
     ################  Compute lambdas batched version END ################
 
     ################  Compute alpha/beta batched version START ################
-    alpha = torch.zeros((out_dim, Z.shape[0])).to(device)
-    beta = torch.zeros((out_dim, Z.shape[0], Z.shape[0])).to(device)
-
-    ## TODO: lambda2 ^ -1 ???
-    def compute_beta_i(kiu, lambda2_i):
-        # return torch.einsum('u, i, m -> um', kiu, lambda2_i**-1, kiu)
-        return torch.outer(kiu, kiu) * lambda2_i
+    alpha_u = torch.zeros((out_dim, Z.shape[0])).cpu()
+    beta_u = torch.zeros((out_dim, Z.shape[0], Z.shape[0])).cpu()
 
     if subset_out_dim is not None:
         out_dim_range = subset_out_dim
@@ -424,22 +429,29 @@ def calc_sparse_dual_params_batch(
     for output_c in out_dim_range:
         start_idx = 0
         end_idx = 0
+        logging.info(f"Computing covariance for class {output_c}")
         for batch in train_loader:
             x_i, y_i = batch[0], batch[1]
             x_i, y_i = x_i.to(device), y_i.to(device)
             batch_size = x_i.shape[0]
             end_idx = start_idx + batch_size
-            Kui_c = kernel(Z, x_i, output_c)
-            alpha[output_c] += torch.einsum(
-                "ub, b -> u", Kui_c, lambda_1[start_idx:end_idx, output_c]
-            )
-            beta[output_c] += (
-                vmap(compute_beta_i)(
-                    Kui_c.T, lambda_2_diag[start_idx:end_idx, output_c][:, None]
-                )
-            ).sum(dim=0)
+            Kui_c = kernel(Z, x_i, output_c).cpu()
+
+            Lambda_batch = Lambda[start_idx:end_idx, output_c]
+            beta_batch = beta_diag[start_idx:end_idx, output_c]
+            alpha_batch = torch.einsum("mb, b -> m", Kui_c, Lambda_batch)
+            beta_batch = torch.einsum("mb, b, nb -> mn", Kui_c, beta_batch, Kui_c)
+
+            alpha_u[output_c] += alpha_batch.cpu()
+            beta_u[output_c] += beta_batch.cpu()
+
             start_idx = end_idx
-    return alpha, beta
+            del Kui_c
+        torch.cuda.empty_cache()
+        Kzz_c = kernel(Z, Z, output_c).cpu() + torch.eye(Z.shape[0], device="cpu") * jitter
+        alpha_u[output_c] = torch.linalg.solve((Kzz_c + beta_u[output_c]), alpha_u[output_c])
+
+    return alpha_u.to(device), beta_u.to(device)
     ################  Compute alpha/beta batched version END ################
 
 

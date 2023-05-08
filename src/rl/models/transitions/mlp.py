@@ -67,6 +67,7 @@ class MLPTransitionModel(TransitionModel):
             output_dim=state_dim,
             num_inducing=num_inducing,
             jitter=jitter,
+            device=device,
         )
 
         # loss_fn = torch.nn.MSELoss()

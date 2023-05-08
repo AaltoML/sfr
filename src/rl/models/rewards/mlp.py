@@ -57,8 +57,6 @@ class MLPRewardModel(RewardModel):
         self.early_stopper = early_stopper
         self.device = device
 
-        if "cuda" in device:
-            network.cuda()
         likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=sigma_noise)
         prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
         self.ntksvgp = src.nn2svgp.NTKSVGP(
@@ -68,6 +66,7 @@ class MLPRewardModel(RewardModel):
             output_dim=1,
             num_inducing=num_inducing,
             jitter=jitter,
+            device=device,
         )
 
         # loss_fn = torch.nn.MSELoss()

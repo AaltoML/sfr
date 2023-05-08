@@ -25,3 +25,7 @@ paper/main.pdf
 *.out
 *.envrc
 *.egg-info
+
+.dir-locals.el
+
+*multirun

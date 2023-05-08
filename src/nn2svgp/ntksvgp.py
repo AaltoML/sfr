@@ -48,7 +48,7 @@ class NTKSVGP(nn.Module):
         num_inducing: int = 30,
         dual_batch_size: Optional[int] = None,
         jitter: float = 1e-6,
-        device: str = "cpu"
+        device: str = "cpu",
     ):
         super().__init__()
         self.network = network
@@ -116,7 +116,7 @@ class NTKSVGP(nn.Module):
                 kernel=self.kernel_single,
                 jitter=self.jitter,
                 out_dim=self.output_dim,
-                device=self.device
+                device=self.device,
             )
         else:
             print("using aidans predict")

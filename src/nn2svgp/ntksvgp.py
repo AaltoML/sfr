@@ -336,8 +336,8 @@ def predict_from_sparse_duals(
         .to(Z.device)[None, ...]
         .repeat(output_dim, 1, 1)
     )
-    KzzplusBeta = (Kzz + beta_u) + Iz * jitter
     Kzz += Iz * jitter
+    KzzplusBeta = (Kzz + beta_u) + Iz * jitter
     assert beta_u.shape == Kzz.shape
 
     Lm = torch.linalg.cholesky(Kzz, upper=True)

@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 import torch
 from torch.nn.utils import parameters_to_vector
@@ -12,7 +14,7 @@ from src import NTKSVGP, CategoricalLh
 import src as ntksvgp
 import os
 
-from preds.models import CIFAR10Net,  MLPS  #CIFAR100Net
+from preds.models import CIFAR10Net,  MLPS, CIFAR100Net
 from preds.datasets import MNIST, FMNIST, CIFAR10
 
 torch.backends.cudnn.deterministic = True
@@ -147,6 +149,10 @@ def main_new(ds_train, ds_test, model_name, seed, n_epochs, batch_size, lr, delt
         criterion = torch.nn.CrossEntropyLoss(reduction='sum')
         tr_loss, tr_acc = evaluate(model, train_loader, criterion, device)
         te_loss, te_acc = evaluate(model, test_loader, criterion, device)
+        logging.info(f"train loss:\t{tr_loss}")
+        logging.info(f"train acc.:\t{tr_acc}")
+        logging.info(f"test loss:\t{te_loss}")
+        logging.info(f"test acc.:\t{te_acc}")
         metrics = {'test_loss': te_loss, 'test_acc': te_acc,
                    'train_loss': tr_loss, 'train_acc': tr_acc}
 

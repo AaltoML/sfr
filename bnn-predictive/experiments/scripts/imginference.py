@@ -4,18 +4,19 @@ import pickle
 import torch
 from torch.utils.data import DataLoader
 from torch.utils.data.dataset import Subset
-from torch.distributions import Categorical
+from torch.distributions import Categorical, Normal
 from tqdm import tqdm
 import logging
 from itertools import chain
 
 #from preds.laplace import Laplace, FunctionaLaplace
+from preds.laplace import FunctionaLaplace
 from src import CategoricalLh, NTKSVGP
 import src as ntksvgp
 from preds.utils import nll_cls, macc, ece
 from preds.datasets import MNIST, FMNIST, SVHN
 from imgclassification import get_model, get_dataset
-
+from preds.predictives import svgp_sampling_predictive
 
 def get_ood_dataset(dataset):
     if dataset == 'MNIST':
@@ -62,27 +63,35 @@ def get_nn_predictive(loader, lap, seeding=False):
     ys = torch.cat(ys)
     return ps, ys
 
-def get_svgp_predictive(loader, svgp, likelihood, seeding=False):
+def get_svgp_predictive(loader,
+                        svgp,
+                        likelihood,
+                        use_nn_out: bool = True,
+                        seeding: bool = False):
     ys, ps = list(), list()
     for X, y in loader:
         X, y = X.cuda(), y.cuda()
         if seeding:
             torch.manual_seed(711)
-        ps.append(sample_svgp(X, likelihood, svgp, n_samples=100).mean(dim=0))
+        ps.append(sample_svgp(X, likelihood, svgp, use_nn_out, n_samples=100).mean(dim=0))
         ys.append(y)
     ps = torch.cat(ps)
     ys = torch.cat(ys)
     return ps, ys    
 
-def sample_svgp(X, likelihood, svgp, n_samples):
+def sample_svgp(X, likelihood, svgp, use_nn_out:bool, n_samples:int):
     """Sample the SVGP, assumes a batched input."""
-    data_shape = X.shape[1:]
     n_data = X.shape[0]
-    gp_means, gp_vars = svgp.predict_fn(X)
-    dist = Normal(gp_means, torch.sqrt(gp_vars.clamp(10**(-8))))
-    logit_samples = dist.sample((n_samples))
+    gp_means, gp_vars = svgp.predict_f(X)
+    logits = svgp.network(X)
+    if use_nn_out:
+        dist = Normal(logits, torch.sqrt(gp_vars.clamp(10**(-8))))
+    else:
+        dist = Normal(gp_means, torch.sqrt(gp_vars.clamp(10**(-8))))
+    logit_samples = dist.sample((n_samples, ))
+    out_dim = logit_samples.shape[-1]
     samples = likelihood.inv_link(logit_samples)
-    samples = samples.reshape(n_samples, n_data, *data_shape)
+    samples = samples.reshape(n_samples, n_data, out_dim)
     return samples
 
 
@@ -122,8 +131,8 @@ def get_quick_loader(loader, device='cuda'):
     return [(X.to(device), y.to(device)) for X, y in loader]
 
 
-def main(dataset_name, ds_train, ds_test, model_name, rerun, batch_size, seed, n_sparse, name,
-         delta_min=1e-7, delta_max=1e7, res_dir='experiments/results', device='cuda'):
+def main(dataset_name, ds_train, ds_test, model_name, rerun, batch_size, seed, n_sparse, name, n_inducing_points,
+        delta_min=1e-7, delta_max=1e7, res_dir='experiments/results', device='cuda'):
     lh = CategoricalLh()
 
     eligible_files = list()
@@ -147,7 +156,7 @@ def main(dataset_name, ds_train, ds_test, model_name, rerun, batch_size, seed, n
     (X_train, y_train) = next(iter(all_train))
     torch.manual_seed(seed)
     M = len(ds_test)
-    n_inducing = int(len(ds_train)*n_sparse)
+    n_inducing = n_inducing_points  # int(len(ds_train)*n_sparse)
     logging.info(f'Train set size: {len(ds_train)}')
     logging.info(f'Num inducing points: {n_inducing}')
     print(X_train.shape)
@@ -161,9 +170,11 @@ def main(dataset_name, ds_train, ds_test, model_name, rerun, batch_size, seed, n
     for f, delta in tqdm(list(zip(eligible_files, deltas))):
         logging.info(f'inference for delta={delta}')
         state = torch.load(f)
-        if 'map' in state and not rerun:
-            # do not recompute the metrics
-            continue
+        # if 'map' in state and not rerun:
+        #     # do not recompute the metrics
+        #     print("map in state")
+        #     continue
+
         model = get_model(model_name, ds_train)
         model.load_state_dict(state['model'])
 
@@ -178,52 +189,22 @@ def main(dataset_name, ds_train, ds_test, model_name, rerun, batch_size, seed, n
 
         # SVGP
         logging.info('SVGP performance')
-        data = (X_train[:1000], y_train[:1000]) # TODO remove later, just for testing
+        data = (X_train, y_train)
         prior = ntksvgp.priors.Gaussian(params=model.parameters, delta=delta)
-        output_dim = model(X_train[:10]).shape[-1]
-        svgp = NTKSVGP(network=model, prior=prior, output_dim=output_dim, likelihood=lh, num_inducing=n_inducing, dual_batch_size=batch_size)
-        svgp.set_data(data)
-        gstar_te, yte = get_svgp_predictive(test_loader, likelihood,  svgp)
-        gstar_va, yva = get_svgp_predictive(val_loader, likelihood, svgp)
+        output_dim = model(X_train[:10].to(device)).shape[-1]
+        svgp = NTKSVGP(network=model, prior=prior, output_dim=output_dim,
+                       likelihood=lh, num_inducing=n_inducing,
+                       dual_batch_size=batch_size, device=device)
+        svgp.set_data((X_train, y_train))
+        gstar_te, yte = get_svgp_predictive(test_loader, svgp, use_nn_out=False, likelihood=lh)
+        gstar_va, yva = get_svgp_predictive(val_loader, svgp, use_nn_out=False, likelihood=lh)
         state[f'svgp_ntk_{name}'] = evaluate(lh, yte, gstar_te, yva, gstar_va)
+        logging.info(state[f"svgp_ntk_{name}"])
 
-        # Laplace Kron
-    #    logging.info('Laplace Kronecker GLM performance')
-     #   lap = Laplace(model, delta, lh)
-    #    lap.infer(train_loader, cov_type='kron')
-    #    mstar_te, yte = get_lap_predictive(test_loader, lap)
-    #    mstar_va, yva = get_lap_predictive(val_loader, lap)
-    #    state['lap_kron'] = evaluate(lh, yte, mstar_te, yva, mstar_va)
-
-     #   logging.info('Laplace Kronecker NN performance')
-    #    mstar_va, yva = get_nn_predictive(val_loader, lap)
-    #    mstar_te, yte = get_nn_predictive(test_loader, lap)
-    #    state['lap_kron_nn'] = evaluate(lh, yte, mstar_te, yva, mstar_va)
-
-        # Laplace NN originally dampened
-    #    logging.info('Laplace Kronecker GLM Damp performance')
-    #    lap.Sigma_chol.dampen = True
-    #    mstar_va, yva = get_lap_predictive(val_loader, lap)
-    #    mstar_te, yte = get_lap_predictive(test_loader, lap)
-    #    state['lap_kron_damp'] = evaluate(lh, yte, mstar_te, yva, mstar_va)
-
-     #   logging.info('Laplace Kronecker NN Damp performance')
-     #   mstar_va, yva = get_nn_predictive(val_loader, lap)
-     #   mstar_te, yte = get_nn_predictive(test_loader, lap)
-     #   state['lap_kron_dampnn'] = evaluate(lh, yte, mstar_te, yva, mstar_va)
-
-        # Laplace Diag
-      #  logging.info('Laplace Diag GLM performance')
-     #   lap = Laplace(model, delta, lh)
-     #   lap.infer(train_loader, cov_type='diag')
-     #   mstar_va, yva = get_lap_predictive(val_loader, lap)
-     #   mstar_te, yte = get_lap_predictive(test_loader, lap)
-     #   state['lap_diag'] = evaluate(lh, yte, mstar_te, yva, mstar_va)
-
-      #  logging.info('Laplace Diag NN performance')
-     #   mstar_va, yva = get_nn_predictive(val_loader, lap)
-     #   mstar_te, yte = get_nn_predictive(test_loader, lap)
-     #   state['lap_diag_nn'] = evaluate(lh, yte, mstar_te, yva, mstar_va)
+        gstar_te, yte = get_svgp_predictive(test_loader, svgp, use_nn_out=True, likelihood=lh)
+        gstar_va, yva = get_svgp_predictive(val_loader, svgp, use_nn_out=True, likelihood=lh)
+        state[f'svgp_ntk_nn_{name}'] = evaluate(lh, yte, gstar_te, yva, gstar_va)
+        logging.info(state[f"svgp_ntk_nn_{name}"])
 
         torch.save(state, f)
 
@@ -259,77 +240,77 @@ def ood(dataset_name, ds_train, ds_test, ds_ood, model_name, batch_size, seed):
     gstar_od, _ = get_map_predictive(ood_loader, model)
     pred_ents['map'] = predictive_entropies(gstar_te, gstar_od)
 
-    # # Laplace Kron GLM
-    model = get_model(model_name, ds_train)
-    state = torch.load(eligible_files[np.argmin([e['lap_kron'] for e in perfs])])
-    logging.info(f'Laplace Kron GLM inference - best delta={state["delta"]}')
-    model.load_state_dict(state['model'])
-    model = model.cuda()
-    lap = Laplace(model, state['delta'], lh)
-    lap.infer(train_loader, cov_type='kron')
-    mstar_te, _ = get_lap_predictive(tqdm(test_loader), lap)
-    mstar_od, _ = get_lap_predictive(tqdm(ood_loader), lap)
-    pred_ents['lap_kron'] = predictive_entropies(mstar_te, mstar_od)
-
-    # Laplace Kron NN
-    model = get_model(model_name, ds_train)
-    state = torch.load(eligible_files[np.argmin([e['lap_kron_nn'] for e in perfs])])
-    logging.info(f'Laplace Kron NN inference - best delta={state["delta"]}')
-    model.load_state_dict(state['model'])
-    model = model.cuda()
-    lap = Laplace(model, state['delta'], lh)
-    lap.infer(train_loader, cov_type='kron')
-    mstar_te, _ = get_nn_predictive(tqdm(test_loader), lap)
-    mstar_od, _ = get_nn_predictive(tqdm(ood_loader), lap)
-    pred_ents['lap_kron_nn'] = predictive_entropies(mstar_te, mstar_od)
-
-    # Laplace Damp
-    model = get_model(model_name, ds_train)
-    state = torch.load(eligible_files[np.argmin([e['lap_kron_damp'] for e in perfs])])
-    logging.info(f'Laplace Kron damp GLM inference - best delta={state["delta"]}')
-    model.load_state_dict(state['model'])
-    model = model.cuda()
-    lap = Laplace(model, state['delta'], lh)
-    lap.infer(train_loader, cov_type='kron', dampen_kron=True)
-    mstar_te, _ = get_lap_predictive(tqdm(test_loader), lap)
-    mstar_od, _ = get_lap_predictive(tqdm(ood_loader), lap)
-    pred_ents['lap_kron_damp'] = predictive_entropies(mstar_te, mstar_od)
-
-    # Laplace NN Damp
-    model = get_model(model_name, ds_train)
-    state = torch.load(eligible_files[np.argmin([e['lap_kron_dampnn'] for e in perfs])])
-    logging.info(f'Laplace Kron damp NN inference - best delta={state["delta"]}')
-    model.load_state_dict(state['model'])
-    model = model.cuda()
-    lap = Laplace(model, state['delta'], lh)
-    lap.infer(train_loader, cov_type='kron', dampen_kron=True)
-    mstar_te, _ = get_nn_predictive(tqdm(test_loader), lap)
-    mstar_od, _ = get_nn_predictive(tqdm(ood_loader), lap)
-    pred_ents['lap_kron_dampnn'] = predictive_entropies(mstar_te, mstar_od)
-
-    # Laplace Diag
-    model = get_model(model_name, ds_train)
-    state = torch.load(eligible_files[np.argmin([e['lap_diag'] for e in perfs])])
-    logging.info(f'Laplace diag GLM inference - best delta={state["delta"]}')
-    model.load_state_dict(state['model'])
-    model = model.cuda()
-    lap = Laplace(model, state['delta'], lh)
-    lap.infer(train_loader, cov_type='diag')
-    mstar_te, _ = get_lap_predictive(tqdm(test_loader), lap)
-    mstar_od, _ = get_lap_predictive(tqdm(ood_loader), lap)
-    pred_ents['lap_diag'] = predictive_entropies(mstar_te, mstar_od)
-
-    # Laplace Diag NN
-    model = get_model(model_name, ds_train)
-    state = torch.load(eligible_files[np.argmin([e['lap_diag_nn'] for e in perfs])])
-    logging.info(f'Laplace diag NN inference - best delta={state["delta"]}')
-    model.load_state_dict(state['model'])
-    model = model.cuda()
-    lap = Laplace(model, state['delta'], lh)
-    lap.infer(train_loader, cov_type='diag')
-    mstar_te, _ = get_nn_predictive(tqdm(test_loader), lap)
-    mstar_od, _ = get_nn_predictive(tqdm(ood_loader), lap)
-    pred_ents['lap_diag_nn'] = predictive_entropies(mstar_te, mstar_od)
+    # # # Laplace Kron GLM
+    # model = get_model(model_name, ds_train)
+    # state = torch.load(eligible_files[np.argmin([e['lap_kron'] for e in perfs])])
+    # logging.info(f'Laplace Kron GLM inference - best delta={state["delta"]}')
+    # model.load_state_dict(state['model'])
+    # model = model.cuda()
+    # lap = Laplace(model, state['delta'], lh)
+    # lap.infer(train_loader, cov_type='kron')
+    # mstar_te, _ = get_lap_predictive(tqdm(test_loader), lap)
+    # mstar_od, _ = get_lap_predictive(tqdm(ood_loader), lap)
+    # pred_ents['lap_kron'] = predictive_entropies(mstar_te, mstar_od)
+    #
+    # # Laplace Kron NN
+    # model = get_model(model_name, ds_train)
+    # state = torch.load(eligible_files[np.argmin([e['lap_kron_nn'] for e in perfs])])
+    # logging.info(f'Laplace Kron NN inference - best delta={state["delta"]}')
+    # model.load_state_dict(state['model'])
+    # model = model.cuda()
+    # lap = Laplace(model, state['delta'], lh)
+    # lap.infer(train_loader, cov_type='kron')
+    # mstar_te, _ = get_nn_predictive(tqdm(test_loader), lap)
+    # mstar_od, _ = get_nn_predictive(tqdm(ood_loader), lap)
+    # pred_ents['lap_kron_nn'] = predictive_entropies(mstar_te, mstar_od)
+    #
+    # # Laplace Damp
+    # model = get_model(model_name, ds_train)
+    # state = torch.load(eligible_files[np.argmin([e['lap_kron_damp'] for e in perfs])])
+    # logging.info(f'Laplace Kron damp GLM inference - best delta={state["delta"]}')
+    # model.load_state_dict(state['model'])
+    # model = model.cuda()
+    # lap = Laplace(model, state['delta'], lh)
+    # lap.infer(train_loader, cov_type='kron', dampen_kron=True)
+    # mstar_te, _ = get_lap_predictive(tqdm(test_loader), lap)
+    # mstar_od, _ = get_lap_predictive(tqdm(ood_loader), lap)
+    # pred_ents['lap_kron_damp'] = predictive_entropies(mstar_te, mstar_od)
+    #
+    # # Laplace NN Damp
+    # model = get_model(model_name, ds_train)
+    # state = torch.load(eligible_files[np.argmin([e['lap_kron_dampnn'] for e in perfs])])
+    # logging.info(f'Laplace Kron damp NN inference - best delta={state["delta"]}')
+    # model.load_state_dict(state['model'])
+    # model = model.cuda()
+    # lap = Laplace(model, state['delta'], lh)
+    # lap.infer(train_loader, cov_type='kron', dampen_kron=True)
+    # mstar_te, _ = get_nn_predictive(tqdm(test_loader), lap)
+    # mstar_od, _ = get_nn_predictive(tqdm(ood_loader), lap)
+    # pred_ents['lap_kron_dampnn'] = predictive_entropies(mstar_te, mstar_od)
+    #
+    # # Laplace Diag
+    # model = get_model(model_name, ds_train)
+    # state = torch.load(eligible_files[np.argmin([e['lap_diag'] for e in perfs])])
+    # logging.info(f'Laplace diag GLM inference - best delta={state["delta"]}')
+    # model.load_state_dict(state['model'])
+    # model = model.cuda()
+    # lap = Laplace(model, state['delta'], lh)
+    # lap.infer(train_loader, cov_type='diag')
+    # mstar_te, _ = get_lap_predictive(tqdm(test_loader), lap)
+    # mstar_od, _ = get_lap_predictive(tqdm(ood_loader), lap)
+    # pred_ents['lap_diag'] = predictive_entropies(mstar_te, mstar_od)
+    #
+    # # Laplace Diag NN
+    # model = get_model(model_name, ds_train)
+    # state = torch.load(eligible_files[np.argmin([e['lap_diag_nn'] for e in perfs])])
+    # logging.info(f'Laplace diag NN inference - best delta={state["delta"]}')
+    # model.load_state_dict(state['model'])
+    # model = model.cuda()
+    # lap = Laplace(model, state['delta'], lh)
+    # lap.infer(train_loader, cov_type='diag')
+    # mstar_te, _ = get_nn_predictive(tqdm(test_loader), lap)
+    # mstar_od, _ = get_nn_predictive(tqdm(ood_loader), lap)
+    # pred_ents['lap_diag_nn'] = predictive_entropies(mstar_te, mstar_od)
 
     fname = f'results/{dataset_name}_{model_name}_{seed}_ood.pkl'
     logging.info(f'save {fname}')
@@ -433,13 +414,14 @@ if __name__ == '__main__':
     parser.add_argument('-d', '--dataset', help='dataset', choices=datasets)
     parser.add_argument('-m', '--model', help='which model to train', choices=models)
     parser.add_argument('-r', '--rerun', help='recompute for models', action='store_true')
-    parser.add_argument('-b', '--batch_size', help='Jac/Kernel batch size', type=int, default=20)
+    parser.add_argument('-b', '--batch_size', help='Jac/Kernel batch size', type=int, default=1000)
     parser.add_argument('-s', '--seed', help='randomness seed', default=117, type=int)
     parser.add_argument('--gp', help='functional inference', action='store_true')
     parser.add_argument('--ood', help='out of distribution', action='store_true')
     parser.add_argument('--delta_min', type=float, default=1e-7)
     parser.add_argument('--delta_max', type=float, default=1e7)
     parser.add_argument('--n_sparse', type=float, default=0.5)
+    parser.add_argument('--n_inducing_points', type=int, default=1000)
     parser.add_argument('--name', type=str, default='testlocal', help='Name of run to be saved in dict key')
     parser.add_argument('--loginfo', action='store_true', help='log info')
     parser.add_argument('--root_dir', help='Root directory', default='../')
@@ -448,6 +430,7 @@ if __name__ == '__main__':
     model_name = args.model
     rerun = args.rerun
     n_sparse = args.n_sparse
+    n_inducing_points = args.n_inducing_points
     root_dir = args.root_dir
     name = args.name
     data_dir = os.path.join(root_dir, 'data')
@@ -463,6 +446,8 @@ if __name__ == '__main__':
 
     logging.basicConfig(level=logging.INFO if args.loginfo else logging.WARNING)
     ds_train, ds_test = get_dataset(dataset, False, data_dir)
+    # ds_train.data = ds_train.data[:1000]
+    # ds_train.targets = ds_train.targets[:1000]
     if args.gp:
         # does inference and OOD at once!
         logging.info(f'Run GP inference with {dataset} using {model_name}')
@@ -475,5 +460,5 @@ if __name__ == '__main__':
         ood(dataset, ds_train, ds_test, ds_ood, model_name, args.batch_size, args.seed)
     else:
         logging.info(f'Run inference with {dataset} using {model_name}')
-        main(dataset, ds_train, ds_test, model_name, rerun, args.batch_size, args.seed, n_sparse, name,
+        main(dataset, ds_train, ds_test, model_name, rerun, args.batch_size, args.seed, n_sparse, name, n_inducing_points,
              args.delta_min, args.delta_max, res_dir, device=device)

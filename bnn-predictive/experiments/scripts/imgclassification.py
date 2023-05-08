@@ -125,7 +125,7 @@ def main_new(ds_train, ds_test, model_name, seed, n_epochs, batch_size, lr, delt
     for delta in deltas:
         torch.manual_seed(seed)
         model = get_model(model_name, ds_train).to(device)
-        f_out = model(next(iter(ds_train))[0])
+        #f_out = model(next(iter(ds_train))[0])
         prior = ntksvgp.priors.Gaussian(params=model.parameters, delta=delta)
         svgp = NTKSVGP(network=model, likelihood=likelihood, output_dim=n_classes, prior=prior, num_inducing=0)
         optimizer = torch.optim.Adam([{"params": svgp.parameters()}], lr=lr)

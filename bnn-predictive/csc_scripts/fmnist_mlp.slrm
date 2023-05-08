@@ -2,16 +2,16 @@
 #SBATCH --job-name=fmnist_mlp
 #SBATCH --array=0-4
 #SBATCH --account=project_2004878
-#SBATCH --time=0:05:00
+#SBATCH --time=0:45:00
 #SBATCH --partition=gpusmall
 #SBATCH --gres=gpu:a100:1
 #SBATCH --cpus-per-task=10
 #SBATCH --mem-per-cpu=8000
-#SBATCH --output=/scratch/project_2004878/bnn-svgp/logs/fmnist/fmnist_all_%J_%a_run.out
+#SBATCH --output=/scratch/project_2004878/full-bnn-svgp/bnn-predictive/logs/fmnist/fmnist_all_%A_%a_run.out
 
 
 source /scratch/project_2004878/miniconda3/etc/profile.d/conda.sh
-conda activate bnn-env-torch2
+conda activate /scratch/project_2004878/full-bnn-svgp/conda/bnn-svgp
 
 SEEDS=(117 68 187 27 51)
 
@@ -19,8 +19,8 @@ SEED=${SEEDS[$(($SLURM_ARRAY_TASK_ID))]}
 dataset='FMNIST'
 echo $dataset
 echo $SEED
-name='sparse_eigth'
-sparse_ratio=0.125
+name='sparse_percent_06'
+sparse_ratio=0.01
 model='MLP'
 n_deltas=6
 srun python3 -u experiments/scripts/imgclassification.py -d ${dataset} -m ${model} --root_dir . -s ${SEED} --n_deltas ${n_deltas}

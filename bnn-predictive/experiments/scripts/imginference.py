@@ -62,17 +62,28 @@ def get_nn_predictive(loader, lap, seeding=False):
     ys = torch.cat(ys)
     return ps, ys
 
-def get_svgp_predictive(loader, svgp, seeding=False):
+def get_svgp_predictive(loader, svgp, likelihood, seeding=False):
     ys, ps = list(), list()
     for X, y in loader:
         X, y = X.cuda(), y.cuda()
         if seeding:
             torch.manual_seed(711)
-        ps.append(svgp.predictive_samples_bnn(X, n_samples=100).mean(dim=0))
+        ps.append(sample_svgp(X, likelihood, svgp, n_samples=100).mean(dim=0))
         ys.append(y)
     ps = torch.cat(ps)
     ys = torch.cat(ys)
     return ps, ys    
+
+def sample_svgp(X, likelihood, svgp, n_samples):
+    """Sample the SVGP, assumes a batched input."""
+    data_shape = X.shape[1:]
+    n_data = X.shape[0]
+    gp_means, gp_vars = svgp.predict_fn(X)
+    dist = Normal(gp_means, torch.sqrt(gp_vars.clamp(10**(-8))))
+    logit_samples = dist.sample((n_samples))
+    samples = likelihood.inv_link(logit_samples)
+    samples = samples.reshape(n_samples, n_data, *data_shape)
+    return samples
 
 
 def evaluate(lh, yte, gstar_te, yva, gstar_va):
@@ -167,13 +178,13 @@ def main(dataset_name, ds_train, ds_test, model_name, rerun, batch_size, seed, n
 
         # SVGP
         logging.info('SVGP performance')
-        data = (X_train, y_train)
+        data = (X_train[:1000], y_train[:1000]) # TODO remove later, just for testing
         prior = ntksvgp.priors.Gaussian(params=model.parameters, delta=delta)
         output_dim = model(X_train[:10]).shape[-1]
         svgp = NTKSVGP(network=model, prior=prior, output_dim=output_dim, likelihood=lh, num_inducing=n_inducing, dual_batch_size=batch_size)
-        svgp.set_data((X_train, y_train))
-        gstar_te, yte = get_svgp_predictive(test_loader, svgp)
-        gstar_va, yva = get_svgp_predictive(val_loader, svgp)
+        svgp.set_data(data)
+        gstar_te, yte = get_svgp_predictive(test_loader, likelihood,  svgp)
+        gstar_va, yva = get_svgp_predictive(val_loader, likelihood, svgp)
         state[f'svgp_ntk_{name}'] = evaluate(lh, yte, gstar_te, yva, gstar_va)
 
         # Laplace Kron

@@ -23,11 +23,15 @@ torch.backends.cudnn.benchmark = False
 def train(model, likelihood, X_train, y_train, optimizer, n_epochs):
     """Train model with given optimizer and run postprocessing"""
     losses = list()
+    is_bernoulli = isinstance(likelihood, BernoulliLh)
     for i in range(n_epochs):
         def closure():
             model.zero_grad()
             f = model(X_train)
-            return likelihood.nn_loss(f=f, y=y_train), X_train.shape[0]
+            if not is_bernoulli:
+                return likelihood.nn_loss(f=f, y=y_train.squeeze()), X_train.shape[0]
+            else:
+                return likelihood.nn_loss(f=f, y=y_train), X_train.shape[0]
         loss = optimizer.step(closure)
         losses.append(loss)
 #    if not isinstance(likelihood, ntksvgp.likelihoods.Likelihood):
@@ -67,8 +71,6 @@ def create_ntksvgp(X_train, y_train, model, likelihood, prior_prec, n_sparse=0.5
     n_classes = model(X_train).shape[-1]
     print(f'N classes: {n_classes}')
     print(f'Prior prec: {prior_prec}')
- #   if n_classes == 1:
-  #      n_classes = 2
     prior = ntksvgp.priors.Gaussian(params=model.parameters, delta=prior_prec) 
     svgp = NTKSVGP(network=model, prior=prior, output_dim=n_classes, likelihood=likelihood, num_inducing=num_inducing)
     svgp.set_data(data)
@@ -91,15 +93,16 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
         likelihood = BernoulliLh(EPS=0.000001)
         K = 1
     else:
-        likelihood = CategoricalLh()
+        likelihood = CategoricalLh(EPS=0.0000001)
         K = ds_train.C
 
-    if y_train.ndim == 1:
+    if y_train.ndim == 1: #isinstance(likelihood, BernoulliLh):
         y_train = y_train.unsqueeze(-1)
         y_test = y_test.unsqueeze(-1)
         y_valid = y_valid.unsqueeze(-1)
 
     prior_prec_n = prior_prec / y_train.shape[0]
+    print(f'prior precision: {prior_prec_n}')
 
     model = SiMLP(D, K, n_layers, n_units, activation=activation).to(device)
     optimizer = LaplaceGGN(model, lr=lr, prior_prec=prior_prec_n)
@@ -119,13 +122,35 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
 
     
     # SVGP predictive
-    svgp = create_ntksvgp(X_train, y_train, model, likelihood, prior_prec_n, n_sparse=n_sparse)
-    fs_train = preds_svgp(X_train, svgp, likelihood, samples=n_samples)
-    fs_test = preds_svgp(X_test, svgp, likelihood, samples=n_samples)
-    fs_valid = preds_svgp(X_valid, svgp,  likelihood, samples=n_samples)
+    if isinstance(likelihood, CategoricalLh):
+        likelihood_svgp = CategoricalLh(EPS=0.1)
+        y_input = y_train.squeeze()
+    else:
+        y_input = y_train
+        likelihood_svgp = likelihood
+    svgp = create_ntksvgp(X_train, y_input, model, likelihood_svgp, prior_prec_n, n_sparse=n_sparse)
+    fs_train = preds_svgp(X_train, svgp, likelihood_svgp, samples=n_samples)
+    fs_test = preds_svgp(X_test, svgp, likelihood_svgp, samples=n_samples)
+    fs_valid = preds_svgp(X_valid, svgp,  likelihood_svgp, samples=n_samples)
     res.update(evaluate(fs_train, y_train, lh, 'svgp_ntk', 'train'))
     res.update(evaluate(fs_test, y_test, lh, 'svgp_ntk', 'test'))
     res.update(evaluate(fs_valid, y_valid, lh, 'svgp_ntk', 'valid'))
+
+    # GP subset predictive
+
+    sparse_idx = torch.randperm(X_train.shape[0])[:int(n_sparse*X_train.shape[0])]
+    sparse_x = X_train[sparse_idx]
+    sparse_y = y_train[sparse_idx]
+    if isinstance(likelihood, CategoricalLh):
+        sparse_y = sparse_y.squeeze()
+    svgp_subset = create_ntksvgp(sparse_x, sparse_y, model, likelihood_svgp, prior_prec_n, n_sparse=1)
+    fs_train = preds_svgp(X_train, svgp_subset, likelihood_svgp, samples=n_samples)
+    fs_test = preds_svgp(X_test, svgp_subset, likelihood_svgp, samples=n_samples)
+    fs_valid = preds_svgp(X_valid, svgp_subset,  likelihood_svgp, samples=n_samples)
+    res.update(evaluate(fs_train, y_train, lh, 'gp_subset', 'train'))
+    res.update(evaluate(fs_test, y_test, lh, 'gp_subset', 'test'))
+    res.update(evaluate(fs_valid, y_valid, lh, 'gp_subset', 'valid'))
+
 
 
     # BBB
@@ -227,7 +252,7 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
     return res
 
 
-def main(ds_train, ds_test, ds_valid, deltas, device, dataset, name, seed, res_dir, **kwargs):
+def main(ds_train, ds_test, ds_valid, deltas, device, dataset, name, seed, res_dir,  **kwargs):
     results = list()
     for i, delta in tqdm.tqdm(list(enumerate(deltas))):
         res = inference(ds_train, ds_test, ds_valid, prior_prec=delta, device=device,
@@ -242,7 +267,7 @@ def main(ds_train, ds_test, ds_valid, deltas, device, dataset, name, seed, res_d
     resdict['K'] = ds_train.C
 
     res_file = f'classification_{dataset}_{name}_{seed}.pkl'
-    with open(os.path.join(res_dir, res_file), 'wb') as f:
+    with open(os.path.join(res_dir, res_folder,  res_file), 'wb') as f:
         pickle.dump(resdict, f)
     print(f'Wrote results to {res_file}')
 
@@ -265,6 +290,7 @@ if __name__ == '__main__':
     parser.add_argument('--activation', help='activation function', default='tanh',
                         choices=['tanh', 'relu'])
     parser.add_argument('--root_dir', help='Root directory', default='../')
+    parser.add_argument('--res_folder', help='Result folder', default='test')
     parser.add_argument('--name', help='name result file', default='', type=str)
     parser.add_argument('--n_samples', help='number predictive samples', type=int, default=1000)
     parser.add_argument('--n_sparse', help='number of sparse data points to use for the svgp', type=float, default=0.5)
@@ -283,12 +309,15 @@ if __name__ == '__main__':
     n_sparse = args.n_sparse
     name = args.name
     root_dir = args.root_dir
+    res_folder = args.res_folder
     refine = args.refine
     refine = bool(refine)
     print(f'Refine: {refine}')
 
     data_dir = os.path.join(root_dir, 'data')
-    res_dir = os.path.join(root_dir, 'experiments', 'results', 'uci')
+    res_dir = os.path.join(root_dir, 'experiments', 'results', 'uci', res_folder)
+    if not os.path.isdir(res_dir):
+        os.mkdir(res_dir)
     print(f'Writing results to {res_dir}')
     print(f'Reading data from {data_dir}')
     print(f'Dataset: {dataset}')
@@ -312,5 +341,6 @@ if __name__ == '__main__':
                                          train=False, valid=True, double=double)
 
     deltas = np.logspace(logd_min, logd_max, n_deltas)
-    main(ds_train, ds_test, ds_valid, deltas, device, dataset, name, seed, res_dir, n_epochs=n_epochs,
-         lr=lr, n_layers=n_layers, n_units=n_units, activation=activation, n_sparse=n_sparse, n_samples=n_samples, refine=refine)
+    main(ds_train, ds_test, ds_valid, deltas, device, dataset, name, seed, res_dir,  n_epochs=n_epochs,
+         lr=lr, n_layers=n_layers, n_units=n_units, activation=activation, n_sparse=n_sparse, n_samples=n_samples,
+          refine=refine)

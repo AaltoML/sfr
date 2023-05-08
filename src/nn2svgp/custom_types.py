@@ -16,19 +16,18 @@ FuncData = TensorType["num_data", "output_dim"]
 FuncMean = TensorType["num_data", "output_dim"]
 FuncVar = TensorType["num_data", "output_dim"]
 
-
 Alpha = TensorType["num_data", "output_dim"]
 Beta = TensorType["num_data", "num_data", "output_dim"]
-AlphaInducing = TensorType["num_inducing", "output_dim"]
-BetaInducing = TensorType["num_inducing", "num_inducing", "output_dim"]
+Lambda = TensorType["num_data", "output_dim"]
+AlphaInducing = TensorType["output_dim", "num_inducing"]
+BetaInducing = TensorType["output_dim", "num_inducing", "num_inducing"]
 
 FuncData = TensorType["num_data", "output_dim"]
 InducingPoints = TensorType["num_inducing", "input_dim"]
 
-Lambda_1 = TensorType["num_data", "num_inducing", "output_dim"]
-Lambda_2 = TensorType["num_data", "output_dim", "output_dim"]
-NTK = Callable[[InputData, InputData], TensorType[""]]
 
-NTK_single = Callable[[InputData, InputData, int], TensorType[""]]
+FullCov = Optional[bool]
+NTK = Callable[[InputData, InputData, FullCov], TensorType[""]]
+NTK_single = Callable[[InputData, InputData, int, FullCov], TensorType[""]]
 
 TestInput = TensorType["num_test", "input_dim"]

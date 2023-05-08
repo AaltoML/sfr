@@ -36,7 +36,6 @@ def init(
     prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
     ntksvgp = src.nn2svgp.NTKSVGP(
         network=network,
-        # train_data=(X_train, Y_train),
         prior=prior,
         likelihood=likelihood,
         output_dim=state_dim,
@@ -55,14 +54,14 @@ def init(
     def predict_fn(state: State, action: Action) -> StatePrediction:
         state_action_input = torch.concat([state, action], -1)
         # delta_state = network.forward(state_action_input)
-        # delta_state_mean, delta_state_var = ntksvgp.predict_f(state_action_input)
-        delta_state_mean = ntksvgp.predict_mean(state_action_input)
+        delta_state_mean, delta_state_var = ntksvgp.predict_f(state_action_input)
+        # delta_state_mean = ntksvgp.predict_mean(state_action_input)
         # delta_state_mean, delta_state_var, noise_var = svgp_predict_fn(
         return StatePrediction(
             state_mean=state + delta_state_mean,
-            state_var=0,
-            # state_var=delta_state_var,
-            noise_var=0,
+            # state_var=0,
+            state_var=delta_state_var,
+            noise_var=0.0,
             # state_var=delta_state_var,
             # noise_var=noise_var,
         )

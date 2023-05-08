@@ -205,11 +205,9 @@ class NTKSVGP(nn.Module):
             @ (1**-1 * torch.eye(num_new_data).to(self.Z)[None, ...])
             @ torch.transpose(Kzx, -1, -2)
         )
-        # print("ALPHA {}".format(self.alpha.shape))
-        # print("BETA {}".format(self.beta.shape))
 
         logger.info("Building predict fn...")
-        self._predict_fn = predict_from_duals(
+        self._predict_fn = predict_from_sparse_duals(
             alpha_u=self.alpha_u,
             beta_u=self.beta_u,
             kernel=self.kernel,

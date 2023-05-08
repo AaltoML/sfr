@@ -236,7 +236,6 @@ class NTKSVGP(nn.Module):
 def build_ntk(
     network: nn.Module, num_data: int, output_dim: int, delta: float = 1.0
 ) -> Tuple[NTK, NTK_single]:
-
     network = network.eval()
     # Detaching the parameters because we won't be calling Tensor.backward().
     params = {k: v.detach() for k, v in network.named_parameters()}
@@ -371,6 +370,7 @@ def predict_from_sparse_duals(
 
     return predict
 
+
 @torch.no_grad()
 def calc_sparse_dual_params_batch(
     network: torch.nn.Module,
@@ -401,16 +401,13 @@ def calc_sparse_dual_params_batch(
         logits_i = network(x_i)
         if logits_i.ndim == 1:
             logits_i = logits_i.unsqueeze(-1)
-        Lambda_i, beta_i = calc_lambdas(
-            Y=y_i, F=logits_i, likelihood=likelihood
-        )
+        Lambda_i, beta_i = calc_lambdas(Y=y_i, F=logits_i, likelihood=likelihood)
         beta_i = torch.vmap(torch.diag)(beta_i)
 
         end_idx = start_idx + batch_size
         Lambda[start_idx:end_idx] = Lambda_i
         beta_diag[start_idx:end_idx] = beta_i
         start_idx = end_idx
-
 
     # Clip the lambdas  (?)
     # lambda_1 = torch.clip(lambda_1, min=1e-7)
@@ -448,8 +445,12 @@ def calc_sparse_dual_params_batch(
             start_idx = end_idx
             del Kui_c
         torch.cuda.empty_cache()
-        Kzz_c = kernel(Z, Z, output_c).cpu() + torch.eye(Z.shape[0], device="cpu") * jitter
-        alpha_u[output_c] = torch.linalg.solve((Kzz_c + beta_u[output_c]), alpha_u[output_c])
+        Kzz_c = (
+            kernel(Z, Z, output_c).cpu() + torch.eye(Z.shape[0], device="cpu") * jitter
+        )
+        alpha_u[output_c] = torch.linalg.solve(
+            (Kzz_c + beta_u[output_c]), alpha_u[output_c]
+        )
 
     return alpha_u.to(device), beta_u.to(device)
     ################  Compute alpha/beta batched version END ################

@@ -154,6 +154,9 @@ def main(dataset_name, ds_train, ds_test, model_name, rerun, batch_size, seed, n
     train_loader = DataLoader(ds_train, batch_size=256)
     all_train = DataLoader(ds_train, batch_size=len(ds_train))
     (X_train, y_train) = next(iter(all_train))
+    X_train = X_train.to(device)
+    y_train = y_train.to(device)
+
     torch.manual_seed(seed)
     M = len(ds_test)
     n_inducing = n_inducing_points  # int(len(ds_train)*n_sparse)
@@ -177,6 +180,7 @@ def main(dataset_name, ds_train, ds_test, model_name, rerun, batch_size, seed, n
 
         model = get_model(model_name, ds_train)
         model.load_state_dict(state['model'])
+        model = model.to(device)
 
         if device == 'cuda':
             model = model.cuda()

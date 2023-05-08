@@ -2,7 +2,7 @@
 #SBATCH --job-name=fmnist_mlp
 #SBATCH --array=0-4
 #SBATCH --account=project_2004878
-#SBATCH --time=0:45:00
+#SBATCH --time=01:45:00
 #SBATCH --partition=gpusmall
 #SBATCH --gres=gpu:a100:1
 #SBATCH --cpus-per-task=10
@@ -19,9 +19,9 @@ SEED=${SEEDS[$(($SLURM_ARRAY_TASK_ID))]}
 dataset='FMNIST'
 echo $dataset
 echo $SEED
-name='sparse_percent_06'
+name='sparse_percent_08'
 sparse_ratio=0.01
 model='MLP'
 n_deltas=6
-srun python3 -u experiments/scripts/imgclassification.py -d ${dataset} -m ${model} --root_dir . -s ${SEED} --n_deltas ${n_deltas}
+#srun python3 -u experiments/scripts/imgclassification.py -d ${dataset} -m ${model} --root_dir . -s ${SEED} --n_deltas ${n_deltas}
 srun python3 -u experiments/scripts/imginference.py -d ${dataset} -m ${model} --root_dir . -s ${SEED} --loginfo --n_sparse ${sparse_ratio} --name ${name}

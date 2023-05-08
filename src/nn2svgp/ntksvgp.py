@@ -11,8 +11,8 @@ import torch
 import torch.nn as nn
 from src.nn2svgp.custom_types import (
     Alpha,
-    AlphaInducing,
     Beta,
+    AlphaInducing,
     BetaInducing,
     Data,
     FuncData,
@@ -20,8 +20,9 @@ from src.nn2svgp.custom_types import (
     FuncVar,
     InducingPoints,
     InputData,
-    Lambda_1,
-    Lambda_2,
+    # Lambda_1,
+    Lambda,
+    # Lambda_2,
     NTK,
     NTK_single,
     OutputData,
@@ -73,7 +74,6 @@ class NTKSVGP(nn.Module):
         # self.train_data = (X_train.to(self.device), Y_train.to(self.device))
         # num_data, input_dim = X_train.shape
         num_data = Y_train.shape[0]
-        # print("Y_train.shape {}".format(Y_train.shape))
         indices = torch.randperm(num_data)[: self.num_inducing]
         # TODO will this work for image classification??
         self.Z = X_train[indices].to(X_train.device)
@@ -102,7 +102,7 @@ class NTKSVGP(nn.Module):
         )
 
         if self.dual_batch_size:
-            self.alpha, self.beta = calc_sparse_dual_params_batch(
+            self.alpha_u, self.beta_u = calc_sparse_dual_params_batch(
                 network=self.network,
                 train_loader=DataLoader(
                     TensorDataset(*(self.train_data)),
@@ -115,40 +115,30 @@ class NTKSVGP(nn.Module):
                 out_dim=self.output_dim,
             )
         else:
-            self.alpha, self.beta = calc_sparse_dual_params(
+            print("using aidans predict")
+            self.alpha_u, self.beta_u = calc_sparse_dual_params(
                 network=self.network,
                 train_data=self.train_data,
                 Z=self.Z,
                 kernel=self.kernel,
                 likelihood=self.likelihood,
+                jitter=self.jitter,
             )
 
         logger.info("Finished calculating dual params")
 
-        # print("alpha {}".format(self.alpha.shape))
-        # print("beta {}".format(self.beta.shape))
-        assert self.alpha.ndim == 2
-        assert self.beta.ndim == 3
-        assert self.alpha.shape[0] == self.output_dim
-        assert self.alpha.shape[1] == self.num_inducing
-        assert self.beta.shape[0] == self.output_dim
-        assert self.beta.shape[1] == self.num_inducing
-        assert self.beta.shape[2] == self.num_inducing
+        assert self.alpha_u.ndim == 2
+        assert self.beta_u.ndim == 3
+        assert self.alpha_u.shape[0] == self.output_dim
+        assert self.alpha_u.shape[1] == self.num_inducing
+        assert self.beta_u.shape[0] == self.output_dim
+        assert self.beta_u.shape[1] == self.num_inducing
+        assert self.beta_u.shape[2] == self.num_inducing
 
-        Kzz = self.kernel(self.Z, self.Z)
-        output_dim = Kzz.shape[0]
-        # print("Kuu {}".format(Kzz.shape))
-        Iz = (
-            torch.eye(Kzz.shape[-1])
-            .to(self.Z.device)[None, ...]
-            .repeat(output_dim, 1, 1)
-        )
-        # print("Iu {}".format(Iz.shape))
-        Kzz += Iz * self.jitter
-        self.alpha_2 = torch.linalg.solve((Kzz + self.beta), self.alpha[..., None])
-        self._predict_fn = predict_from_duals(
-            alpha=self.alpha,
-            beta=self.beta,
+        # self.alpha_2 = torch.linalg.solve((Kzz + self.beta_u), self.alpha_u[..., None])
+        self._predict_fn = predict_from_sparse_duals(
+            alpha_u=self.alpha_u,
+            beta_u=self.beta_u,
             kernel=self.kernel,
             Z=self.Z,
             jitter=self.jitter,
@@ -161,17 +151,10 @@ class NTKSVGP(nn.Module):
     @torch.no_grad()
     def predict_mean(self, x: TestInput) -> FuncMean:
         x = x.to(self.Z.device)
-        # Kxx = self.kernel(x, x)
-        # print("Kxx {}".format(Kxx.shape))
         Kxz = self.kernel(x, self.Z)
-        # print("Kxz {}".format(Kxz.shape))
-
-        f_mean = Kxz @ self.alpha_2
-        # print("f_mean {}".format(f_mean.shape))
-        # f_mean = f_mean @ alpha[..., None]
-        # print("f_mean {}".format(f_mean.shape))
-        f_mean = f_mean[..., 0].T
-        # print("f_mean {}".format(f_mean.shape))
+        # print("kxz {}".format(Kxz.shape))
+        # print("alpa_u {}".format(self.alpha_u.shape))
+        f_mean = (Kxz @ self.alpha_u[..., None])[..., 0].T
         return f_mean
 
     @torch.no_grad()
@@ -204,23 +187,8 @@ class NTKSVGP(nn.Module):
             x = torch.flatten(x, 1, -1)
             print("x AFTER flatten {}".format(x.shape))
         assert x.ndim == 2
-        # if y.ndim == 1:
-        #     y = y[None, ...]
-        #     # TODO should this be somewhere else?
-        #     print("y.shape {}".format(y.shape))
-        #     y = torch.nn.functional.one_hot(y, num_classes=2)
-        #     y = y.to(torch.double)
-        #     print("y.shape {}".format(y.shape))
-        #     print("y.shape {}".format(y))
-        # y = y[:, None]
-        # assert x.ndim == 2 and y.ndim == 2
         num_new_data, input_dim = x.shape
         Kzx = self.kernel(self.Z, x)
-        # print("Kzx {}".format(Kzx.shape))
-        # print("alpha {}".format(self.alpha.shape))
-        # print("beta {}".format(self.beta.shape))
-        # print("x {}".format(x.shape))
-        # print("y {}".format(y.shape))
 
         # lambda_1, lambda_2 = calc_lambdas(Y=Y, F=F, nll=nll)
 
@@ -231,8 +199,8 @@ class NTKSVGP(nn.Module):
         # lambda_1_minus_y = y-lambda_1
         # print(" hereh lambda_1 {}".format(lambda_1.shape))
         # self.alpha += (Kzx @ lambda_1_minus_y.T[..., None])[..., 0]
-        self.alpha += (Kzx @ y.T[..., None])[..., 0]
-        self.beta += (
+        self.alpha_u += (Kzx @ y.T[..., None])[..., 0]
+        self.beta_u += (
             Kzx
             @ (1**-1 * torch.eye(num_new_data).to(self.Z)[None, ...])
             @ torch.transpose(Kzx, -1, -2)
@@ -242,8 +210,8 @@ class NTKSVGP(nn.Module):
 
         logger.info("Building predict fn...")
         self._predict_fn = predict_from_duals(
-            alpha=self.alpha,
-            beta=self.beta,
+            alpha_u=self.alpha_u,
+            beta_u=self.beta_u,
             kernel=self.kernel,
             Z=self.Z,
             jitter=self.jitter,
@@ -254,16 +222,6 @@ class NTKSVGP(nn.Module):
     def num_data(self):
         return self.train_data[0].shape[0]
 
-    # @property
-    # def num_inducing(self):
-    #     try:
-    #         self._num_in
-    #     return self.Z.shape[0]
-
-    # @property
-    # def output_dim(self):
-    #     return self.train_data[1].shape[1]
-
 
 def build_ntk(
     network: nn.Module, num_data: int, output_dim: int, delta: float = 1.0
@@ -272,72 +230,54 @@ def build_ntk(
     params = {k: v.detach() for k, v in network.named_parameters()}
 
     def fnet_single(params, x, i):
-        # print("fnet_single {}".format(x.shape))
-        # print("fnet_single {}".format(x.unsqueeze(0).shape))
         f = functional_call(network, params, (x,))[:, i]
-        # print("f {}".format(f.shape))
-        # f = functional_call(network, params, (x.unsqueeze(0),))[0, ...]
-        # print("f {}".format(f.shape))
-        # f = functional_call(network, params, (x.unsqueeze(0),))[0, ...][:, i]
         return f
-        # return functional_call(network, params, (x.unsqueeze(0),))[0, ...][:, i]
 
-    def single_output_ntk_contraction(x1, x2, i):
+    def single_output_ntk_contraction(
+        x1: InputData, x2: InputData, i: int, full_cov: Optional[bool] = True
+    ):
         def fnet_single(params, x):
-            # print("fnet_single {}".format(x.shape))
-            # print("fnet_single {}".format(x.unsqueeze(0).shape))
             f = functional_call(network, params, (x.unsqueeze(0),))[:, i]
-            # f = functional_call(network, params, (x,))[:, i]
-            # f = functional_call(network, params, (x.unsqueeze(0)))[
-            #     :, i
-            # ]  # TODO: Why using self.net doesn't work?
-            # print("f {}".format(f.shape))
-            # f = functional_call(network, params, (x.unsqueeze(0),))[0, ...]
-            # print("f {}".format(f.shape))
-            # f = functional_call(network, params, (x.unsqueeze(0),))[0, ...][:, i]
             return f
 
         # Compute J(x1)
         jac1 = vmap(jacrev(fnet_single), (None, 0))(params, x1)
-        # print("jac1 {}".format(jac1))
+        # print("jac1 {}".format(jac1.shape))
         jac1 = [j.flatten(2) for j in jac1.values()]
 
         # Compute J(x2)
         jac2 = vmap(jacrev(fnet_single), (None, 0))(params, x2)
+        # print("jac2 {}".format(jac2.shape))
         jac2 = [j.flatten(2) for j in jac2.values()]
 
         # Compute J(x1) @ J(x2).T
         einsum_expr = None
-        compute = "full"
-        if compute == "full":
+        if full_cov:
             einsum_expr = "Naf,Mbf->NMab"
-        elif compute == "trace":
-            einsum_expr = "Naf,Maf->NM"
-        elif compute == "diagonal":
-            einsum_expr = "Naf,Maf->NMa"
         else:
-            assert False
-
+            einsum_expr = "Naf,Maf->NMa"
         result = torch.stack(
             [torch.einsum(einsum_expr, j1, j2) for j1, j2 in zip(jac1, jac2)]
         )
         result = result.sum(0)
-        # return result
-        return 1 / (delta * num_data) * result
+        if full_cov:
+            return 1 / (delta * num_data) * result[..., 0, 0]
+        else:
+            # TODO this could be more efficient
+            result = torch.diagonal(result[..., 0], dim1=-1, dim2=-2)
+            return 1 / (delta * num_data) * result
 
     # @torch.compile(backend="eager")
-    def single_output_ntk(x1, x2, i):
-        # def single_output_ntk(x1: InputData, x2: InputData, i):
-        # func_x1 = partial(fnet_single, x=x1, i=i)
-        # func_x2 = partial(fnet_single, x=x2, i=i)
-        def func_x1(params):
-            return fnet_single(params, x1, i=i)
+    def single_output_ntk(
+        X1: InputData, X2: InputData, i: int, full_cov: Optional[bool] = True
+    ):
+        def func_X1(params):
+            return fnet_single(params, X1, i=i)
 
-        def func_x2(params):
-            return fnet_single(params, x2, i=i)
+        def func_X2(params):
+            return fnet_single(params, X2, i=i)
 
-        output, vjp_fn = vjp(func_x1, params)
-        # print("output {}".format(output))
+        output, vjp_fn = vjp(func_X1, params)
 
         def get_ntk_slice(vec):
             # This computes vec @ J(x2).T
@@ -345,7 +285,7 @@ def build_ntk(
             vjps = vjp_fn(vec)
             # print("vjps {}".format(vjps))
             # This computes J(X1) @ vjps
-            _, jvps = jvp(func_x2, (params,), vjps)
+            _, jvps = jvp(func_X2, (params,), vjps)
             # print("jvps {}".format(jvps))
             return jvps
 
@@ -353,147 +293,69 @@ def build_ntk(
         basis = torch.eye(
             output.numel(), dtype=output.dtype, device=output.device
         ).view(output.numel(), -1)
-        # print("basis {}".format(basis))
         return 1 / (delta * num_data) * vmap(get_ntk_slice)(basis)
-        # return 1 / (delta) * vmap(get_ntk_slice)(basis)
 
-    def ntk(x1, x2):
-        # print("INSIDE kernel {}".format(output_dim))
-        # def ntk(x1: InputData, x2: InputData) -> TensorType[""]:
-        K = torch.empty(output_dim, x1.shape[0], x2.shape[0]).to(x1.device)
-        # print("K building {}".format(K.shape))
-        # print("x1 {}".format(x1.shape))
-        # print("x2 {}".format(x2.shape))
-        # Ks = []
+    def ntk(X1: InputData, X2: Optional[InputData], full_cov: bool = True):
+        if X2 is None:
+            X2 = X1
+        if full_cov:
+            K = torch.empty(output_dim, X1.shape[0], X2.shape[0]).to(X1.device)
+        else:
+            K = torch.empty(output_dim, X1.shape[0]).to(X1.device)
         for i in range(output_dim):
-            # print("output dim {}".format(i))
-            # Ks.append(single_output_ntk(x1, x2, i=i))
-            K[i, :, :] = single_output_ntk(x1, x2, i=i)
-            # k = single_output_ntk(x1, x2, i=i)
-            # k = single_output_ntk_contraction(x1, x2, i=i)
-            # print("k {}".format(k))
-            # K[i, :, :] = k[..., 0, 0]
-        # K = torch.stack(Ks, 0)
-        # print("K {}".format(K.shape))
+            # K[i, ...] = single_output_ntk(X1, X2, i=i, full_cov=full_cov)
+            K[i, ...] = single_output_ntk_contraction(X1, X2, i=i, full_cov=full_cov)
         return K
 
     return ntk, single_output_ntk
 
 
-def predict_from_duals(
-    alpha: Alpha, beta: Beta, kernel: NTK, Z: InducingPoints, jitter: float = 1e-3
+def predict_from_sparse_duals(
+    alpha_u: AlphaInducing,
+    beta_u: BetaInducing,
+    kernel: NTK,
+    Z: InducingPoints,
+    jitter: float = 1e-3,
 ):
-    # print("Z {}".format(Z.shape))
     Kzz = kernel(Z, Z)
     output_dim = Kzz.shape[0]
-    # print("Kuu {}".format(Kzz.shape))
-    Iz = torch.eye(Kzz.shape[-1]).to(Z.device)[None, ...].repeat(output_dim, 1, 1)
-    # print("Iu {}".format(Iz.shape))
+    Iz = (
+        torch.eye(Kzz.shape[-1], dtype=torch.float64)
+        .to(Z.device)[None, ...]
+        .repeat(output_dim, 1, 1)
+    )
+    KzzplusBeta = (Kzz + beta_u) + Iz * jitter
     Kzz += Iz * jitter
-    # beta += I
-    # print("Kuu {}".format(Kzz.shape))
+    assert beta_u.shape == Kzz.shape
 
-    assert beta.shape == Kzz.shape
-    # iBKuu = torch.linalg.solve(beta + Kuu, torch.eye(Kuu.shape[-1]))
-    # print("iBKuu {}".format(iBKuu.shape))
-    # V = torch.matmul(torch.matmul(Kuu, iBKuu), Kuu)0
-    # V = torch.matmul(Kzz, torch.linalg.solve(beta + Kzz, Kzz))
-    # print("V {}".format(V.shape))
-    # iKuuViKuu = torch.linalg.solve(torch.linalg.solve(Kuu, V), Kuu, left=False)
-    # print("iKuuViKuu {}".format(iKuuViKuu.shape))
-    # iKuuViKuua = torch.matmul(iKuuViKuu, alpha[..., None])
-    # print("iKuuVKuua {}".format(iKuuViKuua.shape))
+    Lm = torch.linalg.cholesky(Kzz, upper=True)
+    Lb = torch.linalg.cholesky(KzzplusBeta, upper=True)
 
-    # @torch.compile(backend="aot_eager")
-    # @torch.jit.script
-    def predict(x, full_cov: bool = False):
-        # def predict(x: TestInput, full_cov: bool = False) -> Tuple[OutputMean, OutputVar]:
-        Kxx = kernel(x, x)
-        # print("Kxx {}".format(Kxx.shape))
+    def predict(x, full_cov: bool = False) -> Tuple[OutputMean, OutputVar]:
+        Kxx = kernel(x, x, full_cov=full_cov)
         Kxz = kernel(x, Z)
-        # print("Kxz {}".format(Kxz.shape))
 
-        # f_mean = torch.matmul(Kxu, iKuuViKuua)
-        # print("f_mean {}".format(f_mean.shape))
-        # f_mean = f_mean[..., 0].T
-        # print("f_mean {}".format(f_mean.shape))
-        # Iu = torch.eye(Kuu.shape[-1])[None, ...].repeat(ouput_dim, 1, 1)
-        # print("Iu {}".format(Iz.shape))
-        # print("V {}".format(V.shape))
-        # print("alpha[...,None] {}".format(alpha[..., None].shape))
-        # print(
-        #     "torch.eye(Kuu.shape[-1])[None, ...] {}".format(
-        #         torch.eye(Kuu.shape[-1])[None, ...].shape
-        #     )
-        # )
-        # print(
-        #     "torch.linalg.solve(Kuu, torch.eye(Kuu.shape[-1])[None, ...]) {}".format(
-        #         torch.linalg.solve(Kuu, torch.eye(Kuu.shape[-1])[None, ...]).shape
-        #     )
-        # )
-        # Kux = torch.transpose(Kxu, -1, -2)
-        # m_u = Kux @ alpha
-        # print("m_u {}".format(m_u.shape))
-
-        # print(
-        #     "torch.linalg.solve(Kuu, torch.eye(Kuu.shape[-1])[None, ...] {}".format(
-        #         torch.linalg.solve(Kuu, Iu).shape
-        #     )
-        # )
-        # beta_u = torch.linalg.solve(Kuu, Iu) - torch.linalg.solve(beta + Kuu, Iu)
-        # Kzx = torch.transpose(Kxz, -1, -2)
-        # beta_u = Kux @ beta @ Kxu
-        beta_u = beta
-        # print("beta_u {}".format(beta_u.shape))
-        # print("Kzz {}".format(Kzz.shape))
-        # print("Iz {}".format(Iz.shape))
-
-        # m_u = (
-        #     V
-        #     @ torch.linalg.solve((Kuu), Iu)
-        #     # @ torch.linalg.solve(Kuu, torch.eye(Kuu.shape[-1])[None, ...])
-        #     @ alpha[..., None]
-        # )
-        # # Kux = torch.transpose(Kxu, -1, -2)
-        # print("alpha {}".format(alpha.shape))
-        # # print("Kux {}".format(Kux.shape))
-        # # m_u = Kux @ alpha[..., None]
-        # # print("m_u {}".format(m_u.shape))
-        # f_mean = Kxu @ torch.linalg.solve((Kuu), Iu) @ m_u
-        # f_mean = f_mean[..., 0].T
-
-        # f_mean = Kxz @ torch.linalg.solve((Kzz + beta_u), Iz)
-        f_mean = Kxz @ torch.linalg.solve((Kzz + beta_u), alpha[..., None])
-        # print("f_mean {}".format(f_mean.shape))
-        # f_mean = f_mean @ alpha[..., None]
-        # print("f_mean {}".format(f_mean.shape))
-        f_mean = f_mean[..., 0].T
-        # print("f_mean {}".format(f_mean.shape))
+        f_mean = (Kxz @ alpha_u[..., None])[..., 0].T
 
         if full_cov:
-            raise NotImplementedError
-            f_cov = Kxx - torch.matmul(
-                torch.matmul(Kxz, iBKuu), torch.transpose(Kxz, -1, -2)
-            )
-            # print("f_cov full_cov {}".format(f_cov.shape))
-            return f_mean, f_cov
-        else:
-            # TODO implement more efficiently
-            # f_cov = Kxx - torch.matmul(
-            #     torch.matmul(Kxu, iBKuu), torch.transpose(Kxu, -1, -2)
-            # )
-            # beta_u = torch.linalg.solve(Kuu, Iu) - torch.linalg.solve(beta + Kuu, Iu)
+            # TODO tmp could be computed before
             tmp = torch.linalg.solve(Kzz, Iz) - torch.linalg.solve(beta_u + Kzz, Iz)
             f_cov = Kxx - torch.matmul(
                 torch.matmul(Kxz, tmp), torch.transpose(Kxz, -1, -2)
             )
-            # f_cov = Kxx - torch.matmul(
-            #     Kxu, torch.matmul(beta_u, torch.transpose(Kxu, -1, -2))
-            # )
-            # print("f_cov {}".format(f_cov.shape))
-            f_var = torch.diagonal(f_cov, dim1=-2, dim2=-1).T
-            # print("f_var {}".format(f_var.shape))
-            return f_mean, f_var
+            return f_mean, f_cov
+        else:
+            Kzx = torch.transpose(Kxz, -1, -2)
+            Am = torch.linalg.solve_triangular(
+                torch.transpose(Lm, -1, -2), Kzx, upper=False
+            )
+            Ab = torch.linalg.solve_triangular(
+                torch.transpose(Lb, -1, -2), Kzx, upper=False
+            )
+            f_var = (
+                Kxx - torch.sum(torch.square(Am), -2) + torch.sum(torch.square(Ab), -2)
+            )
+            return f_mean, f_var.T
 
     return predict
 
@@ -581,111 +443,76 @@ def calc_sparse_dual_params(
     Z: InducingPoints,
     kernel: NTK,
     likelihood: Likelihood,
+    jitter: float = 1e-3,
 ) -> Tuple[AlphaInducing, BetaInducing]:
     num_inducing, input_dim = Z.shape
     X, Y = train_data
-    # if Y.ndim == 1:
-    #     Y = Y[..., None]
     assert X.ndim == 2
-    # assert Y.ndim == 2
     assert X.shape[0] == Y.shape[0]
     assert X.shape[1] == input_dim
     Kzx = kernel(Z, X)
-    # print("Kzx {}".format(Kzx.shape))
-    F = network(X)
-    # print("F {}".format(F.shape))
-    lambda_1, lambda_2 = calc_lambdas(Y=Y, F=F, likelihood=likelihood)
-    # print("lambda_1 {}".format(lambda_1.shape))
-    # print("lambda_2 {}".format(lambda_2.shape))
-    alpha, beta = calc_sparse_dual_params_from_lambdas(
-        lambda_1=lambda_1, lambda_2=lambda_2, Kzx=Kzx
+    Kzz = kernel(Z, Z)
+    output_dim = Kzz.shape[0]
+    Iz = (
+        torch.eye(Kzz.shape[-1], dtype=torch.float64)
+        .to(Z.device)[None, ...]
+        .repeat(output_dim, 1, 1)
     )
-    # print("alpha {}".format(alpha.shape))
-    # print("beta {}".format(beta.shape))
-    return alpha, beta
+    Kzz += Iz * jitter
 
-
-def calc_sparse_dual_params_from_lambdas(
-    lambda_1: Lambda_1,
-    lambda_2: Lambda_2,
-    Kzx: TensorType["output_dim", "num_inducing", "num_data"],
-) -> Tuple[AlphaInducing, BetaInducing]:
-    assert lambda_1.ndim == 2
-    num_data, output_dim = lambda_1.shape
-    assert lambda_2.ndim == 3
-    assert lambda_2.shape[0] == num_data
-    assert lambda_2.shape[1] == lambda_2.shape[2] == output_dim
+    F = network(X)
+    Lambda, beta = calc_lambdas(Y=Y, F=F, likelihood=likelihood)
+    assert Lambda.ndim == 2
+    num_data, output_dim = Lambda.shape
+    assert beta.ndim == 3
+    assert beta.shape[0] == num_data
+    assert beta.shape[1] == beta.shape[2] == output_dim
     assert Kzx.ndim == 3
     assert Kzx.shape[0] == output_dim
     assert Kzx.shape[2] == num_data
-    alpha_u = torch.matmul(Kzx, torch.transpose(lambda_1, -1, -2)[..., None])[..., 0]
-    # print("alpha_u {}".format(alpha_u.shape))
-    lambda_2_diag = torch.diagonal(lambda_2, dim1=-2, dim2=-1)  # [num_data, output_dim]
-    # TODO broadcast lambda_2 correctly for multiple output dims
-    # print("lambda_2_diag {}".format(lambda_2_diag.shape))
-    # inv_lambda_2 = (
-    #     torch.transpose(lambda_2_diag, -1, -2) ** -1 * torch.repeat(torch.eye(num_data)[None, ...]
-    # )  # [output_dim, num_data, num_data]
-    # print("inv_lambda_2 {}".format(inv_lambda_2.shape))
-    lambda_2 = torch.diag_embed(lambda_2_diag.T)
-    # print("lambda_2 {}".format(lambda_2.shape))
-    # print("lambda_2 {}".format(lambda_2))
-    beta_u = torch.matmul(
-        torch.matmul(Kzx, lambda_2),
-        torch.transpose(Kzx, -1, -2),
-    )
+    beta_diag = torch.diagonal(beta, dim1=-2, dim2=-1)  # [num_data, output_dim]
+    beta = torch.diag_embed(beta_diag.T)  # [output_dim, num_data, num_data]
+    beta_u = torch.matmul(torch.matmul(Kzx, beta), torch.transpose(Kzx, -1, -2))
     # print("beta_u {}".format(beta_u.shape))
+    # beta_u = beta_u + Iz * jitter
+
+    Lambda_u = torch.matmul(Kzx, torch.transpose(Lambda, -1, -2)[..., None])[..., 0]
+    # print("Lambda_u {}".format(Lambda_u.shape))
+
+    # print("(Kzz + beta_u) {}".format(Kzz + beta_u))
+    KzzplusBeta = (Kzz + beta_u) + Iz * jitter
+    alpha_u = torch.linalg.solve(KzzplusBeta, Lambda_u[..., None])[..., 0]
+    # alpha_u = torch.linalg.solve((Kzz + beta_u), Lambda_u[..., None])[..., 0]
+    # print("alpha_u {}".format(alpha_u.shape))
     return alpha_u, beta_u
 
 
 def calc_lambdas(
     Y: OutputData, F: FuncData, likelihood: Likelihood
-) -> Tuple[Lambda_1, Lambda_2]:
-    # assert Y.ndim == 2
+) -> Tuple[Lambda, Beta]:
+    beta = calc_beta(F=F, likelihood=likelihood)
+    Lambda = calc_lambda(Y=Y, F=F, likelihood=likelihood, beta=beta)
+    return Lambda, beta
+
+
+def calc_beta(F: FuncData, likelihood: Likelihood) -> Tuple[Lambda, Beta]:
+    assert F.ndim == 2
+    beta = 2 * likelihood.Hessian(f=F)
+    return beta
+
+
+def calc_lambda(
+    Y: OutputData, F: FuncData, likelihood: Likelihood, beta: Beta
+) -> Tuple[Lambda, Beta]:
     assert F.ndim == 2
     assert Y.shape[0] == F.shape[0]
+    assert beta.ndim == 3
     nll = likelihood.nn_loss
-    #  assert Y.shape[1] == F.shape[1]
     nll_jacobian_fn = jacrev(nll)
-    nll_hessian_fn = torch.vmap(hessian(nll))
-
-    # nll_jacobian_fn = torch.gradient(nll)
-    # lambda_1 = nll_jacobian_fn(F, Y)
-    lambda_2 = 2 * nll_hessian_fn(F, Y)  # [num_data, output_dim, output_dim]
-    lambda_1 = -1 * nll_jacobian_fn(F, Y)  # [num_data, output_dim]
-    # lambda_2 = torch.vmap(likelihood.Hessian, in_dims=0)(F)
-    # lambda_1 = -torch.vmap(likelihood.residual, in_dims=0)(F)
-    lambda_2 = 2 * likelihood.Hessian(f=F)
-    # lambda_1 = -likelihood.residual(y=Y, f=F)
-    # print("lambda_1 {}".format(lambda_1.shape))
-    # print("lambda_2 {}".format(lambda_2.shape))
-    # print("lambda_1 {}".format(lambda_1))
-    # print("lambda_2 {}".format(lambda_2))
-    # exit()
-    lambda_2_diag = torch.diagonal(lambda_2, dim1=-2, dim2=-1)  # [num_data, output_dim]
-    # print("Y-lambda_1 {}".format(Y - lambda_1))
-    # print("lambda_2_diag {}".format(lambda_2_diag.shape))
-    # print("F {}".format(F.shape))
-    lambda_1 += F * lambda_2_diag
-    # lambda_1 = F * lambda_2_diag
-    # lambda_1 = F * lambda_2_diag
-    # print("lambda_1 {}".format(lambda_1.shape))
-    # print("lambda_1 {}".format(lambda_1))
-    # print("Y {}".format(Y))
-    # print("Y-lambda_1 {}".format(Y - lambda_1))
-    # lambda_1, lambda_2 = [], []
-    # TODO we can do better than a for loop...
-    # for y, f in zip(Y, F):
-    #     # lambda_1.append(nll_jacobian_fn(f, y))
-    #     print("nll_hessian_fn(f, y) {}".format(nll_hessian_fn(f, y).shape))
-    #     lambda_2.append(nll_hessian_fn(f, y))
-    #     # TODO implement clipping for lambdas
-    # lambda_1 = torch.stack(lambda_1, dim=0)  # [num_data, output_dim]
-    # TODO should lambda_1 just be Y?
-    # lambda_1 = Y
-    # print("lambda_2 {}".format(lambda_2.shape))
-    # lambda_2 = torch.stack(lambda_2, dim=0)  # [num_data, output_dim, output_dim]
-    return lambda_1, lambda_2
+    alpha = -1 * nll_jacobian_fn(F, Y)  # [num_data, output_dim]
+    beta_diag = torch.diagonal(beta, dim1=-2, dim2=-1)  # [num_data, output_dim]
+    Lambda = alpha + F * beta_diag
+    return Lambda
 
 
 # TODO: need that to be out of the function

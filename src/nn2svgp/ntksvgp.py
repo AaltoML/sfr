@@ -119,7 +119,6 @@ class NTKSVGP(nn.Module):
                 device=self.device,
             )
         else:
-            print("using aidans predict")
             self.alpha_u, self.beta_u, self.Lambda_u = calc_sparse_dual_params(
                 network=self.network,
                 train_data=self.train_data,

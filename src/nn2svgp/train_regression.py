@@ -62,9 +62,15 @@ if __name__ == "__main__":
         f2 = torch.sin(x) / x + torch.cos(x)  # + x**2 +np.log(5*x + 0.00001)  + 0.5
         f3 = torch.cos(x * 5) + torch.sin(x * 1)  # + x**2 +np.log(5*x + 0.00001)  + 0.5
         if noise == True:
-            y1 = f1 + torch.randn(size=(x.shape)) * 0.2
-            y2 = f2 + torch.randn(size=(x.shape)) * 0.2
-            y3 = f3 + torch.randn(size=(x.shape)) * 0.2
+            # y1 = f1 + torch.randn(size=(x.shape)) * 0.2
+            # y2 = f2 + torch.randn(size=(x.shape)) * 0.2
+            # y3 = f3 + torch.randn(size=(x.shape)) * 0.2
+            # y1 = f1 + torch.randn(size=(x.shape)) * 0.1
+            # y2 = f2 + torch.randn(size=(x.shape)) * 0.1
+            # y3 = f3 + torch.randn(size=(x.shape)) * 0.1
+            y1 = f1 + torch.randn(size=(x.shape)) * 0.0
+            y2 = f2 + torch.randn(size=(x.shape)) * 0.0
+            y3 = f3 + torch.randn(size=(x.shape)) * 0.0
             return torch.stack([y1[:, 0], y2[:, 0], y3[:, 0]], -1)
         else:
             return torch.stack([f1[:, 0], f2[:, 0], f3[:, 0]], -1)
@@ -123,6 +129,7 @@ if __name__ == "__main__":
     print("f: {}".format(network(X_test).shape))
 
     X_new = torch.linspace(-0.5, -0.2, 20, dtype=torch.float64).reshape(-1, 1)
+    X_new = torch.linspace(-5.0, -2.0, 20, dtype=torch.float64).reshape(-1, 1)
     Y_new = func(X_new, noise=True)
 
     # X_new_2 = torch.linspace(3.0, 4.0, 20, dtype=torch.float64).reshape(-1, 1)
@@ -135,7 +142,9 @@ if __name__ == "__main__":
 
     batch_size = X_train.shape[0]
 
-    likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=1)
+    # likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=1)
+    likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=2)
+    # likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=0.1)
     # likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=2)
     # likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=0.8)
     prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
@@ -181,8 +190,8 @@ if __name__ == "__main__":
     import matplotlib.pyplot as plt
 
     plot_var = False
-    # plot_var = True
-    save_dir = "figs"
+    plot_var = True
+    save_dir = "figs/resample"
 
     def plot_output(i):
         fig = plt.subplots(1, 1)

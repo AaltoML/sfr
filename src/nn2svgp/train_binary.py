@@ -183,8 +183,8 @@ if __name__ == "__main__":
         prior=prior,
         likelihood=likelihood,
         output_dim=1,
-        num_inducing=X_train.shape[0],
-        # num_inducing=50,
+        # num_inducing=X_train.shape[0],
+        num_inducing=50,
         # jitter=1e-6,
         jitter=1e-4,
     )
@@ -208,10 +208,10 @@ if __name__ == "__main__":
     print("X_test_short {}".format(X_test_short.shape))
     print(X_test_short.shape)
 
-    # ntksvgp.update(x=X_new, y=Y_new)
-    # f_mean_new, f_var_new = ntksvgp.predict_f(X_test)
-    # print("MEAN NEW_2 {}".format(f_mean_new.shape))
-    # print("VAR NEW_2 {}".format(f_var_new.shape))
+    ntksvgp.update(x=X_new, y=Y_new)
+    f_mean_new, f_var_new = ntksvgp.predict_f(X_test)
+    print("MEAN NEW_2 {}".format(f_mean_new.shape))
+    print("VAR NEW_2 {}".format(f_var_new.shape))
 
     # ntksvgp.update(x=X_new_2, y=Y_new_2)
     # f_mean_new_2, f_var_new_2 = ntksvgp.predict_f(X_test)
@@ -297,37 +297,43 @@ if __name__ == "__main__":
         plt.scatter(
             X_new, Y_new[:, i], color="m", marker="o", alpha=0.6, label="New data"
         )
-        plt.plot(X_test[:, 0], f_mean_new[:, i], color="m", label=r"$\mu_{new}(\cdot)$")
+        plt.plot(
+            X_test[:, 0],
+            f_mean_new[:, i],
+            color="c",
+            linestyle="--",
+            label=r"$\mu_{new}(\cdot)$",
+        )
         if plot_var:
             plt.fill_between(
                 X_test[:, 0],
                 (f_mean_new - 1.98 * torch.sqrt(f_var_new))[:, i],
                 # pred.mean[:, 0],
                 (f_mean_new + 1.98 * torch.sqrt(f_var_new))[:, i],
-                color="m",
+                color="c",
                 alpha=0.2,
                 label=r"$\mu_{new}(\cdot) \pm 1.98\sigma_{new}(\cdot)$",
             )
 
-        plt.scatter(
-            X_new_2, Y_new_2[:, i], color="y", marker="o", alpha=0.6, label="New data 2"
-        )
-        plt.plot(
-            X_test[:, 0],
-            f_mean_new_2[:, i],
-            color="y",
-            linestyle="-",
-            label=r"$\mu_{new,2}(\cdot)$",
-        )
-        if plot_var:
-            plt.fill_between(
-                X_test[:, 0],
-                (f_mean_new_2 - 1.98 * torch.sqrt(f_var_new_2))[:, i],
-                (f_mean_new_2 + 1.98 * torch.sqrt(f_var_new_2))[:, i],
-                color="y",
-                alpha=0.2,
-                label=r"$\mu_{new,2}(\cdot) \pm 1.98\sigma_{new,2}(\cdot)$",
-            )
+        # plt.scatter(
+        #     X_new_2, Y_new_2[:, i], color="y", marker="o", alpha=0.6, label="New data 2"
+        # )
+        # plt.plot(
+        #     X_test[:, 0],
+        #     f_mean_new_2[:, i],
+        #     color="y",
+        #     linestyle="-",
+        #     label=r"$\mu_{new,2}(\cdot)$",
+        # )
+        # if plot_var:
+        #     plt.fill_between(
+        #         X_test[:, 0],
+        #         (f_mean_new_2 - 1.98 * torch.sqrt(f_var_new_2))[:, i],
+        #         (f_mean_new_2 + 1.98 * torch.sqrt(f_var_new_2))[:, i],
+        #         color="y",
+        #         alpha=0.2,
+        #         label=r"$\mu_{new,2}(\cdot) \pm 1.98\sigma_{new,2}(\cdot)$",
+        #     )
 
         # svgp.update(x=X_new_3, y=Y_new_3)
         # pred_new_3 = svgp.predict(X_test)

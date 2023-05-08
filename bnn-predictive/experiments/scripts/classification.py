@@ -71,8 +71,6 @@ def create_ntksvgp(X_train, y_train, model, likelihood, prior_prec, n_sparse=0.5
     n_classes = model(X_train).shape[-1]
     print(f'N classes: {n_classes}')
     print(f'Prior prec: {prior_prec}')
- #   if n_classes == 1:
-  #      n_classes = 2
     prior = ntksvgp.priors.Gaussian(params=model.parameters, delta=prior_prec) 
     svgp = NTKSVGP(network=model, prior=prior, output_dim=n_classes, likelihood=likelihood, num_inducing=num_inducing)
     svgp.set_data(data)
@@ -137,6 +135,22 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
     res.update(evaluate(fs_train, y_train, lh, 'svgp_ntk', 'train'))
     res.update(evaluate(fs_test, y_test, lh, 'svgp_ntk', 'test'))
     res.update(evaluate(fs_valid, y_valid, lh, 'svgp_ntk', 'valid'))
+
+    # GP subset predictive
+
+    sparse_idx = torch.randperm(X_train.shape[0])[:int(n_sparse*X_train.shape[0])]
+    sparse_x = X_train[sparse_idx]
+    sparse_y = y_train[sparse_idx]
+    if isinstance(likelihood, CategoricalLh):
+        sparse_y = sparse_y.squeeze()
+    svgp_subset = create_ntksvgp(sparse_x, sparse_y, model, likelihood_svgp, prior_prec_n, n_sparse=1)
+    fs_train = preds_svgp(X_train, svgp_subset, likelihood_svgp, samples=n_samples)
+    fs_test = preds_svgp(X_test, svgp_subset, likelihood_svgp, samples=n_samples)
+    fs_valid = preds_svgp(X_valid, svgp_subset,  likelihood_svgp, samples=n_samples)
+    res.update(evaluate(fs_train, y_train, lh, 'gp_subset', 'train'))
+    res.update(evaluate(fs_test, y_test, lh, 'gp_subset', 'test'))
+    res.update(evaluate(fs_valid, y_valid, lh, 'gp_subset', 'valid'))
+
 
 
     # BBB
@@ -238,7 +252,7 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
     return res
 
 
-def main(ds_train, ds_test, ds_valid, deltas, device, dataset, name, seed, res_dir, res_folder,  **kwargs):
+def main(ds_train, ds_test, ds_valid, deltas, device, dataset, name, seed, res_dir,  **kwargs):
     results = list()
     for i, delta in tqdm.tqdm(list(enumerate(deltas))):
         res = inference(ds_train, ds_test, ds_valid, prior_prec=delta, device=device,
@@ -295,13 +309,15 @@ if __name__ == '__main__':
     n_sparse = args.n_sparse
     name = args.name
     root_dir = args.root_dir
-    res_folder = args.root_dir
+    res_folder = args.res_folder
     refine = args.refine
     refine = bool(refine)
     print(f'Refine: {refine}')
 
     data_dir = os.path.join(root_dir, 'data')
-    res_dir = os.path.join(root_dir, 'experiments', 'results', 'uci')
+    res_dir = os.path.join(root_dir, 'experiments', 'results', 'uci', res_folder)
+    if not os.path.isdir(res_dir):
+        os.mkdir(res_dir)
     print(f'Writing results to {res_dir}')
     print(f'Reading data from {data_dir}')
     print(f'Dataset: {dataset}')
@@ -325,6 +341,6 @@ if __name__ == '__main__':
                                          train=False, valid=True, double=double)
 
     deltas = np.logspace(logd_min, logd_max, n_deltas)
-    main(ds_train, ds_test, ds_valid, deltas, device, dataset, name, seed, res_dir,res_folder,  n_epochs=n_epochs,
+    main(ds_train, ds_test, ds_valid, deltas, device, dataset, name, seed, res_dir,  n_epochs=n_epochs,
          lr=lr, n_layers=n_layers, n_units=n_units, activation=activation, n_sparse=n_sparse, n_samples=n_samples,
           refine=refine)

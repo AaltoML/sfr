@@ -68,7 +68,8 @@ extras_require = {
         "pytest==7.2.2",
     ],
     "experiments": [
-        "wandb==0.14.1",
+        "wandb",
+        # "wandb==0.14.1",
         "hydra-core==1.3.2",
         "hydra-submitit-launcher==1.2.0",
         "mujoco==2.3.3",

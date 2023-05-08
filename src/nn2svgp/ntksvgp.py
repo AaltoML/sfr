@@ -112,7 +112,6 @@ class NTKSVGP(nn.Module):
                 Z=self.Z,
                 likelihood=self.likelihood,
                 kernel=self.kernel_single,
-                nll=self.likelihood.nn_loss,
                 out_dim=self.output_dim,
             )
         else:
@@ -121,7 +120,6 @@ class NTKSVGP(nn.Module):
                 train_data=self.train_data,
                 Z=self.Z,
                 kernel=self.kernel,
-                nll=self.likelihood.nn_loss,
                 likelihood=self.likelihood,
             )
 
@@ -506,7 +504,6 @@ def calc_sparse_dual_params_batch(
     # train_data: Tuple[InputData, OutputData],
     Z: InducingPoints,
     kernel: NTK_single,
-    nll: Callable[[FuncData, OutputData], float],
     likelihood,
     batch_size: int = 1000,
     out_dim: int = 10,
@@ -529,9 +526,7 @@ def calc_sparse_dual_params_batch(
         logits_i = network(x_i)
         if logits_i.ndim == 1:
             logits_i = logits_i.unsqueeze(-1)
-        lambda_1_i, lambda_2_i = calc_lambdas(
-            Y=y_i, F=logits_i, nll=nll, likelihood=likelihood
-        )
+        lambda_1_i, lambda_2_i = calc_lambdas(Y=y_i, F=logits_i, likelihood=likelihood)
         lambda_2_i = torch.vmap(torch.diag)(lambda_2_i)
 
         end_idx = start_idx + batch_size
@@ -585,8 +580,7 @@ def calc_sparse_dual_params(
     train_data: Tuple[InputData, OutputData],
     Z: InducingPoints,
     kernel: NTK,
-    nll: Callable[[FuncData, OutputData], float],
-    likelihood,
+    likelihood: Likelihood,
 ) -> Tuple[AlphaInducing, BetaInducing]:
     num_inducing, input_dim = Z.shape
     X, Y = train_data
@@ -600,7 +594,7 @@ def calc_sparse_dual_params(
     # print("Kzx {}".format(Kzx.shape))
     F = network(X)
     # print("F {}".format(F.shape))
-    lambda_1, lambda_2 = calc_lambdas(Y=Y, F=F, nll=nll, likelihood=likelihood)
+    lambda_1, lambda_2 = calc_lambdas(Y=Y, F=F, likelihood=likelihood)
     # print("lambda_1 {}".format(lambda_1.shape))
     # print("lambda_2 {}".format(lambda_2.shape))
     alpha, beta = calc_sparse_dual_params_from_lambdas(
@@ -645,10 +639,7 @@ def calc_sparse_dual_params_from_lambdas(
 
 
 def calc_lambdas(
-    Y: OutputData,  # [num_data, output_dim]
-    F: FuncData,  # [num_data, output_dim]
-    nll: Callable[[FuncData, OutputData], float],
-    likelihood,
+    Y: OutputData, F: FuncData, likelihood: Likelihood
 ) -> Tuple[Lambda_1, Lambda_2]:
     # assert Y.ndim == 2
     assert F.ndim == 2

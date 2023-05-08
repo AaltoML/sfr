@@ -179,6 +179,7 @@ class NTKSVGP(nn.Module):
         # neg_log_prior = self.prior.nn_loss(self.network.parameters)
         return neg_log_likelihood + neg_log_prior
 
+    @torch.no_grad()
     def update(self, x: InputData, y: OutputData):
         if not isinstance(self.likelihood, src.nn2svgp.likelihoods.Gaussian):
             raise NotImplementedError

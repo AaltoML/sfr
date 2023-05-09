@@ -112,9 +112,9 @@ class LaplaceGGN(Adam):
         return self
 
 
-def get_diagonal_ggn(optimizer):
+def get_diagonal_ggn(optimizer, num_data):
     diag_prec = torch.diag(optimizer.state['precision'])
-    Sigma_diag = 1 / diag_prec
+    Sigma_diag = 1 /(diag_prec*num_data)
     Sigma_chol = torch.diag(torch.sqrt(Sigma_diag))
     Sigma = torch.diag(Sigma_diag)
     return Sigma, Sigma_chol

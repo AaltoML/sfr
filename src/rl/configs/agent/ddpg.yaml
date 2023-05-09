@@ -1,4 +1,4 @@
-_target_: src.rl.agents.ddpg.init
+_target_: src.rl.agents.DDPGAgent
 _convert_: all
 state_dim: ${state_dim}
 action_dim: ${action_dim}

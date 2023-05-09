@@ -30,7 +30,7 @@ class NTKSVGPRewardModel(RewardModel):
         wandb_loss_name: str = "Reward model loss",
         early_stopper: EarlyStopper = None,
         device: str = "cuda",
-        # predict_method: str = "SVGP", # "SVGP" or "NN"
+        prediction_type: str = "SVGPMeanOnly",  # "SVGPMeanOnly" or "SVGP" or "NN"
     ):
         if "cuda" in device:
             network.cuda()
@@ -43,6 +43,7 @@ class NTKSVGPRewardModel(RewardModel):
         self.wandb_loss_name = wandb_loss_name
         self.early_stopper = early_stopper
         self.device = device
+        self.prediction_type = prediction_type
 
         likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=sigma_noise)
         prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
@@ -65,15 +66,21 @@ class NTKSVGPRewardModel(RewardModel):
     @torch.no_grad()
     def predict(self, state: State, action: Action) -> RewardPrediction:
         state_action_input = torch.concat([state, action], -1)
-        # reward_mean = ntksvgp.predict_mean(state_action_input)
-        reward_mean, reward_var = self.ntksvgp.predict_f(state_action_input)
-        # print("reward_mean {}".format(reward_mean.shape))
-        # TODO use reward_var??
-        # delta_state_mean, delta_state_var, noise_var = svgp_predict_fn(
+        if "NN" in self.prediction_type:
+            reward_mean = self.network.forward(state_action_input)
+            reward_var = torch.zeros_like(reward_mean)
+        elif "SVGP" in self.prediction_type:
+            reward_mean, reward_var = self.ntksvgp.predict_f(state_action_input)
+        elif "SVGPMeanOnly" in self.prediction_type:
+            reward_mean, reward_var = self.ntksvgp.predict_mean(state_action_input)
+            reward_var = torch.zeros_like(reward_mean)
+        else:
+            raise NotImplementedError(
+                "prediction_type should be one of SVGP, SVGPMeanOnly or NN"
+            )
         return RewardPrediction(
             reward_mean=reward_mean[:, 0],
             reward_var=reward_var[:, 0],
-            # reward_var=0,
             noise_var=self.sigma_noise**2,
         )
 

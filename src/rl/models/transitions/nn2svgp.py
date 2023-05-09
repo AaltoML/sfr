@@ -32,6 +32,7 @@ class NTKSVGPTransitionModel(TransitionModel):
         wandb_loss_name: str = "Transition model loss",
         early_stopper: EarlyStopper = None,
         device: str = "cuda",
+        prediction_type: str = "SVGPMeanOnly",  # "SVGPMeanOnly" or "SVGP" or "NN"
     ):
         if "cuda" in device:
             network.cuda()
@@ -46,6 +47,7 @@ class NTKSVGPTransitionModel(TransitionModel):
         self.wandb_loss_name = wandb_loss_name
         self.early_stopper = early_stopper
         self.device = device
+        self.prediction_type = prediction_type
 
         likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=sigma_noise)
         prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
@@ -68,17 +70,26 @@ class NTKSVGPTransitionModel(TransitionModel):
 
     def predict(self, state: State, action: Action) -> StatePrediction:
         state_action_input = torch.concat([state, action], -1)
-        # delta_state = network.forward(state_action_input)
-        delta_state_mean, delta_state_var = self.ntksvgp.predict_f(state_action_input)
+        if "NN" in self.prediction_type:
+            delta_state_mean = self.network.forward(state_action_input)
+            delta_state_var = torch.zeros_like(delta_state_mean)
+        elif "SVGP" in self.prediction_type:
+            delta_state_mean, delta_state_var = self.ntksvgp.predict_f(
+                state_action_input
+            )
+        elif "SVGPMeanOnly" in self.prediction_type:
+            delta_state_mean = self.ntksvgp.predict_mean(state_action_input)
+            delta_state_var = torch.zeros_like(delta_state_mean)
+        else:
+            raise NotImplementedError(
+                "prediction_type should be one of SVGP, SVGPMeanOnly or NN"
+            )
         # delta_state_mean = ntksvgp.predict_mean(state_action_input)
         # delta_state_mean, delta_state_var, noise_var = svgp_predict_fn(
         return StatePrediction(
             state_mean=state + delta_state_mean,
-            # state_var=0,
             state_var=delta_state_var,
             noise_var=self.sigma_noise**2,
-            # state_var=delta_state_var,
-            # noise_var=noise_var,
         )
 
     def train(self, replay_buffer: ReplayBuffer):

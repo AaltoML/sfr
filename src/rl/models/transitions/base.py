@@ -24,7 +24,8 @@ class TransitionModel:
 
     @abc.abstractmethod
     def train(self, data: DataLoader):
+        # TODO this should be Tuple[InputData,OutputData]
         raise NotImplementedError
 
-    def update(self, data: Data):
+    def update(self, data_new: Data):
         pass

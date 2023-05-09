@@ -5,13 +5,15 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+import numpy as np
+import src
 import torch
 import wandb
-from src.rl.custom_types import Action, InputData, OutputData, State, RewardPrediction
+from src.rl.custom_types import Action, InputData, OutputData, RewardPrediction, State
+from src.rl.models.util import weights_init_normal
 from src.rl.utils import EarlyStopper
-import numpy as np
 from torchrl.data import ReplayBuffer
-import src
+
 from .base import RewardModel
 
 
@@ -75,6 +77,7 @@ class MLPRewardModel(RewardModel):
             self.ntksvgp.cuda()
             print("put reward ntksvgp on cuda")
 
+    @torch.no_grad()
     def predict(self, state: State, action: Action) -> RewardPrediction:
         state_action_input = torch.concat([state, action], -1)
         reward_mean = self.network.forward(state_action_input)[:, 0]
@@ -91,6 +94,7 @@ class MLPRewardModel(RewardModel):
         # network.apply(weights_init_normal)
         if self.early_stopper is not None:
             self.early_stopper.reset()
+        # self.network.apply(weights_init_normal)
         self.network.train()
         optimizer = torch.optim.Adam(
             [{"params": self.network.parameters()}], lr=self.learning_rate
@@ -124,6 +128,7 @@ class MLPRewardModel(RewardModel):
         # print("reward {}".format(reward.shape))
         self.ntksvgp.set_data((state_action_inputs, reward))
 
+    @torch.no_grad()
     def update(self, data_new):
         pass
         # ntksvgp.set_data((x, y))

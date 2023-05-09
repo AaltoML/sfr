@@ -54,11 +54,11 @@ class Gaussian(Likelihood):
     def nn_loss(self, f: FuncData, y: OutputData):
         # loss = torch.nn.MSELoss()(f, y)
         # loss = torch.nn.MSELoss(reduction="sum")(f, y)
-        # loss = 0.5 * torch.nn.MSELoss(reduction="mean")(f, y)
-        # return loss
+        loss = 0.5 * torch.nn.MSELoss(reduction="mean")(f, y)
+        return loss
         # return 0.5 * loss * y.shape[-1]
         # return -torch.sum(self.log_prob(f=f, y=y))
-        return -torch.mean(self.log_prob(f=f, y=y))
+        # return -torch.mean(self.log_prob(f=f, y=y))
 
     def residual(self, y, f):
         # TODO should this just be y?

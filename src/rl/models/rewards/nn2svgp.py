@@ -5,12 +5,14 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+import src
 import torch
 import wandb
-from src.rl.custom_types import Action, InputData, OutputData, State, RewardPrediction
+from src.rl.custom_types import Action, InputData, OutputData, RewardPrediction, State
+from src.rl.models.util import weights_init_normal
 from src.rl.utils import EarlyStopper
 from torchrl.data import ReplayBuffer
-import src
+
 from .base import RewardModel
 
 
@@ -21,7 +23,6 @@ class NTKSVGPRewardModel(RewardModel):
         learning_rate: float = 1e-2,
         num_iterations: int = 1000,
         batch_size: int = 64,
-        # num_workers: int = 1,
         num_inducing: int = 100,
         delta: float = 0.0001,  # weight decay
         sigma_noise: float = 1.0,
@@ -29,6 +30,7 @@ class NTKSVGPRewardModel(RewardModel):
         wandb_loss_name: str = "Reward model loss",
         early_stopper: EarlyStopper = None,
         device: str = "cuda",
+        # predict_method: str = "SVGP", # "SVGP" or "NN"
     ):
         if "cuda" in device:
             network.cuda()
@@ -60,6 +62,7 @@ class NTKSVGPRewardModel(RewardModel):
             self.ntksvgp.cuda()
             print("put reward ntksvgp on cuda")
 
+    @torch.no_grad()
     def predict(self, state: State, action: Action) -> RewardPrediction:
         state_action_input = torch.concat([state, action], -1)
         # reward_mean = ntksvgp.predict_mean(state_action_input)
@@ -77,6 +80,8 @@ class NTKSVGPRewardModel(RewardModel):
     def train(self, replay_buffer: ReplayBuffer):
         if self.early_stopper is not None:
             self.early_stopper.reset()
+
+        self.network.apply(weights_init_normal)
         self.network.train()
         optimizer = torch.optim.Adam(
             [{"params": self.network.parameters()}], lr=self.learning_rate
@@ -110,6 +115,7 @@ class NTKSVGPRewardModel(RewardModel):
         # print("reward {}".format(reward.shape))
         self.ntksvgp.set_data((state_action_inputs, reward))
 
+    @torch.no_grad()
     def update(self, data_new):
         # ntksvgp.set_data((x, y))
         return self.ntksvgp.update(x=data_new[0], y=data_new[1])

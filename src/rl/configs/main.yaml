@@ -5,10 +5,10 @@ defaults:
   # - transition_model: svgp
   # - reward_model: mlp_new # uses delta/sigma_noise
   # - transition_model: mlp_new # uses delta/sigma_noise
-  # - reward_model: mlp # uses delta/sigma_noise
-  # - transition_model: mlp # uses delta/sigma_noise
-  - reward_model: nn2svgp
-  - transition_model: nn2svgp
+  - reward_model: mlp # uses delta/sigma_noise
+  - transition_model: mlp # uses delta/sigma_noise
+  # - reward_model: nn2svgp
+  # - transition_model: nn2svgp
   - reward_network: one_layer
   - transition_network: one_layer
   # - agent: ddpg

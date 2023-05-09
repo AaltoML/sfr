@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import abc
-from typing import Any
+from typing import Any, Optional
 
 from src.rl.custom_types import Action, EvalMode, State, T0
 from torchrl.data import ReplayBuffer

@@ -26,6 +26,7 @@ def greedy(
     unc_prop_strategy: str = "mean",
     sample_actor: bool = True,
     bootstrap: bool = True,
+    use_noise_var: bool = False,
 ):
     if unc_prop_strategy == "mean":
         # def greedy_fn(start_state: State, actions: ActionTrajectory) -> TensorType[""]:
@@ -62,10 +63,10 @@ def greedy(
             state_trajectory = state[None, ...]
             for t in range(horizon):
                 next_state_prediction = transition_model.predict(state, actions[t])
-                state_dist = td.Normal(
-                    next_state_prediction.state_mean,
-                    next_state_prediction.state_var + next_state_prediction.noise_var,
-                )
+                var = next_state_prediction.state_var
+                if use_noise_var:
+                    var += next_state_prediction.noise_var
+                state_dist = td.Normal(next_state_prediction.state_mean, var)
                 state = state_dist.sample()
                 # TODO draw more than one sample?
                 # print("sample state {}".format(state.shape))
@@ -115,9 +116,9 @@ def greedy(
             final_action = final_action_dist.mean
         G_final = discount * torch.min(*critic(state_trajectory[-1, :], final_action))
         # print("G_ginal {}".format(G_final.shape))
-        # logger.info("discount {}".format(discount))
-        # logger.info("G 0:H {}".format(torch.mean(G, 0)))
-        # logger.info("G bootstrap {}".format(torch.mean(G_final, 0)))
+        logger.info("discount {}".format(discount))
+        logger.info("G 0:H {}".format(torch.mean(G, 0)))
+        logger.info("G bootstrap {}".format(torch.mean(G_final, 0)))
         if bootstrap:
             return G[..., None] + G_final
         else:

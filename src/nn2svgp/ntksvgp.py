@@ -183,8 +183,6 @@ class NTKSVGP(nn.Module):
 
     @torch.no_grad()
     def update(self, x: InputData, y: OutputData):
-        if not isinstance(self.likelihood, src.nn2svgp.likelihoods.Gaussian):
-            raise NotImplementedError
         logger.info("Updating dual params...")
         # TODO what about classificatin
         # assert x.ndim == 2 and y.ndim == 2
@@ -206,12 +204,23 @@ class NTKSVGP(nn.Module):
         # print(" hereh lambda_1 {}".format(lambda_1.shape))
         # self.alpha += (Kzx @ lambda_1_minus_y.T[..., None])[..., 0]
         # self.alpha_u += (Kzx @ y.T[..., None])[..., 0]
-        self.beta_u += (
-            Kzx
-            @ (1**-1 * torch.eye(num_new_data).to(self.Z)[None, ...])
-            @ torch.transpose(Kzx, -1, -2)
-        )
-        self.Lambda_u += (Kzx @ y.T[..., None])[..., 0]
+
+        if isinstance(self.likelihood, src.nn2svgp.likelihoods.Gaussian):
+            self.beta_u += (
+                Kzx
+                @ (1**-1 * torch.eye(num_new_data).to(self.Z)[None, ...])
+                @ torch.transpose(Kzx, -1, -2)
+            )
+            self.Lambda_u += (Kzx @ y.T[..., None])[..., 0]
+        elif isinstance(self.likelihood, src.nn2svgp.likelihoods.CategoricalLh):
+            f = self.network(x)
+            Lambda_new, beta_new = calc_lambdas(Y=y, F=f, likelihood=self.likelihood)
+            beta_new = torch.diagonal(beta_new, dim1=-2, dim2=-1)  # [N, F]
+            self.beta_u += torch.einsum("fmn, nf, fun -> fmu", Kzx, beta_new, Kzx)
+            self.Lambda_u += torch.einsum("fmn, nf -> fm", Kzx, Lambda_new)
+        else:
+            raise NotImplementedError
+
         self.alpha_u = calc_alpha_u_from_lambda(
             beta_u=self.beta_u,
             Lambda_u=self.Lambda_u,

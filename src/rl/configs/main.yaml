@@ -5,10 +5,10 @@ defaults:
   # - transition_model: svgp
   # - reward_model: mlp_new # uses delta/sigma_noise
   # - transition_model: mlp_new # uses delta/sigma_noise
-  # - reward_model: mlp # uses delta/sigma_noise
-  # - transition_model: mlp # uses delta/sigma_noise
-  - reward_model: nn2svgp
-  - transition_model: nn2svgp
+  - reward_model: mlp # uses delta/sigma_noise
+  - transition_model: mlp # uses delta/sigma_noise
+  # - reward_model: nn2svgp
+  # - transition_model: nn2svgp
   - reward_network: one_layer
   - transition_network: one_layer
   # - agent: ddpg
@@ -64,7 +64,8 @@ wandb:
   entity: "aidanscannell"
   project: "nn2svgp"
   use_wandb: True
-  run_name: ${alg_name}-td=${transition_model.delta}-rd=${reward_model.delta}-ts=${transition_model.sigma_noise}-rs=${reward_model.sigma_noise}-updates=${online_updates}-h=${agent.horizon}-update_freq=${online_update_freq}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
+  run_name: ${alg_name}-td=${transition_model.delta}-rd=${reward_model.delta}-ts=${transition_model.sigma_noise}-rs=${reward_model.sigma_noise}-updates=${online_updates}-update_freq=${online_update_freq}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
+  # run_name: ${alg_name}-td=${transition_model.delta}-rd=${reward_model.delta}-ts=${transition_model.sigma_noise}-rs=${reward_model.sigma_noise}-updates=${online_updates}-h=${agent.horizon}-update_freq=${online_update_freq}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   # run_name: ${alg_name}-${online_update_freq}-${agent.horizon}-${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   tags:
     - "random_seed=${random_seed}"

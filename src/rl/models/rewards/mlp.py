@@ -75,6 +75,7 @@ class MLPRewardModel(RewardModel):
             self.ntksvgp.cuda()
             print("put reward ntksvgp on cuda")
 
+    @torch.no_grad()
     def predict(self, state: State, action: Action) -> RewardPrediction:
         state_action_input = torch.concat([state, action], -1)
         reward_mean = self.network.forward(state_action_input)[:, 0]
@@ -124,6 +125,7 @@ class MLPRewardModel(RewardModel):
         # print("reward {}".format(reward.shape))
         self.ntksvgp.set_data((state_action_inputs, reward))
 
+    @torch.no_grad()
     def update(self, data_new):
         pass
         # ntksvgp.set_data((x, y))

@@ -132,9 +132,9 @@ def get_perf_dict():
 def get_quick_loader(loader, device='cuda'):
     return [(X.to(device), y.to(device)) for X, y in loader]
 
-def main(dataset_name, ds_train, ds_test, model_name, rerun, batch_size, seed, n_sparse, name,
+def main(dataset_name, ds_train, ds_test, model_name, rerun, batch_size, seed, n_sparse, name, n_inducing, 
          delta_min=1e-7, delta_max=1e7, res_dir='experiments/results', device='cuda'):
-    lh = CategoricalLh(EPS=0.0000001)
+    lh = CategoricalLh(EPS=0.000000001)
 
     eligible_files = list()
     deltas = list()
@@ -427,7 +427,7 @@ if __name__ == '__main__':
     parser.add_argument('--delta_min', type=float, default=1e-7)
     parser.add_argument('--delta_max', type=float, default=1e7)
     parser.add_argument('--n_sparse', type=float, default=0.5)
-    parser.add_argument('--n_inducing_points', type=int, default=1000)
+    parser.add_argument('--n_inducing_points', type=int, default=1000)  # TODO: use 3200 (Immer et al.) as default
     parser.add_argument('--name', type=str, default='testlocal', help='Name of run to be saved in dict key')
     parser.add_argument('--loginfo', action='store_true', help='log info')
     parser.add_argument('--root_dir', help='Root directory', default='../')
@@ -468,3 +468,4 @@ if __name__ == '__main__':
         logging.info(f'Run inference with {dataset} using {model_name}')
         main(dataset, ds_train, ds_test, model_name, rerun, args.batch_size, args.seed, n_sparse, name, n_inducing_points,
              args.delta_min, args.delta_max, res_dir, device=device)
+

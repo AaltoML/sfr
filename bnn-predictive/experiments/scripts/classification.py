@@ -29,12 +29,11 @@ def train(model, likelihood, X_train, y_train, optimizer, n_epochs):
             model.zero_grad()
             f = model(X_train)
             if not is_bernoulli:
-                return likelihood.nn_loss(f=f, y=y_train.squeeze()), X_train.shape[0]
+                return likelihood.nn_loss(f=f.squeeze(), y=y_train.squeeze()), X_train.shape[0]
             else:
-                return likelihood.nn_loss(f=f, y=y_train.squeeze()), X_train.shape[0]
+                return likelihood.nn_loss(f=f.squeeze(), y=y_train.squeeze()), X_train.shape[0]
         loss = optimizer.step(closure)
         losses.append(loss)
-#    if not isinstance(likelihood, ntksvgp.likelihoods.Likelihood):
     optimizer.post_process(model, likelihood, [(X_train, y_train)])
     return losses
 
@@ -44,8 +43,8 @@ def preds_glm(X, model, likelihood, mu, Sigma_chol, samples):
     return gs.mean(dim=0)
 
 
-def preds_svgp(X, model, svgp, likelihood,  samples=1000):
-    gs = svgp_sampling_predictive(X, model, svgp, likelihood, mc_samples=samples)
+def preds_svgp(X, svgp, likelihood,  samples=1000):
+    gs = svgp_sampling_predictive(X,  svgp, likelihood, mc_samples=samples)
     return gs.mean(dim=0)
 
 
@@ -126,9 +125,9 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
         y_input = y_train.unsqueeze(-1)
         likelihood_svgp = likelihood
     svgp = create_ntksvgp(X_train, y_input, model, likelihood_svgp, prior_prec_n, n_sparse=n_sparse, device=device)
-    fs_train = preds_svgp(X_train, model, svgp, likelihood_svgp, samples=n_samples)
-    fs_test = preds_svgp(X_test, model, svgp, likelihood_svgp, samples=n_samples)
-    fs_valid = preds_svgp(X_valid, model, svgp,  likelihood_svgp, samples=n_samples)
+    fs_train = preds_svgp(X_train, svgp, likelihood_svgp, samples=n_samples)
+    fs_test = preds_svgp(X_test, svgp, likelihood_svgp, samples=n_samples)
+    fs_valid = preds_svgp(X_valid, svgp,  likelihood_svgp, samples=n_samples)
     res.update(evaluate(fs_train, y_train, lh, 'svgp_ntk', 'train'))
     res.update(evaluate(fs_test, y_test, lh, 'svgp_ntk', 'test'))
     res.update(evaluate(fs_valid, y_valid, lh, 'svgp_ntk', 'valid'))
@@ -140,10 +139,12 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
     sparse_y = y_train[sparse_idx]
     if isinstance(likelihood_svgp, CategoricalLh):
         sparse_y = sparse_y.squeeze()
+    else:
+        sparse_y = sparse_y.unsqueeze(-1)
     svgp_subset = create_ntksvgp(sparse_x, sparse_y, model, likelihood_svgp, prior_prec_n, n_sparse=1, device=device)
-    fs_train = preds_svgp(X_train, model,  svgp_subset, likelihood_svgp, samples=n_samples)
-    fs_test = preds_svgp(X_test, model,  svgp_subset, likelihood_svgp, samples=n_samples)
-    fs_valid = preds_svgp(X_valid, model, svgp_subset,  likelihood_svgp, samples=n_samples)
+    fs_train = preds_svgp(X_train,  svgp_subset, likelihood_svgp, samples=n_samples)
+    fs_test = preds_svgp(X_test, svgp_subset, likelihood_svgp, samples=n_samples)
+    fs_valid = preds_svgp(X_valid,  svgp_subset,  likelihood_svgp, samples=n_samples)
     res.update(evaluate(fs_train, y_train, lh, 'gp_subset', 'train'))
     res.update(evaluate(fs_test, y_test, lh, 'gp_subset', 'test'))
     res.update(evaluate(fs_valid, y_valid, lh, 'gp_subset', 'valid'))

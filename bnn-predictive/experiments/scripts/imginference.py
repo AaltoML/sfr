@@ -215,11 +215,11 @@ def main(dataset_name, ds_train, ds_test, model_name, rerun, batch_size, seed, n
         torch.save(state, f)
 
 
-def ood(dataset_name, ds_train, ds_test, ds_ood, model_name, batch_size, seed):
-    lh = CategoricalLh()
+def ood(dataset_name, ds_train, ds_test, ds_ood, model_name, batch_size, seed, n_inducing, name,
+    res_dir='experiments/results', device='cuda'):
+    lh = CategoricalLh(EPS=0.000000001)
 
-    perf_keys = ['map', 'lap_kron', 'lap_kron_damp', 'lap_kron_nn', 'lap_kron_dampnn',
-                 'lap_diag', 'lap_diag_nn']
+    perf_keys = ['map', 'svgp_ntk']
     eligible_files = list()
     perfs = list()
     for file in os.listdir('models'):
@@ -245,6 +245,30 @@ def ood(dataset_name, ds_train, ds_test, ds_ood, model_name, batch_size, seed):
     gstar_te, _ = get_map_predictive(test_loader, model)
     gstar_od, _ = get_map_predictive(ood_loader, model)
     pred_ents['map'] = predictive_entropies(gstar_te, gstar_od)
+
+    # Get train data for SVGP
+    all_train = DataLoader(ds_train, batch_size=len(ds_train))
+    (X_train, y_train) = next(iter(all_train))
+    X_train = X_train.to(device)
+    y_train = y_train.to(device)
+
+    # SVGP
+    model = get_model(model_name, ds_train)
+    state = torch.load(eligible_files[np.argmin([e['svgp_ntk'] for e in perfs])])
+    logging.info(f'SVGP predictive - best delta={state["delta"]}')
+    model.load_state_dict(state['model'])
+    model = model.to(device)
+
+    data = (X_train, y_train)
+    prior = ntksvgp.priors.Gaussian(params=model.parameters, delta=delta)
+    output_dim = model(X_train[:10].to(device)).shape[-1]
+    svgp = NTKSVGP(network=model, prior=prior, output_dim=output_dim,
+                       likelihood=lh, num_inducing=n_inducing,
+                       dual_batch_size=batch_size, device=device)
+    svgp.set_data(data)
+    gstar_te, _ = get_svgp_predictive(test_loader, svgp, use_nn_out=False, likelihood=lh)
+    gstar_va, _ = get_svgp_predictive(val_loader, svgp, use_nn_out=False, likelihood=lh)
+    pred_ents['svgp_ntk'] = predictive_entropies(gstar_te, gstar_od)
 
     # # # Laplace Kron GLM
     # model = get_model(model_name, ds_train)
@@ -463,7 +487,7 @@ if __name__ == '__main__':
     elif args.ood:
         logging.info(f'Run OOD with {dataset} using {model_name}')
         ds_ood = get_ood_dataset(dataset)
-        ood(dataset, ds_train, ds_test, ds_ood, model_name, args.batch_size, args.seed)
+        ood(dataset, ds_train, ds_test, ds_ood, model_name, args.batch_size, args.seed, n_inducing_points, res_dir, device=device)
     else:
         logging.info(f'Run inference with {dataset} using {model_name}')
         main(dataset, ds_train, ds_test, model_name, rerun, args.batch_size, args.seed, n_sparse, name, n_inducing_points,

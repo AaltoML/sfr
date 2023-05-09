@@ -5,13 +5,15 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+import numpy as np
+import src
 import torch
 import wandb
-from src.rl.custom_types import Action, InputData, OutputData, State, RewardPrediction
+from src.rl.custom_types import Action, InputData, OutputData, RewardPrediction, State
+from src.rl.models.util import weights_init_normal
 from src.rl.utils import EarlyStopper
-import numpy as np
 from torchrl.data import ReplayBuffer
-import src
+
 from .base import RewardModel
 
 
@@ -92,6 +94,7 @@ class MLPRewardModel(RewardModel):
         # network.apply(weights_init_normal)
         if self.early_stopper is not None:
             self.early_stopper.reset()
+        # self.network.apply(weights_init_normal)
         self.network.train()
         optimizer = torch.optim.Adam(
             [{"params": self.network.parameters()}], lr=self.learning_rate

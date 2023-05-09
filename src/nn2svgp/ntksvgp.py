@@ -48,7 +48,7 @@ class NTKSVGP(nn.Module):
         num_inducing: int = 30,
         dual_batch_size: Optional[int] = None,
         jitter: float = 1e-6,
-        device: str = "cpu"
+        device: str = "cpu",
     ):
         super().__init__()
         self.network = network
@@ -116,11 +116,10 @@ class NTKSVGP(nn.Module):
                 kernel=self.kernel_single,
                 jitter=self.jitter,
                 out_dim=self.output_dim,
-                device=self.device
+                device=self.device,
             )
         else:
-            print("using aidans predict")
-            self.alpha_u, self.beta_u = calc_sparse_dual_params(
+            self.alpha_u, self.beta_u, self.Lambda_u = calc_sparse_dual_params(
                 network=self.network,
                 train_data=self.train_data,
                 Z=self.Z,
@@ -180,6 +179,7 @@ class NTKSVGP(nn.Module):
         # neg_log_prior = self.prior.nn_loss(self.network.parameters)
         return neg_log_likelihood + neg_log_prior
 
+    @torch.no_grad()
     def update(self, x: InputData, y: OutputData):
         if not isinstance(self.likelihood, src.nn2svgp.likelihoods.Gaussian):
             raise NotImplementedError
@@ -203,11 +203,19 @@ class NTKSVGP(nn.Module):
         # lambda_1_minus_y = y-lambda_1
         # print(" hereh lambda_1 {}".format(lambda_1.shape))
         # self.alpha += (Kzx @ lambda_1_minus_y.T[..., None])[..., 0]
-        self.alpha_u += (Kzx @ y.T[..., None])[..., 0]
+        # self.alpha_u += (Kzx @ y.T[..., None])[..., 0]
         self.beta_u += (
             Kzx
             @ (1**-1 * torch.eye(num_new_data).to(self.Z)[None, ...])
             @ torch.transpose(Kzx, -1, -2)
+        )
+        self.Lambda_u += (Kzx @ y.T[..., None])[..., 0]
+        self.alpha_u = calc_alpha_u_from_lambda(
+            beta_u=self.beta_u,
+            Lambda_u=self.Lambda_u,
+            Z=self.Z,
+            kernel=self.kernel,
+            jitter=self.jitter,
         )
 
         logger.info("Building predict fn...")
@@ -228,7 +236,6 @@ class NTKSVGP(nn.Module):
 def build_ntk(
     network: nn.Module, num_data: int, output_dim: int, delta: float = 1.0
 ) -> Tuple[NTK, NTK_single]:
-
     network = network.eval()
     # Detaching the parameters because we won't be calling Tensor.backward().
     params = {k: v.detach() for k, v in network.named_parameters()}
@@ -328,8 +335,8 @@ def predict_from_sparse_duals(
         .to(Z.device)[None, ...]
         .repeat(output_dim, 1, 1)
     )
-    KzzplusBeta = (Kzz + beta_u) + Iz * jitter
     Kzz += Iz * jitter
+    KzzplusBeta = (Kzz + beta_u) + Iz * jitter
     assert beta_u.shape == Kzz.shape
 
     Lm = torch.linalg.cholesky(Kzz, upper=True)
@@ -363,6 +370,7 @@ def predict_from_sparse_duals(
 
     return predict
 
+
 @torch.no_grad()
 def calc_sparse_dual_params_batch(
     network: torch.nn.Module,
@@ -393,16 +401,13 @@ def calc_sparse_dual_params_batch(
         logits_i = network(x_i)
         if logits_i.ndim == 1:
             logits_i = logits_i.unsqueeze(-1)
-        Lambda_i, beta_i = calc_lambdas(
-            Y=y_i, F=logits_i, likelihood=likelihood
-        )
+        Lambda_i, beta_i = calc_lambdas(Y=y_i, F=logits_i, likelihood=likelihood)
         beta_i = torch.vmap(torch.diag)(beta_i)
 
         end_idx = start_idx + batch_size
         Lambda[start_idx:end_idx] = Lambda_i
         beta_diag[start_idx:end_idx] = beta_i
         start_idx = end_idx
-
 
     # Clip the lambdas  (?)
     # lambda_1 = torch.clip(lambda_1, min=1e-7)
@@ -440,8 +445,12 @@ def calc_sparse_dual_params_batch(
             start_idx = end_idx
             del Kui_c
         torch.cuda.empty_cache()
-        Kzz_c = kernel(Z, Z, output_c).cpu() + torch.eye(Z.shape[0], device="cpu") * jitter
-        alpha_u[output_c] = torch.linalg.solve((Kzz_c + beta_u[output_c]), alpha_u[output_c])
+        Kzz_c = (
+            kernel(Z, Z, output_c).cpu() + torch.eye(Z.shape[0], device="cpu") * jitter
+        )
+        alpha_u[output_c] = torch.linalg.solve(
+            (Kzz_c + beta_u[output_c]), alpha_u[output_c]
+        )
 
     return alpha_u.to(device), beta_u.to(device)
     ################  Compute alpha/beta batched version END ################
@@ -454,21 +463,13 @@ def calc_sparse_dual_params(
     kernel: NTK,
     likelihood: Likelihood,
     jitter: float = 1e-3,
-) -> Tuple[AlphaInducing, BetaInducing]:
+) -> Tuple[AlphaInducing, BetaInducing, Lambda]:
     num_inducing, input_dim = Z.shape
     X, Y = train_data
     assert X.ndim == 2
     assert X.shape[0] == Y.shape[0]
     assert X.shape[1] == input_dim
     Kzx = kernel(Z, X)
-    Kzz = kernel(Z, Z)
-    output_dim = Kzz.shape[0]
-    Iz = (
-        torch.eye(Kzz.shape[-1], dtype=torch.float64)
-        .to(Z.device)[None, ...]
-        .repeat(output_dim, 1, 1)
-    )
-    Kzz += Iz * jitter
 
     F = network(X)
     Lambda, beta = calc_lambdas(Y=Y, F=F, likelihood=likelihood)
@@ -489,12 +490,35 @@ def calc_sparse_dual_params(
     Lambda_u = torch.matmul(Kzx, torch.transpose(Lambda, -1, -2)[..., None])[..., 0]
     # print("Lambda_u {}".format(Lambda_u.shape))
 
+    alpha_u = calc_alpha_u_from_lambda(
+        beta_u=beta_u, Lambda_u=Lambda_u, Z=Z, kernel=kernel, jitter=jitter
+    )
     # print("(Kzz + beta_u) {}".format(Kzz + beta_u))
-    KzzplusBeta = (Kzz + beta_u) + Iz * jitter
-    alpha_u = torch.linalg.solve(KzzplusBeta, Lambda_u[..., None])[..., 0]
+    # KzzplusBeta = (Kzz + beta_u) + Iz * jitter
+    # alpha_u = torch.linalg.solve(KzzplusBeta, Lambda_u[..., None])[..., 0]
     # alpha_u = torch.linalg.solve((Kzz + beta_u), Lambda_u[..., None])[..., 0]
     # print("alpha_u {}".format(alpha_u.shape))
-    return alpha_u, beta_u
+    return alpha_u, beta_u, Lambda_u
+
+
+def calc_alpha_u_from_lambda(
+    beta_u: BetaInducing,
+    Lambda_u: Lambda,
+    Z: InducingPoints,
+    kernel: NTK,
+    jitter: float = 1e-3,
+) -> AlphaInducing:
+    Kzz = kernel(Z, Z)
+    output_dim = Kzz.shape[0]
+    Iz = (
+        torch.eye(Kzz.shape[-1], dtype=torch.float64)
+        .to(Z.device)[None, ...]
+        .repeat(output_dim, 1, 1)
+    )
+    Kzz += Iz * jitter
+    KzzplusBeta = (Kzz + beta_u) + Iz * jitter
+    alpha_u = torch.linalg.solve(KzzplusBeta, Lambda_u[..., None])[..., 0]
+    return alpha_u
 
 
 def calc_lambdas(

@@ -103,7 +103,6 @@ def init(
         state_action_inputs = torch.concat([data["state"], data["action"]], -1)
         state_diff = data["next_state"] - data["state"]
         ntksvgp.set_data((state_action_inputs, state_diff))
-        # ntksvgp.build_dual_svgp()
 
     def update_fn(data_new):
         return ntksvgp.update(x=data_new[0], y=data_new[1])

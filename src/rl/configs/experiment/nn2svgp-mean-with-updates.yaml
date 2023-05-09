@@ -3,7 +3,7 @@ defaults:
   - override /reward_model: nn2svgp
   - override /transition_model: nn2svgp
 
-alg_name: "nn2svgp-mppi-mean-with-updates"
+alg_name: "nn2svgp-mean-with-updates"
 online_updates: true
 
 transition_model:

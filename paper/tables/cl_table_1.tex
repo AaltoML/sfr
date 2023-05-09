@@ -5,13 +5,13 @@
 \begin{tabular}[c]{c}S-MNIST (SH) \\ 200 points\end{tabular} & 
 \begin{tabular}[c]{c}S-FMNIST (SH)\\ 200 points\end{tabular} & 
 \begin{tabular}[c]{c}P-MNIST (SH) \\ 200\end{tabular} \\ \midrule
-{\sc Online-EWC}~\cite{}* & \val{19.95}{0.28} & \val{19.95}{0.28} & \val{}{} & \val{74.87}{1.81}\\
-{\sc SI}~\cite{}* & \val{19.82}{0.09} & \val{19.82}{0.09} & \val{}{} & \val{88.39}{1.37}\\
-{\sc VCL}~\cite{} & \val{}{} & \val{32.11}{1.16} & \val{}{} &  \val{93.00}{no}\\
-{\sc VCL} (no coreset) & \val{}{} & \val{17.74}{1.20} & \val{}{} & \val{87.50}{0.61} \\
-{\sc FROMP}~\cite{} & \val{}{} & \val{}{} & \val{}{} & \val{}{} \\
-{\sc S-FSVI}~\cite{} & \val{84.51}{1.30} & \val{92.87}{0.14} & \val{}{} & \val{95.76}{0.02} \\
-{\sc SFR} (Ours) & \val{89.01}{0.69} & \val{94.17}{0.15} & \val{}{} & \val{95.00}{0.08} \\
+{\sc Online-EWC}~\cite{schwarz2018progress}$^*$ & \val{19.95}{0.28} & \val{19.95}{0.28} & \val{}{} & \val{74.87}{1.81}\\
+{\sc SI}~\cite{zenke2017continual}$^*$ & \val{19.82}{0.09} & \val{19.82}{0.09} & \val{}{} & \val{88.39}{1.37}\\
+{\sc VCL}~\cite{nguyen2018variational} & \val{}{} & \color{blue}{\val{32.11}{1.16}} & \val{}{} &  \color{blue}{\val{93.00}{0.00}}$^{**}$\\
+{\sc VCL} (no coreset) & \val{}{} & \color{blue}{\val{17.74}{1.20}} & \val{}{} & \color{blue}{\val{87.50}{0.61}} \\
+{\sc FROMP}~\cite{pan2020continual} & \val{}{} & \val{}{} & \val{}{} & \val{}{} \\
+{\sc S-FSVI}~\cite{rudner2022continual} & \val{84.51}{1.30} & \color{blue}{\val{92.87}{0.14}} & \val{}{} & \color{blue}{\val{95.76}{0.02}} \\
+{\sc SFR}~(Ours) & \color{red}{\val{89.01}{0.69}} & \color{red}{\val{94.17}{0.15}} & \val{}{} & \color{red}{\val{95.00}{0.08}}\\
 % {\sc SFR diag.} (Ours) & & & & \\
 \bottomrule
 \end{tabular}

@@ -60,6 +60,7 @@ class NTKSVGP(nn.Module):
         self.jitter = jitter
         self.device = device
 
+    @torch.no_grad()
     def set_data(self, train_data: Data):
         """Sets training data, samples inducing points, calcs dual parameters, builds predict fn"""
         X_train, Y_train = train_data
@@ -88,6 +89,7 @@ class NTKSVGP(nn.Module):
 
         self.build_dual_svgp()
 
+    @torch.no_grad()
     def build_dual_svgp(self):
         logger.info("Calculating dual params and building prediction fn...")
         if isinstance(self.prior, src.nn2svgp.priors.Gaussian):

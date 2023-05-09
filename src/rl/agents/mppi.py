@@ -40,7 +40,7 @@ class MPPIAgent(Agent):
         num_topk: int = 64,
         temperature: int = 0.5,
         momentum: float = 0.1,
-        unc_prop_strategy: str = "mean",
+        unc_prop_strategy: str = "mean",  # "mean" or "sample", "sample" require transition_model to use SVGP prediction type
         sample_actor: bool = True,
         bootstrap: bool = True,
         device: str = "cuda",

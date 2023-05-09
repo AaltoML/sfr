@@ -1,6 +1,0 @@
-# @package _global_
-defaults:
-  - override /model: gp
-
-wandb:
-  name: "gp"

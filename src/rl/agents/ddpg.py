@@ -11,7 +11,7 @@ import src.rl.agents.utils as util
 import torch
 import torch.nn as nn
 import wandb
-from src.rl.custom_types import Action, EvalMode, State, T0
+from src.rl.custom_types import Action, EvalMode, State, T0, Data
 from torchrl.data.replay_buffers import ReplayBuffer
 
 from .agent import Agent
@@ -42,78 +42,60 @@ class Critic(nn.Module):
         return self._critic1(state_action_input), self._critic2(state_action_input)
 
 
-def init(
-    state_dim: int,
-    action_dim: int,
-    mlp_dims: List[int] = [512, 512],
-    learning_rate: float = 3e-4,
-    max_ddpg_iterations: int = 100,  # for training DDPG
-    # std_schedule: str = "linear(1.0, 0.1, 50)",
-    std: float = 0.1,  # TODO make this schedule
-    std_clip: float = 0.3,
-    nstep: int = 3,
-    gamma: float = 0.99,
-    tau: float = 0.005,
-    device: str = "cuda",
-) -> Agent:
-    actor = Actor(state_dim, mlp_dims, action_dim).to(device)
-    critic = Critic(state_dim=state_dim, mlp_dims=mlp_dims, action_dim=action_dim).to(
-        device
-    )
-    critic_target = Critic(
-        state_dim=state_dim, mlp_dims=mlp_dims, action_dim=action_dim
-    ).to(device)
-    print("Critic on device: {}".format(device))
+class DDPGAgent(Agent):
+    def __init__(
+        self,
+        state_dim: int,
+        action_dim: int,
+        mlp_dims: List[int] = [512, 512],
+        learning_rate: float = 3e-4,
+        max_ddpg_iterations: int = 100,  # for training DDPG
+        # std_schedule: str = "linear(1.0, 0.1, 50)",
+        std: float = 0.1,  # TODO make this schedule
+        std_clip: float = 0.3,
+        nstep: int = 3,
+        gamma: float = 0.99,
+        tau: float = 0.005,
+        device: str = "cuda",
+    ):
+        self.max_ddpg_iterations = max_ddpg_iterations
+        self.std = std
+        self.std_clip = std_clip
+        self.nstep = nstep
+        self.gamma = gamma
+        self.tau = tau
+        self.device = device
 
-    # Init optimizer
-    optim_actor = torch.optim.Adam(actor.parameters(), lr=learning_rate)
-    optim_critic = torch.optim.Adam(critic.parameters(), lr=learning_rate)
-    return init_from_actor_critic(
-        actor=actor,
-        critic=critic,
-        critic_target=critic_target,
-        optim_actor=optim_actor,
-        optim_critic=optim_critic,
-        max_ddpg_iterations=max_ddpg_iterations,
-        # std_schedule=std_schedule,
-        std=std,
-        std_clip=std_clip,
-        nstep=nstep,
-        gamma=gamma,
-        tau=tau,
-        device=device,
-    )
+        self.actor = Actor(state_dim, mlp_dims, action_dim).to(device)
+        self.critic = Critic(
+            state_dim=state_dim, mlp_dims=mlp_dims, action_dim=action_dim
+        ).to(device)
+        self.critic_target = Critic(
+            state_dim=state_dim, mlp_dims=mlp_dims, action_dim=action_dim
+        ).to(device)
+        print("Critic on device: {}".format(device))
 
+        # Init optimizer
+        self.optim_actor = torch.optim.Adam(self.actor.parameters(), lr=learning_rate)
+        self.optim_critic = torch.optim.Adam(self.critic.parameters(), lr=learning_rate)
 
-def init_from_actor_critic(
-    actor: Actor,
-    critic: Critic,
-    critic_target: Critic,
-    optim_actor,
-    optim_critic,
-    max_ddpg_iterations: int = 100,  # for training DDPG
-    # std_schedule: str = "linear(1.0, 0.1, 50)",
-    std: float = 0.1,  # TODO make this schedule
-    std_clip: float = 0.3,
-    nstep: int = 3,
-    gamma: float = 0.99,
-    tau: float = 0.005,
-    device: str = "cuda",
-) -> Agent:
-    update_q_fn = update_q(
-        optim=optim_critic,
-        actor=actor,
-        critic=critic,
-        critic_target=critic_target,
-        std_clip=std_clip,
-    )
-    update_actor_fn = update_actor(
-        optim=optim_actor, actor=actor, critic=critic, std_clip=std_clip
-    )
+        self._update_q_fn = update_q(
+            optim=self.optim_critic,
+            actor=self.actor,
+            critic=self.critic,
+            critic_target=self.critic_target,
+            std_clip=std_clip,
+        )
+        self._update_actor_fn = update_actor(
+            optim=self.optim_actor,
+            actor=self.actor,
+            critic=self.critic,
+            std_clip=std_clip,
+        )
 
-    def train_fn(replay_buffer: ReplayBuffer) -> dict:
-        info = {"std": std}
-        for i in range(max_ddpg_iterations):
+    def train(self, replay_buffer: ReplayBuffer) -> dict:
+        info = {"std": self.std}
+        for i in range(self.max_ddpg_iterations):
             # std = linear_schedule(std_schedule, i)  # linearly udpate std
             # info = {"std": std}
             # std = 0.1
@@ -128,19 +110,19 @@ def init_from_actor_critic(
             next_state = samples["next_state"][None, ...]  # [1, B, state_dim]
 
             info.update(
-                update_q_fn(
+                self._update_q_fn(
                     state=state,
                     action=action,
                     reward=reward,
                     discount=1,
                     next_state=next_state,
-                    std=std,
+                    std=self.std,
                 )
             )
-            info.update(update_actor_fn(state=state, std=std))
+            info.update(self._update_actor_fn(state=state, std=self.std))
 
             # Update target network
-            util.soft_update_params(critic, critic_target, tau=tau)
+            util.soft_update_params(self.critic, self.critic_target, tau=self.tau)
             # if i % 10 == 0:
             #     print(
             #         "DDPG: Iteration {} | Q Loss {} | Actor Loss {}".format(
@@ -155,28 +137,23 @@ def init_from_actor_critic(
         return info
 
     @torch.no_grad()
-    def select_action_fn(state: State, eval_mode: EvalMode = False, t0: T0 = None):
+    def select_action(self, state: State, eval_mode: EvalMode = False, t0: T0 = None):
         if isinstance(state, np.ndarray):
             # state = torch.from_numpy(state).to(device).float()
             # print("state {}".format(state.shape))
-            state = torch.tensor(state, dtype=torch.float64, device=device)
+            state = torch.tensor(state, dtype=torch.float64, device=self.device)
         if state.ndim == 2:
             # TODO added this but not checked its right
             # TODO previously had torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
             assert state.shape[0] == 1
             state = state[0, ...]
             # print("state {}".format(state.shape))
-        dist = actor.forward(state, std=std)
+        dist = self.actor.forward(state, std=self.std)
         if eval_mode:
             action = dist.mean
         else:
             action = dist.sample(clip=None)
         return action
-
-    def update_fn(data_new):
-        pass
-
-    return Agent(select_action=select_action_fn, train=train_fn, update=update_fn)
 
 
 def update_q(

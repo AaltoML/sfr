@@ -106,7 +106,7 @@ class NTKSVGP(nn.Module):
         )
 
         if self.dual_batch_size:
-            self.alpha_u, self.beta_u = calc_sparse_dual_params_batch(
+            self.alpha_u, self.beta_u, self.Lambda_u = calc_sparse_dual_params_batch(
                 network=self.network,
                 train_loader=DataLoader(
                     TensorDataset(*(self.train_data)),
@@ -384,7 +384,7 @@ def calc_sparse_dual_params_batch(
     jitter: float = 1e-4,
     subset_out_dim: Optional[List] = None,
     device: str = "cpu",
-) -> Tuple[AlphaInducing, BetaInducing]:
+) -> Tuple[AlphaInducing, BetaInducing, Lambda]:
     ################  Compute lambdas batched version START ################
     num_train = len(train_loader.dataset)
     items_shape = (num_train, out_dim)
@@ -454,7 +454,7 @@ def calc_sparse_dual_params_batch(
             (Kzz_c + beta_u[output_c]), alpha_u[output_c]
         )
 
-    return alpha_u.to(device), beta_u.to(device)
+    return alpha_u.to(device), beta_u.to(device), Lambda.to(device)
     ################  Compute alpha/beta batched version END ################
 
 

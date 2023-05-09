@@ -64,19 +64,18 @@ def evaluate(p, y, likelihood, name, data):
         print(nll_cls(p.squeeze(), y.squeeze(), likelihood))
     return res
 
-def create_ntksvgp(X_train, y_train, model, likelihood, prior_prec, n_sparse=0.5, device='cpu'):
+def create_ntksvgp(X_train, y_train, model, likelihood, prior_prec, n_inducing=64, device='cpu'):
     data = (X_train, y_train)
-    num_inducing = int(n_sparse*X_train.shape[0])
     n_classes = model(X_train).shape[-1]
     print(f'N classes: {n_classes}')
     print(f'Prior prec: {prior_prec}')
     prior = ntksvgp.priors.Gaussian(params=model.parameters, delta=prior_prec) 
-    svgp = NTKSVGP(network=model, prior=prior, output_dim=n_classes, likelihood=likelihood, num_inducing=num_inducing, device=device)
+    svgp = NTKSVGP(network=model, prior=prior, output_dim=n_classes, likelihood=likelihood, num_inducing=n_inducing, device=device)
     svgp.set_data(data)
     return svgp
 
 def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, seed,
-              n_layers=2, n_units=50, activation='tanh', n_sparse=0.25, n_samples=1000, refine=True):
+              n_layers=2, n_units=50, activation='tanh', n_inducing=64, n_samples=1000, refine=True):
     """Full inference (training and prediction)
     storing all relevant quantities and returning a state dictionary.
     if sigma_noise is None, we have classification.
@@ -92,7 +91,7 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
         likelihood = BernoulliLh(EPS=0.000001)
         K = 1
     else:
-        eps = 0.00000001
+        eps = 0.000000001
         likelihood = CategoricalLh(EPS=eps)
         K = ds_train.C
 
@@ -124,7 +123,7 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
     else:
         y_input = y_train.unsqueeze(-1)
         likelihood_svgp = likelihood
-    svgp = create_ntksvgp(X_train, y_input, model, likelihood_svgp, prior_prec_n, n_sparse=n_sparse, device=device)
+    svgp = create_ntksvgp(X_train, y_input, model, likelihood_svgp, prior_prec_n, n_inducing=n_inducing, device=device)
     fs_train = preds_svgp(X_train, svgp, likelihood_svgp, samples=n_samples)
     fs_test = preds_svgp(X_test, svgp, likelihood_svgp, samples=n_samples)
     fs_valid = preds_svgp(X_valid, svgp,  likelihood_svgp, samples=n_samples)
@@ -134,14 +133,14 @@ def inference(ds_train, ds_test, ds_valid, prior_prec, lr, n_epochs, device, see
 
     # GP subset predictive
 
-    sparse_idx = torch.randperm(X_train.shape[0])[:int(n_sparse*X_train.shape[0])]
+    sparse_idx = torch.randperm(X_train.shape[0])[:n_inducing]
     sparse_x = X_train[sparse_idx]
     sparse_y = y_train[sparse_idx]
     if isinstance(likelihood_svgp, CategoricalLh):
         sparse_y = sparse_y.squeeze()
     else:
         sparse_y = sparse_y.unsqueeze(-1)
-    svgp_subset = create_ntksvgp(sparse_x, sparse_y, model, likelihood_svgp, prior_prec_n, n_sparse=1, device=device)
+    svgp_subset = create_ntksvgp(sparse_x, sparse_y, model, likelihood_svgp, prior_prec_n, n_inducing=n_inducing, device=device)
     fs_train = preds_svgp(X_train,  svgp_subset, likelihood_svgp, samples=n_samples)
     fs_test = preds_svgp(X_test, svgp_subset, likelihood_svgp, samples=n_samples)
     fs_valid = preds_svgp(X_valid,  svgp_subset,  likelihood_svgp, samples=n_samples)
@@ -291,7 +290,7 @@ if __name__ == '__main__':
     parser.add_argument('--res_folder', help='Result folder', default='test')
     parser.add_argument('--name', help='name result file', default='', type=str)
     parser.add_argument('--n_samples', help='number predictive samples', type=int, default=1000)
-    parser.add_argument('--n_sparse', help='number of sparse data points to use for the svgp', type=float, default=0.5)
+    parser.add_argument('--n_inducing', help='number of sparse data points to use for the svgp', type=int, default=64)
     parser.add_argument('--refine', help='on/off switch for posterior refinement', type=int)
     args = parser.parse_args()
     dataset = args.dataset
@@ -304,7 +303,7 @@ if __name__ == '__main__':
     n_layers, n_units = args.n_layers, args.n_units
     activation = args.activation
     n_samples = args.n_samples
-    n_sparse = args.n_sparse
+    n_inducing = args.n_inducing
     name = args.name
     root_dir = args.root_dir
     res_folder = args.res_folder
@@ -340,5 +339,5 @@ if __name__ == '__main__':
 
     deltas = np.logspace(logd_min, logd_max, n_deltas)
     main(ds_train, ds_test, ds_valid, deltas, device, dataset, name, seed, res_dir,  n_epochs=n_epochs,
-         lr=lr, n_layers=n_layers, n_units=n_units, activation=activation, n_sparse=n_sparse, n_samples=n_samples,
+         lr=lr, n_layers=n_layers, n_units=n_units, activation=activation, n_inducing=n_inducing, n_samples=n_samples,
           refine=refine)

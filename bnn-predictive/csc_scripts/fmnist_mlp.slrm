@@ -19,9 +19,10 @@ SEED=${SEEDS[$(($SLURM_ARRAY_TASK_ID))]}
 dataset='FMNIST'
 echo $dataset
 echo $SEED
-name='sparse_3200'
-n_inducing=3200
+name='sparse_1000'
+n_inducing=1000
 model='MLP'
-n_deltas=6
-#srun python3 -u experiments/scripts/imgclassification.py -d ${dataset} -m ${model} --root_dir . -s ${SEED} --n_deltas ${n_deltas}
-srun python3 -u experiments/scripts/imginference.py -d ${dataset} -m ${model} --root_dir . -s ${SEED} --loginfo --n_inducing ${n_inducing} --name ${name}
+n_deltas=16
+batch_size=100
+srun python3 -u experiments/scripts/imgclassification.py -d ${dataset} -m ${model} --root_dir . -s ${SEED} --n_deltas ${n_deltas}
+srun python3 -u experiments/scripts/imginference.py -d ${dataset} -m ${model} -b ${batch_size} --root_dir . -s ${SEED} --loginfo --n_inducing ${n_inducing} --name ${name}

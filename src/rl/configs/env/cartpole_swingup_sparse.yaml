@@ -1,0 +1,5 @@
+_target_: src.rl.utils.env.make_env
+env_name: "cartpole"
+task_name: "swingup_sparse"
+seed: ${random_seed}
+action_repeat: 2

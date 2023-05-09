@@ -1,0 +1,27 @@
+# _target_: dm_control.suite.load
+# domain_name: "cartpole"
+# task_name: "swingup"
+# task_kwargs:
+#   random: ${random_seed}
+# visualize_reward: false
+
+_target_: torchrl.envs.TransformedEnv
+env:
+  _target_: torchrl.envs.libs.dm_control.DMControlEnv
+  env_name: "cartpole"
+  task_name: "swingup"
+  random: ${random_seed}
+  device: ${device}
+  frame_skip: 2
+  from_pixels: False
+  pixels_only: False
+transform:
+  _target_: torchrl.envs.transforms.Compose
+  transforms:
+    - _target_: torchrl.envs.transforms.ObservationNorm # normalize observations
+      in_keys:
+        - "observation"
+    - _target_: torchrl.envs.transforms.DoubleToFloat:
+      in_keys:
+        - "observation"
+    - _target_: torchrl.envs.transforms.StepCounter

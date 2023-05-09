@@ -8,16 +8,23 @@ from preds.optimizers import GGN
 from preds.likelihoods import get_Lams_Vys, GaussianLh
 from preds.kron import Kron
 from preds.svgp import SVGPNTK
+from src import NTKSVGP
+import src as ntksvgp
 
 
-def nn_sampling_predictive(X, model, likelihood, mu, Sigma_chol, mc_samples=100, no_link=False):
+def nn_sampling_predictive(
+    X, model, likelihood, mu, Sigma_chol, mc_samples=100, no_link=False
+):
     theta_star = parameters_to_vector(model.parameters())
     if type(Sigma_chol) is Kron:
         covs = Sigma_chol.sample(mc_samples)
     elif len(Sigma_chol.shape) == 2:
         covs = (Sigma_chol @ torch.randn(len(mu), mc_samples, device=mu.device)).t()
     elif len(Sigma_chol.shape) == 1:
-        covs = (Sigma_chol.reshape(-1, 1) * torch.randn(len(mu), mc_samples, device=mu.device)).t()
+        covs = (
+            Sigma_chol.reshape(-1, 1)
+            * torch.randn(len(mu), mc_samples, device=mu.device)
+        ).t()
     samples = mu + covs
     predictions = list()
     link = (lambda x: x) if no_link else likelihood.inv_link
@@ -29,16 +36,21 @@ def nn_sampling_predictive(X, model, likelihood, mu, Sigma_chol, mc_samples=100,
     return torch.stack(predictions)
 
 
-def linear_sampling_predictive(X, model, likelihood, mu, Sigma_chol, mc_samples=100, no_link=False):
+def linear_sampling_predictive(
+    X, model, likelihood, mu, Sigma_chol, mc_samples=100, no_link=False
+):
     theta_star = parameters_to_vector(model.parameters())
     Js, f = Jacobians_naive(model, X)
     if len(Js.shape) > 2:
         Js = Js.transpose(1, 2)
-    offset = f - Js @ theta_star
+    offset = f.squeeze() - Js @ theta_star
     if len(Sigma_chol.shape) == 2:
         covs = (Sigma_chol @ torch.randn(len(mu), mc_samples, device=mu.device)).t()
     elif len(Sigma_chol.shape) == 1:
-        covs = (Sigma_chol.reshape(-1, 1) * torch.randn(len(mu), mc_samples, device=mu.device)).t()
+        covs = (
+            Sigma_chol.reshape(-1, 1)
+            * torch.randn(len(mu), mc_samples, device=mu.device)
+        ).t()
     samples = mu + covs
     predictions = list()
     link = (lambda x: x) if no_link else likelihood.inv_link
@@ -48,27 +60,22 @@ def linear_sampling_predictive(X, model, likelihood, mu, Sigma_chol, mc_samples=
     return torch.stack(predictions)
 
 
-def svgp_sampling_predictive(X, X_train, y_train, model, likelihood, prior_prec, n_sparse=100, sparse_data=None, mc_samples=100, subset=False, no_link=False):
+def svgp_sampling_predictive(X, svgp, likelihood, mc_samples=100, no_link=False):
     """Returns the sparse data used for convenience."""
     link = (lambda x: x) if no_link else likelihood.inv_link
-    data = (y_train, X_train)
-    svgp = SVGPNTK(model, likelihood, data, prior_prec, n_sparse=n_sparse, sparse_data=sparse_data, subset=subset)
-    f_mu, f_var = svgp.predict(X)
-    print('Mean:')
-    print(f_mu.mean())
-    print(model(X).mean())
-    data_sparse = svgp.get_sparse_data()
-    if f_mu.ndim == 1:
-        f_mu = f_mu.unsqueeze(-1)
-        f_var = f_var.unsqueeze(-1).unsqueeze(-1).clamp(1e-10)
-    else:
-        f_var = f_var.clamp(1e-10) * torch.eye(f_var.shape[-1]).unsqueeze(0).repeat(f_var.shape[0], 1, 1)
-    fs = MultivariateNormal(f_mu, f_var)
-    samples = fs.sample((mc_samples, )).squeeze()
-    return link(samples), data_sparse
+    f_mu, f_var = svgp.predict_f(X)
+    # print('Inside SVGP predictive')
+    # print(svgp.network(X).mean())
+    # print(f_mu.mean())
+    # print(f_var.mean())
+    # print(f_var.shape)
+    fs = Normal(f_mu, torch.sqrt(f_var.clamp(1e-5)))
+    return link(fs.sample((mc_samples,)))
 
 
-def functional_sampling_predictive(X, model, likelihood, mu, Sigma, mc_samples=1000, no_link=False):
+def functional_sampling_predictive(
+    X, model, likelihood, mu, Sigma, mc_samples=1000, no_link=False
+):
     theta_star = parameters_to_vector(model.parameters())
     Js, f = Jacobians_naive(model, X)
     # reshape to batch x output x params
@@ -81,9 +88,9 @@ def functional_sampling_predictive(X, model, likelihood, mu, Sigma, mc_samples=1
         # NOTE: Sigma is in this case not really cov but prec-kron and internally inverted
         f_var = Sigma.functional_variance(Js)
     elif len(Sigma.shape) == 2:
-        f_var = torch.einsum('nkp,pq,ncq->nkc', Js, Sigma, Js)
+        f_var = torch.einsum("nkp,pq,ncq->nkc", Js, Sigma, Js)
     elif len(Sigma.shape) == 1:
-        f_var = torch.einsum('nkp,p,ncp->nkc', Js, Sigma, Js)
+        f_var = torch.einsum("nkp,p,ncp->nkc", Js, Sigma, Js)
     if type(likelihood) is GaussianLh:
         return f_mu, f_var
     else:
@@ -92,7 +99,7 @@ def functional_sampling_predictive(X, model, likelihood, mu, Sigma, mc_samples=1
             fs = MultivariateNormal(f_mu, f_var)
             return link(fs.sample((mc_samples,)))
         except RuntimeError:
-            logging.warning('functional sampling covariance indefinite - use diagonal')
+            logging.warning("functional sampling covariance indefinite - use diagonal")
             fs = Normal(f_mu, f_var.diagonal(dim1=1, dim2=2).clamp(1e-5))
             return link(fs.sample((mc_samples,)))
 
@@ -102,13 +109,13 @@ def linear_regression_predictive(X, model, likelihood, mu, Sigma_chol):
     if len(Sigma_chol.shape) == 2:
         Sigma = Sigma_chol @ Sigma_chol.t()
     elif len(Sigma_chol.shape) == 1:
-        Sigma = torch.diag(Sigma_chol ** 2)
+        Sigma = torch.diag(Sigma_chol**2)
     Js, Hess, f = GGN(model, likelihood, X)
     Lams, Vys = get_Lams_Vys(likelihood, Hess)
     delta = mu - theta_star
     # Lam Js = Jacobians of inv link g (m x p x k)
     Jgs = torch.bmm(Js, Lams)
-    lin_pred = torch.einsum('mpk,p->mk', Jgs, delta).reshape(*f.shape)
+    lin_pred = torch.einsum("mpk,p->mk", Jgs, delta).reshape(*f.shape)
     mu_star = (likelihood.inv_link(f) + lin_pred).detach()
     var_f = torch.bmm(Jgs.transpose(1, 2) @ Sigma, Jgs).squeeze().detach()
     var_noise = Vys.squeeze().detach()

@@ -46,6 +46,9 @@ install_requires = [
     "matplotlib==3.7.1",
     "numpy==1.24.2",
     "torch==2.0.0",
+    "torchvision==0.15.1",
+    "onedrivedownloader",  # from mammoth cl framework
+    "av",  #
     # functorch  # needed for vmap
     "torchtyping==0.1.4",
     # laplace-torch
@@ -53,7 +56,7 @@ install_requires = [
     # git+https://github.com/pytorch/rl
     # "torchrl==0.1.0",  # using this on triton
     # "./src/third_party/rl-0.1.0", # using this locally
-    f"torchrl @ file://{_here}/src/third_party/rl-0.1.0",
+    f"torchrl @ file://{_here}/src/rl/third_party/rl-0.1.0",
 ]
 extras_require = {
     "dev": [
@@ -65,7 +68,8 @@ extras_require = {
         "pytest==7.2.2",
     ],
     "experiments": [
-        "wandb==0.14.1",
+        "wandb",
+        # "wandb==0.14.1",
         "hydra-core==1.3.2",
         "hydra-submitit-launcher==1.2.0",
         "mujoco==2.3.3",

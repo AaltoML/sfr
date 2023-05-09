@@ -1,3 +1,5 @@
+import logging
+
 import numpy as np
 import torch
 from torch.nn.utils import parameters_to_vector
@@ -8,6 +10,8 @@ from torchvision.datasets import VisionDataset
 import torchvision.datasets as datasets_torch
 from torchvision.transforms import ToTensor
 from tqdm import tqdm
+from src import NTKSVGP, CategoricalLh
+import src as ntksvgp
 import os
 
 from preds.models import CIFAR10Net,  MLPS, CIFAR100Net
@@ -115,6 +119,47 @@ def main(ds_train, ds_test, model_name, seed, n_epochs, batch_size, lr, deltas, 
                  'losses': losses, 'metrics': metrics, 'delta': delta}
         torch.save(state, os.path.join(res_dir, fname.format(delta=delta)))
 
+def main_new(ds_train, ds_test, model_name, seed, n_epochs, batch_size, lr, deltas, device, fname, res_dir):
+    train_loader = DataLoader(ds_train, batch_size=batch_size, shuffle=True)
+    test_loader = DataLoader(ds_test, batch_size=batch_size, shuffle=False)
+    likelihood = CategoricalLh()
+    n_classes = next(iter(ds_train))[0].shape[-1]
+    for delta in deltas:
+        torch.manual_seed(seed)
+        model = get_model(model_name, ds_train).to(device)
+        #f_out = model(next(iter(ds_train))[0])
+        prior = ntksvgp.priors.Gaussian(params=model.parameters, delta=delta)
+        svgp = NTKSVGP(network=model, likelihood=likelihood, output_dim=n_classes, prior=prior, num_inducing=0)
+        optimizer = torch.optim.Adam([{"params": svgp.parameters()}], lr=lr)
+        losses = list()
+        # training
+        for epoch in tqdm(list(range(n_epochs))):
+            running_loss = 0.0
+            for X, y in train_loader:
+                # X, y = X.to(device), y.to(device)
+                loss = svgp.loss(X, y)
+                optimizer.zero_grad()
+                loss.backward()
+                optimizer.step()
+                running_loss += loss.item() 
+            loss_avg = running_loss / len(train_loader)
+            losses.append(loss_avg)
+        # evaluation
+        model = svgp.network
+        criterion = torch.nn.CrossEntropyLoss(reduction='sum')
+        tr_loss, tr_acc = evaluate(model, train_loader, criterion, device)
+        te_loss, te_acc = evaluate(model, test_loader, criterion, device)
+        logging.info(f"train loss:\t{tr_loss}")
+        logging.info(f"train acc.:\t{tr_acc}")
+        logging.info(f"test loss:\t{te_loss}")
+        logging.info(f"test acc.:\t{te_acc}")
+        metrics = {'test_loss': te_loss, 'test_acc': te_acc,
+                   'train_loss': tr_loss, 'train_acc': tr_acc}
+
+        state = {'model': model.state_dict(), 'optimizer': optimizer.state_dict(),
+                 'losses': losses, 'metrics': metrics, 'delta': delta}
+        torch.save(state, os.path.join(res_dir, fname.format(delta=delta)))
+
 
 if __name__ == '__main__':
     import argparse
@@ -171,5 +216,6 @@ if __name__ == '__main__':
     fname = 'models/' + '_'.join([dataset, model_name, str(seed)]) + '_{delta:.1e}.pt'
     deltas = np.logspace(logd_min, logd_max, n_deltas)
     deltas = np.insert(deltas, 0, 0)  # add unregularized network
+    deltas = deltas / len(ds_train)
 
-    main(ds_train, ds_test, model_name, seed, n_epochs, batch_size, lr, deltas, device, fname, res_dir)
+    main_new(ds_train, ds_test, model_name, seed, n_epochs, batch_size, lr, deltas, device, fname, res_dir)

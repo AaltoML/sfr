@@ -1,0 +1,17 @@
+defaults:
+  - env: cartpole_swingup
+
+_target_: torchrl.envs.TransformedEnv
+transform:
+  _target_: torchrl.envs.transforms.Compose
+  transforms:
+    - _target_: torchrl.envs.transforms.RewardScaling
+      loc: 0.0
+      scale: 1.0
+    - _target_: torchrl.envs.transforms.ObservationNorm # normalize observations
+      in_keys:
+        - "observation"
+    - _target_: torchrl.envs.transforms.DoubleToFloat
+      in_keys:
+        - "observation"
+    - _target_: torchrl.envs.transforms.StepCounter

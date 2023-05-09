@@ -7,4 +7,9 @@ torchvision
 scikit-learn
 jupyter
 opt_einsum
+wandb
+torchtyping
+dm_env
+gym
+dm_control
 tqdm

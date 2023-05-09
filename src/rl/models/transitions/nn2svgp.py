@@ -15,46 +15,60 @@ from torchrl.data import ReplayBuffer
 from .base import TransitionModel
 
 
-def init(
-    network: torch.nn.Module,
-    state_dim: int,
-    learning_rate: float = 1e-2,
-    num_iterations: int = 1000,
-    batch_size: int = 64,
-    # num_workers: int = 1,
-    num_inducing: int = 100,
-    delta: float = 0.0001,  # weight decay
-    sigma_noise: float = 1.0,
-    jitter: float = 1e-4,
-    wandb_loss_name: str = "Transition model loss",
-    early_stopper: EarlyStopper = None,
-    device: str = "cuda",
-) -> TransitionModel:
-    if "cuda" in device:
-        network.cuda()
-    likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=sigma_noise)
-    prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
-    ntksvgp = src.nn2svgp.NTKSVGP(
-        network=network,
-        prior=prior,
-        likelihood=likelihood,
-        output_dim=state_dim,
-        num_inducing=num_inducing,
-        # jitter=1e-6,
-        jitter=jitter,
-    )
+class NTKSVGPTransitionModel(TransitionModel):
+    def __init__(
+        self,
+        network: torch.nn.Module,
+        state_dim: int,
+        learning_rate: float = 1e-2,
+        num_iterations: int = 1000,
+        batch_size: int = 64,
+        # num_workers: int = 1,
+        num_inducing: int = 100,
+        delta: float = 0.0001,  # weight decay
+        sigma_noise: float = 1.0,
+        jitter: float = 1e-4,
+        wandb_loss_name: str = "Transition model loss",
+        early_stopper: EarlyStopper = None,
+        device: str = "cuda",
+    ):
+        if "cuda" in device:
+            network.cuda()
 
-    # loss_fn = torch.nn.MSELoss()
-    # print("trans device {}".format(device))
-    # print("after svgp cuda")
-    if "cuda" in device:
-        ntksvgp.cuda()
-        print("put transition ntksvgp on cuda")
+        self.network = network
+        self.learning_rate = learning_rate
+        self.num_iterations = num_iterations
+        self.batch_size = batch_size
+        self.num_inducing = num_inducing
+        self.delta = delta
+        self.sigma_noise = sigma_noise
+        self.wandb_loss_name = wandb_loss_name
+        self.early_stopper = early_stopper
+        self.device = device
 
-    def predict_fn(state: State, action: Action) -> StatePrediction:
+        likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=sigma_noise)
+        prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
+        self.ntksvgp = src.nn2svgp.NTKSVGP(
+            network=network,
+            prior=prior,
+            likelihood=likelihood,
+            output_dim=state_dim,
+            num_inducing=num_inducing,
+            jitter=jitter,
+            device=device,
+        )
+
+        # loss_fn = torch.nn.MSELoss()
+        # print("trans device {}".format(device))
+        # print("after svgp cuda")
+        if "cuda" in device:
+            self.ntksvgp.cuda()
+            print("put transition ntksvgp on cuda")
+
+    def predict(self, state: State, action: Action) -> StatePrediction:
         state_action_input = torch.concat([state, action], -1)
         # delta_state = network.forward(state_action_input)
-        delta_state_mean, delta_state_var = ntksvgp.predict_f(state_action_input)
+        delta_state_mean, delta_state_var = self.ntksvgp.predict_f(state_action_input)
         # delta_state_mean = ntksvgp.predict_mean(state_action_input)
         # delta_state_mean, delta_state_var, noise_var = svgp_predict_fn(
         return StatePrediction(
@@ -66,15 +80,15 @@ def init(
             # noise_var=noise_var,
         )
 
-    def train_fn(replay_buffer: ReplayBuffer):
-        if early_stopper is not None:
-            early_stopper.reset()
-        network.train()
+    def train(self, replay_buffer: ReplayBuffer):
+        if self.early_stopper is not None:
+            self.early_stopper.reset()
+        self.network.train()
         optimizer = torch.optim.Adam(
-            [{"params": network.parameters()}], lr=learning_rate
+            [{"params": self.network.parameters()}], lr=self.learning_rate
         )
-        for i in range(num_iterations):
-            samples = replay_buffer.sample(batch_size=batch_size)
+        for i in range(self.num_iterations):
+            samples = replay_buffer.sample(batch_size=self.batch_size)
             state_action_inputs = torch.concat(
                 [samples["state"], samples["action"]], -1
             )
@@ -82,18 +96,18 @@ def init(
 
             # pred = network(state_action_inputs)
             # loss = loss_fn(pred, state_diff)
-            loss = ntksvgp.loss(x=state_action_inputs, y=state_diff)
+            loss = self.ntksvgp.loss(x=state_action_inputs, y=state_diff)
 
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
 
-            if wandb_loss_name is not None:
-                wandb.log({wandb_loss_name: loss})
+            if self.wandb_loss_name is not None:
+                wandb.log({self.wandb_loss_name: loss})
 
             logger.info("Iteration : {} | Loss: {}".format(i, loss))
-            if early_stopper is not None:
-                stop_flag = early_stopper(loss)
+            if self.early_stopper is not None:
+                stop_flag = self.early_stopper(loss)
                 if stop_flag:
                     logger.info("Early stopping criteria met, stopping training")
                     logger.info("Breaking out loop")
@@ -102,9 +116,7 @@ def init(
         data = replay_buffer.sample(batch_size=len(replay_buffer))
         state_action_inputs = torch.concat([data["state"], data["action"]], -1)
         state_diff = data["next_state"] - data["state"]
-        ntksvgp.set_data((state_action_inputs, state_diff))
+        self.ntksvgp.set_data((state_action_inputs, state_diff))
 
-    def update_fn(data_new):
-        return ntksvgp.update(x=data_new[0], y=data_new[1])
-
-    return TransitionModel(predict=predict_fn, train=train_fn, update=update_fn)
+    def update(self, data_new):
+        return self.ntksvgp.update(x=data_new[0], y=data_new[1])

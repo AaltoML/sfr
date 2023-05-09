@@ -1,4 +1,4 @@
-_target_: src.rl.models.transitions.nn2svgp.init
+_target_: src.rl.models.transitions.NTKSVGPTransitionModel
 _convert_: all
 network: ${transition_network}
 state_dim: ${state_dim}

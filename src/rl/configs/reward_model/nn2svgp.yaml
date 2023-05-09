@@ -15,3 +15,5 @@ wandb_loss_name: "models/reward_loss"
 #   patience: 50
 #   min_delta: 0
 device: ${device} # TODO should this always be cpu??
+prediction_type: "SVGPMeanOnly"
+# prediction_type: "SVGP"

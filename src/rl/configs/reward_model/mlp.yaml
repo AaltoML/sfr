@@ -10,8 +10,8 @@ num_inducing: 128
 # num_inducing: 256
 dual_batch_size: 1000
 jitter: 1e-4
-# delta: 1e-5
-delta: 0.001
+delta: 1e-5
+# delta: 0.001
 sigma_noise: 1.0
 wandb_loss_name: "models/reward_loss"
 # early_stopper:

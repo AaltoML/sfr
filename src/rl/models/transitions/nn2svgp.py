@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import logging
+from typing import Optional
 
 
 logging.basicConfig(level=logging.INFO)
@@ -26,6 +27,7 @@ class NTKSVGPTransitionModel(TransitionModel):
         batch_size: int = 64,
         # num_workers: int = 1,
         num_inducing: int = 100,
+        dual_batch_size: Optional[int] = None,
         delta: float = 0.0001,  # weight decay
         sigma_noise: float = 1.0,
         jitter: float = 1e-4,
@@ -57,6 +59,7 @@ class NTKSVGPTransitionModel(TransitionModel):
             likelihood=likelihood,
             output_dim=state_dim,
             num_inducing=num_inducing,
+            dual_batch_size=dual_batch_size,
             jitter=jitter,
             device=device,
         )

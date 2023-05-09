@@ -7,6 +7,7 @@ num_iterations: 5000
 batch_size: 64
 # num_workers: 1 # TODO what should I set this to?
 num_inducing: 128
+dual_batch_size: 1000
 jitter: 1e-4
 delta: 0.001
 sigma_noise: 1.0

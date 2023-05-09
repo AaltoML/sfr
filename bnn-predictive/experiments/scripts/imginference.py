@@ -156,7 +156,7 @@ def main(
     res_dir="experiments/results",
     device="cuda",
 ):
-    lh = CategoricalLh(EPS=0.000000001)
+    lh = CategoricalLh(EPS=0.0000000001)
 
     eligible_files = list()
     deltas = list()
@@ -275,10 +275,10 @@ def ood(
 ):
     lh = CategoricalLh(EPS=0.000000001)
 
-    perf_keys = ["map", "svgp_ntk"]
+    perf_keys = ["map", f"svgp_ntk_nn_{name}", f"svgp_ntk_{name}"]
     eligible_files = list()
     perfs = list()
-    for file in os.listdir("models"):
+    for file in os.listdir(os.path.join(res_dir, "models")):
         # strip off filename ending using indexing
         ds, m, s, delta = file[:-3].split("_")
         if (
@@ -287,8 +287,9 @@ def ood(
             and float(delta) > 0
             and seed == int(s)
         ):
-            eligible_files.append("models/" + file)
-            state = torch.load("models/" + file)
+            eligible_files.append(os.path.join(res_dir, "models/" + file))
+            state = torch.load(os.path.join(res_dir, "models/" + file))
+
             perfs.append({k: state[k]["nll_va"] for k in perf_keys})
 
     train_loader = DataLoader(ds_train, batch_size=256)
@@ -315,13 +316,13 @@ def ood(
 
     # SVGP
     model = get_model(model_name, ds_train)
-    state = torch.load(eligible_files[np.argmin([e["svgp_ntk"] for e in perfs])])
+    state = torch.load(eligible_files[np.argmin([e[f"svgp_ntk_{name}"] for e in perfs])])
     logging.info(f'SVGP predictive - best delta={state["delta"]}')
     model.load_state_dict(state["model"])
     model = model.to(device)
 
     data = (X_train, y_train)
-    prior = ntksvgp.priors.Gaussian(params=model.parameters, delta=delta)
+    prior = ntksvgp.priors.Gaussian(params=model.parameters, delta=float(delta))
     output_dim = model(X_train[:10].to(device)).shape[-1]
     svgp = NTKSVGP(
         network=model,
@@ -336,7 +337,20 @@ def ood(
     gstar_te, _ = get_svgp_predictive(
         test_loader, svgp, use_nn_out=False, likelihood=lh
     )
-    gstar_va, _ = get_svgp_predictive(val_loader, svgp, use_nn_out=False, likelihood=lh)
+    gstar_va, _ = get_svgp_predictive(ood_loader, svgp, use_nn_out=False, likelihood=lh)
+    pred_ents["svgp_ntk"] = predictive_entropies(gstar_te, gstar_od)
+
+    # SVGP NN
+    model = get_model(model_name, ds_train)
+    state = torch.load(eligible_files[np.argmin([e[f"svgp_ntk_nn_{name}"] for e in perfs])])
+    logging.info(f'SVGP predictive - best delta={state["delta"]}')
+    model.load_state_dict(state["model"])
+    model = model.to(device)
+
+    gstar_te, _ = get_svgp_predictive(
+        test_loader, svgp, use_nn_out=True, likelihood=lh
+    )
+    gstar_va, _ = get_svgp_predictive(ood_loader, svgp, use_nn_out=False, likelihood=lh)
     pred_ents["svgp_ntk"] = predictive_entropies(gstar_te, gstar_od)
 
     # # # Laplace Kron GLM
@@ -603,7 +617,8 @@ if __name__ == "__main__":
             args.batch_size,
             args.seed,
             n_inducing_points,
-            res_dir,
+            name=name,
+            res_dir=res_dir,
             device=device,
         )
     else:

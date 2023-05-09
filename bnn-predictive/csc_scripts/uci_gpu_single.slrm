@@ -16,7 +16,7 @@ conda activate /scratch/project_2004878/full-bnn-svgp/conda/bnn-svgp
 name='sparse_16'
 res_folder='09'
 n_inducing=16
-SEED=711
+SEED=1
 dataset='satellite'
 logmin=-1
 

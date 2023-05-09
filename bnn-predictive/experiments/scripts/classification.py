@@ -76,7 +76,7 @@ def evaluate(p, y, likelihood, name, data):
     res[f"{data}_nll_{name}"] = nll_cls(p.squeeze(), y.squeeze(), likelihood)
     res[f"{data}_acc_{name}"] = acc(p.squeeze(), y.squeeze(), likelihood)
     res[f"{data}_ece_{name}"] = ece(p.squeeze(), y.squeeze(), likelihood, bins=10)
-    if name in ["svgp_ntk", "map"] and data == "valid":
+    if name in ["svgp_ntk", "map", 'glm'] and data == "valid":
         print(f"Val result for: {name}")
         print(nll_cls(p.squeeze(), y.squeeze(), likelihood))
     return res
@@ -231,7 +231,7 @@ def inference(
 
     # Extract relevant variables
     theta_star = parameters_to_vector(model.parameters()).detach()
-    Sigmad, Sigma_chold = get_diagonal_ggn(optimizer)
+    Sigmad, Sigma_chold = get_diagonal_ggn(optimizer, num_data=X_train.shape[0])
     Sigma_chol = optimizer.state["Sigma_chol"]
 
     # SVGP predictive (with GP subset, not true sparse GP)

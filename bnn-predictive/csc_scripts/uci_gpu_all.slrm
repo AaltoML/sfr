@@ -44,7 +44,7 @@ case $firstdigit in
 esac
 echo $dataset
 echo $SEED
-name='sparse_16'
+name='sparse_32'
 res_folder='09'
-n_inducing=16
+n_inducing=32
 srun python3 -u experiments/scripts/classification.py -d ${dataset} --root_dir . --seed ${SEED} --n_layers 2 --activation tanh --logd_min ${logmin} --refine 0 --name ${name} --n_inducing ${n_inducing} --double --res_folder ${res_folder}

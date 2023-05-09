@@ -418,6 +418,7 @@ def calc_sparse_dual_params_batch(
 
     ################  Compute alpha/beta batched version START ################
     alpha_u = torch.zeros((out_dim, Z.shape[0])).cpu()
+    Lambda_u = torch.zeros((out_dim, Z.shape[0])).cpu()
     beta_u = torch.zeros((out_dim, Z.shape[0], Z.shape[0])).cpu()
 
     if subset_out_dim is not None:
@@ -447,6 +448,7 @@ def calc_sparse_dual_params_batch(
             start_idx = end_idx
             del Kui_c
         torch.cuda.empty_cache()
+        Lambda_u[output_c] = alpha_u[output_c]
         Kzz_c = (
             kernel(Z, Z, output_c).cpu() + torch.eye(Z.shape[0], device="cpu") * jitter
         )
@@ -454,7 +456,7 @@ def calc_sparse_dual_params_batch(
             (Kzz_c + beta_u[output_c]), alpha_u[output_c]
         )
 
-    return alpha_u.to(device), beta_u.to(device), Lambda.to(device)
+    return alpha_u.to(device), beta_u.to(device), Lambda_u.to(device)
     ################  Compute alpha/beta batched version END ################
 
 

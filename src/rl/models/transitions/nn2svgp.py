@@ -9,6 +9,7 @@ import src
 import torch
 import wandb
 from src.rl.custom_types import Action, InputData, OutputData, State, StatePrediction
+from src.rl.models.util import weights_init_normal
 from src.rl.utils import EarlyStopper
 from torchrl.data import ReplayBuffer
 
@@ -83,6 +84,7 @@ class NTKSVGPTransitionModel(TransitionModel):
     def train(self, replay_buffer: ReplayBuffer):
         if self.early_stopper is not None:
             self.early_stopper.reset()
+        # self.network.apply(weights_init_normal)
         self.network.train()
         optimizer = torch.optim.Adam(
             [{"params": self.network.parameters()}], lr=self.learning_rate

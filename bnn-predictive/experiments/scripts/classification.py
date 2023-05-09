@@ -217,8 +217,8 @@ def inference(
         epochsv,
         lr=lrv,
         n_samples_train=1,
-        n_samples_pred=n_samples,
-        n_layers=n_layers,
+        n_samples_pred=100, # was n_samples
+        n_layers=n_layers,  
         n_units=n_units,
         activation=activation,
     )
@@ -458,6 +458,7 @@ if __name__ == "__main__":
     print(f"Writing results to {res_dir}")
     print(f"Reading data from {data_dir}")
     print(f"Dataset: {dataset}")
+    print(f'Number of inducing points: {n_inducing}')
     print(f"Seed: {seed}")
     print(double)
 

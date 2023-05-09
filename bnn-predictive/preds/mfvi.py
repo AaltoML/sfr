@@ -18,7 +18,7 @@ def preds_bbb(model, X, n_samples, likelihood):
 
 
 def run_bbb(ds_train, ds_test, ds_valid, prior_prec, device, likelihood, n_epochs, lr,
-            n_samples_train=10, n_samples_pred=1000, n_layers=2, n_units=50, activation='tanh'):
+            n_samples_train=10, n_samples_pred=100, n_layers=2, n_units=50, activation='tanh'):
     D = ds_train.data.shape[1]
     if type(likelihood) is BernoulliLh or type(likelihood) is ntksvgp.likelihoods.Gaussian:
         K = 1

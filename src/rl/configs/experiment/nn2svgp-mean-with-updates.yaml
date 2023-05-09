@@ -3,11 +3,11 @@ defaults:
   - override /reward_model: nn2svgp
   - override /transition_model: nn2svgp
 
-alg_name: "mlp"
-online_updates: false
+alg_name: "nn2svgp-mppi-mean-with-updates"
+online_updates: true
 
 transition_model:
-  prediction_type: "NN"
+  prediction_type: "SVGPMeanOnly"
 
 reward_model:
-  prediction_type: "NN"
+  prediction_type: "SVGPMeanOnly"

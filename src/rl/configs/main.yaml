@@ -5,10 +5,10 @@ defaults:
   # - transition_model: svgp
   # - reward_model: mlp_new # uses delta/sigma_noise
   # - transition_model: mlp_new # uses delta/sigma_noise
-  - reward_model: mlp # uses delta/sigma_noise
-  - transition_model: mlp # uses delta/sigma_noise
-  # - reward_model: nn2svgp
-  # - transition_model: nn2svgp
+  # - reward_model: mlp # uses delta/sigma_noise
+  # - transition_model: mlp # uses delta/sigma_noise
+  - reward_model: nn2svgp
+  - transition_model: nn2svgp
   - reward_network: one_layer
   - transition_network: one_layer
   # - agent: ddpg
@@ -33,11 +33,11 @@ device: ???
 
 online_updates: false
 # online_updates: true
-online_update_freq: 1
+online_update_freq: 10
 # online_update_freq: 20
 # online_update_freq: 50
 
-alg_name: "nn2svgp-mppi"
+alg_name: "nn2svgp-mean-no-updates"
 # alg_name: "mlp-mppi"
 random_seed: 42
 

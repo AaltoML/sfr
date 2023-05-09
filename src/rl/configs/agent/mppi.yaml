@@ -5,7 +5,8 @@ reward_model: ${reward_model}
 state_dim: ${state_dim}
 action_dim: ${action_dim}
 # DDPG config
-mlp_dims: [512, 512]
+# mlp_dims: [512, 512]
+mlp_dims: [128, 128]
 learning_rate: 3e-4
 max_ddpg_iterations: 500
 # std_schedule: "linear(1.0, 0.1, 50)"

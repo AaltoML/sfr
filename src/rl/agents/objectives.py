@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+import logging
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
 import torch
 import torch.distributions as td
 from src.rl.custom_types import ActionTrajectory, State, StateTrajectory
@@ -51,7 +57,7 @@ def greedy(
 
     elif unc_prop_strategy == "sample":
 
-        def rollout(start_state: State, actions: ActionTrajectory):
+        def rollout(start_state: State, actions: ActionTrajectory) -> StateTrajectory:
             state = start_state
             state_trajectory = state[None, ...]
             for t in range(horizon):
@@ -61,6 +67,8 @@ def greedy(
                     next_state_prediction.state_var + next_state_prediction.noise_var,
                 )
                 state = state_dist.sample()
+                # TODO draw more than one sample?
+                # print("sample state {}".format(state.shape))
                 state_trajectory = torch.concatenate(
                     [state_trajectory, state[None, ...]], 0
                 )
@@ -107,6 +115,9 @@ def greedy(
             final_action = final_action_dist.mean
         G_final = discount * torch.min(*critic(state_trajectory[-1, :], final_action))
         # print("G_ginal {}".format(G_final.shape))
+        # logger.info("discount {}".format(discount))
+        # logger.info("G 0:H {}".format(torch.mean(G, 0)))
+        # logger.info("G bootstrap {}".format(torch.mean(G_final, 0)))
         if bootstrap:
             return G[..., None] + G_final
         else:

@@ -133,7 +133,7 @@ def inference(
         likelihood = BernoulliLh(EPS=0.000001)
         K = 1
     else:
-        eps = 0.000000001
+        eps = 0.0000000001
         likelihood = CategoricalLh(EPS=eps)
         K = ds_train.C
 

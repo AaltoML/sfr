@@ -8,9 +8,14 @@ from preds.gradients import Jacobians_naive
 
 def GGN(model, likelihood, data, target=None, ret_f=False):
     Js, f = Jacobians_naive(model, data)
+    print(f.shape)
+    print(target.shape)
     if target is not None:
-        rs = -likelihood.residual(y=target, f=f)    # TODO: changed from original
+        rs = -likelihood.residual(y=target.unsqueeze(-1), f=f)    # TODO: changed from original
+    if f.ndim == 1:
+        f = f.unsqueeze(-1)
     Hess = likelihood.Hessian(f)
+
     m, p = Js.shape[:2]
     if len(Js.shape) == 2:
         k = 1

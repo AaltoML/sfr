@@ -16,7 +16,6 @@ import src as ntksvgp
 from preds.utils import nll_cls, macc, ece
 from preds.datasets import MNIST, FMNIST, SVHN
 from imgclassification import get_model, get_dataset
-from preds.predictives import svgp_sampling_predictive
 
 def get_ood_dataset(dataset):
     if dataset == 'MNIST':
@@ -63,12 +62,14 @@ def get_nn_predictive(loader, lap, seeding=False):
     ys = torch.cat(ys)
     return ps, ys
 
+
 def get_svgp_predictive(loader,
                         svgp,
                         likelihood,
                         use_nn_out: bool = True,
                         seeding: bool = False):
     ys, ps = list(), list()
+    output_dim = svgp.output_dim
     for X, y in loader:
         X, y = X.cuda(), y.cuda()
         if seeding:
@@ -78,6 +79,7 @@ def get_svgp_predictive(loader,
     ps = torch.cat(ps)
     ys = torch.cat(ys)
     return ps, ys    
+
 
 def sample_svgp(X, likelihood, svgp, use_nn_out:bool, n_samples:int):
     """Sample the SVGP, assumes a batched input."""
@@ -130,10 +132,9 @@ def get_perf_dict():
 def get_quick_loader(loader, device='cuda'):
     return [(X.to(device), y.to(device)) for X, y in loader]
 
-
-def main(dataset_name, ds_train, ds_test, model_name, rerun, batch_size, seed, n_sparse, name, n_inducing_points,
-        delta_min=1e-7, delta_max=1e7, res_dir='experiments/results', device='cuda'):
-    lh = CategoricalLh()
+def main(dataset_name, ds_train, ds_test, model_name, rerun, batch_size, seed, n_sparse, name, n_inducing, 
+         delta_min=1e-7, delta_max=1e7, res_dir='experiments/results', device='cuda'):
+    lh = CategoricalLh(EPS=0.000000001)
 
     eligible_files = list()
     deltas = list()
@@ -193,13 +194,14 @@ def main(dataset_name, ds_train, ds_test, model_name, rerun, batch_size, seed, n
 
         # SVGP
         logging.info('SVGP performance')
+
         data = (X_train, y_train)
         prior = ntksvgp.priors.Gaussian(params=model.parameters, delta=delta)
         output_dim = model(X_train[:10].to(device)).shape[-1]
         svgp = NTKSVGP(network=model, prior=prior, output_dim=output_dim,
                        likelihood=lh, num_inducing=n_inducing,
                        dual_batch_size=batch_size, device=device)
-        svgp.set_data((X_train, y_train))
+        svgp.set_data(data)
         gstar_te, yte = get_svgp_predictive(test_loader, svgp, use_nn_out=False, likelihood=lh)
         gstar_va, yva = get_svgp_predictive(val_loader, svgp, use_nn_out=False, likelihood=lh)
         state[f'svgp_ntk_{name}'] = evaluate(lh, yte, gstar_te, yva, gstar_va)
@@ -425,7 +427,7 @@ if __name__ == '__main__':
     parser.add_argument('--delta_min', type=float, default=1e-7)
     parser.add_argument('--delta_max', type=float, default=1e7)
     parser.add_argument('--n_sparse', type=float, default=0.5)
-    parser.add_argument('--n_inducing_points', type=int, default=1000)
+    parser.add_argument('--n_inducing_points', type=int, default=1000)  # TODO: use 3200 (Immer et al.) as default
     parser.add_argument('--name', type=str, default='testlocal', help='Name of run to be saved in dict key')
     parser.add_argument('--loginfo', action='store_true', help='log info')
     parser.add_argument('--root_dir', help='Root directory', default='../')
@@ -466,3 +468,4 @@ if __name__ == '__main__':
         logging.info(f'Run inference with {dataset} using {model_name}')
         main(dataset, ds_train, ds_test, model_name, rerun, args.batch_size, args.seed, n_sparse, name, n_inducing_points,
              args.delta_min, args.delta_max, res_dir, device=device)
+

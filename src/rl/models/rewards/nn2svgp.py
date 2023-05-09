@@ -74,14 +74,14 @@ class NTKSVGPRewardModel(RewardModel):
             reward_mean=reward_mean[:, 0],
             reward_var=reward_var[:, 0],
             # reward_var=0,
-            noise_var=0,
+            noise_var=self.sigma_noise**2,
         )
 
     def train(self, replay_buffer: ReplayBuffer):
         if self.early_stopper is not None:
             self.early_stopper.reset()
 
-        self.network.apply(weights_init_normal)
+        # self.network.apply(weights_init_normal)
         self.network.train()
         optimizer = torch.optim.Adam(
             [{"params": self.network.parameters()}], lr=self.learning_rate

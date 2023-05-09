@@ -89,7 +89,8 @@ class MLPTransitionModel(TransitionModel):
             # state_var=0.0,
             state_var=torch.zeros_like(delta_state),
             # state_var=delta_state_var,
-            noise_var=0.0,
+            # noise_var=0.0,
+            noise_var=self.sigma_noise**2,
             # state_var=delta_state_var,
             # noise_var=noise_var,
         )

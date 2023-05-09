@@ -87,7 +87,7 @@ class MLPRewardModel(RewardModel):
         return RewardPrediction(
             reward_mean=reward_mean,
             reward_var=torch.zeros_like(reward_mean),
-            noise_var=0.0,
+            noise_var=self.sigma_noise**2,
         )
 
     def train(self, replay_buffer: ReplayBuffer):

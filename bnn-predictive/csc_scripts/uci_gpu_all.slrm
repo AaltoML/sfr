@@ -2,7 +2,7 @@
 #SBATCH --job-name=uci_gpu
 #SBATCH --array=0-79
 #SBATCH --account=project_2004878
-#SBATCH --time=0:45:00
+#SBATCH --time=0:25:00
 #SBATCH --partition=gpusmall
 #SBATCH --gres=gpu:a100:1
 #SBATCH --cpus-per-task=10

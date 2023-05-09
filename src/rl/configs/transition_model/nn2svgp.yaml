@@ -11,6 +11,7 @@ jitter: 1e-4
 delta: 0.001
 sigma_noise: 1.0
 wandb_loss_name: "models/transition_loss"
+# test
 # early_stopper:
 #   _target_: src.rl.utils.EarlyStopper
 #   patience: 50

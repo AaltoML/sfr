@@ -60,7 +60,7 @@ class NTKSVGPRewardModel(RewardModel):
             self.ntksvgp.cuda()
             print("put reward ntksvgp on cuda")
 
-    def predict_fn(self, state: State, action: Action) -> RewardPrediction:
+    def predict(self, state: State, action: Action) -> RewardPrediction:
         state_action_input = torch.concat([state, action], -1)
         # reward_mean = ntksvgp.predict_mean(state_action_input)
         reward_mean, reward_var = self.ntksvgp.predict_f(state_action_input)
@@ -74,7 +74,7 @@ class NTKSVGPRewardModel(RewardModel):
             noise_var=0,
         )
 
-    def train_fn(self, replay_buffer: ReplayBuffer):
+    def train(self, replay_buffer: ReplayBuffer):
         if self.early_stopper is not None:
             self.early_stopper.reset()
         self.network.train()
@@ -110,6 +110,6 @@ class NTKSVGPRewardModel(RewardModel):
         # print("reward {}".format(reward.shape))
         self.ntksvgp.set_data((state_action_inputs, reward))
 
-    def update_fn(self, data_new):
+    def update(self, data_new):
         # ntksvgp.set_data((x, y))
         return self.ntksvgp.update(x=data_new[0], y=data_new[1])

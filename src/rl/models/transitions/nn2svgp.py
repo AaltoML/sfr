@@ -65,7 +65,7 @@ class NTKSVGPTransitionModel(TransitionModel):
             self.ntksvgp.cuda()
             print("put transition ntksvgp on cuda")
 
-    def predict_fn(self, state: State, action: Action) -> StatePrediction:
+    def predict(self, state: State, action: Action) -> StatePrediction:
         state_action_input = torch.concat([state, action], -1)
         # delta_state = network.forward(state_action_input)
         delta_state_mean, delta_state_var = self.ntksvgp.predict_f(state_action_input)
@@ -80,7 +80,7 @@ class NTKSVGPTransitionModel(TransitionModel):
             # noise_var=noise_var,
         )
 
-    def train_fn(self, replay_buffer: ReplayBuffer):
+    def train(self, replay_buffer: ReplayBuffer):
         if self.early_stopper is not None:
             self.early_stopper.reset()
         self.network.train()
@@ -118,5 +118,5 @@ class NTKSVGPTransitionModel(TransitionModel):
         state_diff = data["next_state"] - data["state"]
         self.ntksvgp.set_data((state_action_inputs, state_diff))
 
-    def update_fn(self, data_new):
+    def update(self, data_new):
         return self.ntksvgp.update(x=data_new[0], y=data_new[1])

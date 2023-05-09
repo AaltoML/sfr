@@ -204,6 +204,7 @@ def init(
                 # device=std.device,
             )
 
+    @torch.no_grad()
     def update_fn(data_new):
         state_action_input, state_diff_output, reward_output = data_new
         transition_model.update(data_new=(state_action_input, state_diff_output))

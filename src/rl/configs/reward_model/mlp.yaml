@@ -10,7 +10,7 @@ num_inducing: 256
 jitter: 1e-4
 delta: 1e-5
 sigma_noise: 1.0
-wandb_loss_name: "reward/loss"
+wandb_loss_name: "models/reward_loss"
 # early_stopper:
 #   _target_: src.rl.utils.EarlyStopper
 #   patience: 50

@@ -156,6 +156,7 @@ if __name__ == "__main__":
         output_dim=3,
         # num_inducing=500,
         num_inducing=50,
+        dual_batch_size=32,
         # num_inducing=20,
         # jitter=1e-6,
         jitter=1e-4,
@@ -191,7 +192,7 @@ if __name__ == "__main__":
 
     plot_var = False
     plot_var = True
-    save_dir = "figs/resample"
+    save_dir = "figs"
 
     def plot_output(i):
         fig = plt.subplots(1, 1)

@@ -203,7 +203,7 @@
 % \title{Converting Neural Networks to Gaussian Processes for Sequential Decision-Making Under Uncertainty}
 %\title{Sparse Function Space Representation of Neural Networks for Exploration and Retention}
 %\title{Sparse Function-space Neural Networks}
-\title{Sparse Function Space Representation of Neural Networks for Adaption and Retention}
+\title{Sparse Function-space Representation \\ of Neural Networks}% for Adaptation and Retention}
 \author{%
   Aidan Scannell\textsuperscript{\star} \\
   Aalto University \\
@@ -241,12 +241,25 @@
 %Sequential learning paradigms such as Continual Learning (CL) or Reinforcement Learning (RL) pose a challenge for gradient-based deep learning techniques as they struggle to incorporate new data and retain previous knowledge. Existing methods for converting neural networks from weight to function space allow a probabilistic treatment of the distribution over the function learned by the neural networks but are computationally expensive. We propose a method that converts a neural network to a low-rank functional representation as a sparse Gaussian process. With this approach, we can build a compact representation of the function encoded by the neural network that can replace previous data in continual settings and be used for fast adaptation in RL, avoiding full retraining of the model. 
 %
 % Rewrite on 2023-05-10
-Deep neural networks are known to lack uncertainty estimates, struggle to incorporate new data, and fail to retain previous knowledge. We present a method that mitigates these issues by transforming a weight-space neural network to a low-rank function-space representation, via the so-called dual parameters. In contrast to previous work, we model the joint distribution across the entire data set rather than a subset. This offers a compact and principled way of capturing uncertainty and enables us to incorporate new data without retraining whilst retaining predictive performance. We demonstrate the efficiency of the proposed approach in quantifying uncertainty in supervised learning, maintaining a summary representation in continual learning, and rapid updates in active learning.
+Deep neural networks are known to lack uncertainty estimates, struggle to incorporate new data, and fail to retain previous knowledge. We present a method that mitigates these issues by transforming a weight-space neural network to a low-rank function-space representation, via the so-called dual parameters. In contrast to previous work, we model the joint distribution across the entire data set rather than a subset. This offers a compact and principled way of capturing uncertainty and enables us to incorporate new data without retraining whilst retaining predictive performance. We demonstrate the proposed approach in quantifying uncertainty in supervised learning, maintaining a summary representation in continual learning, and in active learning.
 \end{abstract}
 
 \section{Introduction}
 \label{sec:intro}
 %
+
+
+
+\subsection{Related Work}
+\label{sec:related}
+%
+
+
+% Introduce the laplace GNN + shortcomings
+One common approach for uncertainty with neural networks is a Laplace GNN approximation \citep{daxbergerLaplace2021}. The idea is to essentially takes a trained neural network and linearises around the optimal weights. The resulting linear model can be used to obtain uncertainty estimates and sometimes improved predictions \citep{immerScalable2021}. Given the resultant model is now linear with respect to the weights its is also now possible to convert to a Gaussian process as shown in \citep{immerScalable2021, khan2019approximate}. Yet to obtain uncertainty estimates there is the usual computational scaling of the GP of $O(n^3)$, so cubic in the number of data points. Many approaches  apply crude approximations and yet still obtain good uncertainty estimates. 
+
+
+
 Deep learning has become the cornerstone of contemporary artificial intelligence, proving remarkably effective in tackling supervised and unsupervised learning tasks in the {\em large data}, {\em offline}, and {\em gradient-based training} regime. Despite its success, gradient-based learning techniques exhibit limitations when applied to sequential learning paradigms, such as Continual Learning (CL, \cite{add}) and Reinforcement Learning (RL, \cite{add}). In CL, the challenge is retaining a compact representation of the problem and avoid forgetting over the life-long learning horizon (see, \eg, \cite{add}). Similarly in RL, the model would need to adapt to observations of the environment through exploration, but this can be inefficient and would require constant retraining (\eg, \cite{add, add}).
 
 %Current state of affairs 
@@ -311,19 +324,66 @@ We demonstrate points {\em(i)--(iii)} in the experiments.
 
 
 \begin{figure}[t!]
-  \setlength{\figurewidth}{.48\textwidth}
-  \setlength{\figureheight}{.5\figurewidth}
-  \begin{subfigure}{.48\textwidth}
-    \centering
-    \tikz\node[fill=black!10,minimum width=\figurewidth,minimum height=\figureheight,rounded corners=5pt]{};
+%  \begin{subfigure}{.48\textwidth}
+%    \centering
+%    \tikz\node[fill=black!10,minimum width=\figurewidth,minimum height=\figureheight,rounded corners=5pt]{};
+%  \end{subfigure}
+%  \hfill
+%  \begin{subfigure}{.48\textwidth}
+%    \centering
+%    \tikz\node[fill=black!10,minimum width=\figurewidth,minimum height=\figureheight,rounded corners=5pt]{};
+%  \end{subfigure}
+
+  \centering\scriptsize
+  % Figure options
+  \pgfplotsset{axis on top,scale only axis,width=\figurewidth,height=\figureheight, ylabel near ticks,ylabel style={yshift=-2pt},y tick label style={rotate=90},legend style={nodes={scale=1., transform shape}},tick label style={font=\tiny,scale=1}}
+  \pgfplotsset{xlabel={Input, $x$},axis line style={rounded corners=3pt}}
+  % Set figure 
+  \setlength{\figurewidth}{.28\textwidth}
+  \setlength{\figureheight}{\figurewidth}
+  %
+  \def\inducing{\normalsize Sparse inducing points}
+  %
+  \begin{subfigure}[c]{.34\textwidth}
+    \raggedleft
+    \pgfplotsset{ylabel={Output, $y$}}
+    \input{./fig/regression-nn.tex}%
   \end{subfigure}
+  \hfill  
+  \begin{subfigure}[c]{.01\textwidth}
+    \centering
+    \tikz[overlay,remember picture]\node(p0){.};
+  \end{subfigure}  
   \hfill
-  \begin{subfigure}{.48\textwidth}
-    \centering
-    \tikz\node[fill=black!10,minimum width=\figurewidth,minimum height=\figureheight,rounded corners=5pt]{};
+  \begin{subfigure}[c]{.28\textwidth}
+    \raggedleft
+    \pgfplotsset{yticklabels={,,},ytick={\empty}}
+    \input{./fig/regression-nn2svgp.tex}%
   \end{subfigure}
-  \caption{Teaser figure goes here.}
-  \label{fig:teaser}  
+  \hfill  
+  \begin{subfigure}[c]{.01\textwidth}
+    \centering
+    \tikz[overlay,remember picture]\node(p1){.};
+  \end{subfigure}  
+  \hfill
+  \begin{subfigure}[c]{.28\textwidth}
+    \raggedleft
+    \pgfplotsset{yticklabels={,,},ytick={\empty}}        
+    \input{./fig/regression-update.tex}%
+  \end{subfigure}
+  \caption{\textbf{Regression example on an MLP with two hidden layers.} Left:~Predictions from the trained neural network. Center:~Our approach summarizes the...}
+  \label{fig:teaser} 
+  % 
+  \begin{tikzpicture}[remember picture,overlay]
+    % Arrow style
+    \tikzstyle{myarrow} = [draw=black!80, single arrow, minimum height=14mm, minimum width=2pt, single arrow head extend=4pt, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
+    % Arrows
+    \node[myarrow] (p0-arr) at ($(p0) + (0em,1.5em)$) {};
+    \node[myarrow] (p1-arr) at ($(p1) + (0em,1.5em)$) {};
+    % Arrow labels
+    \node[font=\scriptsize\sc,color=white] at (p0-arr) {nn2svgp};
+    \node[font=\scriptsize\sc,color=white] at (p1-arr) {new data};   
+  \end{tikzpicture}
 \end{figure}
 
 
@@ -347,7 +407,6 @@ We demonstrate points {\em(i)--(iii)} in the experiments.
     %\draw[rounded corners=3pt,line width=1.2pt,black!60] ($(#1)+(-.5\figurewidth,-.5\figureheight)$) rectangle ++(\figurewidth,\figureheight);
     }
 
-  
     % The neural network
     \addfig{0,0}{banana-nn}
 
@@ -357,20 +416,19 @@ We demonstrate points {\em(i)--(iii)} in the experiments.
     % The update
     \addfig{2.2\figurewidth,0}{banana-update}
 
+    % The arrow
+    \tikzstyle{myarrow} = [draw=black!80, single arrow, minimum height=14mm, minimum width=2pt, single arrow head extend=4pt, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
+    \node[myarrow] (first-arr) at ($(banana-nn)!0.5!(banana-nn2svgp)$) {};
+    \node[myarrow] (second-arr) at ($(banana-nn2svgp)!0.5!(banana-update)$) {};
 
-     % The arrow
-     \tikzstyle{myarrow} = [draw=black!80, single arrow, minimum height=14mm, minimum width=2pt, single arrow head extend=4pt, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
-     \node[myarrow] (first-arr) at ($(banana-nn)!0.5!(banana-nn2svgp)$) {};
-     \node[myarrow] (second-arr) at ($(banana-nn2svgp)!0.5!(banana-update)$) {};
-
-     % Arrow labels
-     \node[font=\scriptsize\sc,color=white] at (first-arr) {nn2svgp};
-     \node[font=\scriptsize\sc,color=white] at (second-arr) {new data};   
+    % Arrow labels
+    \node[font=\scriptsize\sc,color=white] at (first-arr) {nn2svgp};
+    \node[font=\scriptsize\sc,color=white] at (second-arr) {new data};   
      
-     % Labels
-     \node[anchor=north, font=\small] at ($(banana-nn) + (0,-.55\figureheight)$) {Neural network prediction};
-     \node[anchor=north, font=\small] at ($(banana-nn2svgp) + (0,-.55\figureheight)$) {Sparse GP representation};
-     \node[anchor=north, font=\small] at ($(banana-update) + (0,-.55\figureheight)$) {Update without re-training};      
+    % Labels
+    \node[anchor=north, font=\small] at ($(banana-nn) + (0,-.55\figureheight)$) {Neural network prediction};
+    \node[anchor=north, font=\small] at ($(banana-nn2svgp) + (0,-.55\figureheight)$) {Sparse GP representation};
+    \node[anchor=north, font=\small] at ($(banana-update) + (0,-.55\figureheight)$) {Update without re-training};      
 
   \end{tikzpicture}
   \newcommand{\mycircle}{\protect\tikz[baseline=-.5ex]\protect\node[circle,inner sep=2pt,draw=black,fill=C0,opacity=.5]{};}
@@ -380,15 +438,6 @@ We demonstrate points {\em(i)--(iii)} in the experiments.
   \label{fig:banana}  
 \end{figure}
 
-
-
-\subsection{Related Work}
-\label{sec:related}
-%
-
-
-% Introduce the laplace GNN + shortcomings
-One common approach for uncertainty with neural networks is a Laplace GNN approximation \citep{daxbergerLaplace2021}. The idea is to essentially takes a trained neural network and linearises around the optimal weights. The resulting linear model can be used to obtain uncertainty estimates and sometimes improved predictions \citep{immerScalable2021}. Given the resultant model is now linear with respect to the weights its is also now possible to convert to a Gaussian process as shown in \citep{immerScalable2021, khan2019approximate}. Yet to obtain uncertainty estimates there is the usual computational scaling of the GP of $O(n^3)$, so cubic in the number of data points. Many approaches  apply crude approximations and yet still obtain good uncertainty estimates. 
 
 
 \section{Methods} \label{sec:methods}

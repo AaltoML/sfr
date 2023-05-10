@@ -39,6 +39,7 @@ case $firstdigit in
    6)  logmin=-2;;
    7)  logmin=-2 ;;
 esac
+
 echo $dataset
 echo $SEED
 name='sparse_all'

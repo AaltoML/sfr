@@ -74,7 +74,8 @@ class PermutedMNIST(ContinualDataset):
     NAME = 'perm-mnist'
     SETTING = 'domain-il'
     N_CLASSES_PER_TASK = 10
-    N_TASKS = 20
+    N_TASKS = 10
+    N_CLASSES = 10
 
     def get_data_loaders(self):
         transform = transforms.Compose((transforms.ToTensor(), Permutation()))
@@ -83,7 +84,7 @@ class PermutedMNIST(ContinualDataset):
 
     @staticmethod
     def get_backbone():
-        return MNISTMLP(28 * 28, PermutedMNIST.N_CLASSES_PER_TASK)
+        return MNISTMLP(28 * 28, PermutedMNIST.N_CLASSES_PER_TASK, width_size=100)
 
     @staticmethod
     def get_transform():

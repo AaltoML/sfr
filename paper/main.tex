@@ -40,6 +40,7 @@
 \usepackage{pgfplots}
 \usetikzlibrary{patterns}
 \usetikzlibrary{decorations,backgrounds,arrows.meta,calc}
+\usetikzlibrary{shapes,arrows,positioning}
 
 % Appendix/supplement title
 \newcommand{\nipstitle}[1]{{%
@@ -323,6 +324,55 @@ We demonstrate points {\em(i)--(iii)} in the experiments.
   \label{fig:teaser}  
 \end{figure}
 
+
+\begin{figure}[t!]
+  \centering
+  % Set figure size
+  \setlength{\figurewidth}{.31\textwidth}
+  \setlength{\figureheight}{\figurewidth}
+  %
+  \begin{tikzpicture}[outer sep=0,inner sep=0]
+
+    \newcommand{\addfig}[2]{
+    \begin{scope}
+      \clip[rounded corners=3pt] ($(#1)+(-.5\figurewidth,-.5\figureheight)$) rectangle ++(\figurewidth,\figureheight);
+      \node (#2) at (#1) {\includegraphics[width=1.05\figurewidth]{./fig/#2}};
+    \end{scope}
+    %\draw[rounded corners=3pt,line width=1.2pt,black!60] ($(#1)+(-.5\figurewidth,-.5\figureheight)$) rectangle ++(\figurewidth,\figureheight);
+    }
+
+  
+    % The neural network
+    \addfig{0,0}{banana-nn}
+
+    % The nn2svgp
+    \addfig{1.1\figurewidth,0}{banana-nn2svgp}
+
+    % The update
+    \addfig{2.2\figurewidth,0}{banana-update}
+
+
+     % The arrow
+     \tikzstyle{myarrow} = [draw=black!80, single arrow, minimum height=12mm, minimum width=2pt, single arrow head extend=4pt, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
+     \node[myarrow] (first-arr) at ($(banana-nn)!0.5!(banana-nn2svgp)$) {};
+     \node[myarrow] (second-arr) at ($(banana-nn2svgp)!0.5!(banana-update)$) {};
+
+     % Arrow labels
+     \node[font=\scriptsize,color=white] at (first-arr) {nn2svgp};
+     \node[font=\scriptsize,color=white] at (second-arr) {new data};   
+     
+     % Labels
+     \node[anchor=north, font=\small] at ($(banana-nn) + (0,-.55\figureheight)$) {Neural network prediction};
+     \node[anchor=north, font=\small] at ($(banana-nn2svgp) + (0,-.55\figureheight)$) {Sparse GP representation};
+     \node[anchor=north, font=\small] at ($(banana-update) + (0,-.55\figureheight)$) {Update without re-training};      
+
+  \end{tikzpicture}
+  \caption{Teaser figure goes here.}
+  \label{fig:banana}  
+\end{figure}
+
+
+
 \subsection{Related Work}
 \label{sec:related}
 %
@@ -342,11 +392,15 @@ One common approach for uncertainty with neural networks is a Laplace GNN approx
 
 \textbf{Dual Gaussian Process} A Gaussian process (GP) is a prior over functions $f \sim \GP(0, \kappa)$. The prior is characterized by a covariance kernel function $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors typically in $\R^{\mathrm{D}}$. Once combined with a data set ${\mathcal{D}_n = \{(\vx_i, y_i)\}_{i=1}^n}$ with $n$ examples, each modeled by the likelihood $p(y_i \mid f_i)$ at function $f_i = f(\vx_i)$, we can form a posterior proccess using multivariate conditioning. The drawbacks to GPs are their lack of scaling to large datasets and non-tractability with non-Gaussian likelihoods.
 
-Sparse Gaussian processes \citep{hensman2013gaussian} are a principled way to scale Gaussian processes to large datasets by changing the complexity from $O(n^3)$ to $O(m^3)$ with $m$ the number of inducing points, and typically $m \ll n$. The key insight is to use a sparse approximating distribution $q(\vu; \vm, \MV)$, where $\vm \in \R^{m}$ and $\MV \in \R^{m \times m}$, and find its parameters through maximizing the evidence lower bound (ELBO). The distribution at all over points is then defined as $q_{\vu}(f) = \int p(f \mid \vu) q(\vu) d\vu$. The dual parameterization \citet{adam2021dual} states that we can decompose the optimal sparse Gaussian process posterior as follows:
+Sparse Gaussian processes \citep{hensman2013gaussian} are a principled way to scale Gaussian processes to large datasets by changing the complexity from $O(n^3)$ to $O(m^3)$ with $m$ the number of inducing points, and typically $m \ll n$. The key insight is to use a sparse approximating distribution $q(\vu; \vm, \MV)$, where $\vm \in \R^{m}$ and $\MV \in \R^{m \times m}$, and find its parameters through maximizing the evidence lower bound (ELBO). The distribution at all over points is then defined as $q_{\vu}(f) = \int p(f \mid \vu) q(\vu) d\vu$. The dual parameterization \cite{adam2021dual} states that we can decompose the optimal sparse Gaussian process posterior as follows:
 \begin{equation}
    \myexpect_{q_{\vu}(f)}[f_i] = \vkzs^{\T} \valpha , \quad 
    \textrm{Var}_{q_{\vu}(f)}[f_i]  = \kappa_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \vbeta)^{-1} ]\vkzs.
 \end{equation}
+
+Here, we omit the dependency of the kernel on $n$, and simply use $\MKxx$ to denote the $n \times n$ matrix with $\kappa(\vx_i,\vx_j)$ as the $ij$\textsuperscript{th} entry, computed for all $\vx_i \in\vX$ where $\vX = (\vx_1,\ldots,\vx_n)$. Similarly, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $\kappa_{ii} = \kappa(\vx_i, \vx_i)$. 
+
+
 The dual parameters consist of an $m$-length vector $\valpha$ and $m\times m$-size matrix $\vbeta$, defined as
 \begin{equation} 
    \vlambda = [ \MKzz + \vbeta]\valpha  = \sum_{i \in \mathcal{D}_{n}}  \vkzi \, \tilde{\lambda}_{i}, \quad
@@ -354,14 +408,14 @@ The dual parameters consist of an $m$-length vector $\valpha$ and $m\times m$-si
 \label{eq:dual_sparse}
 \end{equation}
 
-where $\tilde{\lambda}_i = \alpha_i - \myexpect_{q_{\vu}(f)}[f_i] \beta_i$ with $(\hat{\alpha}_i, \hat{\beta}_i)$ defined as follows,
+where $\tilde{\lambda}_i = \alpha_i - \myexpect_{q_{\vu}(f)}[f_i] \hat{\beta}_i$ with $(\hat{\alpha}_i, \hat{\beta}_i)$ defined as,
 \begin{equation}
  \alpha_i = \myexpect_{q_{\vu}(f_i)} [\nabla_{f_i}\log p(y_i \mid f_i)], \quad
    \beta_i = \myexpect_{q_{\vu}(f_i)} [ -\nabla^{2}_{f_i}\log p(y_i \mid f_i)],
 \label{eq:svgp_dual}
 \end{equation}
 
-The key quantities we need to build our sparse GP are $(\alpha_i, \beta_i)$ and a kernel function $\kappa$ 
+The key quantities we need to build our sparse GP are $(\alpha_i, \beta_i)$ and a kernel function $\kappa$  
 
 \textbf{Neural network to sparse GP}
 
@@ -1080,6 +1134,28 @@ Many approximations exist and can be used alongsied our method.
 We refer the reader to \cite{daxbergerLaplace2021} for more details.
 See \cref{sec-laplace-approximation} for further details on the Laplace approximation.
 
+
+\section{Experiment details}
+
+\subsection{UCI}
+
+\begin{table}[t!] 
+  \centering\scriptsize
+  \caption{Negative log predictive density (NLPD) (lower better) for the proposed model TODO} 
+	\label{tbl:uci_all}
+	% Control table spacing
+	\renewcommand{\arraystretch}{1.}
+	\setlength{\tabcolsep}{2pt}
+	\setlength{\tblw}{0.14\textwidth}  
+	
+	% Custom error formatting
+	\newcommand{\val}[2]{%
+		$#1$\textcolor{gray}{\tiny ${\pm}#2$}
+	} 
+
+    % THE TABLE NUMBER ARE GENERATED BY A SCRIPT	
+	\input{tables/uci_all.tex}
+\end{table}
 
 \section{Template stuff}
 \subsection{Generate TikZ Figures from Python}

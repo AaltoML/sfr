@@ -64,6 +64,10 @@
 
 % Let's use good old bibtex instead
 
+% Figure customization: Tight legend box
+\pgfplotsset{every axis/.append style={
+		legend style={inner xsep=1pt, inner ysep=0.5pt, nodes={inner sep=1pt, text depth=0.1em},draw=none,fill=none}
+}}
 
 % Our packages
 \usepackage{todonotes}
@@ -247,19 +251,6 @@ Deep neural networks are known to lack uncertainty estimates, struggle to incorp
 \section{Introduction}
 \label{sec:intro}
 %
-
-
-
-\subsection{Related Work}
-\label{sec:related}
-%
-
-
-% Introduce the laplace GNN + shortcomings
-One common approach for uncertainty with neural networks is a Laplace GNN approximation \citep{daxbergerLaplace2021}. The idea is to essentially takes a trained neural network and linearises around the optimal weights. The resulting linear model can be used to obtain uncertainty estimates and sometimes improved predictions \citep{immerScalable2021}. Given the resultant model is now linear with respect to the weights its is also now possible to convert to a Gaussian process as shown in \citep{immerScalable2021, khan2019approximate}. Yet to obtain uncertainty estimates there is the usual computational scaling of the GP of $O(n^3)$, so cubic in the number of data points. Many approaches  apply crude approximations and yet still obtain good uncertainty estimates. 
-
-
-
 Deep learning has become the cornerstone of contemporary artificial intelligence, proving remarkably effective in tackling supervised and unsupervised learning tasks in the {\em large data}, {\em offline}, and {\em gradient-based training} regime. Despite its success, gradient-based learning techniques exhibit limitations when applied to sequential learning paradigms, such as Continual Learning (CL, \cite{add}) and Reinforcement Learning (RL, \cite{add}). In CL, the challenge is retaining a compact representation of the problem and avoid forgetting over the life-long learning horizon (see, \eg, \cite{add}). Similarly in RL, the model would need to adapt to observations of the environment through exploration, but this can be inefficient and would require constant retraining (\eg, \cite{add, add}).
 
 %Current state of affairs 
@@ -316,6 +307,11 @@ We demonstrate points {\em(i)--(iii)} in the experiments.
 %  \end{itemize}
 %\end{itemize}
 
+\subsection{Related Work}
+\label{sec:related}
+%
+% Introduce the laplace GNN + shortcomings
+One common approach for uncertainty with neural networks is a Laplace GNN approximation \citep{daxbergerLaplace2021}. The idea is to essentially takes a trained neural network and linearises around the optimal weights. The resulting linear model can be used to obtain uncertainty estimates and sometimes improved predictions \citep{immerScalable2021}. Given the resultant model is now linear with respect to the weights its is also now possible to convert to a Gaussian process as shown in \citep{immerScalable2021, khan2019approximate}. Yet to obtain uncertainty estimates there is the usual computational scaling of the GP of $O(n^3)$, so cubic in the number of data points. Many approaches  apply crude approximations and yet still obtain good uncertainty estimates. 
 
 
 %Why we need uncertainty and adaptiveness
@@ -324,16 +320,6 @@ We demonstrate points {\em(i)--(iii)} in the experiments.
 
 
 \begin{figure}[t!]
-%  \begin{subfigure}{.48\textwidth}
-%    \centering
-%    \tikz\node[fill=black!10,minimum width=\figurewidth,minimum height=\figureheight,rounded corners=5pt]{};
-%  \end{subfigure}
-%  \hfill
-%  \begin{subfigure}{.48\textwidth}
-%    \centering
-%    \tikz\node[fill=black!10,minimum width=\figurewidth,minimum height=\figureheight,rounded corners=5pt]{};
-%  \end{subfigure}
-
   \centering\scriptsize
   % Figure options
   \pgfplotsset{axis on top,scale only axis,width=\figurewidth,height=\figureheight, ylabel near ticks,ylabel style={yshift=-2pt},y tick label style={rotate=90},legend style={nodes={scale=1., transform shape}},tick label style={font=\tiny,scale=1}}
@@ -378,8 +364,8 @@ We demonstrate points {\em(i)--(iii)} in the experiments.
     % Arrow style
     \tikzstyle{myarrow} = [draw=black!80, single arrow, minimum height=14mm, minimum width=2pt, single arrow head extend=4pt, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
     % Arrows
-    \node[myarrow] (p0-arr) at ($(p0) + (0em,1.5em)$) {};
-    \node[myarrow] (p1-arr) at ($(p1) + (0em,1.5em)$) {};
+    \node[myarrow] (p0-arr) at ($(p0) + (1em,1.5em)$) {};
+    \node[myarrow] (p1-arr) at ($(p1) + (1em,1.5em)$) {};
     % Arrow labels
     \node[font=\scriptsize\sc,color=white] at (p0-arr) {nn2svgp};
     \node[font=\scriptsize\sc,color=white] at (p1-arr) {new data};   

@@ -2,9 +2,12 @@
 \begin{tikzpicture}
 
 \definecolor{darkgray176}{RGB}{176,176,176}
+\definecolor{lightgray204}{RGB}{204,204,204}
 
 \begin{axis}[
 height=\figureheight,
+legend cell align={left},
+legend style={fill opacity=0.8, draw opacity=1, text opacity=1, draw=lightgray204},
 tick align=outside,
 tick pos=left,
 width=\figurewidth,
@@ -172,6 +175,7 @@ x  y
 1.94542261961925 0.240943330223005
 1.96246848086935 0.398027059259599
 };
+\addlegendentry{Data}
 \addplot [semithick, red]
 table {%
 -0.2 7.24867568901548
@@ -375,6 +379,7 @@ table {%
 2.18793969849246 0.781260291295607
 2.2 0.79096447328328
 };
+\addlegendentry{Neural net output}
 \end{axis}
 
 \end{tikzpicture}

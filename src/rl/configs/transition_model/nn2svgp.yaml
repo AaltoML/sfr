@@ -9,7 +9,8 @@ batch_size: 64
 num_inducing: 128
 dual_batch_size: 1000
 jitter: 1e-4
-delta: 0.001
+# delta: 0.001
+delta: 0.0001
 sigma_noise: 1.0
 wandb_loss_name: "models/transition_loss"
 # early_stopper:

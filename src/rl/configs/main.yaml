@@ -33,7 +33,7 @@ device: ???
 
 online_updates: false
 # online_updates: true
-online_update_freq: 10
+online_update_freq: 1
 # online_update_freq: 20
 # online_update_freq: 50
 
@@ -45,7 +45,7 @@ random_seed: 42
 init_random_episodes: 1
 num_train_episodes: 2000
 # episode_length: 1000
-episode_length: 100
+episode_length: 500
 update_every_steps: 2
 
 eval_episode_freq: 10

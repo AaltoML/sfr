@@ -430,7 +430,7 @@ def train(cfg: DictConfig):
                 if cfg.wandb.use_wandb:
                     wandb.log({"eval/": eval_metrics})
 
-            try:
+            if isinstance(agent, src.rl.agents.MPPIAgent):
                 dataset = replay_buffer.sample(batch_size=len(replay_buffer))
                 state_action_inputs = torch.concat(
                     [dataset["state"], dataset["action"]], -1
@@ -462,10 +462,19 @@ def train(cfg: DictConfig):
                     # state=state[None, ...], action=action_input[None, ...]
                 )
                 mse_reward_model = torch.mean((reward_mean - reward_output) ** 2)
+
+                state_diff_nn = agent.transition_model.network(state_action_inputs)
+                mse_transition_model_nn = torch.mean(
+                    (state_diff_nn - state_diff_output) ** 2
+                )
+                reward_nn = agent.reward_model.network(state_action_inputs)
+                mse_reward_model_nn = torch.mean((reward_nn - reward_output) ** 2)
                 # print("mse_trans {}".format(mse_transition_model))
                 # print("mse_reward {}".format(mse_reward_model))
-                wandb.log({"mse_transition_model": mse_transition_model})
-                wandb.log({"mse_reward_model": mse_reward_model})
+                wandb.log({"mse_transition_model_svgp": mse_transition_model})
+                wandb.log({"mse_reward_model_svgp": mse_reward_model})
+                wandb.log({"mse_transition_model_nn": mse_transition_model_nn})
+                wandb.log({"mse_reward_model_nn": mse_reward_model_nn})
 
                 nlpd_reward_model = -torch.mean(
                     torch.distributions.Normal(
@@ -476,8 +485,6 @@ def train(cfg: DictConfig):
                 # print("nlpd_reward_model {}".format(nlpd_reward_model))
                 wandb.log({"nlpd_transition_model": torch.mean(nlpd_transition_model)})
                 wandb.log({"nlpd_reward_model": torch.mean(nlpd_reward_model)})
-            except:
-                pass
 
 
 if __name__ == "__main__":

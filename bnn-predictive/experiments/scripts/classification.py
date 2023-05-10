@@ -142,6 +142,10 @@ def inference(
         print('WARNING: Using all training data as inducing points')
         n_inducing = X_train.shape[0]
 
+    if n_inducing == 0:
+        print('Using all data as inducing points')
+        n_inducing = X_train.shape[0]
+
     prior_prec_n = prior_prec / y_train.shape[0]
     print(f"prior precision: {prior_prec_n}")
 

@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=fmnist_mlp
 #SBATCH --array=0-4
-#SBATCH --time=03:45:00
-#SBATCH --output=/scratch/work/%u/full-bnn-svgp/bnn-predictive/logs/uci_classification_%A_%a.out
+#SBATCH --time=00:15:00
+#SBATCH --output=/scratch/work/%u/full-bnn-svgp/bnn-predictive/logs/fmnist/fmnist_classification_%A_%a.out
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu
 #SBATCH --cpus-per-task=10

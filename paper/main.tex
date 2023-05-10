@@ -357,13 +357,13 @@ We demonstrate points {\em(i)--(iii)} in the experiments.
 
 
      % The arrow
-     \tikzstyle{myarrow} = [draw=black!80, single arrow, minimum height=12mm, minimum width=2pt, single arrow head extend=4pt, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
+     \tikzstyle{myarrow} = [draw=black!80, single arrow, minimum height=14mm, minimum width=2pt, single arrow head extend=4pt, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
      \node[myarrow] (first-arr) at ($(banana-nn)!0.5!(banana-nn2svgp)$) {};
      \node[myarrow] (second-arr) at ($(banana-nn2svgp)!0.5!(banana-update)$) {};
 
      % Arrow labels
-     \node[font=\scriptsize,color=white] at (first-arr) {nn2svgp};
-     \node[font=\scriptsize,color=white] at (second-arr) {new data};   
+     \node[font=\scriptsize\sc,color=white] at (first-arr) {nn2svgp};
+     \node[font=\scriptsize\sc,color=white] at (second-arr) {new data};   
      
      % Labels
      \node[anchor=north, font=\small] at ($(banana-nn) + (0,-.55\figureheight)$) {Neural network prediction};
@@ -842,6 +842,10 @@ The key quantities we need to build our sparse GP are $(\alpha_i, \beta_i)$ and 
 
 
 
+
+
+
+A reference implementation of the methods presented in this paper is currently available as supplementary material and will be made available under the MIT License on GitHub upon acceptance.
 
 
 %\section*{Broader Impact}

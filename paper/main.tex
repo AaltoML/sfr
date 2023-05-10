@@ -338,9 +338,9 @@ One common approach for uncertainty with neural networks is a Laplace GNN approx
 
 \textbf{Laplace approximation}
 
-\textbf{Dual GP}
+\textbf{Dual GP} Sparse Gaussian processes \citep{hensman2013gaussian} are a principled way to scale Gaussian processes to large datasets by changing the complexity from $O(n^3)$ where n is number of data points to $O(m^3)$ where $m \ll n$. The key to the complexity saving is to use a sparse distribution
 
-The dual parameterization states that we can decompose the optimal sparse Gaussian process posterior as follows:
+dual parameterization states that we can decompose the optimal sparse Gaussian process posterior as follows:
 \begin{align}
    \myexpect_{q_{\vu}(f)}[f_i] &= \vkzs^{\T} \valpha_{\vu} , \\
    \textrm{Var}_{q_{\vu}(f)}[f_i]  &= \kappa_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \vbeta_{\vu})^{-1} ]\vkzs.
@@ -348,7 +348,7 @@ The dual parameterization states that we can decompose the optimal sparse Gaussi
 The dual parameters consist of an $m$-length vector $\valpha_\vu$ and $m\times m$-size matrix $\vbeta_\vu$, defined as
 \begin{equation} 
 \begin{split}
-   \vlambda & = [ \MKzz + \vbeta_{\vu}]\valpha_{\vu}  = \sum_{i \in \mathcal{D}_{\textrm{old}} \cup \mathcal{D}_{\textrm{new}}}  \vkzi \, \hat{\lambda}_{i}, \\
+   \vlambda & = [ \MKzz + \vbeta_{\vu}]\valpha_{\vu}  = \sum_{i \in \mathcal{D}_{\textrm{old}} \cup \mathcal{D}_{\textrm{new}}}  \vkzi \, \tilde{\lambda}_{i}, \\
    \vbeta_{\vu} &= \sum_{i \in \mathcal{D}_{\textrm{old}} \cup \mathcal{D}_{\textrm{new}}} \vkzi \,\hat{\beta}_{i} \, \vkzi^{\T} ,
 \label{eq:dual_sparse}
 \end{split}
@@ -361,7 +361,7 @@ where $\tilde{\lambda}_i = \alpha_i - \myexpect_{q_{\vu}(f)}[f_i] \beta_i$ with 
 \end{aligned} \label{eq:svgp_dual}
 \end{equation}
 
-The key quantities we need to build our spaerse GP are $(\alpha_i, \beta_i)$
+The key quantities we need to build our sparse GP are $(\alpha_i, \beta_i)$ and a kernel function $\kappa$ 
 
 \textbf{Neural network to sparse GP}
 

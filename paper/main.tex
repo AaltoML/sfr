@@ -762,57 +762,6 @@ where $\tilde{\lambda}_i = \alpha_i - \myexpect_{q_{\vu}(f)}[f_i] \beta_i$ is a 
 %   \caption{Negative test log likelihood (lower is better) on UCI classification tasks (2 hidden layers, 50 tanh). Our SVGP predictive outperforms the GLM predictive. }
 % \end{table}
 
-\begin{itemize}
-  \item Show prediction performance in classification: UCI classification results, compare to BNN predictive paper
-  \item Fast adapatation in model-based RL: results for cartpole
-  \item Is linearising NN mean and using fast updates during episode better than keeping non-linearised mean and not updating?
-  \item Possible ablations
-  \begin{itemize}
-    \item How does number of inducing points affect performance?
-  \end{itemize}
-  \item How good is the assumption that we can linearise BNN to get NTK?
-\end{itemize}
-
-Environments
-\begin{itemize}
-  \item Compare updated posterior with non updated posterior
-  \item Need to show update is fast enough for practical use?
-  \begin{itemize}
-    \item How frequently can we do the posterior update? Every time step or every $K$ steps?
-    \item Update depends on number of inducing points?
-    \item What experiments can we show for this? Wall clock time vs planning horizon with different numbers of inducing points?
-  \end{itemize}
-  \item Is linearising NN mean and using fast updates during episode better than keeping non-linearised mean and not updating?
-  \item How does number of inducing points affect performance?
-  \begin{itemize}
-    \item More inducing points means better approximation but larger computational complexity.
-  \end{itemize}
-  \item How good is the assumption that we can linearise BNN to get NTK?
-  \begin{itemize}
-    \item Does model's performance get worse during an episode because linearisation becomes more wrong?
-    \item SVGP does't have this issue so compare to SVGP in cartpole?
-  \end{itemize}
-  \item What length planning horizon to use?
-  \begin{itemize}
-    \item Too small (e.g. $\Horizon=0$) would mean no exploration?
-    \item Can $\Horizon$ be too large?
-  \end{itemize}
-  \begin{itemize}
-  \item Compare for different strategies of making decisions under dynamic model's uncertainty:
-    \begin{itemize}
-      \item \textbf{Greedy exploitation} \(\pi_{\text{greedy}}\)
-      \item \textbf{Hallucinated-UCRL} \(\pi_{\text{HUCRL}}\)
-      \item \textbf{Thompson sampling} \(\pi_{\text{TS}}\)
-    \end{itemize}
-  \end{itemize}
-  \item Compare impact of stationary vs non-stationary priors
-  \begin{itemize}
-    \item First do this with GP
-    \item Then try to do with Laplace BNN
-  \end{itemize}
-  \item Compare impact of function vs weight space
-\end{itemize}
-
 \section{Discussion and Conclusion}
 \label{sec:conclusion}
 
@@ -822,12 +771,6 @@ Environments
 
 
 %\section*{Broader Impact}
-
-\begin{ack}
-ASK A ABOUT THIS SECTION:
-Aidan Scannell is funded by the Finnish Center for Artificial Intelligence.
-\end{ack}
-
 
 % \section*{References}
 %\small

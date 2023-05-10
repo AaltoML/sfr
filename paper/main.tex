@@ -40,6 +40,7 @@
 \usepackage{pgfplots}
 \usetikzlibrary{patterns}
 \usetikzlibrary{decorations,backgrounds,arrows.meta,calc}
+\usetikzlibrary{shapes,arrows,positioning}
 
 % Appendix/supplement title
 \newcommand{\nipstitle}[1]{{%
@@ -321,6 +322,55 @@ We demonstrate points {\em(i)--(iii)} in the experiments.
   \caption{Teaser figure goes here.}
   \label{fig:teaser}  
 \end{figure}
+
+
+\begin{figure}[t!]
+  \centering
+  % Set figure size
+  \setlength{\figurewidth}{.31\textwidth}
+  \setlength{\figureheight}{\figurewidth}
+  %
+  \begin{tikzpicture}[outer sep=0,inner sep=0]
+
+    \newcommand{\addfig}[2]{
+    \begin{scope}
+      \clip[rounded corners=3pt] ($(#1)+(-.5\figurewidth,-.5\figureheight)$) rectangle ++(\figurewidth,\figureheight);
+      \node (#2) at (#1) {\includegraphics[width=1.05\figurewidth]{./fig/#2}};
+    \end{scope}
+    %\draw[rounded corners=3pt,line width=1.2pt,black!60] ($(#1)+(-.5\figurewidth,-.5\figureheight)$) rectangle ++(\figurewidth,\figureheight);
+    }
+
+  
+    % The neural network
+    \addfig{0,0}{banana-nn}
+
+    % The nn2svgp
+    \addfig{1.1\figurewidth,0}{banana-nn2svgp}
+
+    % The update
+    \addfig{2.2\figurewidth,0}{banana-update}
+
+
+     % The arrow
+     \tikzstyle{myarrow} = [draw=black!80, single arrow, minimum height=12mm, minimum width=2pt, single arrow head extend=4pt, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
+     \node[myarrow] (first-arr) at ($(banana-nn)!0.5!(banana-nn2svgp)$) {};
+     \node[myarrow] (second-arr) at ($(banana-nn2svgp)!0.5!(banana-update)$) {};
+
+     % Arrow labels
+     \node[font=\scriptsize,color=white] at (first-arr) {nn2svgp};
+     \node[font=\scriptsize,color=white] at (second-arr) {new data};   
+     
+     % Labels
+     \node[anchor=north, font=\small] at ($(banana-nn) + (0,-.55\figureheight)$) {Neural network prediction};
+     \node[anchor=north, font=\small] at ($(banana-nn2svgp) + (0,-.55\figureheight)$) {Sparse GP representation};
+     \node[anchor=north, font=\small] at ($(banana-update) + (0,-.55\figureheight)$) {Update without re-training};      
+
+  \end{tikzpicture}
+  \caption{Teaser figure goes here.}
+  \label{fig:banana}  
+\end{figure}
+
+
 
 \subsection{Related Work}
 \label{sec:related}

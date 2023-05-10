@@ -1,6 +1,7 @@
 # @package _global_
 defaults:
-  - override /reward_model: nn2svgp
+  # - override /reward_model: nn2svgp
+  - override /reward_model: cartpole
   - override /transition_model: nn2svgp
 
 alg_name: "nn2svgp-sample-no-updates"
@@ -9,8 +10,8 @@ online_updates: false
 transition_model:
   prediction_type: "SVGP"
 
-reward_model:
-  prediction_type: "SVGP"
+# reward_model:
+#   prediction_type: "SVGP"
 
 agent:
   unc_prop_strategy: "sample"

@@ -194,6 +194,7 @@ if __name__ == '__main__':
 
     print(f'Writing results to {res_dir}')
     print(f'Reading data from {data_dir}')
+    print(f'Model name: {model_name}')
     print(f'Dataset: {dataset}')
     print(f'Seed: {seed}')
 

@@ -1,8 +1,8 @@
 #!/bin/bash
 #SBATCH --job-name=fmnist_mlp
 #SBATCH --array=0-4
-#SBATCH --time=03:45:00
-#SBATCH --output=/scratch/work/%u/full-bnn-svgp/bnn-predictive/logs/uci_classification_%A_%a.out
+#SBATCH --time=00:15:00
+#SBATCH --output=/scratch/work/%u/full-bnn-svgp/bnn-predictive/logs/fmnist/fmnist_classification_%A_%a.out
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu
 #SBATCH --cpus-per-task=10
@@ -23,5 +23,5 @@ n_inducing=1000
 model='MLP'
 n_deltas=16
 batch_size=100
-srun python3 -u experiments/scripts/imgclassification.py -d ${dataset} -m ${model} --root_dir . -s ${SEED} --n_deltas ${n_deltas}
+#srun python3 -u experiments/scripts/imgclassification.py -d ${dataset} -m ${model} --root_dir . -s ${SEED} --n_deltas ${n_deltas}
 srun python3 -u experiments/scripts/imginference.py -d ${dataset} -m ${model} -b ${batch_size} --root_dir . -s ${SEED} --loginfo --n_inducing ${n_inducing} --name ${name}

@@ -339,11 +339,13 @@ One common approach for uncertainty with neural networks is a Laplace GNN approx
 \textbf{Laplace approximation}
 
 \textbf{Dual GP}
+
+The dual parameterization states that we can decompose the optimal sparse Gaussian process posterior as follows:
 \begin{align}
    \myexpect_{q_{\vu}(f)}[f_i] &= \vkzs^{\T} \valpha_{\vu} , \\
-   %\textrm{Var}_{q_{\vu}(f)}[f_i]  &= \kappa_{ii} - \vkzs^\top \sqr{\MKzz^{-1} - \rnd{ \MKzz + \vbeta_{\vu} }^{-1} }   \vkzs, \nonumber
+   \textrm{Var}_{q_{\vu}(f)}[f_i]  &= \kappa_{ii} - \vkzs^\top [\MKzz^{-1} - \MKzz + \vbeta_{\vu} ]^{-1} \vkzs.
 \end{align}
-now the dual parameters consist of an $m$-length vector $\valpha_\vu$ and $m\times m$-size matrix $\vbeta_\vu$, defined as
+The dual parameters consist of an $m$-length vector $\valpha_\vu$ and $m\times m$-size matrix $\vbeta_\vu$, defined as
 \begin{equation} 
 \begin{split}
    \vlambda & = [ \MKzz + \vbeta_{\vu}]\valpha_{\vu}  = \sum_{i \in \mathcal{D}_{\textrm{old}} \cup \mathcal{D}_{\textrm{new}}}  \vkzi \, \hat{\lambda}_{i}, \\
@@ -351,7 +353,7 @@ now the dual parameters consist of an $m$-length vector $\valpha_\vu$ and $m\tim
 \label{eq:dual_sparse}
 \end{split}
 \end{equation}
-where $\tilde{\lambda}_i = \alpha_i - \myexpect_{q_{\vu}(f)}[f_i] \beta_i$ is a different form of the first dual parameter, the gradient with respect to the first expectation parameter of $q_{\vu}(f)$ proposed in \cite{khan2017conjugate,chang2020fast}, with $(\hat{\alpha}_i, \hat{\beta}_i)$ defined as follows,
+where $\tilde{\lambda}_i = \alpha_i - \myexpect_{q_{\vu}(f)}[f_i] \beta_i$ with $(\hat{\alpha}_i, \hat{\beta}_i)$ defined as follows,
 \begin{equation}
 \begin{aligned}
    \hat{\alpha}_i &= \myexpect_{q_{\vu}(f_i)} [\nabla_{f_i}\log p(y_i \mid f_i)],\\

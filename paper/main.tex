@@ -398,7 +398,7 @@ Sparse Gaussian processes \citep{hensman2013gaussian} are a principled way to sc
    \textrm{Var}_{q_{\vu}(f)}[f_i]  = \kappa_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \vbeta)^{-1} ]\vkzs.
 \end{equation}
 
-Here, we omit the dependency of the kernel on $n$, and simply use $\MKxx$ to denote the $n \times n$ matrix with $\kappa(\vx_i,\vx_j)$ as the $ij$\textsuperscript{th} entry, computed for all $\vx_i \in\vX$ where $\vX = (\vx_1,\ldots,\vx_n)$. Similarly, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $\kappa_{ii} = \kappa(\vx_i, \vx_i)$. 
+%Here, we omit the dependency of the kernel on $n$, and simply use $\MKxx$ to denote the $n \times n$ matrix with $\kappa(\vx_i,\vx_j)$ as the $ij$\textsuperscript{th} entry, computed for all $\vx_i \in\vX$ where $\vX = (\vx_1,\ldots,\vx_n)$. Similarly, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $\kappa_{ii} = \kappa(\vx_i, \vx_i)$. 
 
 
 The dual parameters consist of an $m$-length vector $\valpha$ and $m\times m$-size matrix $\vbeta$, defined as
@@ -740,7 +740,11 @@ The key quantities we need to build our sparse GP are $(\alpha_i, \beta_i)$ and 
 
 \begin{table}[t!] 
   \centering\scriptsize
-  \caption{TODO: CL Experiments. $^*$ Methods relying only on weight regularization. \color{blue}{Results from \cite{rudner2022continual}.} \color{red}{Preliminary results need more runs or hyperparam tuning}}
+  \caption{
+  TODO: CL Experiments. $^*$ Methods relying only on weight regularization. 
+  \color{blue}{Results from \cite{rudner2022continual}.} 
+  %\color{red}{Preliminary results need more runs or hyperparam tuning}
+  }
 	\label{tbl:cl_table_1}
 	% Control table spacing
 	\renewcommand{\arraystretch}{1.}

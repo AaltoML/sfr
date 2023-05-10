@@ -180,6 +180,8 @@
 \newcommand{\vu}{\mbf{u}}
 \newcommand{\vx}{\mbf{x}}
 \newcommand{\vy}{\mbf{y}}
+\newcommand{\vw}{\mbf{w}}
+
 
 
 \newcommand{\GP}{\mathcal{GP}}
@@ -428,14 +430,16 @@ One common approach for uncertainty with neural networks is a Laplace GNN approx
 
 \section{Methods} \label{sec:methods}
 
-\textbf{Neural Network} A neural network takes ${\mathcal{D}_n = \{(\vx_i, y_i)\}_{i=1}^n}$ and fits a function $f(\mathbf{x}_{i};\transitionParams)$ through the following optimization:
+\textbf{Neural Network} Given the data set $\dataset_n = \{\mathbf{x}_{i} \in \inputDomain, y_{i} \in \outputDomain\}_{i=1}^{N}$,
+the goal of (supervised) deep learning, is to train the weights $\transitionParams \in \R^{P}$ of an $L\text{-layer}$ NN
+$f : \inputDomain \rightarrow \outputDomain$ to minimize the (regularized) empirical risk,
 \begin{align} \label{eq-empirical-risk}
   \transitionParams^{*} = \arg \min_{\transitionParams \in \R^{P}} \mathcal{L}(\dataset;\transitionParams) = \arg \min_{\transitionParams \in \R^{P}} \left(
   \sum_{i=1}^{N} l(f(\mathbf{x}_{i} ; \transitionParams), y_i) + \frac{1}{\delta}R(\transitionParams)  \right).
 \end{align}
-If $l(f(\mathbf{x}_{i} ; \transitionParams), y_i) = -\log(p(y \mid f(\mathbf{x}_{i}))$ 
+If $l(f(\mathbf{x}_{i} ; \transitionParams), y_i) = -\log(p(y \mid f(\mathbf{x}_{i}))$ and $R(\transitionParams) = \|\transitionParams\|^{2}$ then we can view \cref{eq-empirical-risk} as the MAP solution to a Bayesian objective, where $p(\vw) = \N(\vzeros,\delta\MI)$.
 
-\textbf{Laplace approximation}
+\textbf{Laplace approximation} The Laplace approximation allows us to build a posterior approximation $q(\vw)$ from the optimized objective \cref{eq-empirical-risk}.
 
 
 \textbf{Dual Gaussian Process} A Gaussian process (GP) is a prior over functions $f \sim \GP(0, \kappa)$. The prior is characterized by a covariance kernel function $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors typically in $\R^{\mathrm{D}}$. Once combined with a data set ${\mathcal{D}_n = \{(\vx_i, y_i)\}_{i=1}^n}$ with $n$ examples, each modeled by the likelihood $p(y_i \mid f_i)$ at function $f_i = f(\vx_i)$, we can form a posterior proccess using multivariate conditioning. The drawbacks to GPs are their lack of scaling to large datasets and non-tractability with non-Gaussian likelihoods.

@@ -1,22 +1,25 @@
 #!/bin/bash
 #SBATCH --job-name=uci_gpu
-#SBATCH --time=0:40:00
+#SBATCH --time=0:20:00
+#SBATCH --array=0-9
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu
 #SBATCH --cpus-per-task=10
 #SBATCH --mem-per-cpu=12000
-#SBATCH --output=/scratch/work/tamire1/full-bnn-svgp/bnn-predictive/logs/uci/uci_all_%J_run.out
+#SBATCH --output=/scratch/work/tamire1/full-bnn-svgp/bnn-predictive/logs/uci/uci_all_%A_%a_run.out
 
 
 module load miniconda
 source activate /scratch/work/tamire1/full-bnn-svgp/conda/bnn-svgp
 
-name='sparse_16'
+
+SEEDS=(711 1 75 359 17 420 129 666 69 36)
+SEED=${SEEDS[($SLURM_ARRAY_TASK_ID)]}
+name='sparse_256'
 res_folder='09'
-n_inducing=16
-SEED=69
-dataset='satellite'
-logmin=-1
+n_inducing=256
+dataset='breast_cancer'
+logmin=-2
 
 echo $dataset
 echo $SEED

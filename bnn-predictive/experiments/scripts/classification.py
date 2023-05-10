@@ -130,12 +130,17 @@ def inference(
     res = dict()
     torch.manual_seed(seed)
     if ds_train.C == 2:
-        likelihood = BernoulliLh(EPS=0.000001)
+        likelihood = BernoulliLh(EPS=0.000000001)
         K = 1
     else:
         eps = 0.0000000001
         likelihood = CategoricalLh(EPS=eps)
         K = ds_train.C
+
+    print(f'X_train shape: {X_train.shape[0]}')
+    if X_train.shape[0] <= n_inducing:
+        print('WARNING: Using all training data as inducing points')
+        n_inducing = X_train.shape[0]
 
     prior_prec_n = prior_prec / y_train.shape[0]
     print(f"prior precision: {prior_prec_n}")

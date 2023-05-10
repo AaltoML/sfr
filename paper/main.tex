@@ -202,7 +202,7 @@
 % \title{Adapting Neural Networks to New Data For Updates in Sequential Decision Making via Gaussian Processes}
 % \title{Converting Neural Networks to Gaussian Processes for Sequential Decision-Making Under Uncertainty}
 %\title{Sparse Function Space Representation of Neural Networks for Exploration and Retention}
-\title{Sparse Function Space Neural Networks}
+\title{Sparse Function-space Neural Networks}
 \author{%
   Aidan Scannell\textsuperscript{\star} \\
   Aalto University \\
@@ -236,10 +236,11 @@
 \maketitle
 
 \begin{abstract}
-Sequential learning paradigms such as Continual Learning (CL) or Reinforcement Learning (RL) pose a challenge for gradient-based deep learning techniques as they struggle to incorporate new data and retain previous knowledge.
-Existing methods for converting neural networks from weight to function space allow a probabilistic treatment of the distribution over the function learned by the neural networks but are computationally expensive.
-We propose a method that converts a neural network to a low-rank functional representation as a sparse Gaussian process. 
-With this approach, we can build a compact representation of the function encoded by the neural network that can replace previous data in continual settings and be used for fast adaptation in RL, avoiding full retraining of the model. 
+Deep neural networks lack uncertainty estimates, struggle to incorporate new data, and fail to retain previous knowledge.
+We present a method that overcomes these limitations by converting a weight-space neural network to a low-rank function-space representation, through a dual parameterisation.
+In contrast to previous work, we model the joint distribution over the full data set and not just a subset.
+Our method provides uncertainty estimates and enables us to incorporate new data without retraining, whilst retaining predictive performance.
+We also show that our function-space representation can be used as a low-rank summary of previous data in continual learning problems.
 \end{abstract}
 
 \section{Introduction}

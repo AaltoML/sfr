@@ -343,7 +343,7 @@ One common approach for uncertainty with neural networks is a Laplace GNN approx
 The dual parameterization states that we can decompose the optimal sparse Gaussian process posterior as follows:
 \begin{align}
    \myexpect_{q_{\vu}(f)}[f_i] &= \vkzs^{\T} \valpha_{\vu} , \\
-   \textrm{Var}_{q_{\vu}(f)}[f_i]  &= \kappa_{ii} - \vkzs^\top [\MKzz^{-1} - \MKzz + \vbeta_{\vu} ]^{-1} \vkzs.
+   \textrm{Var}_{q_{\vu}(f)}[f_i]  &= \kappa_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \vbeta_{\vu})^{-1} ]\vkzs.
 \end{align}
 The dual parameters consist of an $m$-length vector $\valpha_\vu$ and $m\times m$-size matrix $\vbeta_\vu$, defined as
 \begin{equation} 
@@ -356,11 +356,18 @@ The dual parameters consist of an $m$-length vector $\valpha_\vu$ and $m\times m
 where $\tilde{\lambda}_i = \alpha_i - \myexpect_{q_{\vu}(f)}[f_i] \beta_i$ with $(\hat{\alpha}_i, \hat{\beta}_i)$ defined as follows,
 \begin{equation}
 \begin{aligned}
-   \hat{\alpha}_i &= \myexpect_{q_{\vu}(f_i)} [\nabla_{f_i}\log p(y_i \mid f_i)],\\
-   \hat{\beta}_i &= \myexpect_{q_{\vu}(f_i)} [ -\nabla^2_{f_i}\log p(y_i \mid f_i)],
+   \alpha_i &= \myexpect_{q_{\vu}(f_i)} [\nabla_{f_i}\log p(y_i \mid f_i)],\\
+   \beta_i &= \myexpect_{q_{\vu}(f_i)} [ -\nabla^2_{f_i}\log p(y_i \mid f_i)],
 \end{aligned} \label{eq:svgp_dual}
 \end{equation}
 
+The key quantities we need to build our spaerse GP are $(\alpha_i, \beta_i)$
+
+\textbf{Neural network to sparse GP}
+
+\textbf{Continual learning}
+
+\textbf{Reinforcement learning}
 
 % We start by obtaining a posterior over the weights of a trained neural network via the Laplace approximation.
 % We then show how we can obtain a function-space posterior, (i.e. a GP posterior)

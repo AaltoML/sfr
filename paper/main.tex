@@ -189,6 +189,7 @@
 \newcommand{\MLambda}[0]{\mathbold{\Lambda}}
 \definecolor{matplotlib-blue}{HTML}{1f77b4}
 \newcommand{\N}{\mathrm{N}}
+%\newcommand{\R}{\mathrm{R}}
 \newcommand{\myexpect}{\mathbb{E}}
 
 
@@ -338,7 +339,12 @@ One common approach for uncertainty with neural networks is a Laplace GNN approx
 
 \textbf{Laplace approximation}
 
-\textbf{Dual GP} Sparse Gaussian processes \citep{hensman2013gaussian} are a principled way to scale Gaussian processes to large datasets by changing the complexity from $O(n^3)$ where n is number of data points to $O(m^3)$ where $m \ll n$. The key to the complexity saving is to use a sparse distribution
+
+\textbf{Dual GP} A Gaussian process is a prior over functions $f \sim \GP(0, \kappa)$. The prior is characterized by a covariance kernel function $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors. Once combined with a data set ${\mathcal{D}_n = \{(\vx_i, y_i)\}_{i=1}^n}$ with $n$ examples, each modeled by the likelihood $p(y_i \mid f_i)$ at function $f_i = f(\vx_i)$, we can form a posterior using multivariate conditioning. 
+
+
+
+Sparse Gaussian processes \citep{hensman2013gaussian} are a principled way to scale Gaussian processes to large datasets by changing the complexity from $O(n^3)$ where n is number of data points to $O(m^3)$ with $m$ the number of inducing points, where typically $m \ll n$. The key to the complexity saving is to use a sparse distribution $q(\vu; \vm, \MV)$, where $\vm \in \R^{m}$ and $\MV \in \R^{m \times m}$. The distribution at all over points is then defined as $q_{\vu}(f) = \int p(f \mid \vu) q(\vu) d\vu$. 
 
 dual parameterization states that we can decompose the optimal sparse Gaussian process posterior as follows:
 \begin{align}

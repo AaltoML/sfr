@@ -79,7 +79,8 @@ class SequentialMNIST(ContinualDataset):
     #@staticmethod
     def get_backbone(self):
         return MNISTMLP(28 * 28, SequentialMNIST.N_TASKS
-                        * SequentialMNIST.N_CLASSES_PER_TASK)
+                        * SequentialMNIST.N_CLASSES_PER_TASK,
+                        width_size=256)
 
     @staticmethod
     def get_transform():

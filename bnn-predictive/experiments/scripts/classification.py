@@ -58,8 +58,8 @@ def preds_glm(X, model, likelihood, mu, Sigma_chol, samples):
     return gs.mean(dim=0)
 
 
-def preds_svgp(X, svgp, likelihood, samples=1000):
-    gs = svgp_sampling_predictive(X, svgp, likelihood, mc_samples=samples)
+def preds_svgp(X, svgp, likelihood, samples=1000, batch_size=100, device='cpu'):
+    gs = svgp_sampling_predictive(X, svgp, likelihood, mc_samples=samples, batch_size=batch_size, device=device)
     return gs.mean(dim=0)
 
 
@@ -83,7 +83,7 @@ def evaluate(p, y, likelihood, name, data):
 
 
 def create_ntksvgp(
-    X_train, y_train, model, likelihood, prior_prec, n_inducing=64, device="cpu"
+    X_train, y_train, model, likelihood, prior_prec, n_inducing=64, batch_size=1000, device="cpu"
 ):
     data = (X_train, y_train)
     n_classes = model(X_train).shape[-1]
@@ -96,6 +96,7 @@ def create_ntksvgp(
         output_dim=n_classes,
         likelihood=likelihood,
         num_inducing=n_inducing,
+        dual_batch_size=batch_size,
         device=device,
     )
     svgp.set_data(data)
@@ -113,6 +114,7 @@ def inference(
     seed,
     n_layers=2,
     n_units=50,
+    batch_size=1000,
     activation="tanh",
     n_inducing=64,
     n_samples=1000,
@@ -179,11 +181,12 @@ def inference(
         likelihood_svgp,
         prior_prec_n,
         n_inducing=n_inducing,
+        batch_size=batch_size,
         device=device,
     )
-    fs_train = preds_svgp(X_train, svgp, likelihood_svgp, samples=n_samples)
-    fs_test = preds_svgp(X_test, svgp, likelihood_svgp, samples=n_samples)
-    fs_valid = preds_svgp(X_valid, svgp, likelihood_svgp, samples=n_samples)
+    fs_train = preds_svgp(X_train, svgp, likelihood_svgp, samples=n_samples, batch_size=batch_size, device=device)
+    fs_test = preds_svgp(X_test, svgp, likelihood_svgp, samples=n_samples, batch_size=batch_size, device=device)
+    fs_valid = preds_svgp(X_valid, svgp, likelihood_svgp, samples=n_samples, batch_size=batch_size, device=device)
     res.update(evaluate(fs_train, y_train, lh, "svgp_ntk", "train"))
     res.update(evaluate(fs_test, y_test, lh, "svgp_ntk", "test"))
     res.update(evaluate(fs_valid, y_valid, lh, "svgp_ntk", "valid"))
@@ -203,12 +206,13 @@ def inference(
         model,
         likelihood_svgp,
         prior_prec_n,
+        batch_size=batch_size,
         n_inducing=n_inducing,
         device=device,
     )
-    fs_train = preds_svgp(X_train, svgp_subset, likelihood_svgp, samples=n_samples)
-    fs_test = preds_svgp(X_test, svgp_subset, likelihood_svgp, samples=n_samples)
-    fs_valid = preds_svgp(X_valid, svgp_subset, likelihood_svgp, samples=n_samples)
+    fs_train = preds_svgp(X_train, svgp_subset, likelihood_svgp, samples=n_samples, batch_size=batch_size, device=device)
+    fs_test = preds_svgp(X_test, svgp_subset, likelihood_svgp, samples=n_samples, batch_size=batch_size, device=device)
+    fs_valid = preds_svgp(X_valid, svgp_subset, likelihood_svgp, samples=n_samples, batch_size=batch_size, device=device)
     res.update(evaluate(fs_train, y_train, lh, "gp_subset", "train"))
     res.update(evaluate(fs_test, y_test, lh, "gp_subset", "test"))
     res.update(evaluate(fs_valid, y_valid, lh, "gp_subset", "valid"))
@@ -409,6 +413,9 @@ if __name__ == "__main__":
         "--n_epochs", help="epochs training neural network", default=10000, type=int
     )
     parser.add_argument(
+        "-b", "--batch_size", help="Jac/Kernel batch size", type=int, default=1000
+    )
+    parser.add_argument(
         "--lr", help="neural network learning rate", default=1e-3, type=float
     )
     parser.add_argument(
@@ -456,6 +463,7 @@ if __name__ == "__main__":
     name = args.name
     root_dir = args.root_dir
     res_folder = args.res_folder
+    batch_size = args.batch_size
     refine = args.refine
     refine = bool(refine)
     print(f"Refine: {refine}")
@@ -468,6 +476,7 @@ if __name__ == "__main__":
     print(f"Reading data from {data_dir}")
     print(f"Dataset: {dataset}")
     print(f'Number of inducing points: {n_inducing}')
+    print(f'Batch size: {batch_size}')
     print(f"Seed: {seed}")
     print(double)
 
@@ -522,6 +531,7 @@ if __name__ == "__main__":
         lr=lr,
         n_layers=n_layers,
         n_units=n_units,
+        batch_size=batch_size, 
         activation=activation,
         n_inducing=n_inducing,
         n_samples=n_samples,

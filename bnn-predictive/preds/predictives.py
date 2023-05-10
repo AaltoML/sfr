@@ -1,6 +1,7 @@
 import torch
 from torch.distributions import MultivariateNormal, LowRankMultivariateNormal, Normal
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
+from torch.utils.data import DataLoader, TensorDataset
 import logging
 
 from preds.gradients import Jacobians_naive
@@ -60,18 +61,36 @@ def linear_sampling_predictive(
     return torch.stack(predictions)
 
 
-def svgp_sampling_predictive(X, svgp, likelihood, mc_samples=100, no_link=False):
+def svgp_sampling_predictive(X, svgp, likelihood, mc_samples=100, no_link=False, batch_size=None, device='cpu'):
     """Returns the sparse data used for convenience."""
     link = (lambda x: x) if no_link else likelihood.inv_link
-    f_mu, f_var = svgp.predict_f(X)
-    # print('Inside SVGP predictive')
-    # print(svgp.network(X).mean())
-    # print(f_mu.mean())
-    # print(f_var.mean())
-    # print(f_var.shape)
-    fs = Normal(f_mu, torch.sqrt(f_var.clamp(1e-5)))
-    return link(fs.sample((mc_samples,)))
+    if batch_size is None:
+        f_mu, f_var = svgp.predict_f(X)
+        fs = Normal(f_mu, torch.sqrt(f_var.clamp(1e-5)))
+        return link(fs.sample((mc_samples,)))
+    else:
+        dataset = TensorDataset(X)
+        data_loader = DataLoader(dataset, batch_size=batch_size)
+        ps = []
+        for X in iter(data_loader):    
+            X = X[0]  
+            X = X.to(device)
+            ps.append(
+                sample_svgp(X, likelihood, svgp,  n_samples=mc_samples))
+        ps = torch.cat(ps, axis=1)
+        return ps
 
+
+def sample_svgp(X, likelihood, svgp,  n_samples: int):
+    """Sample the SVGP, assumes a batched input."""
+    n_data = X.shape[0]
+    gp_means, gp_vars = svgp.predict_f(X)
+    dist = Normal(gp_means, torch.sqrt(gp_vars.clamp(10 ** (-8))))
+    logit_samples = dist.sample((n_samples,))
+    out_dim = logit_samples.shape[-1]
+    samples = likelihood.inv_link(logit_samples)
+    samples = samples.reshape(n_samples, n_data, out_dim)
+    return samples
 
 def functional_sampling_predictive(
     X, model, likelihood, mu, Sigma, mc_samples=1000, no_link=False

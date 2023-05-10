@@ -84,7 +84,7 @@ class PermutedMNIST(ContinualDataset):
 
     @staticmethod
     def get_backbone():
-        return MNISTMLP(28 * 28, PermutedMNIST.N_CLASSES_PER_TASK)
+        return MNISTMLP(28 * 28, PermutedMNIST.N_CLASSES_PER_TASK, width_size=100)
 
     @staticmethod
     def get_transform():

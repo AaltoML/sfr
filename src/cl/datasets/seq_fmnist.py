@@ -79,7 +79,8 @@ class SequentialFashionMNIST(ContinualDataset):
     #@staticmethod
     def get_backbone(self):
         return MNISTMLP(28 * 28, self.N_TASKS
-                        * self.N_CLASSES_PER_TASK)
+                        * self.N_CLASSES_PER_TASK,
+                        width_size=256)
 
     @staticmethod
     def get_transform():

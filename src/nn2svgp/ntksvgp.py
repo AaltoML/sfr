@@ -212,7 +212,7 @@ class NTKSVGP(nn.Module):
                 @ torch.transpose(Kzx, -1, -2)
             )
             self.Lambda_u += (Kzx @ y.T[..., None])[..., 0]
-        elif isinstance(self.likelihood, src.nn2svgp.likelihoods.CategoricalLh):
+        elif isinstance(self.likelihood, src.nn2svgp.likelihoods.CategoricalLh) or isinstance(self.likelihood, src.nn2svgp.likelihoods.BernoulliLh):
             f = self.network(x)
             Lambda_new, beta_new = calc_lambdas(Y=y, F=f, likelihood=self.likelihood)
             beta_new = torch.diagonal(beta_new, dim1=-2, dim2=-1)  # [N, F]

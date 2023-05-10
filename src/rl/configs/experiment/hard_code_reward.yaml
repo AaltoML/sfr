@@ -1,0 +1,10 @@
+# @package _global_
+defaults:
+  - override /reward_model: cartpole
+  - override /transition_model: nn2svgp
+
+alg_name: "mlp"
+online_updates: false
+
+transition_model:
+  prediction_type: "NN"

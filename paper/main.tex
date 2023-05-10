@@ -331,6 +331,10 @@ We demonstrate points {\em(i)--(iii)} in the experiments.
   \setlength{\figurewidth}{.31\textwidth}
   \setlength{\figureheight}{\figurewidth}
   %
+  % Colours
+  \definecolor{C0}{HTML}{DF6679}
+  \definecolor{C1}{HTML}{69A9CE}
+  %
   \begin{tikzpicture}[outer sep=0,inner sep=0]
 
     \newcommand{\addfig}[2]{
@@ -367,7 +371,10 @@ We demonstrate points {\em(i)--(iii)} in the experiments.
      \node[anchor=north, font=\small] at ($(banana-update) + (0,-.55\figureheight)$) {Update without re-training};      
 
   \end{tikzpicture}
-  \caption{Teaser figure goes here.}
+  \newcommand{\mycircle}{\protect\tikz[baseline=-.5ex]\protect\node[circle,inner sep=2pt,draw=black,fill=C0,opacity=.5]{};}
+  \newcommand{\mysquare}{\protect\tikz[baseline=-.5ex]\protect\node[inner sep=2.5pt,draw=black,fill=C1,opacity=.5]{};}
+  %
+  \caption{Binary classification (\mysquare~vs.~\mycircle)}
   \label{fig:banana}  
 \end{figure}
 

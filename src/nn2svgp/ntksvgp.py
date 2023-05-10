@@ -64,6 +64,8 @@ class NTKSVGP(nn.Module):
     def set_data(self, train_data: Data):
         """Sets training data, samples inducing points, calcs dual parameters, builds predict fn"""
         X_train, Y_train = train_data
+        X_train = torch.clone(X_train)
+        Y_train = torch.clone(Y_train)
         # if X_train.ndim > 2:
         #     # TODO flatten dims for images
         #     logger.info("X_train.ndim>2 so flattening {}".format(X_train.shape))

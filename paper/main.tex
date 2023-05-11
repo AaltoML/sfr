@@ -447,7 +447,7 @@ are usually trained to minimize the (regularized) empirical risk,
 \end{align}
 If $\ell(f_\transitionParams(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\transitionParams(\mathbf{x}_{i}))$ and $\mathcal{R}(\transitionParams) = \|\transitionParams\|^{2}_2$ then we can view \cref{eq-empirical-risk} as the MAP solution to a Bayesian objective, where $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$.
 
-\textbf{Neural network to GP} Our goal is to find a kernel from which to build a sparse Gaussian process model. If we had the following function parameterization $g_i(\vx) = \phi^\T(\vx)$ we would could simply convert from weight space to function space the prior under the prior distribution meaning $\kappa(\vx, \vx) = \delta^{-1} \phi(\vx) \phi(\vx)^\T$. Our
+\textbf{Neural network to GP} Our goal is to find a kernel from which to build a sparse Gaussian process model. If we had the following function parameterization $g_i(\vx) = \phi^\T(\vx)$ we would could simply convert from weight space to function space the prior under the prior distribution meaning $\kappa(\vx, \vx) = \delta^{-1} \phi(\vx) \phi(\vx)^\T$ see \citet{rasmussen2006gaussian} for details. We linearise the neural network function  
 
 % The Laplace approximation allows us to build a posterior approximation $q(\vw)$ from the optimized objective \cref{eq-empirical-risk}. Central to the approximation is how to form the hessian of \cref{eq-empirical-risk} a common approach is to use the the GGN approximation which would result in the following posterior $q(\vw;\vw^*, \MSigma_{\textrm{GGN}})$ where 
 

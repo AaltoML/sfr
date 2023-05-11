@@ -110,8 +110,6 @@ class DDPGAgent(Agent):
             reward = samples["reward"]  # needs to be [B, 1]
             # print("REWARD {}".format(reward.shape))
             next_state = samples["next_state"][None, ...]  # [1, B, state_dim]
-            print("inside train")
-            print("samples {}".format(samples))
 
             info.update(
                 self._update_q_fn(
@@ -175,13 +173,6 @@ def update_q(
         next_state: State,
         std: float,
     ):
-        print("here")
-        print(state)
-        print("action {}".format(action))
-        print("reward {}".format(reward))
-        print("next state {}".format(next_state))
-        print("std {}".format(std))
-        # print("std {}".format(std))
         with torch.no_grad():
             next_action = actor(next_state, std=std).sample(clip=std_clip)
 

@@ -489,7 +489,7 @@ def train(cfg: DictConfig):
             if isinstance(agent, src.rl.agents.MPPIAgent):
                 dataset = replay_memory.sample(len(replay_memory))
                 # dataset = replay_buffer.sample(batch_size=len(replay_buffer))
-                print("dataset {}".format(dataset))
+                # print("dataset {}".format(dataset))
                 state_action_inputs = torch.concat(
                     [dataset["state"], dataset["action"]], -1
                 ).to(cfg.device)
@@ -531,27 +531,27 @@ def train(cfg: DictConfig):
                     agent.reward_model, src.rl.models.rewards.CartpoleRewardModel
                 ):
                     # dataset = replay_memory.sample(len(replay_memory))
-                    print("dataset['state'] {}".format(dataset["state"].shape))
-                    print("dataset['action'] {}".format(dataset["action"].shape))
-                    print("dataset['reward'] {}".format(dataset["reward"].shape))
+                    # print("dataset['state'] {}".format(dataset["state"].shape))
+                    # print("dataset['action'] {}".format(dataset["action"].shape))
+                    # print("dataset['reward'] {}".format(dataset["reward"].shape))
                     reward_hard = agent.reward_model.predict(
                         state=dataset["state"],
                         # state=dataset_1["next_state"],
                         action=dataset["action"],
                     ).reward_mean
-                    print("reward_hard {}".format(reward_hard.shape))
-                    print("reward_output {}".format(reward_output.shape))
-                    print(
-                        "(reward_hard - reward_output) {}".format(
-                            (reward_hard - reward_output).shape
-                        )
-                    )
+                    # print("reward_hard {}".format(reward_hard.shape))
+                    # print("reward_output {}".format(reward_output.shape))
+                    # print(
+                    #     "(reward_hard - reward_output) {}".format(
+                    #         (reward_hard - reward_output).shape
+                    #     )
+                    # )
                     mse_reward_model_hard = torch.mean(
                         (reward_hard - reward_output) ** 2
                     )
-                    print(
-                        "mse_reward_model_hard {}".format(mse_reward_model_hard.shape)
-                    )
+                    # print(
+                    #     "mse_reward_model_hard {}".format(mse_reward_model_hard.shape)
+                    # )
                     wandb.log({"mse_reward_model_hard": mse_reward_model_hard})
 
                 # # Log reward model stuff

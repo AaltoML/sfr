@@ -1,16 +1,22 @@
 #!/usr/bin/env python3
+from functools import partial
+
 import torch
 from dm_control.utils import rewards
 from src.rl.custom_types import Action, RewardPrediction, State
 
 from .base import RewardModel
 
+
 _DEFAULT_VALUE_AT_MARGIN = torch.Tensor([0.1])
 
 
 class CartpoleRewardModel(RewardModel):
-    def __init__(self):
-        self._reward_fn = torch.vmap(tensor_reward)
+    def __init__(self, action_penalty: float = 0.0, sparse_threshold: float = 0.0):
+        reward_fn = tensor_reward
+        self.action_penalty = action_penalty
+        self.sparse_threshold = sparse_threshold
+        self._reward_fn = torch.vmap(reward_fn)
         # self._reward_fn = torch.vmap(cartpole_swingup_reward)
 
     def predict(self, state: State, action: Action) -> RewardPrediction:
@@ -18,8 +24,20 @@ class CartpoleRewardModel(RewardModel):
         # print("aciton {}".format(action.shape))
         reward = self._reward_fn(state, action)
         # print("reward {}".format(reward.shape))
+        # print("reward {}".format(reward.max()))
         if reward.ndim == 2:
             reward = reward[:, 0]
+        # print("reward {}".format(reward.shape))
+        penalty = torch.vmap(
+            partial(action_penalty_reward, action_penalty=self.action_penalty)
+        )(action)
+        # print("penalty {}".format(penalty.shape))
+        if (reward > self.sparse_threshold).any():
+            print("using reward")
+        # else:
+        # logger.info("only using using reward")
+        # print("reward {}".format(reward.max()))
+        reward = torch.where(reward > self.sparse_threshold, reward + penalty, penalty)
         return RewardPrediction(reward_mean=reward, reward_var=None, noise_var=None)
 
     def update(self, data_new):
@@ -29,7 +47,7 @@ class CartpoleRewardModel(RewardModel):
         pass
 
 
-def tensor_reward(state, action):
+def tensor_reward(state: State, action: Action):
     """DIFFERENT FROM ORIGINAL GYM"""
     cos_theta = state[1]
     v = state[3]
@@ -41,6 +59,39 @@ def tensor_reward(state, action):
     vel_penalty = 1e-3 * v**2
     reward = -dist_penalty - vel_penalty
     return reward.view([1])
+
+
+def action_penalty_reward(action, action_penalty: float = 0.0):
+    return -action_penalty * torch.sum(action**2)
+    # # if reward < 0.0:
+    #     # print("reward {}".format(reward))
+    #     penalised_reward = reward - action_reward
+    # else:
+    #     return -action_reward.view([1])
+
+
+def tensor_reward_2(state: State, action: Action, action_penalty: float = 0.0):
+    control = single_action
+    upright = (pole_angle_cosine + 1) / 2
+    # print("upright {}".format(upright.shape))
+    centered = tolerance(cart_position, margin=2)
+    # print("centered {}".format(centered.shape))
+    centered = (1 + centered) / 2
+    # print("centered {}".format(centered.shape))
+    small_control = tolerance(
+        control,
+        margin=1,
+        value_at_margin=torch.Tensor([0.0]),
+        sigmoid="quadratic",
+    )[0]
+    # print("smallcontrol {}".format(small_control.shape))
+    small_control = (4 + small_control) / 5
+    # print("smallcontrol {}".format(small_control.shape))
+    small_velocity = tolerance(angular_vel, margin=5).min()
+    # print("small_velocity {}".format(small_velocity.shape))
+    small_velocity = (1 + small_velocity) / 2
+    # print("small_velocity {}".format(small_velocity.shape))
+    reward = upright.mean() * small_control * small_velocity * centered
 
 
 def cartpole_swingup_reward(single_state, single_action):

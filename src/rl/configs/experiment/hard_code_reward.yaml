@@ -2,6 +2,7 @@
 defaults:
   - override /reward_model: cartpole
   - override /transition_model: nn2svgp
+
 hydra:
   sweeper:
     params:

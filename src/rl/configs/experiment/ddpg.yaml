@@ -2,4 +2,11 @@
 defaults:
   - override /agent: ddpg
 
+hydra:
+  sweeper:
+    params:
+      random_seed: 42,100,50,1,15
+
 alg_name: "ddpg"
+
+save_video: true

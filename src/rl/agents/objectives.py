@@ -116,9 +116,9 @@ def greedy(
             final_action = final_action_dist.mean
         G_final = discount * torch.min(*critic(state_trajectory[-1, :], final_action))
         # print("G_ginal {}".format(G_final.shape))
-        logger.info("discount {}".format(discount))
-        logger.info("G 0:H {}".format(torch.mean(G, 0)))
-        logger.info("G bootstrap {}".format(torch.mean(G_final, 0)))
+        # logger.info("discount {}".format(discount))
+        # logger.info("G 0:H {}".format(torch.mean(G, 0)))
+        # logger.info("G bootstrap {}".format(torch.mean(G_final, 0)))
         if bootstrap:
             return G[..., None] + G_final
         else:

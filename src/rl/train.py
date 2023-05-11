@@ -234,8 +234,8 @@ def train(cfg: DictConfig):
                         # print("state_diff_outputs {}".format(state_diff_outputs.shape))
                         # print("reward_outputs {}".format(reward_outputs.shape))
                         logger.info("Updating model at t={}".format(t))
-                        # agent.update(data_new)
-                        raise NotImplementedError("uncomment agent.update")
+                        agent.update(data_new)
+                        # raise NotImplementedError("uncomment agent.update")
                         logger.info("Finished updating models")
                         reset_updates = True
                     else:

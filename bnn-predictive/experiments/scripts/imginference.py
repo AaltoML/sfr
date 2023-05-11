@@ -156,7 +156,7 @@ def main(
     res_dir="experiments/results",
     device="cuda",
 ):
-    lh = CategoricalLh(EPS=0.00000000000001)
+    lh = CategoricalLh(EPS=0.000000000000000001)
 
     eligible_files = list()
     deltas = list()

@@ -60,11 +60,11 @@ class ReplayMemory(object):
             states.append(torch.Tensor(sample.state).to(self.device))
             actions.append(torch.Tensor(sample.action).to(self.device))
             rewards.append(torch.Tensor(sample.reward).to(self.device))
-            next_states.append(torch.Tensor(sample.next_state).to(self.device))
-        states = torch.stack(states, 0)
-        actions = torch.stack(actions, 0)
-        rewards = torch.stack(rewards, 0)
-        next_states = torch.stack(next_states, 0)
+            next_states.append(torch.Tensor(sample.next_state))
+        states = torch.stack(states, 0).to(self.device)
+        actions = torch.stack(actions, 0).to(self.device)
+        rewards = torch.stack(rewards, 0).to(self.device)
+        next_states = torch.stack(next_states, 0).to(self.device)
         return {
             "state": states,
             "action": actions,

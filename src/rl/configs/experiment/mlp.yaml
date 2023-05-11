@@ -3,7 +3,7 @@ defaults:
   - override /reward_model: nn2svgp
   - override /transition_model: nn2svgp
 
-alg_name: "mlp"
+alg_name: "mlp-learn"
 online_updates: false
 
 transition_model:

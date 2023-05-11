@@ -3,7 +3,12 @@ defaults:
   - override /reward_model: cartpole
   - override /transition_model: nn2svgp
 
-alg_name: "mlp"
+hydra:
+  sweeper:
+    params:
+      random_seed: 42,100,50,1,15
+
+alg_name: "mlp-hard-coded"
 online_updates: false
 
 transition_model:

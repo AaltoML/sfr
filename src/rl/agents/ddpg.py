@@ -110,6 +110,8 @@ class DDPGAgent(Agent):
             reward = samples["reward"]  # needs to be [B, 1]
             # print("REWARD {}".format(reward.shape))
             next_state = samples["next_state"][None, ...]  # [1, B, state_dim]
+            print("inside train")
+            print("samples {}".format(samples))
 
             info.update(
                 self._update_q_fn(

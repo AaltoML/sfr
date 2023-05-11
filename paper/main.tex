@@ -64,6 +64,10 @@
 
 % Let's use good old bibtex instead
 
+% Figure customization: Tight legend box
+\pgfplotsset{every axis/.append style={
+		legend style={inner xsep=1pt, inner ysep=0.5pt, nodes={inner sep=1pt, text depth=0.1em},draw=none,fill=none}
+}}
 
 % Our packages
 \usepackage{todonotes}
@@ -176,6 +180,8 @@
 \newcommand{\vu}{\mbf{u}}
 \newcommand{\vx}{\mbf{x}}
 \newcommand{\vy}{\mbf{y}}
+\newcommand{\vw}{\mbf{w}}
+
 
 
 \newcommand{\GP}{\mathcal{GP}}
@@ -202,7 +208,8 @@
 % \title{Adapting Neural Networks to New Data For Updates in Sequential Decision Making via Gaussian Processes}
 % \title{Converting Neural Networks to Gaussian Processes for Sequential Decision-Making Under Uncertainty}
 %\title{Sparse Function Space Representation of Neural Networks for Exploration and Retention}
-\title{Sparse Function Space Neural Networks}
+%\title{Sparse Function-space Neural Networks}
+\title{Sparse Function-space Representation \\ of Neural Networks}% for Adaptation and Retention}
 \author{%
   Aidan Scannell\textsuperscript{\star} \\
   Aalto University \\
@@ -236,10 +243,11 @@
 \maketitle
 
 \begin{abstract}
-Sequential learning paradigms such as Continual Learning (CL) or Reinforcement Learning (RL) pose a challenge for gradient-based deep learning techniques as they struggle to incorporate new data and retain previous knowledge.
-Existing methods for converting neural networks from weight to function space allow a probabilistic treatment of the distribution over the function learned by the neural networks but are computationally expensive.
-We propose a method that converts a neural network to a low-rank functional representation as a sparse Gaussian process. 
-With this approach, we can build a compact representation of the function encoded by the neural network that can replace previous data in continual settings and be used for fast adaptation in RL, avoiding full retraining of the model. 
+% OLDER VERSION
+%Sequential learning paradigms such as Continual Learning (CL) or Reinforcement Learning (RL) pose a challenge for gradient-based deep learning techniques as they struggle to incorporate new data and retain previous knowledge. Existing methods for converting neural networks from weight to function space allow a probabilistic treatment of the distribution over the function learned by the neural networks but are computationally expensive. We propose a method that converts a neural network to a low-rank functional representation as a sparse Gaussian process. With this approach, we can build a compact representation of the function encoded by the neural network that can replace previous data in continual settings and be used for fast adaptation in RL, avoiding full retraining of the model. 
+%
+% Rewrite on 2023-05-10
+Deep neural networks are known to lack uncertainty estimates, struggle to incorporate new data, and fail to retain previous knowledge. We present a method that mitigates these issues by transforming a weight-space neural network to a low-rank function-space representation, via the so-called dual parameters. In contrast to previous work, we model the joint distribution across the entire data set rather than a subset. This offers a compact and principled way of capturing uncertainty and enables us to incorporate new data without retraining whilst retaining predictive performance. We demonstrate the proposed approach in quantifying uncertainty in supervised learning, maintaining a summary representation in continual learning, and in active learning.
 \end{abstract}
 
 \section{Introduction}
@@ -301,6 +309,11 @@ We demonstrate points {\em(i)--(iii)} in the experiments.
 %  \end{itemize}
 %\end{itemize}
 
+\subsection{Related Work}
+\label{sec:related}
+%
+% Introduce the laplace GNN + shortcomings
+One common approach for uncertainty with neural networks is a Laplace GNN approximation \citep{daxbergerLaplace2021}. The idea is to essentially takes a trained neural network and linearises around the optimal weights. The resulting linear model can be used to obtain uncertainty estimates and sometimes improved predictions \citep{immerScalable2021}. Given the resultant model is now linear with respect to the weights its is also now possible to convert to a Gaussian process as shown in \citep{immerScalable2021, khan2019approximate}. Yet to obtain uncertainty estimates there is the usual computational scaling of the GP of $O(n^3)$, so cubic in the number of data points. Many approaches  apply crude approximations and yet still obtain good uncertainty estimates. 
 
 
 %Why we need uncertainty and adaptiveness
@@ -309,19 +322,56 @@ We demonstrate points {\em(i)--(iii)} in the experiments.
 
 
 \begin{figure}[t!]
-  \setlength{\figurewidth}{.48\textwidth}
-  \setlength{\figureheight}{.5\figurewidth}
-  \begin{subfigure}{.48\textwidth}
-    \centering
-    \tikz\node[fill=black!10,minimum width=\figurewidth,minimum height=\figureheight,rounded corners=5pt]{};
+  \centering\scriptsize
+  % Figure options
+  \pgfplotsset{axis on top,scale only axis,width=\figurewidth,height=\figureheight, ylabel near ticks,ylabel style={yshift=-2pt},y tick label style={rotate=90},legend style={nodes={scale=1., transform shape}},tick label style={font=\tiny,scale=1}}
+  \pgfplotsset{xlabel={Input, $x$},axis line style={rounded corners=3pt}}
+  % Set figure 
+  \setlength{\figurewidth}{.28\textwidth}
+  \setlength{\figureheight}{\figurewidth}
+  %
+  \def\inducing{\normalsize Sparse inducing points}
+  %
+  \begin{subfigure}[c]{.34\textwidth}
+    \raggedleft
+    \pgfplotsset{ylabel={Output, $y$}}
+    \input{./fig/regression-nn.tex}%
   \end{subfigure}
+  \hfill  
+  \begin{subfigure}[c]{.01\textwidth}
+    \centering
+    \tikz[overlay,remember picture]\node(p0){};
+  \end{subfigure}  
   \hfill
-  \begin{subfigure}{.48\textwidth}
-    \centering
-    \tikz\node[fill=black!10,minimum width=\figurewidth,minimum height=\figureheight,rounded corners=5pt]{};
+  \begin{subfigure}[c]{.28\textwidth}
+    \raggedleft
+    \pgfplotsset{yticklabels={,,},ytick={\empty}}
+    \input{./fig/regression-nn2svgp.tex}%
   \end{subfigure}
-  \caption{Teaser figure goes here.}
-  \label{fig:teaser}  
+  \hfill  
+  \begin{subfigure}[c]{.01\textwidth}
+    \centering
+    \tikz[overlay,remember picture]\node(p1){};
+  \end{subfigure}  
+  \hfill
+  \begin{subfigure}[c]{.28\textwidth}
+    \raggedleft
+    \pgfplotsset{yticklabels={,,},ytick={\empty}}        
+    \input{./fig/regression-update.tex}%
+  \end{subfigure}
+  \caption{\textbf{Regression example on an MLP with two hidden layers.} Left:~Predictions from the trained neural network. Center:~Our approach summarizes the...}
+  \label{fig:teaser} 
+  % 
+  \begin{tikzpicture}[remember picture,overlay]
+    % Arrow style
+    \tikzstyle{myarrow} = [draw=black!80, single arrow, minimum height=14mm, minimum width=2pt, single arrow head extend=4pt, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
+    % Arrows
+    \node[myarrow] (p0-arr) at ($(p0) + (1em,1.5em)$) {};
+    \node[myarrow] (p1-arr) at ($(p1) + (1em,1.5em)$) {};
+    % Arrow labels
+    \node[font=\scriptsize\sc,color=white] at (p0-arr) {nn2svgp};
+    \node[font=\scriptsize\sc,color=white] at (p1-arr) {new data};   
+  \end{tikzpicture}
 \end{figure}
 
 
@@ -330,6 +380,10 @@ We demonstrate points {\em(i)--(iii)} in the experiments.
   % Set figure size
   \setlength{\figurewidth}{.31\textwidth}
   \setlength{\figureheight}{\figurewidth}
+  %
+  % Colours
+  \definecolor{C0}{HTML}{DF6679}
+  \definecolor{C1}{HTML}{69A9CE}
   %
   \begin{tikzpicture}[outer sep=0,inner sep=0]
 
@@ -341,7 +395,6 @@ We demonstrate points {\em(i)--(iii)} in the experiments.
     %\draw[rounded corners=3pt,line width=1.2pt,black!60] ($(#1)+(-.5\figurewidth,-.5\figureheight)$) rectangle ++(\figurewidth,\figureheight);
     }
 
-  
     % The neural network
     \addfig{0,0}{banana-nn}
 
@@ -351,43 +404,42 @@ We demonstrate points {\em(i)--(iii)} in the experiments.
     % The update
     \addfig{2.2\figurewidth,0}{banana-update}
 
+    % The arrow
+    \tikzstyle{myarrow} = [draw=black!80, single arrow, minimum height=14mm, minimum width=2pt, single arrow head extend=4pt, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
+    \node[myarrow] (first-arr) at ($(banana-nn)!0.5!(banana-nn2svgp)$) {};
+    \node[myarrow] (second-arr) at ($(banana-nn2svgp)!0.5!(banana-update)$) {};
 
-     % The arrow
-     \tikzstyle{myarrow} = [draw=black!80, single arrow, minimum height=12mm, minimum width=2pt, single arrow head extend=4pt, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
-     \node[myarrow] (first-arr) at ($(banana-nn)!0.5!(banana-nn2svgp)$) {};
-     \node[myarrow] (second-arr) at ($(banana-nn2svgp)!0.5!(banana-update)$) {};
-
-     % Arrow labels
-     \node[font=\scriptsize,color=white] at (first-arr) {nn2svgp};
-     \node[font=\scriptsize,color=white] at (second-arr) {new data};   
+    % Arrow labels
+    \node[font=\scriptsize\sc,color=white] at (first-arr) {nn2svgp};
+    \node[font=\scriptsize\sc,color=white] at (second-arr) {new data};   
      
-     % Labels
-     \node[anchor=north, font=\small] at ($(banana-nn) + (0,-.55\figureheight)$) {Neural network prediction};
-     \node[anchor=north, font=\small] at ($(banana-nn2svgp) + (0,-.55\figureheight)$) {Sparse GP representation};
-     \node[anchor=north, font=\small] at ($(banana-update) + (0,-.55\figureheight)$) {Update without re-training};      
+    % Labels
+    \node[anchor=north, font=\small] at ($(banana-nn) + (0,-.55\figureheight)$) {Neural network prediction};
+    \node[anchor=north, font=\small] at ($(banana-nn2svgp) + (0,-.55\figureheight)$) {Sparse GP representation};
+    \node[anchor=north, font=\small] at ($(banana-update) + (0,-.55\figureheight)$) {Update without re-training};      
 
   \end{tikzpicture}
-  \caption{Teaser figure goes here.}
+  \newcommand{\mycircle}{\protect\tikz[baseline=-.5ex]\protect\node[circle,inner sep=2pt,draw=black,fill=C0,opacity=.5]{};}
+  \newcommand{\mysquare}{\protect\tikz[baseline=-.5ex]\protect\node[inner sep=2.5pt,draw=black,fill=C1,opacity=.5]{};}
+  %
+  \caption{Binary classification (\mysquare~vs.~\mycircle)}
   \label{fig:banana}  
 \end{figure}
 
 
 
-\subsection{Related Work}
-\label{sec:related}
-%
-
-
-% Introduce the laplace GNN + shortcomings
-One common approach for uncertainty with neural networks is a Laplace GNN approximation \citep{daxbergerLaplace2021}. The idea is to essentially takes a trained neural network and linearises around the optimal weights. The resulting linear model can be used to obtain uncertainty estimates and sometimes improved predictions \citep{immerScalable2021}. Given the resultant model is now linear with respect to the weights its is also now possible to convert to a Gaussian process as shown in \citep{immerScalable2021, khan2019approximate}. Yet to obtain uncertainty estimates there is the usual computational scaling of the GP of $O(n^3)$, so cubic in the number of data points. Many approaches  apply crude approximations and yet still obtain good uncertainty estimates. 
-
-
 \section{Methods} \label{sec:methods}
 
-\textbf{Neural Network in weight space}
+\textbf{Neural Network} Given the data set $\dataset_n = \{\mathbf{x}_{i} \in \inputDomain, y_{i} \in \outputDomain\}_{i=1}^{N}$,
+the goal of (supervised) deep learning, is to train the weights $\transitionParams \in \R^{P}$ of an $L\text{-layer}$ NN
+$f : \inputDomain \rightarrow \outputDomain$ to minimize the (regularized) empirical risk,
+\begin{align} \label{eq-empirical-risk}
+  \transitionParams^{*} = \arg \min_{\transitionParams \in \R^{P}} \mathcal{L}(\dataset;\transitionParams) = \arg \min_{\transitionParams \in \R^{P}} \left(
+  \sum_{i=1}^{N} l(f(\mathbf{x}_{i} ; \transitionParams), y_i) + \frac{1}{\delta}R(\transitionParams)  \right).
+\end{align}
+If $l(f(\mathbf{x}_{i} ; \transitionParams), y_i) = -\log(p(y \mid f(\mathbf{x}_{i}))$ and $R(\transitionParams) = \|\transitionParams\|^{2}$ then we can view \cref{eq-empirical-risk} as the MAP solution to a Bayesian objective, where $p(\vw) = \N(\vzeros,\delta\MI)$.
 
-
-\textbf{Laplace approximation}
+\textbf{Laplace approximation} The Laplace approximation allows us to build a posterior approximation $q(\vw)$ from the optimized objective \cref{eq-empirical-risk}.
 
 
 \textbf{Dual Gaussian Process} A Gaussian process (GP) is a prior over functions $f \sim \GP(0, \kappa)$. The prior is characterized by a covariance kernel function $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors typically in $\R^{\mathrm{D}}$. Once combined with a data set ${\mathcal{D}_n = \{(\vx_i, y_i)\}_{i=1}^n}$ with $n$ examples, each modeled by the likelihood $p(y_i \mid f_i)$ at function $f_i = f(\vx_i)$, we can form a posterior proccess using multivariate conditioning. The drawbacks to GPs are their lack of scaling to large datasets and non-tractability with non-Gaussian likelihoods.
@@ -398,10 +450,7 @@ Sparse Gaussian processes \citep{hensman2013gaussian} are a principled way to sc
    \textrm{Var}_{q_{\vu}(f)}[f_i]  = \kappa_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \vbeta)^{-1} ]\vkzs.
 \end{equation}
 
-%Here, we omit the dependency of the kernel on $n$, and simply use $\MKxx$ to denote the $n \times n$ matrix with $\kappa(\vx_i,\vx_j)$ as the $ij$\textsuperscript{th} entry, computed for all $\vx_i \in\vX$ where $\vX = (\vx_1,\ldots,\vx_n)$. Similarly, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $\kappa_{ii} = \kappa(\vx_i, \vx_i)$. 
-
-
-The dual parameters consist of an $m$-length vector $\valpha$ and $m\times m$-size matrix $\vbeta$, defined as
+Here, $\MKzz$ to denote the $m \times m$ matrix with $\kappa(\vx_i,\vx_j)$ as the $ij$\textsuperscript{th} entry, Similarly, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $\kappa_{ii} = \kappa(\vx_i, \vx_i)$.  The dual parameters consist of an $m$-length vector $\valpha$ and $m\times m$-size matrix $\vbeta$, defined as
 \begin{equation} 
    \vlambda = [ \MKzz + \vbeta]\valpha  = \sum_{i \in \mathcal{D}_{n}}  \vkzi \, \tilde{\lambda}_{i}, \quad
    \vbeta = \sum_{i \in \mathcal{D}_{n}} \vkzi \,\hat{\beta}_{i} \, \vkzi^{\T} ,
@@ -415,7 +464,7 @@ where $\tilde{\lambda}_i = \alpha_i - \myexpect_{q_{\vu}(f)}[f_i] \hat{\beta}_i$
 \label{eq:svgp_dual}
 \end{equation}
 
-The key quantities we need to build our sparse GP are $(\alpha_i, \beta_i)$ and a kernel function $\kappa$  
+The key quantities we need to build our sparse GP are $(\alpha_i, \beta_i)$ and a kernel function $\kappa$  and from that we are able to make predictions and variance estimates. Crucially in the dual formulation our posterior contains all the training data given the sum in \cref{eq:dual_sparse}.
 
 \textbf{Neural network to sparse GP}
 
@@ -835,6 +884,10 @@ The key quantities we need to build our sparse GP are $(\alpha_i, \beta_i)$ and 
 
 
 
+
+
+
+A reference implementation of the methods presented in this paper is currently available as supplementary material and will be made available under the MIT License on GitHub upon acceptance.
 
 
 %\section*{Broader Impact}

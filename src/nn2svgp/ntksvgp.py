@@ -64,6 +64,8 @@ class NTKSVGP(nn.Module):
     def set_data(self, train_data: Data):
         """Sets training data, samples inducing points, calcs dual parameters, builds predict fn"""
         X_train, Y_train = train_data
+        X_train = torch.clone(X_train)
+        Y_train = torch.clone(Y_train)
         # if X_train.ndim > 2:
         #     # TODO flatten dims for images
         #     logger.info("X_train.ndim>2 so flattening {}".format(X_train.shape))
@@ -212,7 +214,7 @@ class NTKSVGP(nn.Module):
                 @ torch.transpose(Kzx, -1, -2)
             )
             self.Lambda_u += (Kzx @ y.T[..., None])[..., 0]
-        elif isinstance(self.likelihood, src.nn2svgp.likelihoods.CategoricalLh):
+        elif isinstance(self.likelihood, src.nn2svgp.likelihoods.CategoricalLh) or isinstance(self.likelihood, src.nn2svgp.likelihoods.BernoulliLh):
             f = self.network(x)
             Lambda_new, beta_new = calc_lambdas(Y=y, F=f, likelihood=self.likelihood)
             beta_new = torch.diagonal(beta_new, dim1=-2, dim2=-1)  # [N, F]

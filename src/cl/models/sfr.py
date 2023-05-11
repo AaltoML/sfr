@@ -69,7 +69,7 @@ class SFR(ContinualModel):
         super(SFR, self).__init__(backbone, loss, args, transform)
 
         self.n_tasks = dataset.N_TASKS
-        self.n_classes = dataset.N_TASKS * dataset.N_CLASSES_PER_TASK
+        self.n_classes = dataset.N_CLASSES
         self.buffer_size = args.buffer_size
         self.z_per_task = self.buffer_size // self.n_tasks
 
@@ -186,7 +186,7 @@ class SFR(ContinualModel):
         # current neural network weights
         curr_net = copy.deepcopy(self.net)
         curr_net.eval()
-        current_params = {k: v.detach() for k, v in self.net.named_parameters()}
+        current_params = {k: v.detach() for k, v in curr_net.named_parameters()}
 
         print()
         if self.task_cnt != (self.n_tasks - 1):

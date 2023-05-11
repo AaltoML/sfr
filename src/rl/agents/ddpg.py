@@ -106,7 +106,9 @@ class DDPGAgent(Agent):
             samples = replay_buffer.sample()
             state = samples["state"]  # [B, state_dim]
             action = samples["action"]  # [B, action_dim]
-            reward = samples["reward"][..., None]  # needs to be [B, 1]
+            # reward = samples["reward"][..., None]  # needs to be [B, 1]
+            reward = samples["reward"]  # needs to be [B, 1]
+            # print("REWARD {}".format(reward.shape))
             next_state = samples["next_state"][None, ...]  # [1, B, state_dim]
 
             info.update(

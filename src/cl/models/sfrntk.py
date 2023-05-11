@@ -11,7 +11,6 @@ from src.nn2svgp.ntksvgp import calc_sparse_dual_params_batch, loss_cl, build_nt
 from src.nn2svgp.likelihoods import CategoricalLh
 from src.nn2svgp.priors import Gaussian
 
-from tqdm import tqdm
 
 from datasets.utils.continual_dataset import ContinualDataset
 from models.utils.continual_model import ContinualModel
@@ -91,17 +90,17 @@ class SFRNTK(ContinualModel):
 
             new_logits = self.net(inputs_t)
             for c in range(self.n_classes):
-                diff = torch.flatten(new_logits[:, c] - logits_t[:, c])[:, None]
+                diff = torch.flatten(new_logits[:, c] - logits_t[:, c])
                 # print(new_logits[:, c])
                 # print(logits_t[:, c])
 
-                d_iS_d = diff.T @ self.Sigma_inv[t, c] @ diff#.T
+                # d_iS_d = diff.T @ self.Sigma_inv[t, c] @ diff #.T
 
-                # d_iS_d = torch.einsum('mi, mn, ni -> i',
-                #                       diff,
-                #                       #torch.eye(diff.shape[0]).to(self.device),
-                #                       self.Sigma_inv[t, c],
-                #                       diff).squeeze()
+                d_iS_d = torch.einsum('m, mn, n -> ',
+                                      diff,
+                                      #torch.eye(diff.shape[0]).to(self.device),
+                                      self.Sigma_inv[t, c],
+                                      diff)
 
                 # d_iS_d = torch.einsum('ki, n, ki -> i',
                 #                       diff,
@@ -160,19 +159,18 @@ class SFRNTK(ContinualModel):
             train_loader = DataLoader(dataset=task_dataset, batch_size=self.A_batchsize,
                             shuffle=False, num_workers=4)
 
-            _, beta = calc_sparse_dual_params_batch(
+            _, beta, _ = calc_sparse_dual_params_batch(
                 network=curr_net,
                 train_loader=train_loader,
                 Z = z_inputs.to(self.device), 
                 kernel=ntk_single,
-                nll=self.nll_fn,
                 likelihood=CategoricalLh(),
-                batch_size=self.A_batchsize,
                 out_dim=self.n_classes,
+                jitter=self.jitter,
                 subset_out_dim=np.unique(train_loader.dataset.targets),
                 device=self.device
-            ) 
-
+            )
+            
             z_inputs = z_inputs.to(self.device)
             for class_out in range(self.n_classes):
                 self.Sigma_inv[self.task_cnt, class_out] = torch.eye(z_inputs.shape[0])
@@ -193,7 +191,7 @@ class SFRNTK(ContinualModel):
                 # print(f"det Kzz: {det_Kzz}")
 
                 A_k = (A_k + torch.eye(Kzz.shape[0]) * self.jitter).numpy()
-                det_A = 2 * np.sum(np.log(np.diag(np.linalg.cholesky(A_k))))
+                # det_A = 2 * np.sum(np.log(np.diag(np.linalg.cholesky(A_k))))
                 # print(f"det A_k: {det_A}")
 
                 Lz = scipy.linalg.cho_factor(Kzz)
@@ -205,9 +203,9 @@ class SFRNTK(ContinualModel):
                 # Sigma_inv_k = (Sigma_inv_k - minS) / (maxS - minS)
 
                 self.Sigma_inv[self.task_cnt, class_out] = torch.from_numpy(Sigma_inv_k)
-                print(torch.diag(self.Sigma_inv[self.task_cnt, class_out]))
-                print(torch.max(self.Sigma_inv[self.task_cnt, class_out]))
-                print(torch.min(self.Sigma_inv[self.task_cnt, class_out]))
+                #print(torch.diag(self.Sigma_inv[self.task_cnt, class_out]))
+                #print(torch.max(self.Sigma_inv[self.task_cnt, class_out]))
+                #print(torch.min(self.Sigma_inv[self.task_cnt, class_out]))
 
                 # torch.set_default_dtype(torch.float64)
                 # A_k = A_k.to(torch.float64).to(self.device)

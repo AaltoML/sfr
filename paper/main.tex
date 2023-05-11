@@ -194,6 +194,7 @@
 \newcommand{\vkzs}{\mbf{k}_{\mbf{z}i}}
 \newcommand{\vk}{\mbf{k}}
 \newcommand{\MLambda}[0]{\mathbold{\Lambda}}
+\newcommand{\MSigma}[0]{\mathbold{\Sigma}}
 \definecolor{matplotlib-blue}{HTML}{1f77b4}
 \newcommand{\N}{\mathrm{N}}
 %\newcommand{\R}{\mathrm{R}}
@@ -444,7 +445,42 @@ are usually trained to minimize the (regularized) empirical risk,
 \end{align}
 If $\ell(f_\transitionParams(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\transitionParams(\mathbf{x}_{i}))$ and $\mathcal{R}(\transitionParams) = \|\transitionParams\|^{2}_2$ then we can view \cref{eq-empirical-risk} as the MAP solution to a Bayesian objective, where $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$.
 
-\textbf{Laplace approximation} The Laplace approximation allows us to build a posterior approximation $q(\vw)$ from the optimized objective \cref{eq-empirical-risk}.
+\textbf{Neural network to GP} Our goal is to find a kernel from which to build a sparse Gaussian process model. If we had the following function paramaterizatoin $f_i = \phi^\T(\vx)$ we would could simply convert from weight space to function space the prior 
+
+% The Laplace approximation allows us to build a posterior approximation $q(\vw)$ from the optimized objective \cref{eq-empirical-risk}. Central to the approximation is how to form the hessian of \cref{eq-empirical-risk} a common approach is to use the the GGN approximation which would result in the following posterior $q(\vw;\vw^*, \MSigma_{\textrm{GGN}})$ where 
+
+As was pointed out in \citep{immerScalable2021} we can view the approximation in two steps.
+
+Given this interpretation, we can represent the weight space prior from \cref{eq-log-prior}, in
+function space, by linearising the BNN around $\transitionParams^{*}$ and interpretting it as a GP.  
+The GP prior is then given by,
+\begin{align} \label{eq-laplace-approx-function-space}
+  % \transitionFn_{\transitionParams_{i}}(\cdot) \sim \mathcal{N} \left( \mu_{\transitionParams_{i}^{*}}(\cdot), K_{\transitionParams_{i}^{*}}(\cdot, \cdot') \right) \qquad
+  f(\cdot ;\transitionParams) \sim \mathcal{N} \left( \mu(\cdot), k(\cdot, \cdot') \right) \quad
+  % \mu_{\transitionParams_{i}^{*}}(\cdot)
+  \mu(\cdot)
+  = 0 \quad
+  % = f(\cdot ;\transitionParams^{*}) \quad
+  % K_{\transitionParams_{i}^{*}}(\cdot, \cdot')
+  k(\cdot, \cdot')
+  = \frac{1}{\gamma^{2}} \mathbf{J}(\cdot) \mathbf{J}(\cdot')^{T},
+\end{align}
+where the kernel is the neural tangent kernel (NTK) \citep{immerImprovingPredictionsBayesian2021},
+\todo{what mean function shoudl this use???}
+\todo{NTK times some factor??}
+with Jacobian given by $\mathbf{J}(\cdot) = \odv{\transitionFn(\cdot; \transitionParams)}{\transitionParams}_{\transitionParams=\transitionParams^{*}}$.
+% The kernel in \cref{eq-laplace-approx-function-space} is the neural tangent kernel (NTK)
+% $k(\mathbf{x}, \mathbf{x}') = \sigma_{0}^{2} J_{\transitionParams^{*}}(\mathbf{x}) J_{\transitionParams^{*}}(\mathbf{x}')^{T}$
+% \citep{immerImprovingPredictionsBayesian2021}
+% to formulate the GP posterior $p(f(\mathbf{X} ;\transitionParams_{0:i}) \mid \dataset_{0:i})$.
+Given this GP prior, we can use \cref{eq-gp-predictive-posterior} to obtain our GP posterior by conditioning on the data.
+% Given our GP prior, we can use the properties of multivariate normals to obtain our GP posterior by conditioning on the data.
+% where $\mathbf{A} = \mathbf{k}_{*\mathbf{x}} \mathbf{K}^{-1}_{\mathbf{x}\mathbf{x}}$
+In contrast to conventional GP kernels, the NTK does not have any hyperparameters which need to be learned.
+Intuitively, we can view the optimisation in \cref{eq-empirical-risk} as learning our kernel.
+As a result, our NTK may be highly non stationary as it is dependent on the NN architecture, for example, the activation functions.
+It is worth noting that the NTK linearises the network around the optimised parameters $\transitionParams^{*}$,
+so the function space prior (and thus posterior) is only a locally linear approximation.
 
 
 \textbf{Dual Gaussian Process} A Gaussian process (GP) is a prior over functions $f \sim \GP(\mathbf{0}, \kappa(\cdot, \cdot))$. The prior is characterized by a covariance kernel function $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors in $\R^{\mathrm{D}}$. Once combined with a data set ${\mathcal{D} = \{(\vx_i, y_i)\}_{i=1}^n}$ with $n$ examples, each modelled by the likelihood $p(\vy_i \mid \vf_i)$ at function $\vf_i = f(\vx_i)$\, we can form a posterior proccess using multivariate conditioning. The drawbacks of GPs reside in their lack of scaling to large datasets and non-tractability with non-Gaussian likelihoods.

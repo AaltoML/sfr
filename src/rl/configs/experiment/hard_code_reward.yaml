@@ -3,7 +3,7 @@ defaults:
   - override /reward_model: cartpole
   - override /transition_model: nn2svgp
 
-alg_name: "mlp"
+alg_name: "mlp-hard-coded"
 online_updates: false
 
 transition_model:

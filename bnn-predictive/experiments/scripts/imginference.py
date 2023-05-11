@@ -94,7 +94,7 @@ def sample_svgp(X, likelihood, svgp, use_nn_out: bool, n_samples: int):
     logit_samples = dist.sample((n_samples,))
     out_dim = logit_samples.shape[-1]
     samples = likelihood.inv_link(logit_samples)
-    samples = samples.reshape(n_samples, n_data, out_dim)
+   # samples = samples.reshape(n_samples, n_data, out_dim)
     return samples
 
 
@@ -151,12 +151,12 @@ def main(
     n_sparse,
     name,
     n_inducing,
-    delta_min=1e-7,
-    delta_max=1e7,
+    delta_min=1e-5,
+    delta_max=1e8,
     res_dir="experiments/results",
     device="cuda",
 ):
-    lh = CategoricalLh(EPS=0.0000000001)
+    lh = CategoricalLh(EPS=0.00000000000001)
 
     eligible_files = list()
     deltas = list()
@@ -222,6 +222,7 @@ def main(
         gstar_te, yte = get_map_predictive(test_loader, model)
         gstar_va, yva = get_map_predictive(val_loader, model)
         state["map"] = evaluate(lh, yte, gstar_te, yva, gstar_va)
+        logging.info(state['map'])
 
         # SVGP
         logging.info("SVGP performance")
@@ -256,6 +257,32 @@ def main(
         )
         state[f"svgp_ntk_nn_{name}"] = evaluate(lh, yte, gstar_te, yva, gstar_va)
         logging.info(state[f"svgp_ntk_nn_{name}"])
+
+        # GP subset
+        logging.info("GP subset")
+        sparse_idx = torch.randperm(X_train.shape[0])[:n_inducing]
+        sparse_x = X_train[sparse_idx]
+        sparse_y = y_train[sparse_idx]
+        data_sparse = (sparse_x, sparse_y)
+        prior = ntksvgp.priors.Gaussian(params=model.parameters, delta=delta)
+        svgp_subset = NTKSVGP(
+            network=model,
+            prior=prior,
+            output_dim=output_dim,
+            likelihood=lh,
+            num_inducing=n_inducing,
+            dual_batch_size=batch_size,
+            device=device,
+        )
+        svgp_subset.set_data(data_sparse)
+        gstar_te, yte = get_svgp_predictive(
+            test_loader, svgp_subset, use_nn_out=False, likelihood=lh
+        )
+        gstar_va, yva = get_svgp_predictive(
+            val_loader, svgp_subset, use_nn_out=False, likelihood=lh
+        )
+        state[f"gp_subset_{name}"] = evaluate(lh, yte, gstar_te, yva, gstar_va)
+        logging.info(state[f"gp_subset_{name}"])
 
         torch.save(state, f)
 
@@ -554,6 +581,7 @@ if __name__ == "__main__":
     parser.add_argument("-s", "--seed", help="randomness seed", default=117, type=int)
     parser.add_argument("--gp", help="functional inference", action="store_true")
     parser.add_argument("--ood", help="out of distribution", action="store_true")
+    parser.add_argument("--res_folder", help="Result folder", default="test")
     parser.add_argument("--delta_min", type=float, default=1e-7)
     parser.add_argument("--delta_max", type=float, default=1e7)
     parser.add_argument("--n_sparse", type=float, default=0.5)
@@ -575,9 +603,11 @@ if __name__ == "__main__":
     n_sparse = args.n_sparse
     n_inducing_points = args.n_inducing_points
     root_dir = args.root_dir
+    res_folder = args.res_folder
     name = args.name
+
     data_dir = os.path.join(root_dir, "data")
-    res_dir = os.path.join(root_dir, "experiments", "results", dataset)
+    res_dir = os.path.join(root_dir, "experiments", "results", dataset, res_folder)
 
     print(f"Writing results to {res_dir}")
     print(f"Reading data from {data_dir}")

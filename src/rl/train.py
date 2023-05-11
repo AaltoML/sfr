@@ -92,6 +92,7 @@ def train(cfg: DictConfig):
     torch.backends.cudnn.benchmark = False
 
     cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
+    cfg.device = "cpu"
     print("Using device: {}".format(cfg.device))
     cfg.episode_length = cfg.episode_length // cfg.env.action_repeat
     num_train_steps = cfg.num_train_episodes * cfg.episode_length

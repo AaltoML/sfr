@@ -27,3 +27,5 @@ dependencies:
       - torchtyping==0.1.4
       - gpytorch==1.9.1
       - torchrl==0.1.0
+      - hydra-submitit-launcher==1.2.0
+      - mujoco==2.3.3

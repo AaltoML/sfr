@@ -35,9 +35,10 @@ Transition = namedtuple("Transition", ("state", "action", "next_state", "reward"
 
 
 class ReplayMemory(object):
-    def __init__(self, capacity: int, batch_size: int):
+    def __init__(self, capacity: int, batch_size: int, device):
         self.memory = deque([], maxlen=capacity)
         self.batch_size = batch_size
+        self.device = device
 
     def push(self, state: State, action: Action, next_state: State, reward):
         """Save a transition"""
@@ -56,10 +57,10 @@ class ReplayMemory(object):
         next_states = []
         for sample in samples:
             # print("sample {}".format(sample))
-            states.append(torch.Tensor(sample.state))
-            actions.append(torch.Tensor(sample.action))
-            rewards.append(torch.Tensor(sample.reward))
-            next_states.append(torch.Tensor(sample.next_state))
+            states.append(torch.Tensor(sample.state).to(self.device))
+            actions.append(torch.Tensor(sample.action).to(self.device))
+            rewards.append(torch.Tensor(sample.reward).to(self.device))
+            next_states.append(torch.Tensor(sample.next_state).to(self.device))
         states = torch.stack(states, 0)
         actions = torch.stack(actions, 0)
         rewards = torch.stack(rewards, 0)
@@ -161,7 +162,9 @@ def train(cfg: DictConfig):
         pin_memory=False,
     )
     print("num_train_steps {}".format(num_train_steps))
-    replay_memory = ReplayMemory(capacity=num_train_steps, batch_size=cfg.batch_size)
+    replay_memory = ReplayMemory(
+        capacity=num_train_steps, batch_size=cfg.batch_size, device=cfg.device
+    )
     # replay_buffer = ReplayMemory(capacity=num_train_steps, batch_size=cfg.batch_size)
     # replay_buffer = torchrl.data.TensorDictReplayBuffer(
     #     storage=torchrl.data.replay_buffers.LazyTensorStorage(
@@ -361,11 +364,11 @@ def train(cfg: DictConfig):
             #         dtype=torch.float64,
             #     )
             replay_memory.push(
-                state=state.clone(),
-                action=action_input.clone(),
+                state=state.clone().to(cfg.device),
+                action=action_input.clone().to(cfg.device),
                 # next_state=time_step["observation"],
-                next_state=next_state.clone(),
-                reward=reward_output.clone(),
+                next_state=next_state.clone().to(cfg.device),
+                reward=reward_output.clone().to(cfg.device),
             )
             # print("time_step_td {}".format(time_step_td))
             # replay_buffer.add(time_step_td)

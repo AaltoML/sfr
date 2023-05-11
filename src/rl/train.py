@@ -303,35 +303,35 @@ def train(cfg: DictConfig):
             reward_output = reward.to(cfg.device)
             # reward_output = torch.Tensor([time_step["reward"]]).to(cfg.device)
             # print("reward_output {}".format(reward_output.shape))
-            # state_action_input = torch.concatenate(
-            #     [state, torch.Tensor(time_step["action"]).to(cfg.device)], -1
-            # )[None, ...]
-            # state_diff_output = (
-            #     torch.Tensor(time_step["observation"]).to(cfg.device) - state
-            # )[None, ...]
-            # if t == 0 or reset_updates:
-            #     state_action_inputs = state_action_input
-            #     state_diff_outputs = state_diff_output
-            #     reward_outputs = reward_output
-            #     state_action_inputs_all = state_action_input
-            #     state_diff_outputs_all = state_diff_output
-            #     reward_outputs_all = reward_output
-            #     # state_diff_reward_outputs = torch.concat([sts])
-            # else:
-            #     reward_outputs = torch.concat([reward_outputs, reward_output], 0)
-            #     state_action_inputs = torch.concat(
-            #         [state_action_inputs, state_action_input], 0
-            #     )
-            #     state_diff_outputs = torch.concat(
-            #         [state_diff_outputs, state_diff_output], 0
-            #     )
-            # reward_outputs_all = torch.concat([reward_outputs_all, reward_output], 0)
-            # state_action_inputs_all = torch.concat(
-            #     [state_action_inputs_all, state_action_input], 0
-            # )
-            # state_diff_outputs_all = torch.concat(
-            #     [state_diff_outputs_all, state_diff_output], 0
-            # )
+            state_action_input = torch.concatenate(
+                [state, torch.Tensor(time_step["action"]).to(cfg.device)], -1
+            )[None, ...]
+            state_diff_output = (
+                torch.Tensor(time_step["observation"]).to(cfg.device) - state
+            )[None, ...]
+            if t == 0 or reset_updates:
+                state_action_inputs = state_action_input
+                state_diff_outputs = state_diff_output
+                reward_outputs = reward_output
+                state_action_inputs_all = state_action_input
+                state_diff_outputs_all = state_diff_output
+                reward_outputs_all = reward_output
+                # state_diff_reward_outputs = torch.concat([sts])
+            else:
+                reward_outputs = torch.concat([reward_outputs, reward_output], 0)
+                state_action_inputs = torch.concat(
+                    [state_action_inputs, state_action_input], 0
+                )
+                state_diff_outputs = torch.concat(
+                    [state_diff_outputs, state_diff_output], 0
+                )
+            reward_outputs_all = torch.concat([reward_outputs_all, reward_output], 0)
+            state_action_inputs_all = torch.concat(
+                [state_action_inputs_all, state_action_input], 0
+            )
+            state_diff_outputs_all = torch.concat(
+                [state_diff_outputs_all, state_diff_output], 0
+            )
 
             # time_step_td = TensorDict(
             #     {

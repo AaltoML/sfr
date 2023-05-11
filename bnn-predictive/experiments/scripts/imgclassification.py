@@ -175,6 +175,7 @@ if __name__ == '__main__':
     parser.add_argument('--n_deltas', help='number of deltas to try', default=16, type=int)
     parser.add_argument('--logd_min', help='min log delta', default=-2.0, type=float)
     parser.add_argument('--logd_max', help='max log delta', default=3.0, type=float)
+    parser.add_argument("--res_folder", help="Result folder", default="test")
     parser.add_argument('--double', help='double precision', action='store_true')
     parser.add_argument('--root_dir', help='Root directory', default='../')
     args = parser.parse_args()
@@ -188,9 +189,10 @@ if __name__ == '__main__':
     n_deltas = args.n_deltas
     logd_min, logd_max = args.logd_min, args.logd_max
     root_dir = args.root_dir
+    res_folder = args.res_folder
 
     data_dir = os.path.join(root_dir, 'data')
-    res_dir = os.path.join(root_dir, 'experiments', 'results', dataset)
+    res_dir = os.path.join(root_dir, 'experiments', 'results', dataset, res_folder)
 
     print(f'Writing results to {res_dir}')
     print(f'Reading data from {data_dir}')
@@ -217,6 +219,7 @@ if __name__ == '__main__':
     fname = 'models/' + '_'.join([dataset, model_name, str(seed)]) + '_{delta:.1e}.pt'
     deltas = np.logspace(logd_min, logd_max, n_deltas)
     deltas = np.insert(deltas, 0, 0)  # add unregularized network
+    print(f'Train set size: {len(ds_train)}')
     deltas = deltas / len(ds_train)
 
     main_new(ds_train, ds_test, model_name, seed, n_epochs, batch_size, lr, deltas, device, fname, res_dir)

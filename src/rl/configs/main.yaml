@@ -65,7 +65,8 @@ wandb:
   entity: "aidanscannell"
   project: "nn2svgp"
   use_wandb: True
-  run_name: ${alg_name}-td=${transition_model.delta}-ts=${transition_model.sigma_noise}-updates=${online_updates}-update_freq=${online_update_freq}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
+  run_name: ${alg_name}-td=${transition_model.delta}-ts=${transition_model.sigma_noise}-updates=${online_updates}-update_freq=${online_update_freq}
+  # run_name: ${alg_name}-td=${transition_model.delta}-ts=${transition_model.sigma_noise}-updates=${online_updates}-update_freq=${online_update_freq}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   # run_name: ${alg_name}-td=${transition_model.delta}-rd=${reward_model.delta}-ts=${transition_model.sigma_noise}-rs=${reward_model.sigma_noise}-updates=${online_updates}-update_freq=${online_update_freq}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   # run_name: ${alg_name}-td=${transition_model.delta}-rd=${reward_model.delta}-ts=${transition_model.sigma_noise}-rs=${reward_model.sigma_noise}-updates=${online_updates}-h=${agent.horizon}-update_freq=${online_update_freq}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   # run_name: ${alg_name}-${online_update_freq}-${agent.horizon}-${random_seed}-${now:%Y-%m-%d_%H-%M-%S}

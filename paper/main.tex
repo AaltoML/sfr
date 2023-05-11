@@ -182,7 +182,7 @@
 \newcommand{\vy}{\mbf{y}}
 \newcommand{\vw}{\mbf{w}}
 
-\newcommand{\Jac}[1]{\mathcal{J}_{#1}}
+\newcommand{\Jac}[2]{\mathcal{J}_{#1}(#2)}
 
 
 
@@ -454,7 +454,7 @@ If $\ell(f_\transitionParams(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y}
 As was pointed out in \citep{immerScalable2021} we can view the approximation in two steps.
 
 Given this interpretation, we can represent the weight space prior from \cref{eq-log-prior}, in
-function space, by linearising the BNN around $\transitionParams^{*}$ and interpretting it as a GP.  
+function space, by linearising the BNN around $\transitionParams^{*}$ and interpretting it as a GP.
 The GP prior is then given by,
 \begin{align} \label{eq-laplace-approx-function-space}
   % \transitionFn_{\transitionParams_{i}}(\cdot) \sim \mathcal{N} \left( \mu_{\transitionParams_{i}^{*}}(\cdot), K_{\transitionParams_{i}^{*}}(\cdot, \cdot') \right) \qquad
@@ -464,13 +464,14 @@ The GP prior is then given by,
   = 0 \quad
   % = f(\cdot ;\transitionParams^{*}) \quad
   % K_{\transitionParams_{i}^{*}}(\cdot, \cdot')
-  k(\cdot, \cdot')
-  = \frac{1}{\gamma^{2}} \mathbf{J}(\cdot) \mathbf{J}(\cdot')^{T},
+  k(\mathbf{x}, \mathbf{x}')
+  = \frac{1}{\gamma^{2}} \Jac{\transitionParams^*}{\mathbf{x}}\Jac{\transitionParams^*}{\mathbf{x}'}^\top,
 \end{align}
 where the kernel is the neural tangent kernel (NTK) \citep{immerImprovingPredictionsBayesian2021},
 \todo{what mean function shoudl this use???}
 \todo{NTK times some factor??}
-with Jacobian given by $\mathbf{J}(\cdot) = \odv{\transitionFn(\cdot; \transitionParams)}{\transitionParams}_{\transitionParams=\transitionParams^{*}}$.
+with Jacobian given by $\Jac{\transitionParams}{\mathbf{x}} := \nabla_\transitionParams f(\mathbf{x})^\top \in \R^{C \times P}$
+%$\mathbf{J}(\cdot) = \odv{\transitionFn(\cdot; \transitionParams)}{\transitionParams}_{\transitionParams=\transitionParams^{*}}$.
 % The kernel in \cref{eq-laplace-approx-function-space} is the neural tangent kernel (NTK)
 % $k(\mathbf{x}, \mathbf{x}') = \sigma_{0}^{2} J_{\transitionParams^{*}}(\mathbf{x}) J_{\transitionParams^{*}}(\mathbf{x}')^{T}$
 % \citep{immerImprovingPredictionsBayesian2021}

@@ -317,7 +317,7 @@ We demonstrate points {\em(i)--(iii)} in the experiments.
 \label{sec:related}
 %
 % Introduce the laplace GNN + shortcomings
-One common approach for uncertainty with neural networks is a Laplace GNN approximation \citep{daxbergerLaplace2021}. The idea is to essentially takes a trained neural network and linearises around the optimal weights. The resulting linear model can be used to obtain uncertainty estimates and sometimes improved predictions \citep{immerScalable2021}. Given the resultant model is now linear with respect to the weights its is also now possible to convert to a Gaussian process as shown in \citep{immerScalable2021, khan2019approximate}. Yet to obtain uncertainty estimates there is the usual computational scaling of the GP of $O(n^3)$, so cubic in the number of data points. Many approaches  apply crude approximations and yet still obtain good uncertainty estimates. 
+One common approach for uncertainty with neural networks is a Laplace GNN approximation \citep{daxbergerLaplace2021}, that takes a trained neural network and linearises it around the optimal weights. The resulting linear model can be used to obtain uncertainty estimates and refine the neural network predictions \citep{immerScalable2021}. The resultant model is linear with respect to the weights, therefor it is possible to convert it to a Gaussian process (GP) as shown in \citep{immerScalable2021, khan2019approximate}. Yet to obtain uncertainty estimates there is the usual computational scaling  cubic in the number of data points of GPs ($\mathcal{O}(n^3)$). Many approaches  apply crude approximations and yet still obtain good uncertainty estimates. 
 
 
 %Why we need uncertainty and adaptiveness
@@ -434,28 +434,28 @@ One common approach for uncertainty with neural networks is a Laplace GNN approx
 
 \section{Methods} \label{sec:methods}
 
-\textbf{Neural Network} In supervised learning, given a data set $\dataset = \{(\mathbf{x}_{i} , \mathbf{y}_{i})\}_{i=1}^{N}$, with $\mathbf{x}_i \in \inputDomain$ and $\mathbf{y}_i \in \outputDomain$, the weights $\transitionParams \in \R^{P}$ of a neural network
+\textbf{Neural Network} In supervised learning, given a data set $\dataset = \{(\mathbf{x}_{i} , \mathbf{y}_{i})\}_{i=1}^{n}$, with $\mathbf{x}_i \in \inputDomain$ and $\mathbf{y}_i \in \outputDomain$, the weights $\transitionParams \in \R^{P}$ of a neural network
 , $f_\mathbf{w} : \inputDomain \mapsto \outputDomain$, 
 are usually trained to minimize the (regularized) empirical risk,
 \begin{align} \label{eq-empirical-risk}
   \transitionParams^{*} = 
   \argmin_{\transitionParams} \mathcal{L}(\dataset,\transitionParams) =
-  \argmin_{\transitionParams} \sum_{i=1}^{N} \ell(f_\transitionParams(\mathbf{x}_{i}), \mathbf{y}_i) + \delta \mathcal{R}(\transitionParams).
+  \argmin_{\transitionParams} \sum_{i=1}^{n} \ell(f_\transitionParams(\mathbf{x}_{i}), \mathbf{y}_i) + \delta \mathcal{R}(\transitionParams).
 \end{align}
 If $\ell(f_\transitionParams(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\transitionParams(\mathbf{x}_{i}))$ and $\mathcal{R}(\transitionParams) = \|\transitionParams\|^{2}_2$ then we can view \cref{eq-empirical-risk} as the MAP solution to a Bayesian objective, where $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$.
 
 \textbf{Laplace approximation} The Laplace approximation allows us to build a posterior approximation $q(\vw)$ from the optimized objective \cref{eq-empirical-risk}.
 
 
-\textbf{Dual Gaussian Process} A Gaussian process (GP) is a prior over functions $f \sim \GP(\mathbf{0}, \kappa(\cdot, \cdot))$. The prior is characterized by a covariance kernel function $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors in $\R^{\mathrm{D}}$. Once combined with a data set ${\mathcal{D} = \{(\vx_i, y_i)\}_{i=1}^N}$ with $N$ examples, each modelled by the likelihood $p(\vy_i \mid \vf_i)$ at function $\vf_i = f(\vx_i)$\, we can form a posterior proccess using multivariate conditioning. The drawbacks to GPs are their lack of scaling to large datasets and non-tractability with non-Gaussian likelihoods.
+\textbf{Dual Gaussian Process} A Gaussian process (GP) is a prior over functions $f \sim \GP(\mathbf{0}, \kappa(\cdot, \cdot))$. The prior is characterized by a covariance kernel function $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors in $\R^{\mathrm{D}}$. Once combined with a data set ${\mathcal{D} = \{(\vx_i, y_i)\}_{i=1}^n}$ with $n$ examples, each modelled by the likelihood $p(\vy_i \mid \vf_i)$ at function $\vf_i = f(\vx_i)$\, we can form a posterior proccess using multivariate conditioning. The drawbacks of GPs reside in their lack of scaling to large datasets and non-tractability with non-Gaussian likelihoods.
 
-Sparse Gaussian processes \citep{hensman2013gaussian} are a principled way to scale Gaussian processes to large datasets by using a subset of $M$ inducing points, with $M \ll N$,  lowering the complexity from $\mathcal{O}(N^3)$ to $\mathcal{O}(M^3)$. The key insight is to use a sparse approximating distribution $q(\vu; \vm, \MV)$, where $\vm \in \R^{M}$ and $\MV \in \R^{M \times M}$, and find its parameters through maximizing the evidence lower bound (ELBO). Then, the distribution over all points is defined as $q_{\vu}(\vf) = \int p(\vf \mid \vu) q(\vu) \mathrm{d}\vu$. As shown in \cite{adam2021dual}, we can decompose the optimal sparse GP  with a dual parameterization \cite{adam2021dual} as follows:
+Sparse Gaussian processes \citep{hensman2013gaussian} are a principled way to scale Gaussian processes to large datasets by using a subset of $m$ inducing points, with $m \ll n$,  lowering the complexity from $\mathcal{O}(n^3)$ to $\mathcal{O}(m^3)$. The key insight is to use a sparse approximating distribution $q(\vu; \vm, \MV)$, where $\vm \in \R^{m}$ and $\MV \in \R^{m \times m}$, and find its parameters through maximizing the evidence lower bound (ELBO). Then, the distribution over all points is defined as $q_{\vu}(\vf) = \int p(\vf \mid \vu) q(\vu) \mathrm{d}\vu$. As shown in \cite{adam2021dual}, we can decompose the optimal sparse GP  with a dual parameterization \cite{adam2021dual} as follows:
 \begin{equation}
    \myexpect_{q_{\vu}(\vf)}[\vf_i] = \vkzs^{\T} \valpha , \quad 
    \textrm{Var}_{q_{\vu}(\vf)}[\vf_i]  = \kappa_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \vbeta)^{-1} ]\vkzs
 \end{equation}
 
-where the $ij$th entry of the matrix $\MKzz \in \R^{M \times M}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$\todo{the equation above uses $\vkzs$ not $\vk_{\vx i}$} denotes a vector where each $j$th element is $\kappa(\vx_i, \vx_j)$, and $\kappa_{ii} = \kappa(\vx_i, \vx_i)$.  The dual parameters consist of the vector $\valpha \in \R^{M}$ and the matrix $\vbeta \in \R^{M\times M}$, defined as
+where the $ij$th entry of the matrix $\MKzz \in \R^{m \times m}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$\todo{the equation above uses $\vkzs$ not $\vk_{\vx i}$} denotes a vector where each $j$th element is $\kappa(\vx_i, \vx_j)$, and $\kappa_{ii} = \kappa(\vx_i, \vx_i)$.  The dual parameters consist of the vector $\valpha \in \R^{m}$ and the matrix $\vbeta \in \R^{m \times m}$, defined as
 \begin{equation} 
 	\valpha  = \sum_{i \in \mathcal{D}_{n}}  \vkzi \, \tilde{\lambda}_{i}, \quad
 	\vbeta = \sum_{i \in \mathcal{D}_{n}} \vkzi \,\hat{\beta}_{i} \, \vkzi^{\T} ,    \vlambda = [ \MKzz + \vbeta]

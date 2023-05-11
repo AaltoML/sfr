@@ -410,16 +410,16 @@ def train(cfg: DictConfig):
             logger.info("Training agent")
             # # agent.train(replay_buffer)
             agent.train(replay_memory)
-            G = src.rl.utils.evaluate(
-                eval_env,
-                agent,
-                episode_idx=episode_idx,
-                num_episodes=1,
-                online_updates=False,
-                online_update_freq=cfg.online_update_freq,
-                video=video_recorder,
-                device=cfg.device,
-            )
+            # G = src.rl.utils.evaluate(
+            #     eval_env,
+            #     agent,
+            #     episode_idx=episode_idx,
+            #     num_episodes=1,
+            #     online_updates=False,
+            #     online_update_freq=cfg.online_update_freq,
+            #     video=video_recorder,
+            #     device=cfg.device,
+            # )
 
             # # Log rewards/videos in eval env
             # if episode_idx % cfg.eval_episode_freq == 0:

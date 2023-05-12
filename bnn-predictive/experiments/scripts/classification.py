@@ -97,6 +97,7 @@ def create_ntksvgp(
         likelihood=likelihood,
         num_inducing=n_inducing,
         dual_batch_size=batch_size,
+        jitter=0,
         device=device,
     )
     svgp.set_data(data)
@@ -136,6 +137,7 @@ def inference(
         K = 1
     else:
         eps = 0.0000000001
+        eps = 0
         likelihood = CategoricalLh(EPS=eps)
         K = ds_train.C
 

@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=fmnist_mlp
 #SBATCH --array=0-4
-#SBATCH --time=00:15:00
+#SBATCH --time=02:15:00
 #SBATCH --output=/scratch/work/%u/full-bnn-svgp/bnn-predictive/logs/fmnist/fmnist_classification_%A_%a.out
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu
@@ -18,10 +18,16 @@ SEED=${SEEDS[$(($SLURM_ARRAY_TASK_ID))]}
 dataset='FMNIST'
 echo $dataset
 echo $SEED
-name='sparse_1000'
-n_inducing=1000
+name='sparse_100'
+n_inducing=100
 model='MLP'
 n_deltas=16
 batch_size=100
-#srun python3 -u experiments/scripts/imgclassification.py -d ${dataset} -m ${model} --root_dir . -s ${SEED} --n_deltas ${n_deltas}
-srun python3 -u experiments/scripts/imginference.py -d ${dataset} -m ${model} -b ${batch_size} --root_dir . -s ${SEED} --loginfo --n_inducing ${n_inducing} --name ${name}
+delta_min=1e-3
+delta_max=1e-2
+logd_min=2
+logd_max=3
+res_folder='11_3'
+
+srun python3 -u experiments/scripts/imgclassification.py  -d ${dataset} -m ${model} --root_dir . -s ${SEED} --n_deltas ${n_deltas} --res_folder ${res_folder} --logd_min ${logd_min} --logd_max ${logd_max}
+srun python3 -u experiments/scripts/imginference.py -d ${dataset} -m ${model} -b ${batch_size} --root_dir . -s ${SEED} --loginfo --n_inducing ${n_inducing} --name ${name} --delta_min ${delta_min} --delta_max ${delta_max} --res_folder ${res_folder}

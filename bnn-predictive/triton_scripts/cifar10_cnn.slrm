@@ -24,8 +24,9 @@ model='CNN'
 n_deltas=8
 batch_size=100
 delta_min=1e-4
-logd_min=0
-res_folder='11'
+logd_min=1
+logd_max=4
+res_folder='11_2'
 
-srun python3 -u experiments/scripts/imgclassification.py -d ${dataset} -m ${model} --root_dir . -s ${SEED} --n_deltas ${n_deltas} --res_folder ${res_folder} --logd_min ${logd_min}
+#srun python3 -u experiments/scripts/imgclassification.py -d ${dataset} -m ${model} --root_dir . -s ${SEED} --n_deltas ${n_deltas} --res_folder ${res_folder} --logd_min ${logd_min} --logd_max ${logd_max}
 srun python3 -u experiments/scripts/imginference.py -d ${dataset} -m ${model} -b ${batch_size} --root_dir . -s ${SEED} --loginfo --n_inducing ${n_inducing} --name ${name} --delta_min ${delta_min} --res_folder ${res_folder}

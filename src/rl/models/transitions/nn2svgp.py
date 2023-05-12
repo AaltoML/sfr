@@ -74,6 +74,7 @@ class NTKSVGPTransitionModel(TransitionModel):
             self.ntksvgp.cuda()
             print("put transition ntksvgp on cuda")
 
+    @torch.no_grad()
     def predict(self, state: State, action: Action) -> StatePrediction:
         state_action_input = torch.concat([state, action], -1)
         if "NN" in self.prediction_type:

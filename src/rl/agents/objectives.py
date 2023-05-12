@@ -75,6 +75,7 @@ def greedy(
                 )
             return state_trajectory
 
+    @torch.no_grad()
     def greedy_fn(start_state: State, actions: ActionTrajectory) -> TensorType[""]:
         """Estimate value of a trajectory starting at state and executing given actions."""
         # state = start_state

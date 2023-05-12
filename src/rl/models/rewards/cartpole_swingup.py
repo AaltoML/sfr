@@ -19,6 +19,7 @@ class CartpoleRewardModel(RewardModel):
         self._reward_fn = torch.vmap(reward_fn)
         # self._reward_fn = torch.vmap(cartpole_swingup_reward)
 
+    @torch.no_grad()
     def predict(self, state: State, action: Action) -> RewardPrediction:
         # print("state {}".format(state.shape))
         # print("aciton {}".format(action.shape))

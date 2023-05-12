@@ -15,3 +15,8 @@ Add container to path
 NN2SVGP_CONTAINER_DIR=/scratch/project_462000217/nn2svgp
 export PATH="$NN2SVGP_CONTAINER_DIR/bin:$PATH"
 ```
+
+```sh
+conda-containerize update $NN2SVGP_CONTAINER_DIR --post-install post_install.txt
+'pip install -e ".[experiments, dev]"'
+```

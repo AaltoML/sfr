@@ -156,7 +156,7 @@ def main(
     res_dir="experiments/results",
     device="cuda",
 ):
-    lh = CategoricalLh(EPS=0.000000000000000001)
+    lh = CategoricalLh(EPS=0)  #0.000000000000000001)
 
     eligible_files = list()
     deltas = list()
@@ -237,6 +237,7 @@ def main(
             likelihood=lh,
             num_inducing=n_inducing,
             dual_batch_size=batch_size,
+            jitter=10**(-9),
             device=device,
         )
         svgp.set_data(data)
@@ -613,6 +614,9 @@ if __name__ == "__main__":
     print(f"Reading data from {data_dir}")
     print(f"Dataset: {dataset}")
     print(f"Seed: {args.seed}")
+
+
+    torch.set_default_dtype(torch.double)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     torch.set_default_device(device)

@@ -155,7 +155,7 @@ class MPPIAgent(Agent):
         # if isinstance(state, np.ndarray):
         #     state = torch.from_numpy(state).to(device).float()
         # print("state: {}".format(state))
-        global _prev_mean
+        # global _prev_mean
         if isinstance(state, np.ndarray):
             # state = torch.tensor(state, dtype=torch.float32, device=device).unsqueeze(0)
             # TODO should this be float64 or float32?

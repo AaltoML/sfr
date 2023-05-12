@@ -273,8 +273,8 @@ def train(cfg: DictConfig):
                 action_select_end_time = time.time()
                 if t % 100 == 0:
                     logger.info(
-                        "t={} took {}s to select action".format(
-                            episode_idx, action_select_end_time - action_select_time
+                        "timestep={} took {}s to select action".format(
+                            t, action_select_end_time - action_select_time
                         )
                     )
                 action = action.cpu().numpy()

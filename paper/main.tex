@@ -173,6 +173,7 @@
 \newcommand{\vkappa}[0]{\mathbold{\kappa}}
 \newcommand{\vbeta}[0]{\mathbold{\beta}}
 \newcommand{\vlambda}[0]{\mathbold{\lambda}}
+\newcommand{\diag}{\text{{diag}}}
 
 \newcommand{\vm}{\mbf{m}}
 %\newcommand{\vz}{\mbf{z}}
@@ -452,17 +453,39 @@ are usually trained to minimize the (regularized) empirical risk,
 \end{align}
 If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\weights(\mathbf{x}_{i}))$ and $\mathcal{R}(\weights) = \|\weights\|^{2}_2$ then we can view \cref{eq-empirical-risk} as the MAP solution to a Bayesian objective, where $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$.
 
-\textbf{Neural network to GP prior} Our goal is to find a kernel from which to build a sparse Gaussian process model. If we had the following function parameterization $g(\vx) = \phi(\vx)^\top \vw$ where $\phi(\vx)$ is a feature map, we can convert from weight space prior to function space prior giving the following kernel $\kappa(\vx, \vx) = \delta^{-1} \phi(\vx) \phi(\vx)^\T$ see \citep{rasmussen2006gaussian} for details. We can approximate the feature map of the neural network  $f_\weights(\mathbf{x}_{i})$  by using the Jacobian at $\weights^*$ thus our GP prior becomes:
+\textbf{Neural network to GP prior} Our goal is to find a kernel from which to build a sparse Gaussian process model, central to this is a kernel function  $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors in $\R^{\mathrm{D}}$. If we had the following function parameterization $g(\vx) = \phi(\vx)^\top \vw$ where $\phi(\vx)$ is a feature map, we can convert from weight space prior to function space prior giving the following kernel $\kappa(\vx, \vx) = \delta^{-1} \phi(\vx) \phi(\vx)^\T$ see \citep{rasmussen2006gaussian} for details. We can approximate the feature map of the neural network  $f_\weights(\mathbf{x}_{i})$  by using the Jacobian at $\weights^*$ thus our GP prior becomes:
 \begin{align} \label{eq-laplace-approx-function-space}
- g(\vx_i) \sim \mathcal{N} \left( \mu(\vx_i), k(\vx_i, \vx_i) \right) 
-  \mu(\cdot)
-  = 0 \quad
+ g(\vx_i) \sim \mathcal{N} \left( \mu(\vx_i), k(\vx_i, \vx_i) \right) \quad
+  \mu(\vx)
+  = \vzeros \quad
   k(\mathbf{x}, \mathbf{x}')
   = \frac{1}{\delta} \Jac{\weights^*}{\mathbf{x}}\Jac{\weights^*}{\mathbf{x}'}^\top,
 \end{align}
-where the kernel is the neural tangent kernel (NTK) ,with Jacobian given by $\Jac{\weights}{\mathbf{x}} := \nabla_\weights f(\mathbf{x})^\top \in \R^{C \times P}$. Alternatively we could have followed the derivation in \citet{immerImprovingPredictionsBayesian2021} where we perform a local linearization of the neural network prediction function $f^{\textrm{lin}}_{\vw^*}(\vx) = f_{\vw^*}(\vx) + \Jac{\weights^*}{\mathbf{x}} (\vw - \vw^*)$. The difference with our GP prior in \cref{eq-laplace-approx-function-space} would be a slightly different linear 
+where the kernel is the neural tangent kernel (NTK) ,with Jacobian given by $\Jac{\weights}{\mathbf{x}} := \nabla_\weights f(\mathbf{x})^\top \in \R^{C \times P}$. Alternatively we could have followed the derivation in \citet{immerImprovingPredictionsBayesian2021} where we perform a local linearization of the neural network prediction function $f^{\textrm{lin}}_{\vw^*}(\vx; \vw) = f_{\vw^*}(\vx) + \Jac{\weights^*}{\mathbf{x}} (\vw - \vw^*)$. The difference with our GP prior mean function and \cref{eq-laplace-approx-function-space} is a different mean prior function which comes from $f^{\textrm{lin}}_{\vw^*}(\vx; \vzeros) = f_{\vw^*}(\vx) - \Jac{\weights^*}{\mathbf{x}} \vw^*$, essentially they use the difference from the linear model approximation and the neural network function, which does not seem useful as a prior mean function, so instead we use $ \mu(\vx_i) = \vzeros$ as is common in GP literature and derived from a feature map conversion.
 
-\textbf{Dual Gaussian Process} A Gaussian process characterizes a distribution over functions in terms of the first two moment. Seminal work by \citet{} 
+As stated in \citet[Lemma~1]{csato2002sparse} the posterior process mean and covariance function of a GP prior combined with a likelihood function and $\dataset$ can be stated as:
+\begin{equation}  \label{eq:gp_pred}
+ \myexpect_{p(f\mid\vy)}[f_i] = \vk_{\vx i}^\top \valpha , \quad
+\textrm{Var}_{p(f\mid\vy)}[f_i] = \kappa_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i},
+\end{equation}
+where $(\valpha,\vbeta)$ are vectors of
+\begin{equation}
+\label{eq:dual_param}
+\alpha_i \coloneqq\myexpect_{p(f_i \mid \vy)}[\nabla_{f_i}\log p(y_i \mid f_i)],  \quad
+\beta_i \coloneqq - \myexpect_{p(f_i \mid \vy)}[\nabla^2_{f_i}\log p(y_i \mid f_i)] ,
+\end{equation}
+The parameters $(\alpha_i, \beta_i)$ are the dual parameters that arise in the dual formulations used in, for example, support vector machines \citep{cortes1995support}, whose origins are found in work by \citet{kimeldorf1971some}. The above relations holds for generic likelihoods, and no approximations are involved as the expectation is under the exact posterior. The question is how do we form the dual variables without access to the exact posterior and different approximate inference techniques solve the question in different ways. Bound techniques such as \citet{jaakkola1997variational} attempt to bound the integral thus making the integral tractable, while Expecation Propogation (EP) as used in \citet{csato2002sparse} iteratively finds dual variables but sets them to log of the expectation of the approximate posterior. Meanwhile variational inference  \cite{khan2017conjugate, adam2021dual} find them using the variational approximation of the posterior to solve the integral.
+
+As we are using the MAP solution of the neural network loss we will use the Laplace approximation for the dual variables but other techniques could be used. As was detailed in \cite{wilkinson2023bayes, rasmussen2006gaussian} the dual variables of the Laplace approximation is the same as removing the posterior averaging from \cref{eq:dual_param} meaning:
+\begin{equation}
+\label{eq:dual_param_laplace}
+\hat{\alpha}_i \coloneqq \nabla_{f_i}\log p(y_i \mid f_i),  \quad
+\hat{\beta}_i \coloneqq - \nabla^2_{f_i}\log p(y_i \mid f_i),
+\end{equation}
+
+Replacing \cref{eq:dual_param_laplace} in to \cref{eq-laplace-approx-function-space} and we arrive at our GP model based on the converged neural network. 
+
+\textbf{Dual Gaussian Process} A Gaussian process characterizes a distribution over functions in terms of the first two moment. 
 
 
 A Gaussian process (GP) is a prior over functions $f \sim \GP(\mathbf{0}, \kappa(\cdot, \cdot))$. The prior is characterized by a covariance kernel function $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors in $\R^{\mathrm{D}}$. Once combined with a data set ${\mathcal{D} = \{(\vx_i, y_i)\}_{i=1}^n}$ with $n$ examples, each modelled by the likelihood $p(\vy_i \mid \vf_i)$ at function $\vf_i = f(\vx_i)$\, we can form a posterior proccess using multivariate conditioning. The drawbacks of GPs reside in their lack of scaling to large datasets and non-tractability with non-Gaussian likelihoods.
@@ -472,6 +495,8 @@ Sparse Gaussian processes \citep{hensman2013gaussian} are a principled way to sc
    \myexpect_{q_{\vu}(\vf)}[\vf_i] = \vkzs^{\T} \valpha , \quad 
    \textrm{Var}_{q_{\vu}(\vf)}[\vf_i]  = \kappa_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \vbeta)^{-1} ]\vkzs
 \end{equation}
+
+
 
 where the $ij$th entry of the matrix $\MKzz \in \R^{m \times m}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$\todo{the equation above uses $\vkzs$ not $\vk_{\vx i}$} denotes a vector where each $j$th element is $\kappa(\vx_i, \vx_j)$, and $\kappa_{ii} = \kappa(\vx_i, \vx_i)$.  The dual parameters consist of the vector $\valpha \in \R^{m}$ and the matrix $\vbeta \in \R^{m \times m}$, defined as
 \begin{equation} 

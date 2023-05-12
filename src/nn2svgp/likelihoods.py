@@ -82,7 +82,7 @@ def inv_probit(x):
 
 
 class BernoulliLh(Likelihood):
-    def __init__(self, EPS: float = 0.01):
+    def __init__(self, EPS: float = 0.0001):
         self.EPS = EPS
 
     def __call__(

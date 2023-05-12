@@ -46,6 +46,7 @@ def greedy(
         #         final_action = final_action_dist.mean
         #     G_final = discount * torch.min(*critic(state, final_action))
         #     return G[..., None] + G_final
+        @torch.no_grad()
         def rollout(start_state: State, actions: ActionTrajectory) -> StateTrajectory:
             state = start_state
             state_trajectory = state[None, ...]
@@ -58,6 +59,7 @@ def greedy(
 
     elif unc_prop_strategy == "sample":
 
+        @torch.no_grad()
         def rollout(start_state: State, actions: ActionTrajectory) -> StateTrajectory:
             state = start_state
             state_trajectory = state[None, ...]
@@ -75,6 +77,7 @@ def greedy(
                 )
             return state_trajectory
 
+    @torch.no_grad()
     def greedy_fn(start_state: State, actions: ActionTrajectory) -> TensorType[""]:
         """Estimate value of a trajectory starting at state and executing given actions."""
         # state = start_state
@@ -98,7 +101,8 @@ def greedy(
         # else:
         #     print("data_new[reward] {}".format("none"))
         # reward_model.dual_update(data_new=data_new["reward"])
-        for t in range(horizon):
+        # for t in range(horizon):
+        for t in range(horizon - 1):
             G += (
                 discount
                 * reward_model.predict(state_trajectory[t], actions[t]).reward_mean
@@ -114,6 +118,7 @@ def greedy(
             final_action = final_action_dist.sample(clip=std_clip)
         else:
             final_action = final_action_dist.mean
+        final_action = actions[-1]
         G_final = discount * torch.min(*critic(state_trajectory[-1, :], final_action))
         # print("G_ginal {}".format(G_final.shape))
         # logger.info("discount {}".format(discount))

@@ -262,11 +262,21 @@ def train(cfg: DictConfig):
                 # data_new = {"transition": None, "reward": None}
                 # TODO data_new should only be one input
                 # data_new = None
+                #
+                action_select_time = time.time()
                 action = agent.select_action(
                     time_step.observation,
                     eval_mode=False,
                     t0=time_step.step_type == StepType.FIRST,
                 )
+
+                action_select_end_time = time.time()
+                if t % 100 == 0:
+                    logger.info(
+                        "timestep={} took {}s to select action".format(
+                            t, action_select_end_time - action_select_time
+                        )
+                    )
                 action = action.cpu().numpy()
             # action = np.random.uniform(-1, 1, env.action_spec().shape).astype(
             #     dtype=env.action_spec().dtype

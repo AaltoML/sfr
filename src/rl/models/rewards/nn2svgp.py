@@ -33,6 +33,7 @@ class NTKSVGPRewardModel(RewardModel):
         early_stopper: EarlyStopper = None,
         device: str = "cuda",
         prediction_type: str = "SVGPMeanOnly",  # "SVGPMeanOnly" or "SVGP" or "NN"
+        logging_freq: int = 500,
     ):
         if "cuda" in device:
             network.cuda()
@@ -46,6 +47,7 @@ class NTKSVGPRewardModel(RewardModel):
         self.early_stopper = early_stopper
         self.device = device
         self.prediction_type = prediction_type
+        self.logging_freq = logging_freq
 
         likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=sigma_noise)
         prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
@@ -111,7 +113,8 @@ class NTKSVGPRewardModel(RewardModel):
             if self.wandb_loss_name is not None:
                 wandb.log({self.wandb_loss_name: loss})
 
-            logger.info("Iteration : {} | Loss: {}".format(i, loss))
+            if i % self.logging_freq == 0:
+                logger.info("Iteration : {} | Loss: {}".format(i, loss))
             if self.early_stopper is not None:
                 stop_flag = self.early_stopper(loss)
                 if stop_flag:

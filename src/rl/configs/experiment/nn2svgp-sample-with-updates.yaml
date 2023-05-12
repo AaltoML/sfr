@@ -4,10 +4,10 @@ defaults:
   - override /reward_model: cartpole
   - override /transition_model: nn2svgp
 
-hydra:
-  sweeper:
-    params:
-      random_seed: 42,100,50,1,15
+# hydra:
+#   sweeper:
+#     params:
+#       random_seed: 42,100,50,1,15
 
 alg_name: "nn2svgp-sample-with-updates"
 online_updates: true

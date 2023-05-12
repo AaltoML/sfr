@@ -12,13 +12,15 @@ _DEFAULT_VALUE_AT_MARGIN = torch.Tensor([0.1])
 
 
 class CartpoleRewardModel(RewardModel):
-    def __init__(self, action_penalty: float = 0.0, sparse_threshold: float = 0.0):
+    def __init__(self, action_penalty: float = 0.0, sparse_threshold: float = 0.3):
         reward_fn = tensor_reward
         self.action_penalty = action_penalty
         self.sparse_threshold = sparse_threshold
-        self._reward_fn = torch.vmap(reward_fn)
-        # self._reward_fn = torch.vmap(cartpole_swingup_reward)
+        # self._reward_fn = torch.vmap(reward_fn)
+        self._reward_fn = torch.vmap(cartpole_swingup_reward)
+        # self._reward_fn = torch.vmap(pets_cartpole_swingup_reward)
 
+    @torch.no_grad()
     def predict(self, state: State, action: Action) -> RewardPrediction:
         # print("state {}".format(state.shape))
         # print("aciton {}".format(action.shape))
@@ -32,12 +34,20 @@ class CartpoleRewardModel(RewardModel):
             partial(action_penalty_reward, action_penalty=self.action_penalty)
         )(action)
         # print("penalty {}".format(penalty.shape))
-        if (reward > self.sparse_threshold).any():
-            print("using reward")
+        # print("reward {}".format(reward.max()))
+        # if (reward > self.sparse_threshold).any():
+        #     print("using reward")
         # else:
         # logger.info("only using using reward")
-        # print("reward {}".format(reward.max()))
-        reward = torch.where(reward > self.sparse_threshold, reward + penalty, penalty)
+        print("reward BEFORE {}".format(reward.max()))
+        # print("reward BEFORE {}".format(reward))
+        reward = torch.where(
+            reward > self.sparse_threshold, reward, torch.zeros_like(reward)
+        )
+        # reward = torch.where(reward > self.sparse_threshold, reward + penalty, penalty)
+
+        # print("reward {}".format(reward))
+        print("reward MAX {}".format(reward.max()))
         return RewardPrediction(reward_mean=reward, reward_var=None, noise_var=None)
 
     def update(self, data_new):
@@ -58,6 +68,7 @@ def tensor_reward(state: State, action: Action):
     dist_penalty = 0.01 * x**2 + (y - 1) ** 2
     vel_penalty = 1e-3 * v**2
     reward = -dist_penalty - vel_penalty
+    # assert reward > 0.0
     return reward.view([1])
 
 
@@ -94,6 +105,44 @@ def tensor_reward_2(state: State, action: Action, action_penalty: float = 0.0):
     reward = upright.mean() * small_control * small_velocity * centered
 
 
+def pets_cartpole_swingup_reward(single_state, single_action):
+    # TODO map over data
+    assert single_state.ndim == 1
+    assert single_action.ndim == 1
+    # return torch.sum(single_state + single_action)
+    # list_indices = [[0], [2], [3]]
+    # convert list_indices to Tensor
+    # indices = torch.tensor(list_indices)
+    # get elements from tensor_a using indices.
+    # tensor_a=torch.index_select(tensor_a, 0, indices.view(-1))
+    # print(tensor_a)
+
+    # cart_position = torch.stack([single_state[0], single_state[1], single_state[2]], 0)
+    cart_position = single_state[0]
+    # print("cart_position {}".format(cart_position.shape))
+    # cart_velocity = single_state[1]
+    # pole_angle_sine = single_state[1]
+    # pole_angle_cosine = single_state[1]
+    pole_angle_sine = single_state[2]
+    pole_angle_cosine = single_state[1]
+    # angular_vel = single_state[3:5]
+    angular_vel = single_state[4]
+
+    x0 = cart_position
+    # theta = pole_angle_cosine
+    # l = 1.0
+    l = 0.045
+    # print("pole_angle_sine {}".format(pole_angle_sine.shape))
+    ee_pos = torch.stack([x0 - l * pole_angle_sine, -l * pole_angle_cosine])
+    lt = torch.Tensor([0.0, l]).to(single_state.device)
+    # print("torch.Tensor([0.0, l]) {}".format(torch.Tensor([0.0, l]).shape))
+    # print("ee_pos {}".format(ee_pos.shape))
+    # ee_pos = torch.Tensor([x0 - l * pole_angle_sine, -l * pole_angle_cosine])
+    reward = torch.exp(-torch.sum(torch.square(ee_pos - lt)) / (l**2))
+    reward -= 0.01 * torch.sum(torch.square(single_action))
+    return reward
+
+
 def cartpole_swingup_reward(single_state, single_action):
     # TODO map over data
     assert single_state.ndim == 1
@@ -110,13 +159,14 @@ def cartpole_swingup_reward(single_state, single_action):
     cart_position = single_state[0]
     # print("cart_position {}".format(cart_position.shape))
     # cart_velocity = single_state[1]
-    pole_angle_sine = single_state[1]
+    # pole_angle_sine = single_state[1]
     # pole_angle_cosine = single_state[1]
     # pole_angle_sine = single_state[3]
-    pole_angle_cosine = single_state[2]
-    angular_vel = single_state[3]
+    pole_angle_cosine = single_state[1]
+    # angular_vel = single_state[3:5]
     angular_vel = single_state[4]
 
+    # control = single_state[3]
     control = single_action
     # control = single_state[4]
     # angular_vel = single_state[4]

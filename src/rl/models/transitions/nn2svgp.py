@@ -35,6 +35,7 @@ class NTKSVGPTransitionModel(TransitionModel):
         early_stopper: EarlyStopper = None,
         device: str = "cuda",
         prediction_type: str = "SVGPMeanOnly",  # "SVGPMeanOnly" or "SVGP" or "NN"
+        logging_freq: int = 500,
     ):
         if "cuda" in device:
             network.cuda()
@@ -50,6 +51,7 @@ class NTKSVGPTransitionModel(TransitionModel):
         self.early_stopper = early_stopper
         self.device = device
         self.prediction_type = prediction_type
+        self.logging_freq = logging_freq
 
         likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=sigma_noise)
         prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
@@ -60,6 +62,7 @@ class NTKSVGPTransitionModel(TransitionModel):
             output_dim=state_dim,
             num_inducing=num_inducing,
             dual_batch_size=dual_batch_size,
+            # dual_batch_size=None,
             jitter=jitter,
             device=device,
         )
@@ -121,7 +124,8 @@ class NTKSVGPTransitionModel(TransitionModel):
             if self.wandb_loss_name is not None:
                 wandb.log({self.wandb_loss_name: loss})
 
-            logger.info("Iteration : {} | Loss: {}".format(i, loss))
+            if i % self.logging_freq == 0:
+                logger.info("Iteration : {} | Loss: {}".format(i, loss))
             if self.early_stopper is not None:
                 stop_flag = self.early_stopper(loss)
                 if stop_flag:
@@ -130,9 +134,9 @@ class NTKSVGPTransitionModel(TransitionModel):
                     break
 
         data = replay_buffer.sample(batch_size=len(replay_buffer))
-        state_action_inputs = torch.concat([data["state"], data["action"]], -1)
-        state_diff = data["next_state"] - data["state"]
-        self.ntksvgp.set_data((state_action_inputs, state_diff))
+        state_action_inputs_all = torch.concat([data["state"], data["action"]], -1)
+        state_diff_all = data["next_state"] - data["state"]
+        self.ntksvgp.set_data((state_action_inputs_all, state_diff_all))
 
     def update(self, data_new):
         return self.ntksvgp.update(x=data_new[0], y=data_new[1])

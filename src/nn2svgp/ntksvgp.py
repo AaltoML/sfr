@@ -256,9 +256,9 @@ def build_ntk(
     # Detaching the parameters because we won't be calling Tensor.backward().
     params = {k: v.detach() for k, v in network.named_parameters()}
 
-    def fnet_single(params, x, i):
-        f = functional_call(network, params, (x,))[:, i]
-        return f
+    # def fnet_single(params, x, i):
+    #     f = functional_call(network, params, (x,))[:, i]
+    #     return f
 
     @torch.no_grad()
     def single_output_ntk_contraction(
@@ -359,8 +359,14 @@ def predict_from_sparse_duals(
     KzzplusBeta = (Kzz + beta_u) + Iz * jitter
     assert beta_u.shape == Kzz.shape
 
+    # beta_u += Iz * jitter
     Lm = torch.linalg.cholesky(Kzz, upper=True)
+    # L = torch.linalg.cholesky(beta_u, upper=True)
+    # Lb = torch.linalg.cholesky(Kzz, upper=True)
     Lb = torch.linalg.cholesky(KzzplusBeta, upper=True)
+    # Lb = Iz
+
+    # L = torch.linalg.cholesky(Kzz, upper=True)
 
     @torch.no_grad()
     def predict(x, full_cov: bool = False) -> Tuple[OutputMean, OutputVar]:
@@ -508,6 +514,7 @@ def calc_sparse_dual_params(
     beta_diag = torch.diagonal(beta, dim1=-2, dim2=-1)  # [num_data, output_dim]
     beta = torch.diag_embed(beta_diag.T)  # [output_dim, num_data, num_data]
     beta_u = torch.matmul(torch.matmul(Kzx, beta), torch.transpose(Kzx, -1, -2))
+    # beta_u = torch.matmul(Kzx, torch.transpose(Kzx, -1, -2))
     # print("beta_u {}".format(beta_u.shape))
     # beta_u = beta_u + Iz * jitter
 

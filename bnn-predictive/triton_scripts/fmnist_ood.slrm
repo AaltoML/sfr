@@ -1,8 +1,8 @@
 #!/bin/bash
-#SBATCH --job-name=cifar10_cnn
+#SBATCH --job-name=fmnist_ood
 #SBATCH --array=0-4
-#SBATCH --time=02:00:00
-#SBATCH --output=/scratch/work/%u/full-bnn-svgp/bnn-predictive/logs/cifar10/cifar10_classification_%A_%a.out
+#SBATCH --time=00:30:00
+#SBATCH --output=/scratch/work/%u/full-bnn-svgp/bnn-predictive/logs/fmnist/fmnist_classification_%A_%a.out
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:a100:1
 #SBATCH --cpus-per-task=10
@@ -15,18 +15,19 @@ source activate /scratch/work/tamire1/full-bnn-svgp/conda/bnn-svgp
 SEEDS=(117 68 187 27 51)
 
 SEED=${SEEDS[$(($SLURM_ARRAY_TASK_ID))]}
-dataset='CIFAR10'
+dataset='FMNIST'
 echo $dataset
 echo $SEED
-name='sparse_1000_eps_small'
-n_inducing=1000
+name='sparse_500_eps_small'
+n_inducing=500
 model='CNN'
-n_deltas=8
-batch_size=50
+n_deltas=16
+batch_size=100
 delta_min=1e-3
+delta_max=1e-2
 logd_min=2
 logd_max=3
-res_folder='12'
+res_folder='11_3'
 
 #srun python3 -u experiments/scripts/imgclassification.py -d ${dataset} -m ${model} --root_dir . -s ${SEED} --n_deltas ${n_deltas} --res_folder ${res_folder} --logd_min ${logd_min} --logd_max ${logd_max}
-srun python3 -u experiments/scripts/imginference.py -d ${dataset} -m ${model} -b ${batch_size} --root_dir . -s ${SEED} --loginfo --n_inducing ${n_inducing} --name ${name} --delta_min ${delta_min} --res_folder ${res_folder}
+srun python3 -u experiments/scripts/imginference.py -d ${dataset} -m ${model} -b ${batch_size} --root_dir . -s ${SEED} --ood --loginfo --n_inducing ${n_inducing} --name ${name} --delta_min ${delta_min} --delta_max ${delta_max} --res_folder ${res_folder}

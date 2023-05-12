@@ -33,7 +33,7 @@ module load lumi-container-wrapper
 MINLPS_CONTAINER_DIR=~/minlps
 export PATH="$NN2SVGP_CONTAINER_DIR/bin:$PATH"
 
-python rl/cluster_train.py +experiment=nn2svgp-sample
+python cluster_train.py +experiment=nn2svgp-sample
 rem echo Starting lumi_test.py
 rem date
 rem python lumi_test.py

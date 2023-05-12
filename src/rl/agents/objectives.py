@@ -101,7 +101,8 @@ def greedy(
         # else:
         #     print("data_new[reward] {}".format("none"))
         # reward_model.dual_update(data_new=data_new["reward"])
-        for t in range(horizon):
+        # for t in range(horizon):
+        for t in range(horizon - 1):
             G += (
                 discount
                 * reward_model.predict(state_trajectory[t], actions[t]).reward_mean
@@ -117,6 +118,7 @@ def greedy(
             final_action = final_action_dist.sample(clip=std_clip)
         else:
             final_action = final_action_dist.mean
+        final_action = actions[-1]
         G_final = discount * torch.min(*critic(state_trajectory[-1, :], final_action))
         # print("G_ginal {}".format(G_final.shape))
         # logger.info("discount {}".format(discount))

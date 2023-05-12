@@ -65,14 +65,36 @@ _target_: hydra_plugins.hydra_submitit_launcher.submitit_launcher.SlurmLauncher
 # mem: 10G
 # array: 0-12
 
-job-name: "nn2svgp" # Job name
-output: "nn2svgp.o%j" # Name of stdout output file
-error: "nn2svgp.e%j" # Name of stderr error file
-partition: standard-g # Partition (queue) name
-nodes: 2 # Total number of nodes
-ntasks-per-node: 6 # 8 MPI ranks per node, 128 total (16x8)
-gpus-per-node: 1 # Allocate one gpu per MPI rank
-# time1-12:00:00       # Run time (d-hh:mm:ss)
-timeout_min: 500
+# output: "nn2svgp.o%j" # Name of stdout output file
+# error: "nn2svgp.e%j" # Name of stderr error file
+# nodes: 2 # Total number of nodes
+# ntasks-per-node: 6 # 8 MPI ranks per node, 128 total (16x8)
+# gpus-per-node: 1 # Allocate one gpu per MPI rank
+# # time1-12:00:00       # Run time (d-hh:mm:ss)
+# # timeout_min: 500
+# # mail-user=
+
 account: project_462000183
-# mail-user=
+partition: standard-g # Partition (queue) name
+timeout_min: 500
+cpus_per_task: 6
+gpus_per_node: 1
+tasks_per_node: 1
+mem_gb: null
+nodes: 1
+name: ${hydra.job.name}
+qos: null
+comment: null
+constraint: null
+exclude: null
+gres: null
+cpus_per_gpu: null
+gpus_per_task: null
+mem_per_gpu: null
+mem_per_cpu: null
+signal_delay_s: 120
+max_num_timeout: 0
+additional_parameters: {}
+array_parallelism: 256
+setup: null
+srun_args: null

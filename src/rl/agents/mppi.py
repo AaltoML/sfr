@@ -253,5 +253,6 @@ class MPPIAgent(Agent):
         self.transition_model.update(data_new=(state_action_input, state_diff_output))
         self.reward_model.update(data_new=(state_action_input, reward_output))
 
+    @torch.no_grad()
     def _estimate_value(self, start_state: State, actions: ActionTrajectory):
         return self._estimate_value_fn(start_state=start_state, actions=actions)

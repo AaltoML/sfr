@@ -246,6 +246,7 @@ class NTKSVGP(nn.Module):
         return self.train_data[0].shape[0]
 
 
+@torch.no_grad()
 def build_ntk(
     network: nn.Module, num_data: int, output_dim: int, delta: float = 1.0
 ) -> Tuple[NTK, NTK_single]:
@@ -257,9 +258,11 @@ def build_ntk(
         f = functional_call(network, params, (x,))[:, i]
         return f
 
+    @torch.no_grad()
     def single_output_ntk_contraction(
         x1: InputData, x2: InputData, i: int, full_cov: Optional[bool] = True
     ):
+        @torch.no_grad()
         def fnet_single(params, x):
             f = functional_call(network, params, (x.unsqueeze(0),))[:, i]
             return f
@@ -319,6 +322,7 @@ def build_ntk(
         ).view(output.numel(), -1)
         return 1 / (delta * num_data) * vmap(get_ntk_slice)(basis)
 
+    @torch.no_grad()
     def ntk(X1: InputData, X2: Optional[InputData], full_cov: bool = True):
         if X2 is None:
             X2 = X1
@@ -334,6 +338,7 @@ def build_ntk(
     return ntk, single_output_ntk_contraction
 
 
+@torch.no_grad()
 def predict_from_sparse_duals(
     alpha_u: AlphaInducing,
     beta_u: BetaInducing,
@@ -355,6 +360,7 @@ def predict_from_sparse_duals(
     Lm = torch.linalg.cholesky(Kzz, upper=True)
     Lb = torch.linalg.cholesky(KzzplusBeta, upper=True)
 
+    @torch.no_grad()
     def predict(x, full_cov: bool = False) -> Tuple[OutputMean, OutputVar]:
         Kxx = kernel(x, x, full_cov=full_cov)
         Kxz = kernel(x, Z)
@@ -471,6 +477,7 @@ def calc_sparse_dual_params_batch(
     ################  Compute alpha/beta batched version END ################
 
 
+@torch.no_grad()
 def calc_sparse_dual_params(
     network: torch.nn.Module,
     train_data: Tuple[InputData, OutputData],
@@ -516,6 +523,7 @@ def calc_sparse_dual_params(
     return alpha_u, beta_u, Lambda_u
 
 
+@torch.no_grad()
 def calc_alpha_u_from_lambda(
     beta_u: BetaInducing,
     Lambda_u: Lambda,
@@ -536,6 +544,7 @@ def calc_alpha_u_from_lambda(
     return alpha_u
 
 
+@torch.no_grad()
 def calc_lambdas(
     Y: OutputData, F: FuncData, likelihood: Likelihood
 ) -> Tuple[Lambda, Beta]:
@@ -544,12 +553,14 @@ def calc_lambdas(
     return Lambda, beta
 
 
+@torch.no_grad()
 def calc_beta(F: FuncData, likelihood: Likelihood) -> Tuple[Lambda, Beta]:
     assert F.ndim == 2
     beta = 2 * likelihood.Hessian(f=F)
     return beta
 
 
+@torch.no_grad()
 def calc_lambda(
     Y: OutputData, F: FuncData, likelihood: Likelihood, beta: Beta
 ) -> Tuple[Lambda, Beta]:

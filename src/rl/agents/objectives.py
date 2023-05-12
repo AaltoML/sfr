@@ -46,6 +46,7 @@ def greedy(
         #         final_action = final_action_dist.mean
         #     G_final = discount * torch.min(*critic(state, final_action))
         #     return G[..., None] + G_final
+        @torch.no_grad()
         def rollout(start_state: State, actions: ActionTrajectory) -> StateTrajectory:
             state = start_state
             state_trajectory = state[None, ...]
@@ -58,6 +59,7 @@ def greedy(
 
     elif unc_prop_strategy == "sample":
 
+        @torch.no_grad()
         def rollout(start_state: State, actions: ActionTrajectory) -> StateTrajectory:
             state = start_state
             state_trajectory = state[None, ...]

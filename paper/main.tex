@@ -322,28 +322,6 @@ We demonstrate points {\em(i)--(iii)} in the experiments.
 %  \end{itemize}
 %\end{itemize}
 
-\subsection{Related Work}
-\label{sec:related}
-%
-% Introduce the laplace GNN + shortcomings
-One common approach for uncertainty with neural networks is a Laplace GNN approximation \citep{daxbergerLaplace2021}, that takes a trained neural network and linearises it around the optimal weights. The resulting linear model can be used to obtain uncertainty estimates and refine the neural network predictions \citep{immerScalable2021}. The resultant model is linear with respect to the weights, therefor it is possible to convert it to a Gaussian process (GP) as shown in \citep{immerScalable2021, khan2019approximate}. Yet to obtain uncertainty estimates there is the usual computational scaling  cubic in the number of data points of GPs ($\mathcal{O}(n^3)$). Many approaches  apply crude approximations and yet still obtain good uncertainty estimates. 
-
-
-%% CL section 
-%%
-%% EWC, SI, VCL -> weight regularization 
-EWC \cite{kirkpatrick2017overcoming}
-SI \cite{zenke17a}, 
-VCL \cite{nguyen-tuongModel2009},  
-
-%% DER, FROMP, S-FSVI
-DER \cite{buzzega2020dark}
-FROMP \cite{pan2020continual}
-S-FSVI \cite{rudner2022continual}
-
-
-%Why we need uncertainty and adaptiveness
-%How to adapt to new information is a limitation of current machine learning models. The problem is specifically relevant when we combine a model with a decision-making process. In such a sequential setting, an agent typically makes decisions in an environment and obtains new information and would ideally incorporate the information into their parameters. Not only do we need models that adapt to new informatoion but all express uncertainty over the models predictions. The reason being twofold: in many applications, \eg\ healthcare, autonomous driving is an essential requirement, and many advanced exploration techniques require uncertainty to determine where to query next.
 
 
 
@@ -401,6 +379,33 @@ S-FSVI \cite{rudner2022continual}
 \end{figure}
 
 
+
+
+\subsection{Related work}
+\label{sec:related}
+%
+% Introduce the laplace GNN + shortcomings
+One common approach for uncertainty with neural networks is a Laplace GNN approximation \citep{daxbergerLaplace2021}, that takes a trained neural network and linearises it around the optimal weights. The resulting linear model can be used to obtain uncertainty estimates and refine the neural network predictions \citep{immerScalable2021}. The resultant model is linear with respect to the weights, therefor it is possible to convert it to a Gaussian process (GP) as shown in \citep{immerScalable2021, khan2019approximate}. Yet to obtain uncertainty estimates there is the usual computational scaling  cubic in the number of data points of GPs ($\mathcal{O}(n^3)$). Many approaches  apply crude approximations and yet still obtain good uncertainty estimates. 
+
+
+%% CL section 
+%%
+%% EWC, SI, VCL -> weight regularization 
+EWC \cite{kirkpatrick2017overcoming}
+SI \cite{zenke17a}, 
+VCL \cite{nguyen-tuongModel2009},  
+
+%% DER, FROMP, S-FSVI
+DER \cite{buzzega2020dark}
+FROMP \cite{pan2020continual}
+S-FSVI \cite{rudner2022continual}
+
+
+%Why we need uncertainty and adaptiveness
+%How to adapt to new information is a limitation of current machine learning models. The problem is specifically relevant when we combine a model with a decision-making process. In such a sequential setting, an agent typically makes decisions in an environment and obtains new information and would ideally incorporate the information into their parameters. Not only do we need models that adapt to new informatoion but all express uncertainty over the models predictions. The reason being twofold: in many applications, \eg\ healthcare, autonomous driving is an essential requirement, and many advanced exploration techniques require uncertainty to determine where to query next.
+
+
+
 \begin{figure}[t!]
   \centering
   % Set figure size
@@ -455,9 +460,10 @@ S-FSVI \cite{rudner2022continual}
 
 
 
-\section{Methods} \label{sec:methods}
-
-\textbf{Neural Network} In supervised learning, given a data set $\dataset = \{(\mathbf{x}_{i} , \mathbf{y}_{i})\}_{i=1}^{n}$, with $\mathbf{x}_i \in \inputDomain$ and $\mathbf{y}_i \in \outputDomain$, the weights $\weights \in \R^{P}$ of a neural network
+\section{Methods}
+\label{sec:methods}
+%
+In supervised learning, given a data set $\dataset = \{(\mathbf{x}_{i} , \mathbf{y}_{i})\}_{i=1}^{n}$, with $\mathbf{x}_i \in \inputDomain$ and $\mathbf{y}_i \in \outputDomain$, the weights $\weights \in \R^{P}$ of a neural network
 , $f_\mathbf{w} : \inputDomain \mapsto \outputDomain$, 
 are usually trained to minimize the (regularized) empirical risk,
 \begin{align} \label{eq-empirical-risk}
@@ -467,7 +473,10 @@ are usually trained to minimize the (regularized) empirical risk,
 \end{align}
 If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\weights(\mathbf{x}_{i}))$ and $\mathcal{R}(\weights) = \frac{1}{2}\|\weights\|^{2}_2$ then we can view \cref{eq-empirical-risk} as the MAP solution to a Bayesian objective, where $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$.
 
-\textbf{Neural network to GP prior} A Gaussian process characterizes a distribution over functions in terms of the first two moments. The key quantity of a Gaussian process is the prior covariance function $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors in $\R^{\mathrm{D}}$. We aim to find a kernel based on the neural network to build the Gaussian process posterior. If we had the following function parameterization $g(\vx) = \phi(\vx)^\top \vw$ where $\phi(\vx)$ is a feature map, we can convert from weight space prior to function space prior giving the following kernel $\kappa(\vx, \vx') = \delta^{-1} \phi(\vx) \phi(\vx')^\T$ see \citep{rasmussen2006gaussian} for details. We can approximate the feature map of the neural network  $f_\weights(\mathbf{x})$  by using the Jacobian at $\weights^*$ thus our GP prior becomes:
+\subsection{Neural network to GP prior} 
+\label{sec:nn2gp}
+%
+A Gaussian process characterizes a distribution over functions in terms of the first two moments. The key quantity of a Gaussian process is the prior covariance function $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors in $\R^{\mathrm{D}}$. We aim to find a kernel based on the neural network to build the Gaussian process posterior. If we had the following function parameterization $g(\vx) = \phi(\vx)^\top \vw$ where $\phi(\vx)$ is a feature map, we can convert from weight space prior to function space prior giving the following kernel $\kappa(\vx, \vx') = \delta^{-1} \phi(\vx) \phi(\vx')^\T$ see \citep{rasmussen2006gaussian} for details. We can approximate the feature map of the neural network  $f_\weights(\mathbf{x})$  by using the Jacobian at $\weights^*$ thus our GP prior becomes:
 \begin{align} \label{eq-laplace-approx-function-space}
  g(\vx) \sim \Norm \left( \mu(\vx), k(\vx, \vx') \right) \quad
   \mu(\vx)
@@ -476,7 +485,6 @@ If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\
   = \frac{1}{\delta} \Jac{\weights^*}{\mathbf{x}}\Jac{\weights^*}{\mathbf{x}'}^\top,
 \end{align}
 where the kernel is the neural tangent kernel (NTK) with Jacobian given by $\Jac{\weights}{\mathbf{x}} \coloneqq \nabla_\weights f(\mathbf{x})^\top \in \R^{C \times P}$. Alternatively, we could have followed the derivation in \citet{immerImprovingPredictionsBayesian2021} where we perform a local linearization of the neural network prediction function $f^{\textrm{lin}}_{\vw^*}(\vx; \vw) = f_{\vw^*}(\vx) + \Jac{\weights^*}{\mathbf{x}} (\vw - \vw^*)$. The difference between our GP prior mean function and \cref{eq-laplace-approx-function-space} is that we use a different mean prior function coming from $f^{\textrm{lin}}_{\vw^*}(\vx; \vzeros) = f_{\vw^*}(\vx) - \Jac{\weights^*}{\mathbf{x}} \vw^*$, essentially they use the difference from the linear model approximation and the neural network function, which does not seem useful as a prior mean function, so instead we use $ \mu(\vx_i) = \vzeros$ as is common in GP literature and derived from a feature map conversion.
-
 
 As stated in \citet[Lemma~1]{csato2002sparse} the posterior process mean and covariance function of a GP prior combined with a likelihood function and $\dataset$ can be stated as:
 \begin{equation}  \label{eq:gp_pred}
@@ -500,7 +508,10 @@ As we are using the MAP solution of the neural network loss we will use the Lapl
 
 Replacing \cref{eq:dual_param_laplace} in to \cref{eq-laplace-approx-function-space} and we arrive at our GP model based on the converged neural network. Again this is similar to what was arrived at for \citet{immerImprovingPredictionsBayesian2021} for the posterior variance function, but they instead use the $f_{\vw^*}(\vx)$ for the posterior mean and fail to spot the significance of the dual variables. The problem with \cref{eq:gp_pred} is that to make predictions and compute variances we must incur a cost of $O(n^3)$ which limits the use of the GP on large datasets.
 
-\textbf{Sparse Dual Gaussian Process} Sparse Gaussian processes are a way to reduce the computational complexity of a full GP using a low-rank approximation. Many sparsifying approaches exist (see \citet{quinonero2005unifying}) for an overview. Given that we have our dual variables derived from our neural network predictions and kernel function, we could use any approximation. We decide to follow the sparsifying approach of \citep{titsias2009variational}, which is to define the marginal distribution as $q_{\vu}(\vf)  = \int p(\vf  \mid \vu) q(\vu)  d\vu$. Given that we have $p(f_i  \mid \vu)$ determined by our GP prior, the goal is to find a $q(\vu)$. As was shown in \cite{adam2021dual}, the posterior under this model has a particular structure similar to \cref{eq:gp_pred}. In that paper, they spot the dual variables' importance for approximate inference but write them in the natural parameter form as this form is more suitable for optimization through natural gradients. In order to make the link to the dual variables defined in \cref{eq:dual_param} we write them in the sparse GP in the dual variable form. 
+\subsection{Sparse dual Gaussian process} 
+\label{sec:sparse-dual-gp}
+%
+Sparse Gaussian processes are a way to reduce the computational complexity of a full GP using a low-rank approximation. Many sparsifying approaches exist (see \cite{quinonero2005unifying}) for an overview. Given that we have our dual variables derived from our neural network predictions and kernel function, we could use any approximation. We decide to follow the sparsifying approach of \citet{titsias2009variational}, which is to define the marginal distribution as $q_{\vu}(\vf)  = \int p(\vf  \mid \vu) q(\vu)  d\vu$. Given that we have $p(f_i  \mid \vu)$ determined by our GP prior, the goal is to find a $q(\vu)$. As was shown in \cite{adam2021dual}, the posterior under this model has a particular structure similar to \cref{eq:gp_pred}. In that paper, they spot the dual variables' importance for approximate inference but write them in the natural parameter form as this form is more suitable for optimization through natural gradients. In order to make the link to the dual variables defined in \cref{eq:dual_param} we write them in the sparse GP in the dual variable form. 
 \begin{equation} 
 	\valpha_{\vu}  = \sum_{i \in \mathcal{D}_{n}}  \vkzi \, \hat{\alpha}_{i}, \quad
 	\vbeta_{\vu} = \sum_{i \in \mathcal{D}_{n}} \vkzi \,\hat{\beta}_{i} \, \vkzi^{\T} ,    
@@ -526,7 +537,11 @@ write it out for Gaussian
 
 
 
-\textbf{Neural network to sparse GP}
+\subsection{Forming the sparse function-space representation of a neural network}
+
+
+
+\section{Sparse function-space sequential learning}
 
 \textbf{Continual learning}
 

@@ -46,7 +46,9 @@ def train(
                 "Epoch: {} | Batch: {} | Loss: {}".format(epoch_idx, batch_idx, loss)
             )
 
-    ntksvgp.build_dual_svgp()
+    print("setting data")
+    ntksvgp.set_data((X_train, Y_train))
+    print("FINISHED setting data")
     return {"loss": loss_history}
 
 
@@ -176,9 +178,6 @@ if __name__ == "__main__":
         jitter=1e-4,
     )
 
-    print("setting data")
-    ntksvgp.set_data((X_train, Y_train))
-    print("FINISHED setting data")
     metrics = train(
         ntksvgp=ntksvgp,
         data=data,

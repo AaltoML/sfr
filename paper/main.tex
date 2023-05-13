@@ -512,7 +512,7 @@ Replacing \cref{eq:dual_param_laplace} in to \cref{eq-laplace-approx-function-sp
 \subsection{Sparse dual Gaussian process} 
 \label{sec:sparse-dual-gp}
 %
-Sparse Gaussian processes are a way to reduce the computational complexity of a full GP using a low-rank approximation. Many sparsifying approaches exist (see \cite{quinonero2005unifying}) for an overview. Given that we have our dual variables derived from our neural network predictions and kernel function, we could use any approximation. We decide to follow the sparsifying approach of \citet{titsias2009variational}, which is to define the marginal distribution as $q_{\vu}(\vf)  = \int p(\vf  \mid \vu) q(\vu)  d\vu$. Given that we have $p(f_i  \mid \vu)$ determined by our GP prior, the goal is to find a $q(\vu)$. As was shown in \cite{adam2021dual}, the posterior under this model has a particular structure similar to \cref{eq:gp_pred}. In that paper, they spot the dual variables' importance for approximate inference but write them in the natural parameter form as this form is more suitable for optimization through natural gradients. In order to make the link to the dual variables defined in \cref{eq:dual_param} we write them in the sparse GP in the dual variable form. 
+Sparse Gaussian processes are a way to reduce the computational complexity of a full GP using a low-rank approximation. Many sparsifying approaches exist (see \cite{quinonero2005unifying}) for an overview. Given that we have our dual variables derived from our neural network predictions and kernel function, we could use any approximation. We decide to follow the sparsifying approach of \citet{titsias2009variational} and also used in the DITC approximaton \cite{quinonero2005unifying}, which is to define the marginal distribution as $q_{\vu}(\vf)  = \int p(\vf  \mid \vu) q(\vu)  d\vu$. Given that we have $p(f_i  \mid \vu)$ determined by our GP prior, the goal is to find a $q(\vu)$. As was shown in \cite{adam2021dual}, the posterior under this model has a particular structure similar to \cref{eq:gp_pred}. In the paper, they spot the dual variables' importance for approximate inference but write them in the natural parameter form as this form is more suitable for optimization through natural gradients. In order to make the link to the dual variables defined in \cref{eq:dual_param} we write them in the sparse GP in the dual variable form. 
 
 \begin{equation} 
 	\valpha_{\vu}  =  \sum_{i \in \mathcal{D}_{n}}  \vkzi \, \hat{\alpha}_{i}, \quad
@@ -524,25 +524,7 @@ Using the sparse definition of the dual variables our sparse GP posterior takes 
    \myexpect_{q_{\vu}(\vf)}[\vf_i] = \vkzs^{\T} \MKzz^{-1}   \valpha_{\vu} , \quad 
    \textrm{Var}_{q_{\vu}(\vf)}[\vf_i]  = \kappa_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \vbeta_{\vu})^{-1} ]\vkzs
 \end{equation}
-where $\MKzz$ and $\vkzs$ are define similarly to $\MKxx$ and $\vk_{\vx i}$ but now over the $\MZ \in \R^{M \times D} $ inducing points instead of the full dataset $\MX$. The key quantities we need to make predictions from out sparse GP from the converged neural network are $(\hat{\alpha}_i, \hat{\beta}_i)$ and a kernel function $\kappa$ which are then combined in \cref{eq:dual_sparse_post}. Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred} we can see that the computational complexity is now $\mathcal{O}(m^3)$ to $\mathcal{O}(n^3)$ where $m \ll n$.  Crucially given the structure of our probabilistic model our sparse dual variables \cref{eq:dual_sparse} are a compact form of the full model projected using kernel computations. Our approach is in contrast to \citet{immerImprovingPredictionsBayesian2021} which simply use a subset of the full model, which is a less principled approach to build a sparse model given it ignores information in the dataset.
-
-It is important to highlight that the sparsifying approach is independent of the approximate inference technique. An example would be to use a Gaussian likelihood for $p(y_i \mid f_i)$ then
-
-
-
-
-mention DITC and consfusion
-
-principled way to contain information
-
-write it out for Gaussian
-
-
-
-
-
-\subsection{Forming the sparse function-space representation of a neural network}
-
+where $\MKzz$ and $\vkzs$ are define similarly to $\MKxx$ and $\vk_{\vx i}$ but now over the $\MZ \in \R^{M \times D} $ inducing points instead of the full dataset $\MX$. The key quantities we need to make predictions from out sparse GP from the converged neural network are $(\hat{\alpha}_i, \hat{\beta}_i)$ and a kernel function $\kappa$ which are then combined in \cref{eq:dual_sparse_post}. Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred} we can see that the computational complexity is now $\mathcal{O}(m^3)$ to $\mathcal{O}(n^3)$ where $m \ll n$.  Crucially given the structure of our probabilistic model our sparse dual variables \cref{eq:dual_sparse} are a compact form of the full model projected using kernel computations. Our approach is in contrast to \citet{immerImprovingPredictionsBayesian2021} which simply use a subset of the full model, which is a less principled approach to build a sparse model given it ignores information in the dataset. It is important to highlight that the sparsifying approach is independent of the approximate inference technique which is determined from the neural network, which determines \cref{eq:dual_param}. More complicated inference techniques such as variational inference could be used but given its simplicity, all we need is trained neural network, we use a Laplace approximation in our experiments.
 
 
 \section{Sparse function-space sequential learning}

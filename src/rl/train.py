@@ -180,7 +180,7 @@ def train(cfg: DictConfig):
     # )
     print("Made replay buffer")
 
-    reward_fn = hydra.utils.instantiate(cfg.agent.reward_model).predict
+    reward_fn = hydra.utils.instantiate(cfg.reward_model).predict
     # transition_model = hydra.utils.instantiate(cfg.agent.transition_model)
     # svgp = hydra.utils.instantiate(cfg.agent.reward_model.svgp)
     # reward_model = hydra.utils.instantiate(cfg.agent.reward_model, svgp=svgp)
@@ -550,75 +550,82 @@ def train(cfg: DictConfig):
 
                 # print("dataset['reward'] {}".format(dataset["reward"].shape))
                 reward_output = dataset["reward"][:, 0]
-                if isinstance(
-                    agent.reward_model, src.rl.models.rewards.CartpoleRewardModel
-                ):
-                    # dataset = replay_memory.sample(len(replay_memory))
-                    # print("dataset['state'] {}".format(dataset["state"].shape))
-                    # print("dataset['action'] {}".format(dataset["action"].shape))
-                    # print("dataset['reward'] {}".format(dataset["reward"].shape))
-                    reward_hard = agent.reward_model.predict(
-                        state=dataset["next_state"],
-                        # state=dataset["state"],
-                        # state=dataset_1["next_state"],
-                        action=dataset["action"],
-                    ).reward_mean
-                    # print("reward_hard {}".format(reward_hard.shape))
-                    # print("reward_output {}".format(reward_output.shape))
-                    # print(
-                    #     "(reward_hard - reward_output) {}".format(
-                    #         (reward_hard - reward_output).shape
-                    #     )
-                    # )
-                    mse_reward_model_hard = torch.mean(
-                        (reward_hard - reward_output) ** 2
-                    )
-                    # print(
-                    #     "mse_reward_model_hard {}".format(mse_reward_model_hard.shape)
-                    # )
-                    wandb.log({"mse_reward_model_hard": mse_reward_model_hard})
+                try:
+                    if isinstance(
+                        agent.reward_model, src.rl.models.rewards.CartpoleRewardModel
+                    ):
+                        # dataset = replay_memory.sample(len(replay_memory))
+                        # print("dataset['state'] {}".format(dataset["state"].shape))
+                        # print("dataset['action'] {}".format(dataset["action"].shape))
+                        # print("dataset['reward'] {}".format(dataset["reward"].shape))
+                        reward_hard = agent.reward_model.predict(
+                            state=dataset["next_state"],
+                            # state=dataset["state"],
+                            # state=dataset_1["next_state"],
+                            action=dataset["action"],
+                        ).reward_mean
+                        # print("reward_hard {}".format(reward_hard.shape))
+                        # print("reward_output {}".format(reward_output.shape))
+                        # print(
+                        #     "(reward_hard - reward_output) {}".format(
+                        #         (reward_hard - reward_output).shape
+                        #     )
+                        # )
+                        mse_reward_model_hard = torch.mean(
+                            (reward_hard - reward_output) ** 2
+                        )
+                        # print(
+                        #     "mse_reward_model_hard {}".format(mse_reward_model_hard.shape)
+                        # )
+                        wandb.log({"mse_reward_model_hard": mse_reward_model_hard})
 
-                # # Log reward model stuff
-                # reward_output = dataset["reward"].to(cfg.device)
-                # # reward_output = dataset["reward"]
-                # if isinstance(
-                #     agent.reward_model, src.rl.models.rewards.CartpoleRewardModel
-                # ):
-                #     # pass
-                #     reward_hard = agent.reward_model.predict(
-                #         # dataset["next_state"],
-                #         state=dataset["state"],
-                #         action=dataset["action"],
-                #     ).reward_mean
-                #     # reward_output = agent.reward_model.predict(
-                #     #     # dataset["next_state"],
-                #     #     dataset["state"],
-                #     #     dataset["action"],
-                #     # ).reward_mean
-                #     print("reward_hard {}".format(reward_hard.shape))
-                #     print("reward_output {}".format(reward_output.shape))
-                #     mse_reward_model_hard = torch.mean(
-                #         (reward_hard - reward_output) ** 2
-                #     )
-                #     print(
-                #         "mse_reward_model_hard {}".format(mse_reward_model_hard.shape)
-                #     )
-                #     wandb.log({"mse_reward_model_hard": mse_reward_model_hard})
-                else:
-                    reward_mean, reward_var = agent.reward_model.ntksvgp.predict(
-                        state_action_inputs
-                    )
-                    mse_reward_model = torch.mean((reward_mean - reward_output) ** 2)
-                    reward_nn = agent.reward_model.network(state_action_inputs)
-                    mse_reward_model_nn = torch.mean((reward_nn - reward_output) ** 2)
-                    wandb.log({"mse_reward_model_svgp": mse_reward_model})
-                    wandb.log({"mse_reward_model_nn": mse_reward_model_nn})
-                    nlpd_reward_model = -torch.mean(
-                        torch.distributions.Normal(
-                            reward_mean, torch.sqrt(reward_var)
-                        ).log_prob(reward_output)
-                    )
-                    wandb.log({"nlpd_reward_model": torch.mean(nlpd_reward_model)})
+                    # # Log reward model stuff
+                    # reward_output = dataset["reward"].to(cfg.device)
+                    # # reward_output = dataset["reward"]
+                    # if isinstance(
+                    #     agent.reward_model, src.rl.models.rewards.CartpoleRewardModel
+                    # ):
+                    #     # pass
+                    #     reward_hard = agent.reward_model.predict(
+                    #         # dataset["next_state"],
+                    #         state=dataset["state"],
+                    #         action=dataset["action"],
+                    #     ).reward_mean
+                    #     # reward_output = agent.reward_model.predict(
+                    #     #     # dataset["next_state"],
+                    #     #     dataset["state"],
+                    #     #     dataset["action"],
+                    #     # ).reward_mean
+                    #     print("reward_hard {}".format(reward_hard.shape))
+                    #     print("reward_output {}".format(reward_output.shape))
+                    #     mse_reward_model_hard = torch.mean(
+                    #         (reward_hard - reward_output) ** 2
+                    #     )
+                    #     print(
+                    #         "mse_reward_model_hard {}".format(mse_reward_model_hard.shape)
+                    #     )
+                    #     wandb.log({"mse_reward_model_hard": mse_reward_model_hard})
+                    else:
+                        reward_mean, reward_var = agent.reward_model.ntksvgp.predict(
+                            state_action_inputs
+                        )
+                        mse_reward_model = torch.mean(
+                            (reward_mean - reward_output) ** 2
+                        )
+                        reward_nn = agent.reward_model.network(state_action_inputs)
+                        mse_reward_model_nn = torch.mean(
+                            (reward_nn - reward_output) ** 2
+                        )
+                        wandb.log({"mse_reward_model_svgp": mse_reward_model})
+                        wandb.log({"mse_reward_model_nn": mse_reward_model_nn})
+                        nlpd_reward_model = -torch.mean(
+                            torch.distributions.Normal(
+                                reward_mean, torch.sqrt(reward_var)
+                            ).log_prob(reward_output)
+                        )
+                        wandb.log({"nlpd_reward_model": torch.mean(nlpd_reward_model)})
+                except:
+                    pass
 
 
 if __name__ == "__main__":

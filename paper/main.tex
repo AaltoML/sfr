@@ -493,7 +493,18 @@ If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\
 \subsection{Linearization gives rise to a Gaussian process posterior} 
 \label{sec:nn2gp}
 %
+
 The structure of the posterior given by the loss-landscape around the MAP weights $\vw^*$  induces a correlation structure on learned model functions of the neural network. These can be seen as possible perturbed versions of $f_{\vw^*}$ that can be used for characterizing ambiguity and uncertainty in the learned model (see \cref{fig:banana} for an example of sampling in weight-space). This gives rise to a probability {\em distribution} over the possible functions. If we limit the interest to the first two moments, we can characterize the resulting posterior over these functions as a Gaussian process (GP).
+
+%A Gaussian process characterizes a distribution over functions in terms of the first two moments. The key quantity of a Gaussian process is the prior covariance function (or kernel function) $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors in $\R^{\mathrm{D}}$. We aim to find a kernel based on the neural network to build the Gaussian process posterior.  A linear function in terms of parameters can easily be converted from the weight space to the function space as follows:
+%\begin{equation}
+%g_\weights(\mathbf{x}_{i})) = \phi(\vx)^\top \vw \implies \mu(\vx) = \vzeros \quad \kappa(\mathbf{x}, \mathbf{x}') = \frac{1}{\delta} \phi(\vx)^\top \phi(\vx)
+%\end{equation}
+%
+%
+%
+% The approximation can be seen as taking the map solution of \cref{eq-empirical-risk} as the mean of $q(\vw)$ but then substituting the following functional approximation for $\hat{f}_\weights(\mathbf{x}_{i}) = \Jac{\weights^*}{\mathbf{x}} $
+
 
 %A Gaussian procss characterizes a distribution over functions in terms of the first two moments. The key quantity of 
 %A Gaussian process is the prior covariance function (or kernel function) $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors in $\R^{\mathrm{D}}$. We aim to find a kernel based on the neural network to build the Gaussian process posterior. 

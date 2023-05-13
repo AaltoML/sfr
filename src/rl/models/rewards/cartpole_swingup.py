@@ -39,7 +39,7 @@ class CartpoleRewardModel(RewardModel):
         #     print("using reward")
         # else:
         # logger.info("only using using reward")
-        print("reward BEFORE {}".format(reward.max()))
+        # print("reward BEFORE {}".format(reward.max()))
         # print("reward BEFORE {}".format(reward))
         reward = torch.where(
             reward > self.sparse_threshold, reward, torch.zeros_like(reward)
@@ -47,7 +47,7 @@ class CartpoleRewardModel(RewardModel):
         # reward = torch.where(reward > self.sparse_threshold, reward + penalty, penalty)
 
         # print("reward {}".format(reward))
-        print("reward MAX {}".format(reward.max()))
+        # print("reward MAX {}".format(reward.max()))
         return RewardPrediction(reward_mean=reward, reward_var=None, noise_var=None)
 
     def update(self, data_new):

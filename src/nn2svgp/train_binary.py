@@ -174,7 +174,7 @@ if __name__ == "__main__":
 
     batch_size = X_train.shape[0]
 
-    likelihood = src.nn2svgp.likelihoods.BernoulliLh()
+    likelihood = src.nn2svgp.likelihoods.BernoulliLh(EPS=0.01)
     # likelihood = src.nn2svgp.likelihoods.CategoricalLh()
     # likelihood = src.nn2svgp.likelihoods.Gaussian()
     prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)

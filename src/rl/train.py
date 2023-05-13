@@ -293,7 +293,8 @@ def train(cfg: DictConfig):
 
             reward = reward_fn(
                 # torch.Tensor(time_step["observation"][None, ...]),
-                state=state[None, ...],
+                # state=state[None, ...],
+                state=next_state[None, ...],
                 action=action_input[None, ...],
             ).reward_mean
             # reward = agent.reward_model.predict(
@@ -543,7 +544,8 @@ def train(cfg: DictConfig):
                     # print("dataset['action'] {}".format(dataset["action"].shape))
                     # print("dataset['reward'] {}".format(dataset["reward"].shape))
                     reward_hard = agent.reward_model.predict(
-                        state=dataset["state"],
+                        state=dataset["next_state"],
+                        # state=dataset["state"],
                         # state=dataset_1["next_state"],
                         action=dataset["action"],
                     ).reward_mean

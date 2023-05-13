@@ -80,6 +80,7 @@ if __name__ == "__main__":
         return torch.Tensor(ys)
 
     delta = 0.0002
+    # delta = 0.000002
     # delta = 0.002
     # delta = 0.005
     # delta = 0.01
@@ -178,12 +179,21 @@ if __name__ == "__main__":
     # likelihood = src.nn2svgp.likelihoods.CategoricalLh()
     # likelihood = src.nn2svgp.likelihoods.Gaussian()
     prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
+    # ntksvgp = src.nn2svgp.NN2GPSubset(
+    #     network=network,
+    #     prior=prior,
+    #     likelihood=likelihood,
+    #     output_dim=1,
+    #     # dual_batch_size=100,
+    #     jitter=1e-4,
+    # )
     ntksvgp = NTKSVGP(
         network=network,
         # train_data=(X_train, Y_train),
         prior=prior,
         likelihood=likelihood,
         output_dim=1,
+        dual_batch_size=100,
         # num_inducing=X_train.shape[0],
         num_inducing=50,
         # jitter=1e-6,

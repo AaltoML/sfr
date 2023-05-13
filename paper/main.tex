@@ -351,7 +351,7 @@ S-FSVI \cite{rudner2022continual}
   \centering\scriptsize
   % Figure options
   \pgfplotsset{axis on top,scale only axis,width=\figurewidth,height=\figureheight, ylabel near ticks,ylabel style={yshift=-2pt},y tick label style={rotate=90},legend style={nodes={scale=1., transform shape}},tick label style={font=\tiny,scale=1}}
-  \pgfplotsset{xlabel={Input, $x$},axis line style={rounded corners=3pt}}
+  \pgfplotsset{xlabel={Input, $x$},axis line style={rounded corners=2pt}}
   % Set figure 
   \setlength{\figurewidth}{.28\textwidth}
   \setlength{\figureheight}{\figurewidth}
@@ -361,7 +361,7 @@ S-FSVI \cite{rudner2022continual}
   \begin{subfigure}[c]{.34\textwidth}
     \raggedleft
     \pgfplotsset{ylabel={Output, $y$}}
-    \input{./fig/regression-nn.tex}%
+    \input{../src/nn2svgp/figs/regression-nn.tex}%
   \end{subfigure}
   \hfill  
   \begin{subfigure}[c]{.01\textwidth}
@@ -372,7 +372,7 @@ S-FSVI \cite{rudner2022continual}
   \begin{subfigure}[c]{.28\textwidth}
     \raggedleft
     \pgfplotsset{yticklabels={,,},ytick={\empty}}
-    \input{./fig/regression-nn2svgp.tex}%
+    \input{../src/nn2svgp/figs/regression-nn2svgp.tex}%
   \end{subfigure}
   \hfill  
   \begin{subfigure}[c]{.01\textwidth}
@@ -383,7 +383,7 @@ S-FSVI \cite{rudner2022continual}
   \begin{subfigure}[c]{.28\textwidth}
     \raggedleft
     \pgfplotsset{yticklabels={,,},ytick={\empty}}        
-    \input{./fig/regression-update.tex}%
+    \input{../src/nn2svgp/figs/regression-update.tex}%
   \end{subfigure}
   \caption{\textbf{Regression example on an MLP with two hidden layers.} Left:~Predictions from the trained neural network. Center:~Our approach summarizes the...}
   \label{fig:teaser} 
@@ -428,21 +428,22 @@ S-FSVI \cite{rudner2022continual}
     \addfig{1.1\figurewidth,0}{banana-nn2svgp}
 
     % The update
-    \addfig{2.2\figurewidth,0}{banana-update}
+    \addfig{2.2\figurewidth,0}{banana-hmc}
 
     % The arrow
     \tikzstyle{myarrow} = [draw=black!80, single arrow, minimum height=14mm, minimum width=2pt, single arrow head extend=4pt, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
+    \tikzstyle{myblock} = [draw=black!80, minimum height=4mm, minimum width=7mm, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
     \node[myarrow] (first-arr) at ($(banana-nn)!0.5!(banana-nn2svgp)$) {};
-    \node[myarrow] (second-arr) at ($(banana-nn2svgp)!0.5!(banana-update)$) {};
+    \node[myblock] (second-arr) at ($(banana-nn2svgp)!0.5!(banana-hmc)$) {};
 
     % Arrow labels
     \node[font=\scriptsize\sc,color=white] at (first-arr) {nn2svgp};
-    \node[font=\scriptsize\sc,color=white] at (second-arr) {new data};   
-     
+    \node[font=\scriptsize\sc,color=white] at (second-arr) {\normalsize$\bm\approx$};
+         
     % Labels
     \node[anchor=north, font=\small] at ($(banana-nn) + (0,-.55\figureheight)$) {Neural network prediction};
     \node[anchor=north, font=\small] at ($(banana-nn2svgp) + (0,-.55\figureheight)$) {Sparse GP representation};
-    \node[anchor=north, font=\small] at ($(banana-update) + (0,-.55\figureheight)$) {Update without re-training};      
+    \node[anchor=north, font=\small] at ($(banana-hmc) + (0,-.55\figureheight)$) {HMC result as baseline};      
 
   \end{tikzpicture}
   \newcommand{\mycircle}{\protect\tikz[baseline=-.5ex]\protect\node[circle,inner sep=2pt,draw=black,fill=C0,opacity=.5]{};}

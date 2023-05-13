@@ -489,10 +489,18 @@ In supervised learning, given a data set $\dataset = \{(\mathbf{x}_{i} , \mathbf
 %
 If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\weights(\mathbf{x}_{i}))$ and the regularizer $\mathcal{R}(\weights) = \frac{1}{2}\|\weights\|^{2}_2$, then we can view \cref{eq-empirical-risk} as the maximum {\it a~posteriori} (MAP) solution to a Bayesian objective, where $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$.
 
-\subsection{Neural network to GP prior} 
+\subsection{Neural Network to GP Prior} 
 \label{sec:nn2gp}
 %
-A Gaussian process characterizes a distribution over functions in terms of the first two moments. The key quantity of a Gaussian process is the prior covariance function (or kernel function) $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors in $\R^{\mathrm{D}}$. We aim to find a kernel based on the neural network to build the Gaussian process posterior. If we had the following function parameterization $g(\vx) = \phi(\vx)^\top \vw$ where $\phi(\vx)$ is a feature map, we can convert from weight space prior to function space prior giving the following kernel $\kappa(\vx, \vx') = \delta^{-1} \phi(\vx) \phi(\vx')^\T$ see \citep{rasmussen2006gaussian} for details.\todo{this part needs to be rewritten, starts talking about a general function parameterisation and then jumps directly to the neural network} 
+A Gaussian process characterizes a distribution over functions in terms of the first two moments. The key quantity of a Gaussian process is the prior covariance function (or kernel function) $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors in $\R^{\mathrm{D}}$. We aim to find a kernel based on the neural network to build the Gaussian process posterior. A common approach to find a $q(\vw)$ is to perform a Laplace-GGN approximation. The approximation can be seen as taking the map solution of \cref{eq-empirical-risk}
+
+A linear function in terms of parameters can easily be converted from the weight space to the function space as follows
+
+\begin{equation}
+\hat{f}_\weights(\mathbf{x}_{i})) = \phi(\vx)^\top \vw
+\end{equation}
+
+$g(\vx) = \phi(\vx)^\top \vw$ where $\phi(\vx)$ is a feature map, we can convert from weight space prior to function space prior giving the following kernel $\kappa(\vx, \vx') = \delta^{-1} \phi(\vx) \phi(\vx')^\T$ see \citep{rasmussen2006gaussian} for details.\todo{this part needs to be rewritten, starts talking about a general function parameterisation and then jumps directly to the neural network} 
 We can approximate the feature map of the neural network  $f_\weights(\mathbf{x})$  by using the Jacobian at $\weights^*$ thus our GP prior becomes:
 \begin{equation} \label{eq-laplace-approx-function-space}
  g(\vx) \sim \Norm \left( \mu(\vx), \kappa(\vx, \vx') \right) \quad \text{with} \quad

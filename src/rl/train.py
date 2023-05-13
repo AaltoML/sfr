@@ -18,19 +18,16 @@ import torch
 
 torch.set_default_dtype(torch.float64)
 
-from src.rl.custom_types import State, Action
 import src
 import torchrl
 import wandb
 from dm_env import specs, StepType
 from omegaconf import DictConfig, OmegaConf
+from src.rl.custom_types import Action, State
 from src.rl.utils import EarlyStopper, set_seed_everywhere
 from tensordict import TensorDict
 
 
-reward_fn = src.rl.models.rewards.CartpoleRewardModel().predict
-# def reward_fn(state, action):
-#     return torch.vmap(src.rl.models.rewards.cartpole_swingup_reward)(state, action)
 Transition = namedtuple("Transition", ("state", "action", "next_state", "reward"))
 
 
@@ -183,6 +180,7 @@ def train(cfg: DictConfig):
     # )
     print("Made replay buffer")
 
+    reward_fn = hydra.utils.instantiate(cfg.agent.reward_model).predict
     # transition_model = hydra.utils.instantiate(cfg.agent.transition_model)
     # svgp = hydra.utils.instantiate(cfg.agent.reward_model.svgp)
     # reward_model = hydra.utils.instantiate(cfg.agent.reward_model, svgp=svgp)
@@ -199,8 +197,13 @@ def train(cfg: DictConfig):
     global_step = 0
     for episode_idx in range(cfg.num_train_episodes):
         logger.info("Episode {} | Collecting data".format(episode_idx))
+
         # Collect trajectory
         time_step = env.reset()
+
+        if cfg.save_video:
+            video_recorder.init(env, enabled=True)
+
         episode_reward = 0
         t = 0
         reset_updates = False
@@ -296,7 +299,8 @@ def train(cfg: DictConfig):
 
             reward = reward_fn(
                 # torch.Tensor(time_step["observation"][None, ...]),
-                state=state[None, ...],
+                # state=state[None, ...],
+                state=next_state[None, ...],
                 action=action_input[None, ...],
             ).reward_mean
             # reward = agent.reward_model.predict(
@@ -312,6 +316,8 @@ def train(cfg: DictConfig):
             # print("reward {}".format(reward.shape))
             # reward = reward_fn(state[None, ...], action_input[None, ...]).reward_mean
             reward_output = reward.to(cfg.device)
+            reward_diff = reward - time_step["reward"]
+            wandb.log({"env_reward_diff": reward_diff})
             # reward_output = torch.Tensor([time_step["reward"]]).to(cfg.device)
             # print("reward_output {}".format(reward_output.shape))
             state_action_input = torch.concatenate(
@@ -388,6 +394,8 @@ def train(cfg: DictConfig):
             # episode_reward += time_step["reward"] # TODO put back to env reward
             episode_reward += reward
             t += 1
+            if cfg.save_video:
+                video_recorder.record(env)
 
         logger.info("Finished collecting {} time steps".format(t))
 
@@ -421,16 +429,20 @@ def train(cfg: DictConfig):
             logger.info("Training agent")
             # # agent.train(replay_buffer)
             agent.train(replay_memory)
-            # G = src.rl.utils.evaluate(
-            #     eval_env,
-            #     agent,
-            #     episode_idx=episode_idx,
-            #     num_episodes=1,
-            #     online_updates=False,
-            #     online_update_freq=cfg.online_update_freq,
-            #     video=video_recorder,
-            #     device=cfg.device,
-            # )
+
+            if cfg.save_video:
+                # G = src.rl.utils.evaluate(
+                #     eval_env,
+                #     agent,
+                #     episode_idx=episode_idx,
+                #     num_episodes=1,
+                #     online_updates=False,
+                #     online_update_freq=cfg.online_update_freq,
+                #     video=video_recorder,
+                #     device=cfg.device,
+                # )
+                print("saving video episode: {}".format(episode_idx))
+                video_recorder.save(episode_idx)
 
             # # Log rewards/videos in eval env
             # if episode_idx % cfg.eval_episode_freq == 0:
@@ -546,7 +558,8 @@ def train(cfg: DictConfig):
                     # print("dataset['action'] {}".format(dataset["action"].shape))
                     # print("dataset['reward'] {}".format(dataset["reward"].shape))
                     reward_hard = agent.reward_model.predict(
-                        state=dataset["state"],
+                        state=dataset["next_state"],
+                        # state=dataset["state"],
                         # state=dataset_1["next_state"],
                         action=dataset["action"],
                     ).reward_mean

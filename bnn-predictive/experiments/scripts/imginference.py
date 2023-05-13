@@ -619,7 +619,7 @@ if __name__ == "__main__":
     print(f"Seed: {args.seed}")
 
 
-    #torch.set_default_dtype(torch.double)
+    torch.set_default_dtype(torch.double)
 
     device = "cuda" if torch.cuda.is_available() else "cpu"
     torch.set_default_device(device)

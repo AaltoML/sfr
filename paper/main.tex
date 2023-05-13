@@ -514,8 +514,10 @@ If we had the following function parameterization $g(\vx) = \phi(\vx)^\top \vw$ 
 \subsection{Neural Network to GP Prior} 
 \label{sec:nn2gp}
 %
-A common approach to find a distribution over $q(\vw)$ is to perform a Laplace-GGN approximation. The approximation can be seen as taking the Laplace approximation of \cref{eq-empirical-risk} and approximating the   Hessian of $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i)$ with the Generalized Gauss Newton(GGN) approximation. \citet{immerImprovingPredictionsBayesian2021} proposed to make the following linear approximation
-$f^{\textrm{lin.}}_{\vw^*}(\vx; \vw) = f_{\vw^*}(\vx) + \Jac{\weights^*}{\mathbf{x}} \, (\vw - \vw^*)$ of the neural network, with Jacobian $\Jac{\weights}{\mathbf{x}} \coloneqq \nabla_\weights f(\mathbf{x})^\top \in \R^{C \times P}$. The idea
+Given an approximate posterior $q(\vw)$  \citet{immerImprovingPredictionsBayesian2021} proposed to make the following linear approximation
+$f^{\textrm{lin.}}_{\vw^*}(\vx; \vw) = f_{\vw^*}(\vx) + \Jac{\weights^*}{\mathbf{x}} \, (\vw - \vw^*)$ of the neural network, with Jacobian $\Jac{\weights}{\mathbf{x}} \coloneqq \nabla_\weights f(\mathbf{x})^\top \in \R^{C \times P}$. The approximation can be used with any approximate inference technique but in the paper they focus on the Laplace-GNN. They find that the linear approximation helps to improve predictions by correcting the approximate posterior when sampled through a non-Gaussian likelihoods. 
+
+
 
  at the map estimate it was possible to improve predictions from a Laplace-GGN Bayesian neural network.  with Jacobian $\Jac{\weights}{\mathbf{x}} \coloneqq \nabla_\weights f(\mathbf{x})^\top \in \R^{C \times P}$
 

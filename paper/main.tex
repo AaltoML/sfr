@@ -479,28 +479,27 @@ S-FSVI \cite{rudner2022continual}
 \section{Methods}
 \label{sec:methods}
 %
-In supervised learning, given a data set $\dataset = \{(\mathbf{x}_{i} , \mathbf{y}_{i})\}_{i=1}^{n}$, with $\mathbf{x}_i \in \inputDomain$ and $\mathbf{y}_i \in \outputDomain$, the weights $\weights \in \R^{P}$ of a neural network
-, $f_\mathbf{w} : \inputDomain \mapsto \outputDomain$, 
-are usually trained to minimize the (regularized) empirical risk,
-\begin{align} \label{eq-empirical-risk}
+In supervised learning, given a data set $\dataset = \{(\mathbf{x}_{i} , \mathbf{y}_{i})\}_{i=1}^{n}$, with input $\mathbf{x}_i \in \inputDomain$ and output $\mathbf{y}_i \in \outputDomain$ pairs, the weights $\weights \in \R^{P}$ of a neural network, $f_\mathbf{w} : \inputDomain \mapsto \outputDomain$, are usually trained to minimize the (regularized) empirical risk,
+%
+\begin{equation} \label{eq-empirical-risk}
   \weights^{*} = 
-  \argmin_{\weights} \mathcal{L}(\dataset,\weights) =
-  \argmin_{\weights} \sum_{i=1}^{n} \ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) + \delta \mathcal{R}(\weights).
-\end{align}
-If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\weights(\mathbf{x}_{i}))$ and $\mathcal{R}(\weights) = \frac{1}{2}\|\weights\|^{2}_2$ then we can view \cref{eq-empirical-risk} as the MAP solution to a Bayesian objective, where $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$.
+  \arg \min_{\weights} \mathcal{L}(\dataset,\weights) =
+  \arg \min_{\weights} \sum_{i=1}^{n} \ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) + \delta \mathcal{R}(\weights).
+\end{equation}
+%
+If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\weights(\mathbf{x}_{i}))$ and the regularizer $\mathcal{R}(\weights) = \frac{1}{2}\|\weights\|^{2}_2$, then we can view \cref{eq-empirical-risk} as the maximum {\it a~posteriori} (MAP) solution to a Bayesian objective, where $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$.
 
 \subsection{Neural network to GP prior} 
 \label{sec:nn2gp}
 %
 A Gaussian process characterizes a distribution over functions in terms of the first two moments. The key quantity of a Gaussian process is the prior covariance function (or kernel function) $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors in $\R^{\mathrm{D}}$. We aim to find a kernel based on the neural network to build the Gaussian process posterior. If we had the following function parameterization $g(\vx) = \phi(\vx)^\top \vw$ where $\phi(\vx)$ is a feature map, we can convert from weight space prior to function space prior giving the following kernel $\kappa(\vx, \vx') = \delta^{-1} \phi(\vx) \phi(\vx')^\T$ see \citep{rasmussen2006gaussian} for details.\todo{this part needs to be rewritten, starts talking about a general function parameterisation and then jumps directly to the neural network} 
 We can approximate the feature map of the neural network  $f_\weights(\mathbf{x})$  by using the Jacobian at $\weights^*$ thus our GP prior becomes:
-\begin{align} \label{eq-laplace-approx-function-space}
- g(\vx) \sim \Norm \left( \mu(\vx), \kappa(\vx, \vx') \right) \quad
-  \mu(\vx)
-  = \vzeros \quad
+\begin{equation} \label{eq-laplace-approx-function-space}
+ g(\vx) \sim \Norm \left( \mu(\vx), \kappa(\vx, \vx') \right) \quad \text{with} \quad
+  \mu(\vx) = \vzeros \quad \text{and} \quad
   \kappa(\mathbf{x}, \mathbf{x}')
   = \frac{1}{\delta} \Jac{\weights^*}{\mathbf{x}}\Jac{\weights^*}{\mathbf{x}'}^\top,
-\end{align}
+\end{equation}
 where the kernel is the Neural Tangent Kernel (NTK) \citep{jacot2018neural} with Jacobian $\Jac{\weights}{\mathbf{x}} \coloneqq \nabla_\weights f(\mathbf{x})^\top \in \R^{C \times P}$. Alternatively, we could have followed the derivation in \citet{immerImprovingPredictionsBayesian2021} where they perform a local linearization of the neural network  $f^{\textrm{lin}}_{\vw^*}(\vx; \vw) = f_{\vw^*}(\vx) + \Jac{\weights^*}{\mathbf{x}} \, (\vw - \vw^*)$. Their mean prior function differ from ours, \cref{eq-laplace-approx-function-space}, as theirs comes from setting  $  \mu(\vx) = f^{\textrm{lin}}_{\vw_*}(\vx; \vw = \vzeros) = f_{\vw^*}(\vx) - \Jac{\weights^*}{\mathbf{x}} \vw^*$, \ie the difference between the linear model approximation and the neural network function at $\vx$. %which does not seem useful as a prior mean function, 
 On the other hand, we set $\mu(\vx) = \vzeros$, as common in GP literature and derived from a feature map conversion. \todo{derived what?}
 

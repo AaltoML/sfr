@@ -479,7 +479,7 @@ S-FSVI \cite{rudner2022continual}
 \section{Methods}
 \label{sec:methods}
 %
-In supervised learning, given a data set $\dataset = \{(\mathbf{x}_{i} , \mathbf{y}_{i})\}_{i=1}^{n}$, with input $\mathbf{x}_i \in \inputDomain$ and output $\mathbf{y}_i \in \outputDomain$ pairs, the weights $\weights \in \R^{P}$ of a neural network, $f_\mathbf{w} : \inputDomain \mapsto \outputDomain$, are usually trained to minimize the (regularized) empirical risk,
+In supervised learning, given a data set $\dataset = \{(\mathbf{x}_{i} , \mathbf{y}_{i})\}_{i=1}^{n}$, with input $\mathbf{x}_i \in \inputDomain$ and output $\mathbf{y}_i \in \outputDomain$ pairs, the weights $\weights \in \R^{P}$ of a neural network, $f_\mathbf{w} : \inputDomain \to \outputDomain$, are usually trained to minimize the (regularized) empirical risk,
 %
 \begin{equation} \label{eq-empirical-risk}
   \weights^{*} = 

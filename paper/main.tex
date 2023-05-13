@@ -587,22 +587,31 @@ where $\MKzz$ and $\vkzs$ are define similarly to $\MKxx$ and $\vk_{\vx i}$ but 
 
 \textbf{Continual learning}
 
-\textbf{Model-based reinforcement learning}
+\subsection{Reinforcement learning}
 We now detail how our method can be used in model-based RL.
-Folling the Markov decision process formulation \cite{bellmanDynamic1956}, we
-denote states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \), actions \(\action \in \actionDomain \subseteq \R^{D_{\action}}\) and
-transition dynamics \(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \).
-The goal of RL is to find the policy \(\pi : \stateDomain \rightarrow \actionDomain \), that maximises the sum of rewards
+We consider stochastic environments with states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \),
+actions \(\action \in \actionDomain \subseteq \R^{D_{\action}}\) and transition dynamics
+\(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \), such that
+$\state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}$, where  $\noise_{t}$
+is i.i.d. transition noise.
+We consider the episodic setting where the system is reset to an initial state $\state_{0}$ at each episode and we
+assume that there is a known reward function $r : \stateDomain \times \actionDomain \rightarrow \R$.
+% Following the Markov decision process formulation \cite{bellmanMarkovianDecisionProcess1957a}, we
+% denote the states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \) and actions \(\action \in \actionDomain \subseteq \R^{D_{\action}}\)
+% of the sytem, the reward function $r : \stateDomain \times \actionDomain \rightarrow \R$, and transition dynamics
+% \(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \), such that
+% $\state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}$ where  $\noise_{t}$
+% is i.i.d. transition noise.
+The goal of RL is to find the policy \(\pi : \stateDomain \rightarrow \actionDomain\) that maximises the sum of discounted rewards
+in expecation over the transition noise,
 \begin{align} \label{eq-model-free-objective}
 \policy^{*} = \arg \max_{\policy \in \policyDomain} J(\transitionFn, \policy) = \arg \max_{\policy \in \policyDomain} \mathbb{E}_{\noise_{0:\infty}} \left[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \right]
-\quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}.
+\quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t},
 \end{align}
-in expecation over the transition noise,
- subject to  i.i.d. transition noise \(\noise_{t}\).
-where $\gamma \in [0, 1]$ is a discount factor to account for the infinte sum.
+where $\gamma \in [0, 1]$ is a discount factor and $\Pi$ is a set of policies.
 
 
-
+\textbf{Model-learning}
 In model-based RL, the state transition data set \(\mathcal{D} = \{\{(s_{t},a_{t}), s_{t+1}\}^{T_{i}}_{t=1}\}_{i=0}^{N}\) is first used to
 learn a dynamic model \(f_{\mathbf{w}})\) using supervised learning.
 \cref{alg-mbrl} shows the typical model-based RL loop.
@@ -611,13 +620,11 @@ learn a dynamic model \(f_{\mathbf{w}})\) using supervised learning.
 \begin{align} \label{eq-fast-update-mpc}
   \policy_{i+1}^{\text{PS}}(\state) &= \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}}
 J^{\Horizon}(\action_{0:\Horizon}, \transitionFn) + \stateValueFn(\state_{\Horizon+1})
+\quad
+  \stateValueFn(\state) &= \mathbb{E} \left[ \sum_{t=0}^{\infty}     \discount^{t} \rewardFn(\state_{t},\action_{t}) \mid \state_{0}=\state \right] \label{eq-fast-update-mpc-old}
 \end{align}
 \end{subequations}
-\begin{subequations}
-\begin{align} \label{eq-fast-update-mpc-old}
-  \stateValueFn(\state) &= \mathbb{E} \left[ \sum_{t=0}^{\infty}     \discount^{t} \rewardFn(\state_{t},\action_{t}) \mid \state_{0}=\state \right]
-\end{align}
-\end{subequations}
+
 
 
 In model-based RL, we obtain the posterior over the dynamics \(p(f\mid\mathcal{D})\) after performing (approximate) Bayesian

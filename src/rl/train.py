@@ -316,6 +316,8 @@ def train(cfg: DictConfig):
             # print("reward {}".format(reward.shape))
             # reward = reward_fn(state[None, ...], action_input[None, ...]).reward_mean
             reward_output = reward.to(cfg.device)
+            reward_diff = reward - time_step["reward"]
+            wandb.log({"env_reward_diff": reward_diff})
             # reward_output = torch.Tensor([time_step["reward"]]).to(cfg.device)
             # print("reward_output {}".format(reward_output.shape))
             state_action_input = torch.concatenate(

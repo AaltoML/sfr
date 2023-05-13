@@ -977,64 +977,64 @@ an effective and  common approach is to simply take the expecation over both the
 	
 	\input{tables/cl_table_1}
 \end{table}
-
-
-\subsection{Fast updates in reinforcement learning}
-
-\begin{figure}[!t]
-  \centering
-  \begin{subfigure}{.2\textwidth}
-  \resizebox{\textwidth}{!}{%
-  \begin{tikzpicture}[inner sep=0,outer sep=0]
-  
-    % Draw decorated 'ground'
-    \draw[postaction={draw, decorate, decoration={border, angle=-45,
-					amplitude=1cm, segment length=.5cm}}] (-3,-1.5) -- (12,-1.5);
-  
-    % The cart
-    \draw[draw=black,fill=black!50,draw=black,line width=3pt,rounded corners=1mm] (0,0) rectangle (9cm,3cm);
-    \node[fill=black,circle,minimum size=.5cm] (dot) at (4.5cm,3cm) {};
-    
-    % Wheels
-    \node[fill=white,draw=black,line width=3pt,circle,minimum size=2cm,,fill=black!50] at (2cm,-.5cm) {};
-    \node[fill=white,draw=black,line width=3pt,circle,minimum size=2cm,fill=black!50] at (7cm,-.5cm) {};  
-    
-    % The arm
-    \node[anchor=north,minimum width=1cm,minimum height=14cm,draw=black,rotate=20,rounded corners=5mm,yshift=7mm,xshift=-.3mm,fill=white,draw=black,line width=3pt] at (dot) {};
-    \node[fill=black,circle,minimum size=.5cm] at (dot) {};
-    
-    % Markings
-    \draw[loosely dashed,line width=1pt] (4.5,6) -- (4.5,-10);
-    
-    % Arrow
-    \draw[->,black,line width=3pt,-{Latex[length=7mm,width=7mm]}] (1,5) --node[above,outer sep=6pt]{\large $x$} (4.5,5);
-    
-    \def\centerarc[#1](#2)(#3:#4:#5)% Syntax: [draw options] (center) (initial angle:final angle:radius)
-    { \draw[#1] ($(#2)+({#5*cos(#3)},{#5*sin(#3)})$) arc (#3:#4:#5); }
-    
-    % Draw arc
-    \centerarc[black,line width=3pt](dot)(270:290:11)
-    \node at (6.5,-9) {$\theta$};
-    
-    \node[white,minimum size=1cm] at (4.5,-13) {};
-    
-  \end{tikzpicture}}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}{.78\textwidth}
-    % \tikz\node[minimum width=\textwidth,minimum height=.35\textwidth,fill=black!10,rounded corners=2pt]{RL trjectories or something interesting?};
-
-    % \includegraphics[width=0.5\textwidth]{./fig/rl.pdf}
-    \input{./fig/rl}
-
-
-  \end{subfigure}
-  \hfill
-  \caption{Add caption.}
-  \label{fig:rl}
-\end{figure}
-
-
+%
+%
+%\subsection{Fast updates in reinforcement learning}
+%
+%\begin{figure}[!t]
+%  \centering
+%  \begin{subfigure}{.2\textwidth}
+%  \resizebox{\textwidth}{!}{%
+%  \begin{tikzpicture}[inner sep=0,outer sep=0]
+%  
+%    % Draw decorated 'ground'
+%    \draw[postaction={draw, decorate, decoration={border, angle=-45,
+%					amplitude=1cm, segment length=.5cm}}] (-3,-1.5) -- (12,-1.5);
+%  
+%    % The cart
+%    \draw[draw=black,fill=black!50,draw=black,line width=3pt,rounded corners=1mm] (0,0) rectangle (9cm,3cm);
+%    \node[fill=black,circle,minimum size=.5cm] (dot) at (4.5cm,3cm) {};
+%    
+%    % Wheels
+%    \node[fill=white,draw=black,line width=3pt,circle,minimum size=2cm,,fill=black!50] at (2cm,-.5cm) {};
+%    \node[fill=white,draw=black,line width=3pt,circle,minimum size=2cm,fill=black!50] at (7cm,-.5cm) {};  
+%    
+%    % The arm
+%    \node[anchor=north,minimum width=1cm,minimum height=14cm,draw=black,rotate=20,rounded corners=5mm,yshift=7mm,xshift=-.3mm,fill=white,draw=black,line width=3pt] at (dot) {};
+%    \node[fill=black,circle,minimum size=.5cm] at (dot) {};
+%    
+%    % Markings
+%    \draw[loosely dashed,line width=1pt] (4.5,6) -- (4.5,-10);
+%    
+%    % Arrow
+%    \draw[->,black,line width=3pt,-{Latex[length=7mm,width=7mm]}] (1,5) --node[above,outer sep=6pt]{\large $x$} (4.5,5);
+%    
+%    \def\centerarc[#1](#2)(#3:#4:#5)% Syntax: [draw options] (center) (initial angle:final angle:radius)
+%    { \draw[#1] ($(#2)+({#5*cos(#3)},{#5*sin(#3)})$) arc (#3:#4:#5); }
+%    
+%    % Draw arc
+%    \centerarc[black,line width=3pt](dot)(270:290:11)
+%    \node at (6.5,-9) {$\theta$};
+%    
+%    \node[white,minimum size=1cm] at (4.5,-13) {};
+%    
+%  \end{tikzpicture}}
+%  \end{subfigure}
+%  \hfill
+%  \begin{subfigure}{.78\textwidth}
+%    % \tikz\node[minimum width=\textwidth,minimum height=.35\textwidth,fill=black!10,rounded corners=2pt]{RL trjectories or something interesting?};
+%
+%    % \includegraphics[width=0.5\textwidth]{./fig/rl.pdf}
+%    \input{./fig/rl}
+%
+%
+%  \end{subfigure}
+%  \hfill
+%  \caption{Add caption.}
+%  \label{fig:rl}
+%\end{figure}
+%
+%
 
 
 % \begin{figure}
@@ -1115,324 +1115,324 @@ iid noise \(\noise_{t}\), given by,
 \begin{assumption}
   (system properties) The environment's dynamics are $L_{\transitionFn}\text{-Lipschitz}$ continuous and the transition noise $\noise_{t}$ is $\sigma\text{-sub-Gaussian}$ for all $t \geq 0$.
 \end{assumption}
-
-\subsection{Model-based Reinforcement Learning (RL)}
-The goal of reinforcement learning is to find a policy \(\pi \in \Pi\) that maximises the sum of discounted
-rewards in expecation under the transition noise (aleatoric uncertainty),
-\begin{align} \label{eq-model-free-objective}
-\policy^{*} = \arg \max_{\policy \in \policyDomain} J(\transitionFn, \policy) = \arg \max_{\policy \in \policyDomain} \mathbb{E}_{\noise_{0:\infty}} \left[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \right],
-\end{align}
-where $\gamma \in [0, 1]$
-
-\textbf{Model-based}
-In Bayesian model-based RL, we obtain the posterior over the dynamics \(p(f\mid\mathcal{D})\) after performing (approximate) Bayesian
-inference given a state transition data set \(\mathcal{D} = \{\{(s_{t},a_{t}), s_{t+1}\}^{T_{i}}_{t=1}\}_{i=0}^{N}\).
-\cref{alg-mbrl} shows the typical model-based RL loop.
-Importantly, the dynamics are usually only updated after an episode $i$.
-
-\begin{algorithm}[!b]
-\caption{Model-based RL}\label{alg-mbrl}
-\begin{algorithmic}[1]
-  \Require Start state $\state_{0}$, initial data set $\dataset_{0}$, dynamics posterior $p(\transitionFn \mid \dataset_{0})$, policy $\policy_{0}$
-\For{$i  \in \{1, 2, \ldots, \text{num episodes} \}$}
-    \State Reset the system to $\state_{0}$ and reset trajectory buffers $\bm\tau_{t} = \emptyset \ \forall t$
-    \For{$t  \in \{1, 2, \ldots, \text{num steps} \}$}
-      % \State Collect  $\tau_{0:t} = \tau_{0:t-1} \cup (\state_{j}, \action_{j}, \state_{j+1}, r_{j+1})$
-      \State Use \cref{eq-greedy}/\cref{eq-posterior-sampling}/\cref{eq-ucrl} to collect data $\bm\tau_{t} = \bm\tau_{t-1} \cup (\state_{t}, \policy_{i}(\state_{t}), \transitionFn(\state_{t}, \policy_{i}(\state_{t})), r_{t+1})$
-      % \State Execute policy $\policy_{i}(\state_{t})$ in environment and update trajectory $\tau_{i+1} = \{\state_{j}, \action_{j}, \state_{j+1}, r_{j+1}) \}_{j=0}^{t}$
-    \EndFor
-    \State Update data set $\dataset_{0:i} = \dataset_{0:i-1} \cup \tau$
-    \State Train dynamics $p(\transitionFn \mid \dataset_{0:i}) \leftarrow \text{update\_dynamics}(\dataset_{0:i}, p(\transitionFn \mid \dataset_{0:i-1}))$
-    % \State Train dynamics $p(\transitionFn \mid \dataset_{0:i+1})$ using $\dataset_{0:i+1}$
-    % \State Improve policy $\pi_{i+1}$ using $p(\transitionFn \mid \dataset_{0:i+1})$ and/or $\dataset_{0:i+1}$
-    \State Improve policy $\pi_{i+1} \leftarrow \text{update\_policy}(p\left(\transitionFn \mid \dataset_{0:i}), \dataset_{0:i} \right)$
-    %\State Improve policy $\pi_{i+1}$ using $p(\transitionFn \mid \dataset_{0:i+1})$ and/or $\dataset_{0:i+1}$
-\EndFor
-\end{algorithmic}
-\end{algorithm}
-
-% \begin{minipage}{0.499\textwidth}
-% \begin{algorithm}[H]
-% \caption{Model-based RL}\label{alg-mbrl}
-% \begin{algorithmic}[1]
-%   \Require Initial data set $\dataset_{0}$, dynamics posterior $p(\transitionFn \mid \dataset_{0})$, policy $\policy_{0}$
-% \For{$i  \in \{0, 1, \ldots, \text{num episodes} \}$}
-%     \For{$t  \in \{0, 1, \ldots, \text{num steps} \}$}
-%       \State Execute policy $\policy_{i}(\state_{t})$ in environment
-%       \State $\tau_{i+1} = \{\state_{j}, \action_{j}, \state_{j+1}, r_{j+1}) \}_{j=0}^{t}$
-%     \EndFor
-%     \State Update data set $\mathcal{D}_{0:i+1} = \mathcal{D}_{0:i} \cup \tau_{i+1}$
-%     \State Train dynamics $p(\transitionFn \mid \dataset_{0:i+1})$
-%     \State Improve policy $\pi_{i+1}$
-%     %\State Improve policy $\pi_{i+1}$ using $p(\transitionFn \mid \dataset_{0:i+1})$ and/or $\dataset_{0:i+1}$
-% \EndFor
-% \end{algorithmic}
-% \end{algorithm}
-% \end{minipage}
-% \hfill
-% \begin{minipage}{0.499\textwidth}
-% \begin{algorithm}[H]
-% \caption{Model-based RL with fast updates}\label{alg-mbrl-fast-updates}
-% \begin{algorithmic}[1]
-%   \Require Initial data set $\dataset_{0}$, dynamics posterior $p(\transitionFn \mid \dataset_{0})$, policy $\policy_{0}$
-%     % ${p(\state_{\timeInd+1} \mid \singleInput, \dataset_{0})}$}
-% \For{$i  \in \{0, 1, \ldots, \text{num episodes} \}$}
-%     \For{$t  \in \{0, 1, \ldots, \text{num steps} \}$}
-%       \State Execute policy $\policy_{i}(\state_{t})$ in environment
-%       % \State Append transition $\state_{t}, \action_{t}, \state_{t+1}, r_{t+1})$ to trajectory $\tau_{i}$
-%       \State $\tau_{i+1} = \{\state_{j}, \action_{j}, \state_{j+1}, r_{j+1}) \}_{j=0}^{t}$
-%       \State {\color{blue}Update dynamics $p(\transitionFn \mid \dataset_{0:i} \cup \tau_{i+1})$}
-%     \EndFor
-%     \State Update data set $\mathcal{D}_{0:i+1} = \mathcal{D}_{0:i} \cup \tau_{i+1}$
-%     \State Train dynamics $p(\transitionFn \mid \dataset_{0:i+1})$
-%     \State Improve policy $\pi_{i+1}$
-%     %\State Improve policy $\pi_{i+1}$ using $p(\transitionFn \mid \dataset_{0:i+1})$ and/or $\dataset_{0:i+1}$
-% \EndFor
-% \end{algorithmic}
-% \end{algorithm}
-% \end{minipage}
-
-
-
-\subsection{Exploration Strategies}
-\textbf{Greedy exploitation}
-Given the posterior dynamics \(p(\transitionFn \mid \mathcal{D})\),
-a common approach is to simply take the expecation over both the aleatoric and epistemic uncertainty,
-\begin{align} \label{eq-greedy}
-\policy_{i+1}^{\text{greedy}} = \arg \max_{\policy \in \policyDomain} \mathbb{E}_{\transitionFn \sim p(\transitionFn \mid \dataset_{0:i})} \left[ J(\transitionFn, \policy) \right],
-\end{align}
-This approach has been widely adopted, for example, in PILCO, PETS, GP-MPC
-\cite{deisenrothPILCO2011,chuaDeepReinforcementLearning2018,kamtheDataEfficient2018}.
-This approach helps to alleviate model bias as the posterior ``knows what the model does not know''.
-This is because the predictive posterior \(p(f(s_{t},a_{t}) \mid (s_{t},a_{t}),  \mathcal{D} )\) will be (or should be) uncertain when making
-predictions far away from the training data.
-The expectation considers all possible dynamics models which prevents the policy optimisation from
-exploiting innacuracies in the model.
-This approach has no guarantees for exploration in the general case.
-However, under specific dynamics and reward structures (e.g. PILCO) this objective can achieve sublinear regret.
-\todo{need to double check sublinear regret statement. And give a reference}
-
-
-\textbf{Posterior sampling}
-\cite{osbandWhyPosteriorSampling2017,osbandMoreEfficientReinforcement2013}
-\begin{align} \label{eq-posterior-sampling}
-\policy_{i+1}^{\text{PS}} = \arg \max_{\policy \in \policyDomain} \left[ J(\transitionFn, \policy) \right] \quad \text{s.t. } \transitionFn \sim p(\transitionFn \mid \dataset_{0:i})
-\end{align}
-
-\textbf{Hallucinated upper confidence RL}
-A more theoretically grounded exploration strategy is UCRL \citep{jakschNearoptimal2010}, which optimises joinly over
-policies and models inside the set
-\(\mathcal{M} = \{ f \mid | f(s,a) - \mu_{i}(s, a) | \leq \beta_{i} \Sigma_{i}(s, a) \quad \forall s, a \in \mathcal{S} \times \mathcal{A} \}\), representing all statistically plausible
-models under the posterior \(p(f(s,a) \mid \mathcal{D}_{0:i} \cup (s,a)) = \mathcal{N}(f(s,a) \mid \mu_{i}(s,a), \Sigma_{i}(s,a))\) at episode \(i\).
-This strategy is given by,
-\begin{align} \label{eq-ucrl}
-\policy_{i+1}^{\text{UCRL}} = \arg \max_{\policy \in \policyDomain} \max_{\transitionFn \in \mathcal{M}} J(\transitionFn, \policy).
-\end{align}
-This strategy optimises an optimistic policy over the set of plausible dynamics models.
-Although this joint optimisation is intractable in general,
-\cite{curiEfficient2020} proposed a practical alternative which is detailed in \cref{sec-hucrl}.
-
-\textbf{MPC vs policy learning}
-It is worth noting that the strategies in \cref{eq-greedy,eq-posterior-sampling,eq-ucrl} can be used with both model predictive control (MPC)
-techniques, such as the cross entoropy method (CEM), and model-free RL techniques, such as soft actor-critic (SAC).
-
-
-In this work we are interested in how we can use \(p(f \mid \mathcal{D})\) to alleviate some of the issues in model-based RL,
-for example, model bias and the exploration-exploitation trade-off.
-
-
-
-\todo{show how to get new $\dualParam{1}$ and $\dualParam{2}$ in Train dynamics line of \cref{alg-mbrl-fast-updates}}
-\begin{algorithm}[!t]
-\caption{Model-based RL with fast updates}\label{alg-mbrl-fast-updates}
-\begin{algorithmic}[1]
-  \Require Start state $\state_{0}$, initial data set $\dataset_{0}$, dynamics posterior $p(\transitionFn \mid \dataset_{0})$ (inc. dual parameters $\dualParam{1}, \dualParam{2}$), policy $\policy_{0}$
-    % ${p(\state_{\timeInd+1} \mid \singleInput, \dataset_{0})}$}
-\For{$i  \in \{1, 2, \ldots, \text{num episodes} \}$}
-    \State Reset the system to $\state_{0}$ and reset trajectory buffers $\bm\tau_{t} = \emptyset \ \forall t$
-    \For{$t  \in \{1, 2, \ldots, \text{num steps} \}$}
-      % \State Execute policy $\policy_{i}(\state_{t})$ (\cref{eq-fast-update-mpc}) in environment
-      \State Use \cref{eq-fast-update-mpc} to collect data $\bm\tau_{t} = \bm\tau_{t-1} \cup (\state_{t}, \policy_{i}(\state_{t}), \transitionFn(\state_{t}, \policy^{\text{fast}}_{i}(\state_{t})), r_{t+1})$
-      % \State Append transition $\state_{t}, \action_{t}, \state_{t+1}, r_{t+1})$ to trajectory $\tau_{i}$
-      % \State $\tau_{i+1} = \{\state_{j}, \action_{j}, \state_{j+1}, r_{j+1}) \}_{j=0}^{t}$
-      %\State {\color{blue}Update dynamics $p(\transitionFn \mid \dataset_{0:i} \cup \tau_{i+1})$}
-      \State {\color{blue}Update dynamics posterior using \cref{eq-dual-update-svgp}, i.e. fast update}
-      % \begin{align}
-      % \dualParam{1}^{t+1} &\leftarrow \dualParam{1}^{t} +  \nabla_{\meanParam{1}} \mathbb{E}_{q_{\inducingVariable}(\latentFn(\state_{t}, \action_{t}))} \left[ \log p(\state_{t+1} \mid \latentFn(\state_{t}, \action_{t}) ) \right] \\
-      % \dualParam{2}^{t+1} &\leftarrow \dualParam{2}^{t} +  \nabla_{\meanParam{2}} \mathbb{E}_{q_{\inducingVariable}(\latentFn(\state_{t}, \action_{t}))}  \left[ \log p(\state_{t+1} \mid \latentFn(\state_{t}, \action_{t}) ) \right]
-      % \end{align}}
-    \EndFor
-    \State Update data set $\dataset_{0:i} = \dataset_{0:i-1} \cup \tau$
-    \State Train dynamics $p(\transitionFn \mid \dataset_{0:i}) \leftarrow \text{update\_dynamics}(\dataset_{0:i}, p(\transitionFn \mid \dataset_{0:i-1}))$
-    \State Improve policy $\pi^{\text{fast}}_{i+1} \leftarrow \text{update\_policy}(p\left(\transitionFn \mid \dataset_{0:i}), \dataset_{0:i} \right)$
-\EndFor
-\end{algorithmic}
-\end{algorithm}
-
-
-\subsubsection{Fast updates}
-
-
-In this section we extend these fast updates to environment's with high dimensional state spaces and large data sets.
-% Our method draws on the connection between BNNs and GPs and formulates a function space SVGP posterior given
-Our method uses a BNN dynamic model and draws on the connection between BNNs and GPs
-\citep{khanApproximate2019} to formulate a function space SVGP posterior,
-where we can apply the fast updates from \cref{eq-dual-update-svgp}.
-At a high-level, we first use Laplace's approximation to obtain a weight space posterior for our BNN.
-We then linearise our BNN around the optimal parameters and interpret it as a GP.
-Finally, we formulate a lower rank approximation of this GP posterior (i.e. a SVGP posterior) using inducing variables.
-% formulates a function space SVGP posterior by drawing on the connection between BNNs and GPs.
-
-
-The strategies in \cref{eq-greedy,eq-posterior-sampling,eq-hucrl} do not update the dynamic model during an episode.
-A better approach would be to update the posterior at every time step during an episode, for example,
-\begin{subequations}
-\begin{align} \label{eq-fast-update-mpc}
-  \policy_{i+1}^{\text{greedy}}(\state) &= \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}}
-\E_{p(\transitionFn \mid \dataset_{0:i})} \left[J^{\Horizon}(\action_{0:\Horizon}, \transitionFn) \right] + \stateValueFn(\state_{\Horizon+1}) \\
-  \policy_{i+1}^{\text{PS}}(\state) &= \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}}
-J^{\Horizon}(\action_{0:\Horizon}, \transitionFn) + \stateValueFn(\state_{\Horizon+1}) \quad \text{s.t. } \transitionFn \sim p(\transitionFn \mid \dataset_{0:i} \cup \bm\tau_{t}) \\
-  \policy_{i+1}^{\text{UCRL}}(\state) &= \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}} \max_{\transitionFn \in \mathcal{M}}
-J^{\Horizon}(\action_{0:\Horizon}, \transitionFn) + \stateValueFn(\state_{\Horizon+1}) \quad \text{s.t. } \mathcal{M} = \{\transitionFn(\state_{t},\action_{t}) - \mu_{i,t}(\state_{t},\action_{t}) \leq \beta_{i,t} \Sigma_{i,t}(\state_{t}, \action_{t})\} \\
-  \stateValueFn(\state) &= \mathbb{E} \left[ \sum_{t=0}^{\infty}     \discount^{t} \rewardFn(\state_{t},\action_{t}) \mid \state_{0}=\state \right] \label{eq-value-fn}
-\end{align}
-\end{subequations}
-\begin{subequations}
-\begin{align} \label{eq-fast-update-mpc-old}
-  \policy^{\text{fast}}(\state) = \arg &\max_{\action_{0}} \max_{\action_{1}, \ldots, \action_{\Horizon}}
-  \mathbb{E}_{\state_{\horizon} \sim p(\state_{\horizon+1} \mid \transitionFn(\state_{\horizon}, \action_{\horizon}))} \left[ \sum_{\horizon=0}^{\Horizon}     \discount^{\horizon} \rewardFn(\state_{\horizon},\action_{\horizon}) \mid \state_{0}=\state \right] + \discount^{\Horizon+1} \stateValueFn(\state_{\Horizon+1}) \\
-  \stateValueFn(\state) &= \mathbb{E} \left[ \sum_{t=0}^{\infty}     \discount^{t} \rewardFn(\state_{t},\action_{t}) \mid \state_{0}=\state \right] \label{eq-fast-update-mpc}
-\end{align}
-\end{subequations}
-
-\begin{align} \label{}
-  \policy(\state) = \arg &\max_{\action_{0}} \max_{\action_{1}, \ldots, \action_{\Horizon}} \max_{\optimisticTransition \in \optimisticTransitionSet}
-  \sum_{\horizon=0}^{\Horizon}  \mathbb{E}_{\noise_{\horizon}} \left[  \discount^{\horizon} \rewardFn(\state_{\horizon},\action_{\horizon}) \right] + \discount^{\Horizon+1} \stateValueFn(\state_{\Horizon+1}) \\
-  \text{s.t. } \state_{\horizon+1} &= \optimisticTransition(\state_{\horizon}, \action_{\horizon}) + \noise_{\horizon} \\
-  \optimisticTransition(\state_{\horizon}, \action_{\horizon}) &=
-\optimisticTransitionMean(\state_{\horizon}, \action_{\horizon}) \pm \beta_{i}
-\optimisticTransitionCov(\state_{\horizon}, \action_{\horizon})
-\end{align}
-
-\input{proof.tex}
-
-
-\section{Hallucinated Upper Confidence Reinforcement Learning (H-UCRL)} \label{sec-hucrl}
-\cite{curiEfficient2020} introduced a tractable approximation which retains some of the theoretical guarantees whilst
-being applicable with deep model-based RL.
-They introduce a function \(\eta: \mathcal{S} \times \mathcal{A} \rightarrow [-1, 1]^{p}\) which acts as a hallucinated control input.
-The strategy is given by,
-\begin{align} \label{eq-hucrl}
-\pi_i^{\text{UCRL}} = \arg \max_{\policy \in \policyDomain} \max_{\eta(\cdot) \in [-1,1]} J(\transitionFn, \policy) \quad \text{s.t.} \quad \transitionFn = \mu_{i}(\state_{t}, \action_{t}) + \beta_{i} \Sigma_{i}(\state_{t}, \action_{t}) \eta(\state_{t},\action_{t}).
-\end{align}
-Intuitively, \(\eta(\state,\action) \in [-1,1]\) enables the optimisation to select any dynamics model
-\(\transitionFn\) within \(\pm \beta \Sigma_{i}(\state_{t}, \action_{t})\) of the posterior mean \(\mu_{i}(\state_{t}, \action_{t})\).
-
-\section{Laplace Approximation} \label{sec-laplace-approximation}
-
-\textbf{Laplace approximation}
-The Laplace approximation \todo{add citation of original paper} constructs a Gaussian approximation of the weight-space posterior $p(\weights \mid \dataset)$
-by using a second-order Taylor expansion of $\mathcal{L}$ around $\weights^{*}$.
-The posterior approximation is given by,
-\begin{align} \label{eq-laplace-approx-weight-space}
-  p(\weights \mid \dataset) \approx \mathcal{N} \left( \weights \mid \weights^{*} , \bm\Sigma_{\weights^{*}} \right)
-  \quad \text{with} \quad \bm\Sigma_{\weights} =
- - \nabla_{\weights \weights}^{2} \mathcal{L} ( \dataset ; \weights)|_{\weights=\weights^{*}}
-\end{align}
-That is, it sets the posterior precision to the Hessian of the loss at the optimal parameters $\weights^{*}$.
-It is worth noting that computing the Hessian of the loss can be computationally intractable for large networks.
-The prior terms are usually trivial, so we focus on the likelihood here.
-The Jacobian and Hessian of the log likelihood can be expressed per data point,
-\begin{align} \label{eq-jac}
-  \nabla_{\weights} \log p(\mathbf{y} \mid \mathbf{f}(\mathbf{x}; \weights)) &= \mathbf{J}(\mathbf{x})^{T} \mathbf{r}(\mathbf{y} ; \mathbf{f}) \\
-  \nabla^{2}_{\weights\weights} \log p(\mathbf{y} \mid \mathbf{f}(\mathbf{x}; \weights)) &= \mathbf{H}(\mathbf{x})^{T}
-  \mathbf{r}(\mathbf{y};\mathbf{f}) - \mathbf{J}(\mathbf{x})^{T} \bm\Lambda(\mathbf{y};\mathbf{f}) \mathbf{J}(\mathbf{x}),
-\label{eq-hess}
-\end{align}
-through the Jacobian $\mathbf{J} \in \R^{C \times P}$ and Hessian $\mathbf{H} \in \R^{C \times P \times P}$ of the feature extractor $\mathbf{f}(\mathbf{x}; \bm\weights)$,
-\begin{align} \label{eq-jac}
-[\mathbf{J}(\cdot)]_{ci} = \odv{f_{c}(\cdot ; \weights)}{\weights_{i}}_{\weights=\weights^{*}} \qquad
-[\mathbf{H}(\cdot)]_{cij} = \odv{f_{c}(\cdot ; \weights)}{\weights_{i}\weights_{j}}_{\weights=\weights^{*}}
-\end{align}
-where
-$\mathbf{r}(\mathbf{y}; \mathbf{f}) = \nabla_{\mathbf{f}} \log p(\mathbf{y} \mid \mathbf{f})$ can be interpreted as a residual and
-$\bm\Lambda(\mathbf{y} ; \mathbf{f}) = \nabla^{2}_{\mathbf{f} \mathbf{f}} \log p(\mathbf{y} \mid \mathbf{f})$
-as per-input noise.
-Many approximations exist and can be used alongsied our method.
-We refer the reader to \cite{daxbergerLaplace2021} for more details.
-See \cref{sec-laplace-approximation} for further details on the Laplace approximation.
-
-
-\section{Experiment details}
-
-\subsection{UCI}
-
-\begin{table}[t!] 
-  \centering\scriptsize
-  \caption{Negative log predictive density (NLPD) (lower better) for the proposed model TODO} 
-	\label{tbl:uci_all}
-	% Control table spacing
-	\renewcommand{\arraystretch}{1.}
-	\setlength{\tabcolsep}{2pt}
-	\setlength{\tblw}{0.14\textwidth}  
-	
-	% Custom error formatting
-	\newcommand{\val}[2]{%
-		$#1$\textcolor{gray}{\tiny ${\pm}#2$}
-	} 
-
-    % THE TABLE NUMBER ARE GENERATED BY A SCRIPT	
-	\input{tables/uci_all.tex}
-\end{table}
-
-\section{Template stuff}
-\subsection{Generate TikZ Figures from Python}
-We can generate figures in \texttt{.tex} format directly from Python:
-\begin{verbatim}
-tikzplotlib.save("fig.tex", axis_width="\\figurewidth", axis_height="\\figureheight")
-\end{verbatim}
-\cref{fig:example} shows that we get nicely formatted lables/titles/etc when we include them in our paper.
-\begin{figure}[h]
-    \centering\footnotesize
-
-    % Set your figure size here
-    \setlength{\figurewidth}{.33\textwidth}
-    \setlength{\figureheight}{.75\figurewidth}
-
-    % Customize your plot here
-    % (scale only axis applies the size to the axis box and not entire figure)
-    \pgfplotsset{grid style={dotted},title={Foo},scale only axis}
-
-    % Use the subcaption package (= subfigure) for sub-plots, that is
-    % plot the separate plots separately in Python
-    \begin{subfigure}{.4\textwidth}
-        \centering
-        \input{./fig/example_fig.tex}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}{.4\textwidth}
-        \centering
-        \input{./fig/example_fig.tex}
-    \end{subfigure}
-    \caption{Foo}
-    \label{fig:example}
-\end{figure}
-
-\subsection{Generate Tables from Python}
-We can also generate tables straight from python using \href{https://github.com/astanin/python-tabulate}{tabulate}:
-\begin{verbatim}
-table = [["Sun",696000,1989100000],["Earth",6371,5973.6],
-        ["Moon",1737,73.5],["Mars",3390,641.85]]
-headers = ["Planet","R (km)", "mass (x 10^29 kg)"]
-table = tabulate(table, headers=headers, tablefmt="latex")
-with open("table.tex", 'w') as file:
-    file.write(table)
-\end{verbatim}
-
-\begin{table}[h]
-    \centering
-    \input{./tables/example_table.tex}
-\end{table}
+%
+%\subsection{Model-based Reinforcement Learning (RL)}
+%The goal of reinforcement learning is to find a policy \(\pi \in \Pi\) that maximises the sum of discounted
+%rewards in expecation under the transition noise (aleatoric uncertainty),
+%\begin{align} \label{eq-model-free-objective}
+%\policy^{*} = \arg \max_{\policy \in \policyDomain} J(\transitionFn, \policy) = \arg \max_{\policy \in \policyDomain} \mathbb{E}_{\noise_{0:\infty}} \left[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \right],
+%\end{align}
+%where $\gamma \in [0, 1]$
+%
+%\textbf{Model-based}
+%In Bayesian model-based RL, we obtain the posterior over the dynamics \(p(f\mid\mathcal{D})\) after performing (approximate) Bayesian
+%inference given a state transition data set \(\mathcal{D} = \{\{(s_{t},a_{t}), s_{t+1}\}^{T_{i}}_{t=1}\}_{i=0}^{N}\).
+%\cref{alg-mbrl} shows the typical model-based RL loop.
+%Importantly, the dynamics are usually only updated after an episode $i$.
+%
+%\begin{algorithm}[!b]
+%\caption{Model-based RL}\label{alg-mbrl}
+%\begin{algorithmic}[1]
+%  \Require Start state $\state_{0}$, initial data set $\dataset_{0}$, dynamics posterior $p(\transitionFn \mid \dataset_{0})$, policy $\policy_{0}$
+%\For{$i  \in \{1, 2, \ldots, \text{num episodes} \}$}
+%    \State Reset the system to $\state_{0}$ and reset trajectory buffers $\bm\tau_{t} = \emptyset \ \forall t$
+%    \For{$t  \in \{1, 2, \ldots, \text{num steps} \}$}
+%      % \State Collect  $\tau_{0:t} = \tau_{0:t-1} \cup (\state_{j}, \action_{j}, \state_{j+1}, r_{j+1})$
+%      \State Use \cref{eq-greedy}/\cref{eq-posterior-sampling}/\cref{eq-ucrl} to collect data $\bm\tau_{t} = \bm\tau_{t-1} \cup (\state_{t}, \policy_{i}(\state_{t}), \transitionFn(\state_{t}, \policy_{i}(\state_{t})), r_{t+1})$
+%      % \State Execute policy $\policy_{i}(\state_{t})$ in environment and update trajectory $\tau_{i+1} = \{\state_{j}, \action_{j}, \state_{j+1}, r_{j+1}) \}_{j=0}^{t}$
+%    \EndFor
+%    \State Update data set $\dataset_{0:i} = \dataset_{0:i-1} \cup \tau$
+%    \State Train dynamics $p(\transitionFn \mid \dataset_{0:i}) \leftarrow \text{update\_dynamics}(\dataset_{0:i}, p(\transitionFn \mid \dataset_{0:i-1}))$
+%    % \State Train dynamics $p(\transitionFn \mid \dataset_{0:i+1})$ using $\dataset_{0:i+1}$
+%    % \State Improve policy $\pi_{i+1}$ using $p(\transitionFn \mid \dataset_{0:i+1})$ and/or $\dataset_{0:i+1}$
+%    \State Improve policy $\pi_{i+1} \leftarrow \text{update\_policy}(p\left(\transitionFn \mid \dataset_{0:i}), \dataset_{0:i} \right)$
+%    %\State Improve policy $\pi_{i+1}$ using $p(\transitionFn \mid \dataset_{0:i+1})$ and/or $\dataset_{0:i+1}$
+%\EndFor
+%\end{algorithmic}
+%\end{algorithm}
+%
+%% \begin{minipage}{0.499\textwidth}
+%% \begin{algorithm}[H]
+%% \caption{Model-based RL}\label{alg-mbrl}
+%% \begin{algorithmic}[1]
+%%   \Require Initial data set $\dataset_{0}$, dynamics posterior $p(\transitionFn \mid \dataset_{0})$, policy $\policy_{0}$
+%% \For{$i  \in \{0, 1, \ldots, \text{num episodes} \}$}
+%%     \For{$t  \in \{0, 1, \ldots, \text{num steps} \}$}
+%%       \State Execute policy $\policy_{i}(\state_{t})$ in environment
+%%       \State $\tau_{i+1} = \{\state_{j}, \action_{j}, \state_{j+1}, r_{j+1}) \}_{j=0}^{t}$
+%%     \EndFor
+%%     \State Update data set $\mathcal{D}_{0:i+1} = \mathcal{D}_{0:i} \cup \tau_{i+1}$
+%%     \State Train dynamics $p(\transitionFn \mid \dataset_{0:i+1})$
+%%     \State Improve policy $\pi_{i+1}$
+%%     %\State Improve policy $\pi_{i+1}$ using $p(\transitionFn \mid \dataset_{0:i+1})$ and/or $\dataset_{0:i+1}$
+%% \EndFor
+%% \end{algorithmic}
+%% \end{algorithm}
+%% \end{minipage}
+%% \hfill
+%% \begin{minipage}{0.499\textwidth}
+%% \begin{algorithm}[H]
+%% \caption{Model-based RL with fast updates}\label{alg-mbrl-fast-updates}
+%% \begin{algorithmic}[1]
+%%   \Require Initial data set $\dataset_{0}$, dynamics posterior $p(\transitionFn \mid \dataset_{0})$, policy $\policy_{0}$
+%%     % ${p(\state_{\timeInd+1} \mid \singleInput, \dataset_{0})}$}
+%% \For{$i  \in \{0, 1, \ldots, \text{num episodes} \}$}
+%%     \For{$t  \in \{0, 1, \ldots, \text{num steps} \}$}
+%%       \State Execute policy $\policy_{i}(\state_{t})$ in environment
+%%       % \State Append transition $\state_{t}, \action_{t}, \state_{t+1}, r_{t+1})$ to trajectory $\tau_{i}$
+%%       \State $\tau_{i+1} = \{\state_{j}, \action_{j}, \state_{j+1}, r_{j+1}) \}_{j=0}^{t}$
+%%       \State {\color{blue}Update dynamics $p(\transitionFn \mid \dataset_{0:i} \cup \tau_{i+1})$}
+%%     \EndFor
+%%     \State Update data set $\mathcal{D}_{0:i+1} = \mathcal{D}_{0:i} \cup \tau_{i+1}$
+%%     \State Train dynamics $p(\transitionFn \mid \dataset_{0:i+1})$
+%%     \State Improve policy $\pi_{i+1}$
+%%     %\State Improve policy $\pi_{i+1}$ using $p(\transitionFn \mid \dataset_{0:i+1})$ and/or $\dataset_{0:i+1}$
+%% \EndFor
+%% \end{algorithmic}
+%% \end{algorithm}
+%% \end{minipage}
+%
+%
+%
+%\subsection{Exploration Strategies}
+%\textbf{Greedy exploitation}
+%Given the posterior dynamics \(p(\transitionFn \mid \mathcal{D})\),
+%a common approach is to simply take the expecation over both the aleatoric and epistemic uncertainty,
+%\begin{align} \label{eq-greedy}
+%\policy_{i+1}^{\text{greedy}} = \arg \max_{\policy \in \policyDomain} \mathbb{E}_{\transitionFn \sim p(\transitionFn \mid \dataset_{0:i})} \left[ J(\transitionFn, \policy) \right],
+%\end{align}
+%This approach has been widely adopted, for example, in PILCO, PETS, GP-MPC
+%\cite{deisenrothPILCO2011,chuaDeepReinforcementLearning2018,kamtheDataEfficient2018}.
+%This approach helps to alleviate model bias as the posterior ``knows what the model does not know''.
+%This is because the predictive posterior \(p(f(s_{t},a_{t}) \mid (s_{t},a_{t}),  \mathcal{D} )\) will be (or should be) uncertain when making
+%predictions far away from the training data.
+%The expectation considers all possible dynamics models which prevents the policy optimisation from
+%exploiting innacuracies in the model.
+%This approach has no guarantees for exploration in the general case.
+%However, under specific dynamics and reward structures (e.g. PILCO) this objective can achieve sublinear regret.
+%\todo{need to double check sublinear regret statement. And give a reference}
+%
+%
+%\textbf{Posterior sampling}
+%\cite{osbandWhyPosteriorSampling2017,osbandMoreEfficientReinforcement2013}
+%\begin{align} \label{eq-posterior-sampling}
+%\policy_{i+1}^{\text{PS}} = \arg \max_{\policy \in \policyDomain} \left[ J(\transitionFn, \policy) \right] \quad \text{s.t. } \transitionFn \sim p(\transitionFn \mid \dataset_{0:i})
+%\end{align}
+%
+%\textbf{Hallucinated upper confidence RL}
+%A more theoretically grounded exploration strategy is UCRL \citep{jakschNearoptimal2010}, which optimises joinly over
+%policies and models inside the set
+%\(\mathcal{M} = \{ f \mid | f(s,a) - \mu_{i}(s, a) | \leq \beta_{i} \Sigma_{i}(s, a) \quad \forall s, a \in \mathcal{S} \times \mathcal{A} \}\), representing all statistically plausible
+%models under the posterior \(p(f(s,a) \mid \mathcal{D}_{0:i} \cup (s,a)) = \mathcal{N}(f(s,a) \mid \mu_{i}(s,a), \Sigma_{i}(s,a))\) at episode \(i\).
+%This strategy is given by,
+%\begin{align} \label{eq-ucrl}
+%\policy_{i+1}^{\text{UCRL}} = \arg \max_{\policy \in \policyDomain} \max_{\transitionFn \in \mathcal{M}} J(\transitionFn, \policy).
+%\end{align}
+%This strategy optimises an optimistic policy over the set of plausible dynamics models.
+%Although this joint optimisation is intractable in general,
+%\cite{curiEfficient2020} proposed a practical alternative which is detailed in \cref{sec-hucrl}.
+%
+%\textbf{MPC vs policy learning}
+%It is worth noting that the strategies in \cref{eq-greedy,eq-posterior-sampling,eq-ucrl} can be used with both model predictive control (MPC)
+%techniques, such as the cross entoropy method (CEM), and model-free RL techniques, such as soft actor-critic (SAC).
+%
+%
+%In this work we are interested in how we can use \(p(f \mid \mathcal{D})\) to alleviate some of the issues in model-based RL,
+%for example, model bias and the exploration-exploitation trade-off.
+%
+%
+%
+%\todo{show how to get new $\dualParam{1}$ and $\dualParam{2}$ in Train dynamics line of \cref{alg-mbrl-fast-updates}}
+%\begin{algorithm}[!t]
+%\caption{Model-based RL with fast updates}\label{alg-mbrl-fast-updates}
+%\begin{algorithmic}[1]
+%  \Require Start state $\state_{0}$, initial data set $\dataset_{0}$, dynamics posterior $p(\transitionFn \mid \dataset_{0})$ (inc. dual parameters $\dualParam{1}, \dualParam{2}$), policy $\policy_{0}$
+%    % ${p(\state_{\timeInd+1} \mid \singleInput, \dataset_{0})}$}
+%\For{$i  \in \{1, 2, \ldots, \text{num episodes} \}$}
+%    \State Reset the system to $\state_{0}$ and reset trajectory buffers $\bm\tau_{t} = \emptyset \ \forall t$
+%    \For{$t  \in \{1, 2, \ldots, \text{num steps} \}$}
+%      % \State Execute policy $\policy_{i}(\state_{t})$ (\cref{eq-fast-update-mpc}) in environment
+%      \State Use \cref{eq-fast-update-mpc} to collect data $\bm\tau_{t} = \bm\tau_{t-1} \cup (\state_{t}, \policy_{i}(\state_{t}), \transitionFn(\state_{t}, \policy^{\text{fast}}_{i}(\state_{t})), r_{t+1})$
+%      % \State Append transition $\state_{t}, \action_{t}, \state_{t+1}, r_{t+1})$ to trajectory $\tau_{i}$
+%      % \State $\tau_{i+1} = \{\state_{j}, \action_{j}, \state_{j+1}, r_{j+1}) \}_{j=0}^{t}$
+%      %\State {\color{blue}Update dynamics $p(\transitionFn \mid \dataset_{0:i} \cup \tau_{i+1})$}
+%      \State {\color{blue}Update dynamics posterior using \cref{eq-dual-update-svgp}, i.e. fast update}
+%      % \begin{align}
+%      % \dualParam{1}^{t+1} &\leftarrow \dualParam{1}^{t} +  \nabla_{\meanParam{1}} \mathbb{E}_{q_{\inducingVariable}(\latentFn(\state_{t}, \action_{t}))} \left[ \log p(\state_{t+1} \mid \latentFn(\state_{t}, \action_{t}) ) \right] \\
+%      % \dualParam{2}^{t+1} &\leftarrow \dualParam{2}^{t} +  \nabla_{\meanParam{2}} \mathbb{E}_{q_{\inducingVariable}(\latentFn(\state_{t}, \action_{t}))}  \left[ \log p(\state_{t+1} \mid \latentFn(\state_{t}, \action_{t}) ) \right]
+%      % \end{align}}
+%    \EndFor
+%    \State Update data set $\dataset_{0:i} = \dataset_{0:i-1} \cup \tau$
+%    \State Train dynamics $p(\transitionFn \mid \dataset_{0:i}) \leftarrow \text{update\_dynamics}(\dataset_{0:i}, p(\transitionFn \mid \dataset_{0:i-1}))$
+%    \State Improve policy $\pi^{\text{fast}}_{i+1} \leftarrow \text{update\_policy}(p\left(\transitionFn \mid \dataset_{0:i}), \dataset_{0:i} \right)$
+%\EndFor
+%\end{algorithmic}
+%\end{algorithm}
+%
+%
+%\subsubsection{Fast updates}
+%
+%
+%In this section we extend these fast updates to environment's with high dimensional state spaces and large data sets.
+%% Our method draws on the connection between BNNs and GPs and formulates a function space SVGP posterior given
+%Our method uses a BNN dynamic model and draws on the connection between BNNs and GPs
+%\citep{khanApproximate2019} to formulate a function space SVGP posterior,
+%where we can apply the fast updates from \cref{eq-dual-update-svgp}.
+%At a high-level, we first use Laplace's approximation to obtain a weight space posterior for our BNN.
+%We then linearise our BNN around the optimal parameters and interpret it as a GP.
+%Finally, we formulate a lower rank approximation of this GP posterior (i.e. a SVGP posterior) using inducing variables.
+%% formulates a function space SVGP posterior by drawing on the connection between BNNs and GPs.
+%
+%
+%The strategies in \cref{eq-greedy,eq-posterior-sampling,eq-hucrl} do not update the dynamic model during an episode.
+%A better approach would be to update the posterior at every time step during an episode, for example,
+%\begin{subequations}
+%\begin{align} \label{eq-fast-update-mpc}
+%  \policy_{i+1}^{\text{greedy}}(\state) &= \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}}
+%\E_{p(\transitionFn \mid \dataset_{0:i})} \left[J^{\Horizon}(\action_{0:\Horizon}, \transitionFn) \right] + \stateValueFn(\state_{\Horizon+1}) \\
+%  \policy_{i+1}^{\text{PS}}(\state) &= \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}}
+%J^{\Horizon}(\action_{0:\Horizon}, \transitionFn) + \stateValueFn(\state_{\Horizon+1}) \quad \text{s.t. } \transitionFn \sim p(\transitionFn \mid \dataset_{0:i} \cup \bm\tau_{t}) \\
+%  \policy_{i+1}^{\text{UCRL}}(\state) &= \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}} \max_{\transitionFn \in \mathcal{M}}
+%J^{\Horizon}(\action_{0:\Horizon}, \transitionFn) + \stateValueFn(\state_{\Horizon+1}) \quad \text{s.t. } \mathcal{M} = \{\transitionFn(\state_{t},\action_{t}) - \mu_{i,t}(\state_{t},\action_{t}) \leq \beta_{i,t} \Sigma_{i,t}(\state_{t}, \action_{t})\} \\
+%  \stateValueFn(\state) &= \mathbb{E} \left[ \sum_{t=0}^{\infty}     \discount^{t} \rewardFn(\state_{t},\action_{t}) \mid \state_{0}=\state \right] \label{eq-value-fn}
+%\end{align}
+%\end{subequations}
+%\begin{subequations}
+%\begin{align} \label{eq-fast-update-mpc-old}
+%  \policy^{\text{fast}}(\state) = \arg &\max_{\action_{0}} \max_{\action_{1}, \ldots, \action_{\Horizon}}
+%  \mathbb{E}_{\state_{\horizon} \sim p(\state_{\horizon+1} \mid \transitionFn(\state_{\horizon}, \action_{\horizon}))} \left[ \sum_{\horizon=0}^{\Horizon}     \discount^{\horizon} \rewardFn(\state_{\horizon},\action_{\horizon}) \mid \state_{0}=\state \right] + \discount^{\Horizon+1} \stateValueFn(\state_{\Horizon+1}) \\
+%  \stateValueFn(\state) &= \mathbb{E} \left[ \sum_{t=0}^{\infty}     \discount^{t} \rewardFn(\state_{t},\action_{t}) \mid \state_{0}=\state \right] \label{eq-fast-update-mpc}
+%\end{align}
+%\end{subequations}
+%
+%\begin{align} \label{}
+%  \policy(\state) = \arg &\max_{\action_{0}} \max_{\action_{1}, \ldots, \action_{\Horizon}} \max_{\optimisticTransition \in \optimisticTransitionSet}
+%  \sum_{\horizon=0}^{\Horizon}  \mathbb{E}_{\noise_{\horizon}} \left[  \discount^{\horizon} \rewardFn(\state_{\horizon},\action_{\horizon}) \right] + \discount^{\Horizon+1} \stateValueFn(\state_{\Horizon+1}) \\
+%  \text{s.t. } \state_{\horizon+1} &= \optimisticTransition(\state_{\horizon}, \action_{\horizon}) + \noise_{\horizon} \\
+%  \optimisticTransition(\state_{\horizon}, \action_{\horizon}) &=
+%\optimisticTransitionMean(\state_{\horizon}, \action_{\horizon}) \pm \beta_{i}
+%\optimisticTransitionCov(\state_{\horizon}, \action_{\horizon})
+%\end{align}
+%
+%\input{proof.tex}
+%
+%
+%\section{Hallucinated Upper Confidence Reinforcement Learning (H-UCRL)} \label{sec-hucrl}
+%\cite{curiEfficient2020} introduced a tractable approximation which retains some of the theoretical guarantees whilst
+%being applicable with deep model-based RL.
+%They introduce a function \(\eta: \mathcal{S} \times \mathcal{A} \rightarrow [-1, 1]^{p}\) which acts as a hallucinated control input.
+%The strategy is given by,
+%\begin{align} \label{eq-hucrl}
+%\pi_i^{\text{UCRL}} = \arg \max_{\policy \in \policyDomain} \max_{\eta(\cdot) \in [-1,1]} J(\transitionFn, \policy) \quad \text{s.t.} \quad \transitionFn = \mu_{i}(\state_{t}, \action_{t}) + \beta_{i} \Sigma_{i}(\state_{t}, \action_{t}) \eta(\state_{t},\action_{t}).
+%\end{align}
+%Intuitively, \(\eta(\state,\action) \in [-1,1]\) enables the optimisation to select any dynamics model
+%\(\transitionFn\) within \(\pm \beta \Sigma_{i}(\state_{t}, \action_{t})\) of the posterior mean \(\mu_{i}(\state_{t}, \action_{t})\).
+%
+%\section{Laplace Approximation} \label{sec-laplace-approximation}
+%
+%\textbf{Laplace approximation}
+%The Laplace approximation \todo{add citation of original paper} constructs a Gaussian approximation of the weight-space posterior $p(\weights \mid \dataset)$
+%by using a second-order Taylor expansion of $\mathcal{L}$ around $\weights^{*}$.
+%The posterior approximation is given by,
+%\begin{align} \label{eq-laplace-approx-weight-space}
+%  p(\weights \mid \dataset) \approx \mathcal{N} \left( \weights \mid \weights^{*} , \bm\Sigma_{\weights^{*}} \right)
+%  \quad \text{with} \quad \bm\Sigma_{\weights} =
+% - \nabla_{\weights \weights}^{2} \mathcal{L} ( \dataset ; \weights)|_{\weights=\weights^{*}}
+%\end{align}
+%That is, it sets the posterior precision to the Hessian of the loss at the optimal parameters $\weights^{*}$.
+%It is worth noting that computing the Hessian of the loss can be computationally intractable for large networks.
+%The prior terms are usually trivial, so we focus on the likelihood here.
+%The Jacobian and Hessian of the log likelihood can be expressed per data point,
+%\begin{align} \label{eq-jac}
+%  \nabla_{\weights} \log p(\mathbf{y} \mid \mathbf{f}(\mathbf{x}; \weights)) &= \mathbf{J}(\mathbf{x})^{T} \mathbf{r}(\mathbf{y} ; \mathbf{f}) \\
+%  \nabla^{2}_{\weights\weights} \log p(\mathbf{y} \mid \mathbf{f}(\mathbf{x}; \weights)) &= \mathbf{H}(\mathbf{x})^{T}
+%  \mathbf{r}(\mathbf{y};\mathbf{f}) - \mathbf{J}(\mathbf{x})^{T} \bm\Lambda(\mathbf{y};\mathbf{f}) \mathbf{J}(\mathbf{x}),
+%\label{eq-hess}
+%\end{align}
+%through the Jacobian $\mathbf{J} \in \R^{C \times P}$ and Hessian $\mathbf{H} \in \R^{C \times P \times P}$ of the feature extractor $\mathbf{f}(\mathbf{x}; \bm\weights)$,
+%\begin{align} \label{eq-jac}
+%[\mathbf{J}(\cdot)]_{ci} = \odv{f_{c}(\cdot ; \weights)}{\weights_{i}}_{\weights=\weights^{*}} \qquad
+%[\mathbf{H}(\cdot)]_{cij} = \odv{f_{c}(\cdot ; \weights)}{\weights_{i}\weights_{j}}_{\weights=\weights^{*}}
+%\end{align}
+%where
+%$\mathbf{r}(\mathbf{y}; \mathbf{f}) = \nabla_{\mathbf{f}} \log p(\mathbf{y} \mid \mathbf{f})$ can be interpreted as a residual and
+%$\bm\Lambda(\mathbf{y} ; \mathbf{f}) = \nabla^{2}_{\mathbf{f} \mathbf{f}} \log p(\mathbf{y} \mid \mathbf{f})$
+%as per-input noise.
+%Many approximations exist and can be used alongsied our method.
+%We refer the reader to \cite{daxbergerLaplace2021} for more details.
+%See \cref{sec-laplace-approximation} for further details on the Laplace approximation.
+%
+%
+%\section{Experiment details}
+%
+%\subsection{UCI}
+%
+%\begin{table}[t!] 
+%  \centering\scriptsize
+%  \caption{Negative log predictive density (NLPD) (lower better) for the proposed model TODO} 
+%	\label{tbl:uci_all}
+%	% Control table spacing
+%	\renewcommand{\arraystretch}{1.}
+%	\setlength{\tabcolsep}{2pt}
+%	\setlength{\tblw}{0.14\textwidth}  
+%	
+%	% Custom error formatting
+%	\newcommand{\val}[2]{%
+%		$#1$\textcolor{gray}{\tiny ${\pm}#2$}
+%	} 
+%
+%    % THE TABLE NUMBER ARE GENERATED BY A SCRIPT	
+%	\input{tables/uci_all.tex}
+%\end{table}
+%
+%\section{Template stuff}
+%\subsection{Generate TikZ Figures from Python}
+%We can generate figures in \texttt{.tex} format directly from Python:
+%\begin{verbatim}
+%tikzplotlib.save("fig.tex", axis_width="\\figurewidth", axis_height="\\figureheight")
+%\end{verbatim}
+%\cref{fig:example} shows that we get nicely formatted lables/titles/etc when we include them in our paper.
+%\begin{figure}[h]
+%    \centering\footnotesize
+%
+%    % Set your figure size here
+%    \setlength{\figurewidth}{.33\textwidth}
+%    \setlength{\figureheight}{.75\figurewidth}
+%
+%    % Customize your plot here
+%    % (scale only axis applies the size to the axis box and not entire figure)
+%    \pgfplotsset{grid style={dotted},title={Foo},scale only axis}
+%
+%    % Use the subcaption package (= subfigure) for sub-plots, that is
+%    % plot the separate plots separately in Python
+%    \begin{subfigure}{.4\textwidth}
+%        \centering
+%        \input{./fig/example_fig.tex}
+%    \end{subfigure}
+%    \hfill
+%    \begin{subfigure}{.4\textwidth}
+%        \centering
+%        \input{./fig/example_fig.tex}
+%    \end{subfigure}
+%    \caption{Foo}
+%    \label{fig:example}
+%\end{figure}
+%
+%\subsection{Generate Tables from Python}
+%We can also generate tables straight from python using \href{https://github.com/astanin/python-tabulate}{tabulate}:
+%\begin{verbatim}
+%table = [["Sun",696000,1989100000],["Earth",6371,5973.6],
+%        ["Moon",1737,73.5],["Mars",3390,641.85]]
+%headers = ["Planet","R (km)", "mass (x 10^29 kg)"]
+%table = tabulate(table, headers=headers, tablefmt="latex")
+%with open("table.tex", 'w') as file:
+%    file.write(table)
+%\end{verbatim}
+%
+%\begin{table}[h]
+%    \centering
+%    \input{./tables/example_table.tex}
+%\end{table}
 
 \subsection{Biblatex}
 Rember when using biblatex to use 'parencite' for \citep{kamtheDataEfficient2018} and when using natbib to use 'citep'.

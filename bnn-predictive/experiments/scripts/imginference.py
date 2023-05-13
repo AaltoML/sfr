@@ -88,9 +88,9 @@ def sample_svgp(X, likelihood, svgp, use_nn_out: bool, n_samples: int):
     gp_means, gp_vars = svgp.predict_f(X)
     logits = svgp.network(X)
     if use_nn_out:
-        dist = Normal(logits, torch.sqrt(gp_vars.clamp(10 ** (-8))))
+        dist = Normal(logits, torch.sqrt(gp_vars.clamp(10 ** (-32))))
     else:
-        dist = Normal(gp_means, torch.sqrt(gp_vars.clamp(10 ** (-8))))
+        dist = Normal(gp_means, torch.sqrt(gp_vars.clamp(10 ** (-32))))
     logit_samples = dist.sample((n_samples,))
     out_dim = logit_samples.shape[-1]
     samples = likelihood.inv_link(logit_samples)

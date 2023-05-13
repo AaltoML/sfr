@@ -1,7 +1,7 @@
 #!/bin/bash
 #SBATCH --job-name=fmnist_cnn
 #SBATCH --array=0-4
-#SBATCH --time=05:45:00
+#SBATCH --time=01:45:00
 #SBATCH --output=/scratch/work/%u/full-bnn-svgp/bnn-predictive/logs/fmnist/fmnist_classification_%A_%a.out
 #SBATCH --partition=gpu
 #SBATCH --gres=gpu:a100:1
@@ -18,11 +18,11 @@ SEED=${SEEDS[$(($SLURM_ARRAY_TASK_ID))]}
 dataset='FMNIST'
 echo $dataset
 echo $SEED
-name='sparse_3200_eps_small'
-n_inducing=3200
+name='sparse_100_eps_small'
+n_inducing=100
 model='CNN'
 n_deltas=16
-batch_size=2
+batch_size=200
 delta_min=1e-3
 delta_max=1e-2
 logd_min=2

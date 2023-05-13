@@ -18,14 +18,15 @@ import torch
 
 torch.set_default_dtype(torch.float64)
 
-from src.rl.custom_types import State, Action
 import src
 import torchrl
 import wandb
 from dm_env import specs, StepType
 from omegaconf import DictConfig, OmegaConf
+from src.rl.custom_types import Action, State
 from src.rl.utils import EarlyStopper, set_seed_everywhere
 from tensordict import TensorDict
+
 
 Transition = namedtuple("Transition", ("state", "action", "next_state", "reward"))
 

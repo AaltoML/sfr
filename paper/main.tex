@@ -469,7 +469,7 @@ As stated in \citet[Lemma~1]{csato2002sparse} the posterior process mean and cov
  \myexpect_{p(f\mid\vy)}[f_i] = \vk_{\vx i}^\top \valpha , \quad
 \textrm{Var}_{p(f\mid\vy)}[f_i] = \kappa_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i},
 \end{equation}
-where $(\valpha,\vbeta)$ are vectors of
+where the $ij$th entry of the matrix $\MKxx \in \R^{m \times m}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$th element is $\kappa(\vx_i, \vx_j)$, and $\kappa_{ii} = \kappa(\vx_i, \vx_i)$.  The dual parameters consist of the vector $\valpha \in \R^{m}$ and vector $\vbeta \in \R^{m}$, defined as:
 \begin{equation}
 \label{eq:dual_param}
 \alpha_i \coloneqq\myexpect_{p(f_i \mid \vy)}[\nabla_{f_i}\log p(y_i \mid f_i)],  \quad
@@ -486,13 +486,19 @@ As we are using the MAP solution of the neural network loss we will use the Lapl
 
 Replacing \cref{eq:dual_param_laplace} in to \cref{eq-laplace-approx-function-space} and we arrive at our GP model based on the converged neural network. Again this is similar to what was arrived at for \citet{immerImprovingPredictionsBayesian2021} for the posterior variance function, but they instead use the $f_{\vw^*}(\vx)$ for the posterior mean and fail to spot the significance of the dual variables. The problem with \cref{eq:gp_pred} is that to make predictions and compute variances we must incur a cost of $O(n^3)$ which limits the use of the GP on large datasets.
 
-\textbf{Sparse Dual Gaussian Process} Sparse Gaussian processes are a way to reduce the computational complexity of a full GP using a low-rank approximation. Many sparsifying approaches exist (see \citet{quinonero2005unifying}) for an overview. Given that we have our dual variables derived from our neural network predictions and kernel function, we could use any approximation. We decide to follow the sparsifying approach of \citep{titsias2009variational}, which is to define the marginal distribution as $q_{\vu}(f_i)  = \int p(f_i  \mid \vu) q(\vu)  d\vu$. Given that we have $p(f_i  \mid \vu)$ determined by our GP prior, the goal is to find a $q(\vu)$. As was shown in \cite{adam2021dual}, the posterior under this model has a particular structure similar to \cref{eq:gp_pred}. In that paper, they spot the dual variables' importance for approximate inference but write them in the natural parameter form as this form is more suitable for optimization through natural gradients. In order to make the link
+\textbf{Sparse Dual Gaussian Process} Sparse Gaussian processes are a way to reduce the computational complexity of a full GP using a low-rank approximation. Many sparsifying approaches exist (see \citet{quinonero2005unifying}) for an overview. Given that we have our dual variables derived from our neural network predictions and kernel function, we could use any approximation. We decide to follow the sparsifying approach of \citep{titsias2009variational}, which is to define the marginal distribution as $q_{\vu}(\vf)  = \int p(\vf  \mid \vu) q(\vu)  d\vu$. Given that we have $p(f_i  \mid \vu)$ determined by our GP prior, the goal is to find a $q(\vu)$. As was shown in \cite{adam2021dual}, the posterior under this model has a particular structure similar to \cref{eq:gp_pred}. In that paper, they spot the dual variables' importance for approximate inference but write them in the natural parameter form as this form is more suitable for optimization through natural gradients. In order to make the link to the dual variables defined in \cref{eq:dual_param} we write them in the sparse GP in the dual variable form. 
+
+\begin{equation} 
+	\valpha_{\vu}  = \sum_{i \in \mathcal{D}_{n}}  \vkzi \, \hat{\alpha}_{i}, \quad
+	\vbeta_{\vu} = \sum_{i \in \mathcal{D}_{n}} \vkzi \,\hat{\beta}_{i} \, \vkzi^{\T} ,    
+\label{eq:dual_sparse}
+\end{equation}
 
 
 Sparse Gaussian processes \citep{hensman2013gaussian} are a principled way to scale Gaussian processes to large datasets by using a subset of $m$ inducing points, with $m \ll n$,  lowering the complexity from $\mathcal{O}(n^3)$ to $\mathcal{O}(m^3)$. The key insight is to use a sparse approximating distribution $q(\vu; \vm, \MV)$, where $\vm \in \R^{m}$ and $\MV \in \R^{m \times m}$, and find its parameters through maximizing the evidence lower bound (ELBO). Then, the distribution over all points is defined as $q_{\vu}(\vf) = \int p(\vf \mid \vu) q(\vu) \mathrm{d}\vu$. As shown in \cite{adam2021dual}, we can decompose the optimal sparse GP  with a dual parameterization \cite{adam2021dual} as follows:
 \begin{equation}
-   \myexpect_{q_{\vu}(\vf)}[\vf_i] = \vkzs^{\T} \valpha , \quad 
-   \textrm{Var}_{q_{\vu}(\vf)}[\vf_i]  = \kappa_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \vbeta)^{-1} ]\vkzs
+   \myexpect_{q_{\vu}(\vf)}[\vf_i] = \vkzs^{\T} \MKzz^{-1}  \valpha_{\vu} , \quad 
+   \textrm{Var}_{q_{\vu}(\vf)}[\vf_i]  = \kappa_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \vbeta_{\vu})^{-1} ]\vkzs
 \end{equation}
 
 
@@ -504,12 +510,6 @@ where the $ij$th entry of the matrix $\MKzz \in \R^{m \times m}$ is $\kappa(\vx_
 \label{eq:dual_sparse}
 \end{equation}
 
-where $\tilde{\lambda}_i = \alpha_i - \myexpect_{q_{\vu}(\vf)}[\vf_i] \hat{\beta}_i$ with $(\hat{\alpha}_i, \hat{\beta}_i)$ defined as,
-\begin{equation}
- \alpha_i = \myexpect_{q_{\vu}(\vf_i)} [\nabla_{\vf_i}\log p(\vy_i \mid \vf_i)], \quad
-   \beta_i = \myexpect_{q_{\vu}(\vf_i)} [ -\nabla^{2}_{\vf_i}\log p(\vy_i \mid \vf_i)],
-\label{eq:svgp_dual}
-\end{equation}
 
 The key quantities we need to build our sparse GP are $(\alpha_i, \beta_i)$ and a kernel function $\kappa$  and from that we are able to make predictions and variance estimates. Crucially in the dual formulation our posterior contains all the training data given the sum in \cref{eq:dual_sparse}.
 

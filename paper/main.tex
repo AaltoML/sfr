@@ -453,15 +453,16 @@ are usually trained to minimize the (regularized) empirical risk,
 \end{align}
 If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\weights(\mathbf{x}_{i}))$ and $\mathcal{R}(\weights) = \frac{1}{2}\|\weights\|^{2}_2$ then we can view \cref{eq-empirical-risk} as the MAP solution to a Bayesian objective, where $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$.
 
-\textbf{Neural network to GP prior} A Gaussian process characterizes a distribution over functions in terms of the first two moment. The key quantity of a Gaussian process is the prior covariance function $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors in $\R^{\mathrm{D}}$. Our goal is to find a kernel based on the neural network from which to build Gaussian process posterior. If we had the following function parameterization $g(\vx) = \phi(\vx)^\top \vw$ where $\phi(\vx)$ is a feature map, we can convert from weight space prior to function space prior giving the following kernel $\kappa(\vx, \vx) = \delta^{-1} \phi(\vx) \phi(\vx)^\T$ see \citep{rasmussen2006gaussian} for details. We can approximate the feature map of the neural network  $f_\weights(\mathbf{x}_{i})$  by using the Jacobian at $\weights^*$ thus our GP prior becomes:
+\textbf{Neural network to GP prior} A Gaussian process characterizes a distribution over functions in terms of the first two moments. The key quantity of a Gaussian process is the prior covariance function $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors in $\R^{\mathrm{D}}$. We aim to find a kernel based on the neural network to build the Gaussian process posterior. If we had the following function parameterization $g(\vx) = \phi(\vx)^\top \vw$ where $\phi(\vx)$ is a feature map, we can convert from weight space prior to function space prior giving the following kernel $\kappa(\vx, \vx') = \delta^{-1} \phi(\vx) \phi(\vx')^\T$ see \citep{rasmussen2006gaussian} for details. We can approximate the feature map of the neural network  $f_\weights(\mathbf{x})$  by using the Jacobian at $\weights^*$ thus our GP prior becomes:
 \begin{align} \label{eq-laplace-approx-function-space}
- g(\vx_i) \sim \mathcal{N} \left( \mu(\vx_i), k(\vx_i, \vx_i) \right) \quad
+ g(\vx) \sim \Norm \left( \mu(\vx), k(\vx, \vx') \right) \quad
   \mu(\vx)
   = \vzeros \quad
   k(\mathbf{x}, \mathbf{x}')
   = \frac{1}{\delta} \Jac{\weights^*}{\mathbf{x}}\Jac{\weights^*}{\mathbf{x}'}^\top,
 \end{align}
-where the kernel is the neural tangent kernel (NTK) ,with Jacobian given by $\Jac{\weights}{\mathbf{x}} := \nabla_\weights f(\mathbf{x})^\top \in \R^{C \times P}$. Alternatively we could have followed the derivation in \citet{immerImprovingPredictionsBayesian2021} where we perform a local linearization of the neural network prediction function $f^{\textrm{lin}}_{\vw^*}(\vx; \vw) = f_{\vw^*}(\vx) + \Jac{\weights^*}{\mathbf{x}} (\vw - \vw^*)$. The difference with our GP prior mean function and \cref{eq-laplace-approx-function-space} is a different mean prior function which comes from $f^{\textrm{lin}}_{\vw^*}(\vx; \vzeros) = f_{\vw^*}(\vx) - \Jac{\weights^*}{\mathbf{x}} \vw^*$, essentially they use the difference from the linear model approximation and the neural network function, which does not seem useful as a prior mean function, so instead we use $ \mu(\vx_i) = \vzeros$ as is common in GP literature and derived from a feature map conversion.
+where the kernel is the neural tangent kernel (NTK) with Jacobian given by $\Jac{\weights}{\mathbf{x}} \coloneqq \nabla_\weights f(\mathbf{x})^\top \in \R^{C \times P}$. Alternatively, we could have followed the derivation in \citet{immerImprovingPredictionsBayesian2021} where we perform a local linearization of the neural network prediction function $f^{\textrm{lin}}_{\vw^*}(\vx; \vw) = f_{\vw^*}(\vx) + \Jac{\weights^*}{\mathbf{x}} (\vw - \vw^*)$. The difference between our GP prior mean function and \cref{eq-laplace-approx-function-space} is that we use a different mean prior function coming from $f^{\textrm{lin}}_{\vw^*}(\vx; \vzeros) = f_{\vw^*}(\vx) - \Jac{\weights^*}{\mathbf{x}} \vw^*$, essentially they use the difference from the linear model approximation and the neural network function, which does not seem useful as a prior mean function, so instead we use $ \mu(\vx_i) = \vzeros$ as is common in GP literature and derived from a feature map conversion.
+
 
 As stated in \citet[Lemma~1]{csato2002sparse} the posterior process mean and covariance function of a GP prior combined with a likelihood function and $\dataset$ can be stated as:
 \begin{equation}  \label{eq:gp_pred}
@@ -541,7 +542,7 @@ J^{\Horizon}(\action_{0:\Horizon}, \transitionFn) + \stateValueFn(\state_{\Horiz
 \end{subequations}
 \begin{subequations}
 \begin{align} \label{eq-fast-update-mpc-old}
-  \stateValueFn(\state) &= \mathbb{E} \left[ \sum_{t=0}^{\infty}     \discount^{t} \rewardFn(\state_{t},\action_{t}) \mid \state_{0}=\state \right] \label{eq-fast-update-mpc}
+  \stateValueFn(\state) &= \mathbb{E} \left[ \sum_{t=0}^{\infty}     \discount^{t} \rewardFn(\state_{t},\action_{t}) \mid \state_{0}=\state \right]
 \end{align}
 \end{subequations}
 

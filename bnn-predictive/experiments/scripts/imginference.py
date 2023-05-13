@@ -237,7 +237,7 @@ def main(
             likelihood=lh,
             num_inducing=n_inducing,
             dual_batch_size=batch_size,
-            jitter=10**(-9),
+            jitter=0,#10**(-9),
             device=device,
         )
         svgp.set_data(data)
@@ -273,6 +273,7 @@ def main(
             likelihood=lh,
             num_inducing=n_inducing,
             dual_batch_size=batch_size,
+            jitter=0,
             device=device,
         )
         svgp_subset.set_data(data_sparse)
@@ -315,9 +316,11 @@ def ood(
             and float(delta) > 0
             and seed == int(s)
         ):
-            eligible_files.append(os.path.join(res_dir, "models/" + file))
-            state = torch.load(os.path.join(res_dir, "models/" + file))
 
+            state = torch.load(os.path.join(res_dir, "models/" + file))
+            if 'map' not in state:
+                continue
+            eligible_files.append(os.path.join(res_dir, "models/" + file))
             perfs.append({k: state[k]["nll_va"] for k in perf_keys})
 
     train_loader = DataLoader(ds_train, batch_size=256)
@@ -453,7 +456,7 @@ def ood(
     # mstar_od, _ = get_nn_predictive(tqdm(ood_loader), lap)
     # pred_ents['lap_diag_nn'] = predictive_entropies(mstar_te, mstar_od)
 
-    fname = f"results/{dataset_name}_{model_name}_{seed}_ood.pkl"
+    fname = f"{res_dir}/{dataset_name}_{model_name}_{seed}_{name}_ood.pkl"
     logging.info(f"save {fname}")
     with open(fname, "wb") as f:
         pickle.dump(pred_ents, f)
@@ -559,7 +562,7 @@ def gp(dataset_name, ds_train, ds_test, ds_ood, model_name, batch_size, seed):
                     "perf": evaluate(lh, yte, pred_test, yva, pred_val),
                 }
 
-    fname = f"results/{dataset_name}_{model_name}_{seed}_GP.pkl"
+    fname = f"results/{dataset_name}_{model_name}_{seed}_{name}_GP.pkl"
     logging.info(f"save {fname}")
     with open(fname, "wb") as f:
         pickle.dump(gp_perf, f)

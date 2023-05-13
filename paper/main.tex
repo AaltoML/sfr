@@ -266,7 +266,7 @@ Deep neural networks are known to lack uncertainty estimates, struggle to incorp
 \section{Introduction}
 \label{sec:intro}
 %
-Deep learning has become the cornerstone of contemporary artificial intelligence, proving remarkably effective in tackling supervised and unsupervised learning tasks in the {\em large data}, {\em offline}, and {\em gradient-based training} regime. Despite its success, gradient-based learning techniques exhibit limitations when applied to sequential learning paradigms, such as Continual Learning (CL, \cite{add}) and Reinforcement Learning (RL, \cite{add}). In CL, the challenge is retaining a compact representation of the problem and avoid forgetting over the life-long learning horizon (see, \eg, \cite{add}). Similarly in RL, the model would need to adapt to observations of the environment through exploration, but this can be inefficient and would require constant retraining (\eg, \cite{add, add}).
+Deep learning has become the cornerstone of contemporary artificial intelligence, proving remarkably effective in tackling supervised and unsupervised learning tasks in the {\em large data}, {\em offline}, and {\em gradient-based training} regime. Despite its success, gradient-based learning techniques exhibit limitations when applied to sequential learning paradigms, such as Continual Learning (CL, \cite{add}) and Reinforcement Learning (RL, \cite{sutton2018reinforcement}). In CL, the challenge is retaining a compact representation of the problem and avoid forgetting over the life-long learning horizon (see, \eg, \cite{add}). Similarly in RL, the model would need to adapt to observations of the environment through exploration, but this can be inefficient and would require constant retraining (\eg, \cite{add, add}).
 
 %Current state of affairs 
 Recent work on techniques (\eg, \cite{list}) for converting trained neural networks from weight space to function space allow a principled mathematical approach for analyzing the behaviour \cite{add}, performing probabilistic inference \cite{add}, and quantifying uncertainty in neural networks \cite{add}. The methods rely on linearizing the neural network and capturing the first two moments in function space in terms of a mean function and covariance function (kernel)---defining a Gaussian process (GP, \cite{rasmussen2006}). GPs provide a widely-used probabilistic toolkit with principled uncertainty estimates, and they are a standard surrogate model for Bayesian optimization \citep{garnett_bayesoptbook_2022} and are effective in model-based reinforcement learning \citep{deisenroth2011pilco} with theoretical guarantees on regret bounds \citep{srinivas2009gaussian}. 
@@ -515,7 +515,55 @@ The key quantities we need to build our sparse GP are $(\alpha_i, \beta_i)$ and 
 
 \textbf{Continual learning}
 
-\textbf{Reinforcement learning}
+\textbf{Model-based reinforcement learning}
+We now detail how our method can be used in model-based RL.
+Folling the Markov decision process formulation \cite{bellmanDynamic1956}, we
+denote states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \), actions \(\action \in \actionDomain \subseteq \R^{D_{\action}}\) and
+transition dynamics \(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \) subject to  i.i.d. transition noise \(\noise_{t}\).
+The goal of RL is to find the policy \(\pi \in \Pi \) that maximises the sum of rewards
+in expecation over the transition noise,
+\begin{align} \label{eq-model-free-objective}
+\policy^{*} = \arg \max_{\policy \in \policyDomain} J(\transitionFn, \policy) = \arg \max_{\policy \in \policyDomain} \mathbb{E}_{\noise_{0:\infty}} \left[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \right]
+\quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}.
+\end{align}
+where $\gamma \in [0, 1]$ is a discount factor to account for the infinte sum.
+
+
+In model-based RL, the state transition data set \(\mathcal{D} = \{\{(s_{t},a_{t}), s_{t+1}\}^{T_{i}}_{t=1}\}_{i=0}^{N}\) is first used to
+learn a dynamic model \(f_{\mathbf{w}})\) using supervised learning.
+\cref{alg-mbrl} shows the typical model-based RL loop.
+
+\begin{subequations}
+\begin{align} \label{eq-fast-update-mpc}
+  \policy_{i+1}^{\text{PS}}(\state) &= \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}}
+J^{\Horizon}(\action_{0:\Horizon}, \transitionFn) + \stateValueFn(\state_{\Horizon+1})
+\end{align}
+\end{subequations}
+\begin{subequations}
+\begin{align} \label{eq-fast-update-mpc-old}
+  \stateValueFn(\state) &= \mathbb{E} \left[ \sum_{t=0}^{\infty}     \discount^{t} \rewardFn(\state_{t},\action_{t}) \mid \state_{0}=\state \right] \label{eq-fast-update-mpc}
+\end{align}
+\end{subequations}
+
+
+In model-based RL, we obtain the posterior over the dynamics \(p(f\mid\mathcal{D})\) after performing (approximate) Bayesian
+inference given a state transition data set \(\mathcal{D} = \{\{(s_{t},a_{t}), s_{t+1}\}^{T_{i}}_{t=1}\}_{i=0}^{N}\).
+\cref{alg-mbrl} shows the typical model-based RL loop.
+Importantly, the dynamics are usually only updated after an episode $i$.
+
+
+\textbf{Posterior sampling}
+Given the posterior dynamics \(p(\transitionFn \mid \mathcal{D})\),
+an effective and  common approach is to simply take the expecation over both the aleatoric and epistemic uncertainty,
+
+\cite{osbandWhyPosteriorSampling2017,osbandMoreEfficientReinforcement2013}
+\begin{align} \label{eq-posterior-sampling}
+\policy_{i+1}^{\text{PS}} = \arg \max_{\policy \in \policyDomain} \left[ J(\transitionFn, \policy) \right] \quad \text{s.t. } \transitionFn \sim p(\transitionFn \mid \dataset_{0:i})
+\end{align}
+
+
+
+
 
 
 % We start by obtaining a posterior over the weights of a trained neural network via the Laplace approximation.

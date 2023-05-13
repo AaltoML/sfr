@@ -489,6 +489,7 @@ In supervised learning, given a data set $\dataset = \{(\mathbf{x}_{i} , \mathbf
 %
 If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\weights(\mathbf{x}_{i}))$ and the regularizer $\mathcal{R}(\weights) = \frac{1}{2}\|\weights\|^{2}_2$, then we can view \cref{eq-empirical-risk} as the maximum {\it a~posteriori} (MAP) solution to a Bayesian objective, where $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$, where the regularization weight takes the role of a prior precision parameter.
 
+
 \subsection{Linearization gives rise to a Gaussian process posterior} 
 \label{sec:nn2gp}
 %
@@ -498,6 +499,19 @@ The structure of the posterior given by the loss-landscape around the MAP weight
 %A Gaussian process is the prior covariance function (or kernel function) $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors in $\R^{\mathrm{D}}$. We aim to find a kernel based on the neural network to build the Gaussian process posterior. 
 A GP is fully characterized by a mean $\mu(\cdot)$ and covariance function $\kappa(\cdot,\cdot)$ (kernel).
 If we had the following function parameterization $g(\vx) = \phi(\vx)^\top \vw$ where $\phi(\vx)$ is a feature map, we can convert from weight space prior to function space prior giving the following kernel $\kappa(\vx, \vx') = \delta^{-1} \phi(\vx) \phi^\T(\vx')$ (see Ch.~XXX in \cite{rasmussen2006gaussian} for details).\todo{this part needs to be rewritten, starts talking about a general function parameterisation and then jumps directly to the neural network} 
+%=======
+%\subsection{Neural Network to GP Prior} 
+%\label{sec:nn2gp}
+%%
+%A Gaussian process characterizes a distribution over functions in terms of the first two moments. The key quantity of a Gaussian process is the prior covariance function (or kernel function) $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors in $\R^{\mathrm{D}}$. We aim to find a kernel based on the neural network to build the Gaussian process posterior. A common approach to find a $q(\vw)$ is to perform a Laplace-GGN approximation. The approximation can be seen as taking the map solution of \cref{eq-empirical-risk}
+%
+%A linear function in terms of parameters can easily be converted from the weight space to the function space as follows
+%
+%\begin{equation}
+%\hat{f}_\weights(\mathbf{x}_{i})) = \phi(\vx)^\top \vw
+%\end{equation}
+%
+%$g(\vx) = \phi(\vx)^\top \vw$ where $\phi(\vx)$ is a feature map, we can convert from weight space prior to function space prior giving the following kernel $\kappa(\vx, \vx') = \delta^{-1} \phi(\vx) \phi(\vx')^\T$ see \citep{rasmussen2006gaussian} for details.\todo{this part needs to be rewritten, starts talking about a general function parameterisation and then jumps directly to the neural network} 
 We can approximate the feature map of the neural network  $f_\weights(\mathbf{x})$  by using the Jacobian at $\weights^*$ thus our GP prior becomes:
 \begin{equation} \label{eq-laplace-approx-function-space}
  g(\vx) \sim \GP \left( \mu(\vx), \kappa(\vx, \vx') \right) \quad \text{with} \quad
@@ -561,14 +575,16 @@ where $\MKzz$ and $\vkzs$ are define similarly to $\MKxx$ and $\vk_{\vx i}$ but 
 We now detail how our method can be used in model-based RL.
 Folling the Markov decision process formulation \cite{bellmanDynamic1956}, we
 denote states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \), actions \(\action \in \actionDomain \subseteq \R^{D_{\action}}\) and
-transition dynamics \(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \) subject to  i.i.d. transition noise \(\noise_{t}\).
-The goal of RL is to find the policy \(\pi \in \Pi \) that maximises the sum of rewards
-in expecation over the transition noise,
+transition dynamics \(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \).
+The goal of RL is to find the policy \(\pi : \stateDomain \rightarrow \actionDomain \), that maximises the sum of rewards
 \begin{align} \label{eq-model-free-objective}
 \policy^{*} = \arg \max_{\policy \in \policyDomain} J(\transitionFn, \policy) = \arg \max_{\policy \in \policyDomain} \mathbb{E}_{\noise_{0:\infty}} \left[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \right]
 \quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}.
 \end{align}
+in expecation over the transition noise,
+ subject to  i.i.d. transition noise \(\noise_{t}\).
 where $\gamma \in [0, 1]$ is a discount factor to account for the infinte sum.
+
 
 
 In model-based RL, the state transition data set \(\mathcal{D} = \{\{(s_{t},a_{t}), s_{t+1}\}^{T_{i}}_{t=1}\}_{i=0}^{N}\) is first used to
@@ -988,7 +1004,12 @@ an effective and  common approach is to simply take the expecation over both the
   \end{subfigure}
   \hfill
   \begin{subfigure}{.78\textwidth}
-    \tikz\node[minimum width=\textwidth,minimum height=.35\textwidth,fill=black!10,rounded corners=2pt]{RL trjectories or something interesting?};
+    % \tikz\node[minimum width=\textwidth,minimum height=.35\textwidth,fill=black!10,rounded corners=2pt]{RL trjectories or something interesting?};
+
+    % \includegraphics[width=0.5\textwidth]{./fig/rl.pdf}
+    \input{./fig/rl}
+
+
   \end{subfigure}
   \hfill
   \caption{Add caption.}

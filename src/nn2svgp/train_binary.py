@@ -43,7 +43,7 @@ def train(
                 "Epoch: {} | Batch: {} | Loss: {}".format(epoch_idx, batch_idx, loss)
             )
 
-    ntksvgp.build_dual_svgp()
+    ntksvgp.set_data((data[0], data[1]))
     return {"loss": loss_history}
 
 
@@ -80,6 +80,7 @@ if __name__ == "__main__":
         return torch.Tensor(ys)
 
     delta = 0.0002
+    # delta = 0.000002
     # delta = 0.002
     # delta = 0.005
     # delta = 0.01
@@ -174,25 +175,31 @@ if __name__ == "__main__":
 
     batch_size = X_train.shape[0]
 
-    likelihood = src.nn2svgp.likelihoods.BernoulliLh()
+    likelihood = src.nn2svgp.likelihoods.BernoulliLh(EPS=0.01)
     # likelihood = src.nn2svgp.likelihoods.CategoricalLh()
     # likelihood = src.nn2svgp.likelihoods.Gaussian()
     prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
+    # ntksvgp = src.nn2svgp.NN2GPSubset(
+    #     network=network,
+    #     prior=prior,
+    #     likelihood=likelihood,
+    #     output_dim=1,
+    #     # dual_batch_size=100,
+    #     jitter=1e-4,
+    # )
     ntksvgp = NTKSVGP(
         network=network,
         # train_data=(X_train, Y_train),
         prior=prior,
         likelihood=likelihood,
         output_dim=1,
+        dual_batch_size=100,
         # num_inducing=X_train.shape[0],
         num_inducing=50,
         # jitter=1e-6,
         jitter=1e-4,
     )
 
-    print("setting data")
-    ntksvgp.set_data((X_train, Y_train))
-    print("FINISHED setting data")
     metrics = train(
         ntksvgp=ntksvgp,
         data=data,
@@ -200,7 +207,6 @@ if __name__ == "__main__":
         batch_size=batch_size,
         learning_rate=1e-2,
     )
-    # ntksvgp.update(X_train, Y_train)
 
     # f_mean, f_var = ntksvgp.predict_f(X_test_short)
     f_mean, f_var = ntksvgp.predict_f(X_test)

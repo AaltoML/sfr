@@ -27,10 +27,6 @@ from omegaconf import DictConfig, OmegaConf
 from src.rl.utils import EarlyStopper, set_seed_everywhere
 from tensordict import TensorDict
 
-
-reward_fn = src.rl.models.rewards.CartpoleRewardModel().predict
-# def reward_fn(state, action):
-#     return torch.vmap(src.rl.models.rewards.cartpole_swingup_reward)(state, action)
 Transition = namedtuple("Transition", ("state", "action", "next_state", "reward"))
 
 
@@ -183,6 +179,7 @@ def train(cfg: DictConfig):
     # )
     print("Made replay buffer")
 
+    reward_fn = hydra.utils.instantiate(cfg.agent.reward_model).predict
     # transition_model = hydra.utils.instantiate(cfg.agent.transition_model)
     # svgp = hydra.utils.instantiate(cfg.agent.reward_model.svgp)
     # reward_model = hydra.utils.instantiate(cfg.agent.reward_model, svgp=svgp)

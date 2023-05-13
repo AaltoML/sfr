@@ -384,13 +384,15 @@ We demonstrate points {\em(i)--(iii)} in the experiments.
 \subsection{Related work}
 \label{sec:related}
 %
-% Introduce the laplace GNN + shortcomings
-One common approach for uncertainty with neural networks is a Laplace GNN approximation \citep{daxbergerLaplace2021}, that takes a trained neural network and linearises it around the optimal weights. The resulting linear model can be used to obtain uncertainty estimates and refine the neural network predictions \citep{immerScalable2021}. The resultant model is linear with respect to the weights, therefor it is possible to convert it to a Gaussian process (GP) as shown in \citep{immerScalable2021, khan2019approximate}. Yet to obtain uncertainty estimates there is the usual computational scaling  cubic in the number of data points of GPs ($\mathcal{O}(n^3)$). Many approaches  apply crude approximations and yet still obtain good uncertainty estimates. 
+% Introduce the laplace GGN + shortcomings
+One common approach for uncertainty with neural networks is a Laplace-GGN approximation \citep{daxbergerLaplace2021}, which takes a trained neural network and linearises it around the optimal weights. The resulting linear model can be used to obtain uncertainty estimates and refine the neural network predictions \citep{immerScalable2021}, and is linear with respect to the weights. Therefore, as shown in \citep{immerScalable2021, khan2019approximate}, the linear model can be converted to a Gaussian process (GP), which is then used to obtain the uncertainty estimates.
+However, the GP introduces a computational scaling that is cubic in the number of data points ($\mathcal{O}(n^3)$). Many approaches apply crude approximations to alleviate the computational costs, \eg, considering only a subset of the training datas, but are still obtain good uncertainty estimates \citep{immerScalable2021}\todo{other methods?}. 
 
 
 %% CL section 
 %%
 %% EWC, SI, VCL -> weight regularization 
+
 EWC \cite{kirkpatrick2017overcoming}
 SI \cite{zenke17a}, 
 VCL \cite{nguyen-tuongModel2009},  

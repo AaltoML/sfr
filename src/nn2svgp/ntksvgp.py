@@ -264,7 +264,7 @@ def build_ntk(
     def single_output_ntk_contraction(
         x1: InputData, x2: InputData, i: int, full_cov: Optional[bool] = True
     ):
-        @torch.no_grad()
+        # @torch.no_grad()
         def fnet_single(params, x):
             f = functional_call(network, params, (x.unsqueeze(0),))[:, i]
             return f

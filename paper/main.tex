@@ -499,8 +499,12 @@ If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\
 \subsection{Linearization gives rise to a Gaussian process} 
 \label{sec:nn2gp}
 %
-\todo{You need something like this to bridge from the previous, GPs cannot come from nowhere!}
-The structure of the posterior given by the loss-landscape around the MAP weights $\vw^*$  induces a correlation structure on learned model functions of the neural network. These can be seen as possible perturbed versions of $f_{\vw^*}$ that can be used for characterizing ambiguity and uncertainty in the learned model (see \cref{fig:banana} for an example of sampling in weight-space). This gives rise to a probability {\em distribution} over the possible functions. If we limit the interest to the first two moments, we can characterize the resulting posterior over these functions as a Gaussian process (GP).
+Quantifying uncertainty in a Bayesian framework boils down to finding a posterior of $p(\vw \mid \dataset)$ from, which represents the uncertainty over our parameters based on the prior and data. The posterior structure is related to the loss-landscape around the MAP weights $\vw^*$, which induces a correlation structure on functions produced from the neural network's deterministic mapping. Samples from the weight posterior are perturbed versions of $f_{\vw^*}$ characterizing uncertainty in the learned model in the function space. Although the true posterior is intractable given the non-linearities of the neural network sampling techniques available such as Hamiltonian Monte-Carlo (HMC), The uncertainty plotted \cref{fig:banana} shows the induced function space posterior by sampling through the model. However, in most cases, sampling techniques like HMC are not available given the computational burden.
+
+A common approach is to approximate the correlation structure of a distribution centred at the MAP estimate such as the Laplace-GNN \citep{khan2019approximate, daxberger2021laplace, maddox2021fast}. The Laplace GNN takes the MAP solution and approximates the Hessian of our loss function  $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i)$ with the GGN approximation. Another way of viewing the 
+
+In this paper we are concerned with learning posterior directly in the function space. 
+
 
 - distribution over w given to you by the non-linear function. One could sample over weights pass it over the function and you have distribution over functions. HMC is heavy, structure of the problem around the map estimate. characteruze this as the first two moments of the distributions over the functions restrict to the first two moments.  
 
@@ -568,8 +572,8 @@ As stated in \citet[Lemma~1]{csato2002sparse}, the posterior process mean and co
 where $f_i = f_\weights(\vx_i)$, the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{m \times m}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $\kappa_{ii} = \kappa(\vx_i, \vx_i)$.  The dual parameters consist of the vector $\valpha \in \R^{m}$ and vector $\vbeta \in \R^{m}$, defined as:
 \begin{equation}
 \label{eq:dual_param}
-\alpha_i \coloneqq \myexpect_{p(f_i \mid \vy)}[\nabla_{f_i}\log p(y_i \mid f_i)],  \quad
-\beta_i \coloneqq - \myexpect_{p(f_i \mid \vy)}[\nabla^2_{f_i f_i}\log p(y_i \mid f_i)] ,
+\alpha_i \coloneqq \myexpect_{p(\vw \mid \vy)}[\nabla_{f_i}\log p(y_i \mid f_i)],  \quad
+\beta_i \coloneqq - \myexpect_{p(\vw \mid \vy)}[\nabla^2_{f_i f_i}\log p(y_i \mid f_i)] ,
 \end{equation}
 %
 The parameters $(\alpha_i, \beta_i)$ are the dual parameters that arise in the dual formulations used in, for example, support vector machines \citep{cortes1995support}, whose origins are found in work by \citet{kimeldorf1971some}. The above relations holds for generic likelihoods, and no approximations are involved as the expectation is under the exact posterior. The question is how do we form the dual variables without access to the exact posterior and different approximate inference techniques solve the question in different ways. Bound techniques such as \citet{jaakkola1997variational} attempt to bound the integral thus making the integral tractable, while Expecation Propogation (EP) as used in \citet{csato2002sparse} iteratively finds dual variables but sets them to log of the expectation of the approximate posterior. Meanwhile variational inference  \cite{khan2017conjugate, adam2021dual} find them using the variational approximation of the posterior to solve the integral.

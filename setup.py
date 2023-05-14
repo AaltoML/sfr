@@ -43,7 +43,7 @@ keywords = [
 python_requires = ">=3.8"
 
 install_requires = [
-    "matplotlib==3.7.1",
+    "matplotlib==3.5.1",
     "numpy==1.24.2",
     "torch==2.0.0",
     "torchvision==0.15.1",

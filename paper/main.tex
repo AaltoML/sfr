@@ -582,7 +582,11 @@ where $\MKzz$ and $\vkzs$ are define similarly to $\MKxx$ and $\vk_{\vx i}$ but 
 \textbf{Continual learning}
 
 \subsection{Reinforcement learning}
-We now detail how our method can be used in model-based RL.
+A key challenge in RL is to balance the trade-off between exploration and exploitation.
+That is, should the agent select an action that it knows will lead to a high reward (exploitation), or should it select an action that it has
+not selected before, which could lead to either a higher or lower reward (exploration).
+In this section, we detail how our method's principled uncertainty estimates can be used to balance this trade-off using a model-based RL algorithim.
+
 We consider stochastic environments with states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \),
 actions \(\action \in \actionDomain \subseteq \R^{D_{\action}}\) and transition dynamics
 \(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \), such that
@@ -596,45 +600,49 @@ assume that there is a known reward function $r : \stateDomain \times \actionDom
 % \(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \), such that
 % $\state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}$ where  $\noise_{t}$
 % is i.i.d. transition noise.
-The goal of RL is to find the policy \(\pi : \stateDomain \rightarrow \actionDomain\) that maximises the sum of discounted rewards
+% $\mathbb{E}_{\noise_{0:\infty}} \big[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \big]$
+% \begin{align} \label{eq-model-free-objective}
+% \policy^{*} = \arg \max_{\policy \in \policyDomain} J(\transitionFn, \policy) = \arg \max_{\policy \in \policyDomain} \mathbb{E}_{\noise_{0:\infty}} \bigg[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \bigg]
+% \quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t},
+% \end{align}
+The goal of RL is to find the policy \(\pi : \stateDomain \rightarrow \actionDomain\)
+(from a set of policies $\Pi$) that maximises the sum of discounted rewards
 in expecation over the transition noise,
 \begin{align} \label{eq-model-free-objective}
-\policy^{*} = \arg \max_{\policy \in \policyDomain} J(\transitionFn, \policy) = \arg \max_{\policy \in \policyDomain} \mathbb{E}_{\noise_{0:\infty}} \left[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \right]
-\quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t},
+J(\transitionFn, \policy) = \mathbb{E}_{\noise_{0:\infty}} \bigg[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \bigg]
+\quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}
 \end{align}
-where $\gamma \in [0, 1]$ is a discount factor and $\Pi$ is a set of policies.
-
-
-\textbf{Model-learning}
-In model-based RL, the state transition data set \(\mathcal{D} = \{\{(s_{t},a_{t}), s_{t+1}\}^{T_{i}}_{t=1}\}_{i=0}^{N}\) is first used to
-learn a dynamic model \(f_{\mathbf{w}})\) using supervised learning.
-\cref{alg-mbrl} shows the typical model-based RL loop.
-
+where $\gamma \in [0, 1]$ is a discount factor.
+In this work, we consider model-based RL where a model of the transition dynamics \(f_{\mathbf{w}} \approx \transitionFn\) is learned and then used by a planning algorithm.
 \begin{align} \label{eq-fast-update-mpc}
-  \policy_{i+1}^{\text{PS}}(\state) &= \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}}
-J^{\Horizon}(\action_{0:\Horizon}, \transitionFn) + \stateValueFn(\state_{\Horizon+1})
-\quad
-  \stateValueFn(\state) &= \mathbb{E} \left[ \sum_{t=0}^{\infty}     \discount^{t} \rewardFn(\state_{t},\action_{t}) \mid \state_{0}=\state \right] %\label{eq-fast-update-mpc-old}
+  \policy^{\text{Greedy}}(\state) &= \arg \max_{\pi \in \Pi} J(f_{\mathbf{w}^{*}}, \pi) \quad   \\
+  \policy^{\text{PS}}(\state) &= \arg \max_{\pi \in \Pi} J(\hat{f}, \pi)
+\quad \text{s.t. } \hat{\transitionFn} \sim p(\transitionFn_{\mathbf{w}} \mid \dataset),
 \end{align}
-
-
-
-
-In model-based RL, we obtain the posterior over the dynamics \(p(f\mid\mathcal{D})\) after performing (approximate) Bayesian
-inference given a state transition data set \(\mathcal{D} = \{\{(s_{t},a_{t}), s_{t+1}\}^{T_{i}}_{t=1}\}_{i=0}^{N}\).
-\cref{alg-mbrl} shows the typical model-based RL loop.
-Importantly, the dynamics are usually only updated after an episode $i$.
-
-
-\textbf{Posterior sampling}
-Given the posterior dynamics \(p(\transitionFn \mid \mathcal{D})\),
-an effective and  common approach is to simply take the expecation over both the aleatoric and epistemic uncertainty,
-
+Our exact set up uses
+Model Predictive Path Integral (MPPI) control
+\cite{panSample2015}
+\cite{williamsModel2017}
+A principled approach
+% Given the posterior dynamics \(p(\transitionFn \mid \mathcal{D})\),
+% an effective and  common approach is to simply take the expecation over both the aleatoric and epistemic uncertainty,
 \cite{osbandWhyPosteriorSampling2017,osbandMoreEfficientReinforcement2013}
-\begin{align} \label{eq-posterior-sampling}
-\policy_{i+1}^{\text{PS}} = \arg \max_{\policy \in \policyDomain} \left[ J(\transitionFn, \policy) \right] \quad \text{s.t. } \transitionFn \sim p(\transitionFn \mid \dataset_{0:i})
-\end{align}
 
+\textbf{Appendix}
+
+% \cref{alg-mbrl} shows the typical model-based RL loop.
+\begin{align} \label{eq-fast-update-mpc}
+  \policy_{i+1}^{\text{PS}}(\state) = \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}}
+\E \bigg[ \sum_{t=0}^{H-1} \gamma^{t} r(\state_{t},\action_{t}) \mid \state_{0}=\state  \bigg] + Q_{\theta}(\state_{\Horizon}, \action_{H})
+\quad \text{s.t. } \state_{t+1} &= \hat{\transitionFn}(\state_{t}, \action_{t}) + \noise_{t} \\
+\hat{\transitionFn} &\sim p(\transitionFn \mid \dataset),
+\end{align}
+with $\hat{\transitionFn} \sim p(\transitionFn \mid \dataset)$
+
+
+
+We use deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016} to learn an action value function $Q_{\theta}$.
+Note that we also learn a policy but its sole purpose is for learning the value function.
 
 
 

@@ -490,11 +490,11 @@ In supervised learning, given a data set $\dataset = \{(\mathbf{x}_{i} , \mathbf
 If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\weights(\mathbf{x}_{i}))$ and the regularizer $\mathcal{R}(\weights) = \frac{1}{2}\|\weights\|^{2}_2$, then we can view \cref{eq-empirical-risk} as the maximum {\it a~posteriori} (MAP) solution to a Bayesian objective, where $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$, where the regularization weight takes the role of a prior precision parameter.
 
 %
-%\subsection{Linearization gives rise to a Gaussian process posterior} 
-%\label{sec:nn2gp}
+\subsection{Linearization gives rise to a Gaussian process} 
+\label{sec:nn2gp}
 %
-%
-%The structure of the posterior given by the loss-landscape around the MAP weights $\vw^*$  induces a correlation structure on learned model functions of the neural network. These can be seen as possible perturbed versions of $f_{\vw^*}$ that can be used for characterizing ambiguity and uncertainty in the learned model (see \cref{fig:banana} for an example of sampling in weight-space). This gives rise to a probability {\em distribution} over the possible functions. If we limit the interest to the first two moments, we can characterize the resulting posterior over these functions as a Gaussian process (GP).
+\todo{You need something like this to bridge from the previous, GPs cannot come from nowhere!}
+The structure of the posterior given by the loss-landscape around the MAP weights $\vw^*$  induces a correlation structure on learned model functions of the neural network. These can be seen as possible perturbed versions of $f_{\vw^*}$ that can be used for characterizing ambiguity and uncertainty in the learned model (see \cref{fig:banana} for an example of sampling in weight-space). This gives rise to a probability {\em distribution} over the possible functions. If we limit the interest to the first two moments, we can characterize the resulting posterior over these functions as a Gaussian process (GP).
 
 %A Gaussian process characterizes a distribution over functions in terms of the first two moments. The key quantity of a Gaussian process is the prior covariance function (or kernel function) $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors in $\R^{\mathrm{D}}$. We aim to find a kernel based on the neural network to build the Gaussian process posterior.  A linear function in terms of parameters can easily be converted from the weight space to the function space as follows:
 %\begin{equation}
@@ -510,13 +510,12 @@ If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\
 %A Gaussian process is the prior covariance function (or kernel function) $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors in $\R^{\mathrm{D}}$. We aim to find a kernel based on the neural network to build the Gaussian process posterior. 
 %A GP is fully characterized by a mean $\mu(\cdot)$ and covariance function $\kappa(\cdot,\cdot)$ (kernel).
 %If we had the following function parameterization $g(\vx) = \phi(\vx)^\top \vw$ where $\phi(\vx)$ is a feature map, we can convert from weight space prior to function space prior giving the following kernel $\kappa(\vx, \vx') = \delta^{-1} \phi(\vx) \phi^\T(\vx')$ (see Ch.~XXX in \cite{rasmussen2006gaussian} for details).\todo{this part needs to be rewritten, starts talking about a general function parameterisation and then jumps directly to the neural network} 
-%=======
-\subsection{Neural Network to GP Prior} 
-\label{sec:nn2gp}
+%\subsection{Neural Network to GP Prior} 
+%\label{sec:nn2gp}
 %
 A Gaussian process characterizes a distribution over functions in terms of the first two moments,  a mean $\mu(\cdot)$ and covariance function $\kappa(\cdot,\cdot)$ (kernel). We aim to find a kernel and mean function based on the neural network to build the Gaussian process posterior.  A linear function in terms of parameters can be converted from the weight space to the function space (see Ch.~XXX in \cite{rasmussen2006gaussian} as follows:
 \begin{equation} \label{eq:weight_func}
-g_\weights(\mathbf{x}_{i}) = \phi(\vx)^\top \vw \implies \mu(\vx) = \vzeros \quad \kappa(\mathbf{x}, \mathbf{x}') = \frac{1}{\delta} \phi(\vx)^\top \phi(\vx)
+g_\weights(\mathbf{x}_{i}) = \phi^\top\!(\vx) \, \vw \implies \mu(\vx) = \vzeros \quad \kappa(\mathbf{x}, \mathbf{x}') = \frac{1}{\delta} \phi(\vx)^\top \phi(\vx)
 \end{equation}
 Given an approximate posterior $q(\vw)$, \citet{immerImprovingPredictionsBayesian2021} proposed to make the following linear approximation
 $f^{\textrm{lin.}}_{\vw^*}(\vx; \vw) = f_{\vw^*}(\vx) + \Jac{\weights^*}{\mathbf{x}} \, (\vw - \vw^*)$ of the neural network, where $\Jac{\weights}{\mathbf{x}} \coloneqq \nabla_\weights f(\mathbf{x})^\top \in \R^{C \times P}$ is the Jacobian. The approximation can be used with any approximate inference technique but in the paper they focus on the Laplace-GNN. They find that the linear approximation helps to improve predictions by correcting the approximate posterior when sampled through a non-Gaussian likelihoods.
@@ -576,6 +575,8 @@ Using the sparse definition of the dual variables our sparse GP posterior takes 
 where $\MKzz$ and $\vkzs$ are define similarly to $\MKxx$ and $\vk_{\vx i}$ but now over the $\MZ \in \R^{M \times D} $ inducing points instead of the full dataset $\MX$. The key quantities we need to make predictions from our sparse GP from the converged neural network are $(\hat{\alpha}_i, \hat{\beta}_i)$ and a kernel function $\kappa$. Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred} we can see that the computational complexity is now $\mathcal{O}(m^3)$ to $\mathcal{O}(n^3)$ where $m \ll n$.  Crucially given the structure of our probabilistic model, our sparse dual variables \cref{eq:dual_sparse} are a compact form of the full model projected using the kernel. Our approach contrasts to \citet{immerImprovingPredictionsBayesian2021}, which uses a subset of the full model, a less principled approach to build a sparse model given it ignores the information in the dataset. It is important to highlight that the sparsifying approach is independent of the approximate inference technique. The \cref{eq:dual_param} are determined from the neural network. More complicated inference techniques, such as variational inference, could be used, but given its simplicity, we only need a trained neural network; we use a Laplace approximation in our experiments.
 
 
+
+
 \section{Sparse function-space sequential learning}
 
 \textbf{Continual learning}
@@ -609,14 +610,13 @@ In model-based RL, the state transition data set \(\mathcal{D} = \{\{(s_{t},a_{t
 learn a dynamic model \(f_{\mathbf{w}})\) using supervised learning.
 \cref{alg-mbrl} shows the typical model-based RL loop.
 
-\begin{subequations}
 \begin{align} \label{eq-fast-update-mpc}
   \policy_{i+1}^{\text{PS}}(\state) &= \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}}
 J^{\Horizon}(\action_{0:\Horizon}, \transitionFn) + \stateValueFn(\state_{\Horizon+1})
 \quad
-  \stateValueFn(\state) &= \mathbb{E} \left[ \sum_{t=0}^{\infty}     \discount^{t} \rewardFn(\state_{t},\action_{t}) \mid \state_{0}=\state \right] \label{eq-fast-update-mpc-old}
+  \stateValueFn(\state) &= \mathbb{E} \left[ \sum_{t=0}^{\infty}     \discount^{t} \rewardFn(\state_{t},\action_{t}) \mid \state_{0}=\state \right] %\label{eq-fast-update-mpc-old}
 \end{align}
-\end{subequations}
+
 
 
 

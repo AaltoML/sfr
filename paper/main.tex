@@ -637,14 +637,14 @@ where $\gamma \in [0, 1)$ is a discount factor.
 In this work, we consider model-based RL where a model of the transition dynamics is learned \(f_{\mathbf{w}} \approx \transitionFn\) and then used by a planning algorithm.
 A simple approach is to use the learned dynamic model $f_{\mathbf{w}^{*}}$ and maximise the objective in \cref{eq-model-free-objective},
 \begin{align} \label{eq-greedy}
-  \policy^{\text{Greedy}}(\state) &= \arg \max_{\pi \in \Pi} J(f_{\mathbf{w}^{*}}, \pi).
+  \policy^{\text{Greedy}} &= \arg \max_{\pi \in \Pi} J(f_{\mathbf{w}^{*}}, \pi).
 \end{align}
 However, we can leverage the method in \cref{sec:methods} to obtain a function-space posterior over the learned dynamics $q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset)$,
 where $\mathcal{D}$ represents the state transition data set \(\mathcal{D} = \{(s_{i},a_{i}), s_{i+1}\}_{i=0}^{N}\).
 Importantly, the uncertainty represented by this posterior distribution can be used to balance the exploration-exploitation trade-off,
 using approaches such as posterior sampling \cite{osbandWhyPosteriorSampling2017,osbandMoreEfficientReinforcement2013},
 \begin{align} \label{eq-posterior-sampling}
-  \policy^{\text{PS}}(\state) &= \arg \max_{\pi \in \Pi} J(\hat{f}, \pi)
+  \policy^{\text{PS}} &= \arg \max_{\pi \in \Pi} J(\hat{f}, \pi)
 \quad \text{s.t. } \tilde{\transitionFn} \sim q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset),
 \end{align}
 where a function $\tilde{\transitionFn}$ is sampled from the (approximate) posterior $q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset)$ and used to find a policy as

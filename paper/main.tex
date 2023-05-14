@@ -505,23 +505,46 @@ In supervised learning, given a data set $\dataset = \{(\mathbf{x}_{i} , \mathbf
 If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\weights(\mathbf{x}_{i}))$ and the regularizer $\mathcal{R}(\weights) = \frac{1}{2}\|\weights\|^{2}_2$, then we can view \cref{eq-empirical-risk} as the maximum {\it a~posteriori} (MAP) solution to a Bayesian objective, where the regularization weight takes the role of a prior precision parameter, \ie, $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$.
 
 %
-\subsection{Linearization gives rise to a Gaussian process} 
-\label{sec:nn2gp}
+% \subsection{Linearization gives rise to a Gaussian process}
+% \label{sec:nn2gp}
 %
 
-Quantifying uncertainty in a Bayesian framework means finding a posterior of $p(\vw \mid \dataset)$. The posterior represents the uncertainty over our parameters based on the prior and the data. The posterior structure directly relates to the optimization loss around the MAP weights $\vw^*$. Furthermore, the landscape in the weight space induces functions produced by the neural network's deterministic mapping. If one was to sample from the weight posterior, the corresponding functions created can be viewed as perturbed versions of the $f_{\vw^*}$. In most applications, we care about predictions from the neural network, so the distribution is in the function space and not in the weight space.
+\textbf{Uncertainty quantification}
+Bayesian inference offers a principled approach to quantifying uncertainty in neural networks.
+The goal is to find the posterior over the weights ${p(\vw \mid \vy) \propto p(\vy \mid f_{\weights}(\vx)) p(\weights)}$ as
+it represents our belief in the parameters after combining data $\dataset$ with our prior $p(\vw)$.
+Although the true posterior $p(\vw \mid \dataset)$ is intractable given the non-linearities of the neural network, one can resort to sampling techniques such as Hamiltonian Monte-Carlo (HMC).
+However, for most applications their high computational costs make them impractical so we need approximate inference techniques.
+In \cref{fig:banana}, we show a qualitative example of the induced function-space posterior obtained with our method compared to the posterior obtained through HMC sampling on the Banana toy dataset. \todo{make it more straightforward that we are computationally cheaper? A: Not sure we are reallying trying to sell our method here}
 
-Although the true posterior $p(\vw \mid \dataset)$ is intractable given the non-linearities of the neural network, one can resort to sampling techniques such as Hamiltonian Monte-Carlo (HMC). However, even in this case, the high computational costs make them impractical meaning for most applications we need approximate inference techniques. In \cref{fig:banana}, we show a qualitative example of the induced function space posterior obtained with our method compared to the posterior obtained through HMC sampling on the Banana toy dataset. \todo{make it more straightforward that we are computationally cheaper? A: Not sure we are reallying trying to sell our method here}
+\textbf{Function space}
+As a neural network is a deterministic mapping, the weight-space posterior induces a distribution over the function values.
+Intuitively, if one was to sample from the weight posterior, the corresponding functions created can
+be viewed as perturbed versions of the function at the MAP estimate $f_{\vw^*}$.
+% \todo{not super sure about the perturbed part here. I know what \textrm{you}'re trying to say but a little confused}
+In most applications, we care about predictions from the neural network and not the weights themselves.
+As such, it is the distribution over function values that we are actually interested in.
 
-A common approach is to approximate the correlation structure of a distribution centred at the MAP estimate as done in the Laplace-GGN \citep{khan2019approximate, daxberger2021laplace, maddox2021fast}. The Laplace-GGN takes the MAP solution and approximates the Hessian of the loss function  
-% $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i)$ 
-with the Generalized Gaussian-Newton approximation (GGN). 
-Following the work of \citep{khan2019approximate}, we can view this approximation as building an approximate linear model of the neural network as $\hat{f}_\weights(\mathbf{x}_i) = \Jac{\weights_*}{\mathbf{x}_i} \, \weights$, where $\Jac{\weights}{\mathbf{x}_i} \coloneqq \nabla_\weights f(\mathbf{x}_i)^\top \in \R^{C \times P}$ is the Jacobian at the MAP. Using the Hessian of the approximate model, we arrive at the Laplace-GGN posterior for $q(\vw)$.
 
-Recent work \citep{khan2019approximate,maddox2021fast} shows that linearizing approximations in the weight space lead to function space equivalent approximations. As our goal is to build a sparse functional representation of a neural network, a starting point is the non-sparse  $q(\vf)$ function space posterior approximation. We choose to use a Gaussian process, as is typical, an extension of the multivariate normal that characterizes a distribution over functions in terms of the first two moments, a mean $\mu(\cdot)$ and covariance  (or kernel) function $\kappa(\cdot,\cdot)$. Thus, we need these two functions based on the neural network to build the Gaussian process posterior. Gaussian distributions remain tractable under linear transformations. Therefore, a linear function in terms of parameters can be converted from the weight space to the function space (see Ch.~2.1 in \cite{rasmussen2006gaussian}) as follows:\begin{equation} \label{eq:weight_func}
-g_\weights(\mathbf{x}_{i}) = \phi^\top\!(\vx_i) \, \vw \implies \mu(\vx_i) = 0 \quad \kappa(\mathbf{x}_i, \mathbf{x}_i') = \frac{1}{\delta} \phi(\vx_i)^\top \phi(\vx_i)
+\textbf{Linearization gives rise to a Gaussian process}
+Our goal is to build a sparse function-space representation of a neural network.
+Gaussian processes are an extension of the multivariate normal that characterizes a distribution over
+functions in terms of the first two moments.
+They are defined by a mean function $\mu(\cdot)$ and a covariance (aka kernel) function $\kappa(\cdot,\cdot)$.
+Thus, we need these two functions based on the neural network to build the Gaussian process posterior.
+Recent work \citep{khan2019approximate,maddox2021fast} has shown that linearizing approximations in the weight space
+lead to function space equivalent approximations.
+As Gaussian distributions remain tractable under linear transformations, a linear function in
+terms of parameters can be converted from the weight space to the function space (see Ch.~2.1 in \cite{rasmussen2006gaussian}) as follows:\begin{equation} \label{eq:weight_func}
+g_\weights(\mathbf{x}_{i}) = \phi^\top\!(\vx_i) \, \vw \implies \mu(\vx_i) = 0 \quad \kappa(\mathbf{x}_i, \mathbf{x}_i') = \frac{1}{\delta} \phi(\vx_i)^\top \phi(\vx_i).
 \end{equation}
-
+% The posterior structure directly relates to the optimization loss around the MAP weights $\vw^*$.
+A common approach is to approximate the correlation structure of a distribution centred at the MAP estimate as done in the Laplace-GGN \citep{khan2019approximate, daxberger2021laplace, maddox2021fast}. The Laplace-GGN takes the MAP solution and approximates the Hessian of the loss function
+% $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i)$
+with the Generalized Gaussian-Newton approximation (GGN).
+Following the work of \citep{khan2019approximate}, we can view this approximation as building an approximate linear model of the neural network as $\hat{f}_\weights(\mathbf{x}_i) = \Jac{\weights_*}{\mathbf{x}_i} \, \weights$, where $\Jac{\weights}{\mathbf{x}_i} \coloneqq \nabla_\weights f(\mathbf{x}_i)^\top \in \R^{C \times P}$ is the Jacobian at the MAP.
+Using the Hessian of the approximate model, we arrive at the Laplace-GGN posterior for $q(\vw)$.
+\todo{do we need this sentence about the Hessian to get Laplace-GGN??}
 Therefore, the GGN approximate linear model can be used to convert our weight space model to the function space by,
 \begin{equation} 
 \label{eq-laplace-approx-function-space}

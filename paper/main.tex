@@ -953,9 +953,13 @@ See \cref{sec-rl-appendix} for more details of how we use
 \todo{Overview of experiments}
 
 Our experiments seek to answer the following questions:
-\begin{itemize}
-  \item Does NN2SFR caputure good uncertainty estimates
-\end{itemize}
+\begin{enumerate}
+  \item \textbf{Predictions} How do predictions with our sparse function-space approximation compare to weight-space approximations? Does our method's ability to consider the full data set offer benefits over subset function-space methods?
+  % \item Does our method's ability to consider the full data set offer benefits over subset function-space methods?
+  \item \textbf{Function-space updates} How faster are our function-space updates relative to retraining from scratch? Do they improve predictive performance? Are they as good as retraining from scratch?
+  \item \textbf{Uncertainty} How good are our uncertainty estimates? Can they be used in downstream settings like RL?
+  \item \textbf{Representation} Is our sparse function-space representation useful for continual learning?
+\end{enumerate}
 
 \subsection{Capturing uncertainty in UCI tasks under supervised learning}
 %

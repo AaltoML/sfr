@@ -501,7 +501,7 @@ If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\
 %
 Quantifying uncertainty in a Bayesian framework boils down to finding a posterior of $p(\vw \mid \dataset)$ from, which represents the uncertainty over our parameters based on the prior and data. The posterior structure is related to the loss-landscape around the MAP weights $\vw^*$, which induces a correlation structure on functions produced from the neural network's deterministic mapping. Samples from the weight posterior are perturbed versions of $f_{\vw^*}$ characterizing uncertainty in the learned model in the function space. Although the true posterior is intractable given the non-linearities of the neural network sampling techniques available such as Hamiltonian Monte-Carlo (HMC), The uncertainty plotted \cref{fig:banana} shows the induced function space posterior by sampling through the model. However, in most cases, sampling techniques like HMC are not available given the computational burden.
 
-A common approach is to approximate the correlation structure of a distribution centred at the MAP estimate such as the Laplace-GNN \citep{khan2019approximate, daxberger2021laplace, maddox2021fast}. The Laplace GNN takes the MAP solution and approximates the Hessian of our loss function  $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i)$ with the GGN approximation. Another way of viewing the 
+A common approach is to approximate the correlation structure of a distribution centred at the MAP estimate such as the Laplace-GNN \citep{khan2019approximate, daxberger2021laplace, maddox2021fast}. The Laplace GNN takes the MAP solution and approximates the Hessian of our loss function  $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i)$ with the GGN approximation. Another way of viewing the approximation is that we build the following approximate model 
 
 In this paper we are concerned with learning posterior directly in the function space. 
 
@@ -601,8 +601,8 @@ Sparse Gaussian processes are a way to reduce the computational complexity of a 
 \end{equation}
 Using the sparse definition of the dual variables our sparse GP posterior takes the following form:
 \begin{equation}\label{eq:dual_sparse_post}
-   \myexpect_{q_{\vu}(\vf)}[\vf_i] = \vkzs^{\T} \MKzz^{-1}   \valpha_{\vu} , \quad 
-   \textrm{Var}_{q_{\vu}(\vf)}[\vf_i]  = \kappa_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \vbeta_{\vu})^{-1} ]\vkzs
+   \myexpect_{q_{\vu}(\vf)}[f_i] = \vkzs^{\T} \MKzz^{-1}   \valpha_{\vu} , \quad 
+   \textrm{Var}_{q_{\vu}(\vf)}[f_i]  = \kappa_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \vbeta_{\vu})^{-1} ]\vkzs
 \end{equation}
 where $\MKzz$ and $\vkzs$ are define similarly to $\MKxx$ and $\vk_{\vx i}$ but now over the $\MZ \in \R^{M \times D} $ inducing points instead of the full dataset $\MX$. The key quantities we need to make predictions from our sparse GP from the converged neural network are $(\hat{\alpha}_i, \hat{\beta}_i)$ and a kernel function $\kappa$. Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred} we can see that the computational complexity is now $\mathcal{O}(m^3)$ to $\mathcal{O}(n^3)$ where $m \ll n$.  Crucially given the structure of our probabilistic model, our sparse dual variables \cref{eq:dual_sparse} are a compact form of the full model projected using the kernel. Our approach contrasts to \citet{immerImprovingPredictionsBayesian2021}, which uses a subset of the full model, a less principled approach to build a sparse model given it ignores the information in the dataset. It is important to highlight that the sparsifying approach is independent of the approximate inference technique. The \cref{eq:dual_param} are determined from the neural network. More complicated inference techniques, such as variational inference, could be used, but given its simplicity, we only need a trained neural network; we use a Laplace approximation in our experiments.
 

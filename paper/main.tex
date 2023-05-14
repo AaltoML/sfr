@@ -406,7 +406,13 @@ The Hessian can be efficiently approximated using the generalised Gauss-Newton a
 %% CL section 
 %%
 %% EWC, SI, VCL -> weight regularization 
-
+% 1) what is the central problem of CL? 
+% 		Training from a non-stationary distribution the models overwrites the previously learnt parameters and then forgets the previous learnt function.
+% 2) What others have done?
+% 		starting with EWC and SI, that are the most known methods in term of weight regularization. And others took a different approach again in the weight regularization real with VCL (to check)
+% 3) People started to try experimenting with the functional regularization -> 
+% In order of complexity -> DER, FROMP, S-FSVI
+% In order of pubblication -> DER/FROMP, K-Priors (?), S-FSVI
 EWC \cite{kirkpatrick2017overcoming}
 SI \cite{zenke17a}, 
 VCL \cite{nguyen-tuongModel2009},  
@@ -487,7 +493,7 @@ In supervised learning, given a data set $\dataset = \{(\mathbf{x}_{i} , \mathbf
   \arg \min_{\weights} \sum_{i=1}^{n} \ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) + \delta \mathcal{R}(\weights).
 \end{equation}
 %
-If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\weights(\mathbf{x}_{i}))$ and the regularizer $\mathcal{R}(\weights) = \frac{1}{2}\|\weights\|^{2}_2$, then we can view \cref{eq-empirical-risk} as the maximum {\it a~posteriori} (MAP) solution to a Bayesian objective, where $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$, where the regularization weight takes the role of a prior precision parameter.
+If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\weights(\mathbf{x}_{i}))$ and the regularizer $\mathcal{R}(\weights) = \frac{1}{2}\|\weights\|^{2}_2$, then we can view \cref{eq-empirical-risk} as the maximum {\it a~posteriori} (MAP) solution to a Bayesian objective, where the regularization weight takes the role of a prior precision parameter, \ie, $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$.
 
 %
 \subsection{Linearization gives rise to a Gaussian process} 

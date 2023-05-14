@@ -1097,6 +1097,11 @@ We compare a model-based RL agent using a simple MLP dynamic model with
 \label{sec:conclusion}
 
 
+It is worth noting that the NTK linearises the network around the MAP solution $\weights^{*}$,
+so the function space prior (and thus posterior) is only a locally linear approximation.
+In contrast to conventional GP kernels, the NTK does not have any hyperparameters which need to be learned.
+It is also worth noting that the NTK may be highly non stationary and is dependent on the NN architecture, for example, the activation functions.
+
 
 
 

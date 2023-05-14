@@ -158,6 +158,7 @@
 
 
 % Math Macros
+\newcommand{\MB}{\mbf{B}}
 \newcommand{\MC}{\mbf{C}}
 \newcommand{\MZ}{\mbf{Z}}
 \newcommand{\MV}{\mbf{V}}
@@ -553,6 +554,7 @@ Replace with a taylor series at the MAP first order taylor expansion in w. degen
 %\subsection{Neural Network to GP Prior} 
 %\label{sec:nn2gp}
 %
+
 A Gaussian process characterizes a distribution over functions in terms of the first two moments, a mean $\mu(\cdot)$ and covariance function $\kappa(\cdot,\cdot)$ (kernel). We aim to find a kernel and mean function based on the neural network to build the Gaussian process posterior.  A linear function in terms of parameters can be converted from the weight space to the function space (see Ch.~XXX in \cite{rasmussen2006gaussian} as follows:
 \begin{equation} \label{eq:weight_func}
 g_\weights(\mathbf{x}) = \phi^\top\!(\vx) \, \vw \implies \mu(\vx) = \vzeros \quad \kappa(\mathbf{x}, \mathbf{x}') = \frac{1}{\delta} \phi(\vx)^\top \phi(\vx)
@@ -618,13 +620,24 @@ where $\MKzz$ and $\vkzs$ are define similarly to $\MKxx$ and $\vk_{\vx i}$ but 
 
 
 
-\section{Sparse function-space sequential learning}
+\section{Sparse Function-space Sequential Learning}
 
 We have presented a method for converting any trained neural network into a sparse function-space representation.
 In this section, we demonstrate how sequential learning methods can benefit from our function-space representation and it's associated uncertainty estimates.
 
 
-\subsection{Continual learning}
+\subsection{Continual Learning}
+
+
+
+\begin{equation}
+ 	\bar{\MB}^{-1}_s = \MKzz^{-1} \vbeta_\vu \MKzz^{-1} \in \R^{m \times m}
+ \end{equation}
+
+\begin{equation}
+	\mathcal{R_\textit{SFR}}(\mathbf{w}) = \sum_{s=1}^{t-1}\left[\left(f_{\vw}(\MZ_{s}) - f_{\vw_{s}}(\MZ_s) \right)^\T \bar{\MB}^{-1}_{s} \left(f_{\vw}(\MZ_{s}) - f_{\vw_{s}}(\MZ_s) \right) \right] \in \R
+\end{equation}
+
 
 \subsection{Reinforcement learning}
 A key challenge in RL is to balance the trade-off between exploration and exploitation.
@@ -972,6 +985,7 @@ Note that we also learn a policy but its sole purpose is for learning the value 
 Our experiments seek to answer the following questions:
 \begin{itemize}
   \item Does NN2SFR caputure good uncertainty estimates
+  \item Can NN2SFR be used to build a summary of the current neural network to mitigate catastrophic forgetting over previous tasks?
 \end{itemize}
 
 \subsection{Capturing uncertainty in UCI tasks under supervised learning}
@@ -1000,6 +1014,7 @@ Our experiments seek to answer the following questions:
 
 
 \subsection{Supervised learning on image data sets}
+
 
 \begin{table}[t!] 
   \centering\scriptsize
@@ -1178,6 +1193,23 @@ iid noise \(\noise_{t}\), given by,
 \begin{assumption}
   (system properties) The environment's dynamics are $L_{\transitionFn}\text{-Lipschitz}$ continuous and the transition noise $\noise_{t}$ is $\sigma\text{-sub-Gaussian}$ for all $t \geq 0$.
 \end{assumption}
+
+
+\section{Extending the CL regularizer to multi-class settings}
+
+
+\begin{align}
+ 	\bar{\MB}^{-1}_s &= \MKzz^{-1} \vbeta_\vu \MKzz^{-1} \in \R^{C \times m \times m}\\
+ 	& \Kzz \in \R^{C \times m \times m} 
+ \end{align}
+
+\begin{equation}
+	\mathcal{R_\textit{SFR}}(\mathbf{w}) = \sum_{s=1}^{t-1}\left[\left(f_{\vw}(\MZ_{s}) - f_{\vw_{s}}(\MZ_s) \right)^\T \bar{\MB}^{-1}_{s} \left(f_{\vw}(\MZ_{s}) - f_{\vw_{s}}(\MZ_s) \right) \right] \in \R
+\end{equation}
+
+
+
+
 %
 %\subsection{Model-based Reinforcement Learning (RL)}
 %The goal of reinforcement learning is to find a policy \(\pi \in \Pi\) that maximises the sum of discounted

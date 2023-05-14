@@ -619,9 +619,9 @@ In this section, we demonstrate how sequential learning methods can benefit from
 
 \subsection{Reinforcement learning}
 A key challenge in RL is to balance the trade-off between exploration and exploitation.
-That is, should the agent select an action that it knows will lead to a high reward (exploitation), or should it select an action that it has
-not selected before, which could lead to either a higher or lower reward (exploration).
-In this section, we detail how our method's principled uncertainty estimates can be used to balance this trade-off using a model-based RL algorithim.
+That is, should the agent select an action that it knows will lead to a high reward (exploitation), or should it
+hope to discover new actions which lead to high reward (exploration) by selecting actions that it has not selected before.
+In this section, we detail how our method's principled uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim.
 
 We consider stochastic environments with states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \),
 actions \(\action \in \actionDomain \subseteq \R^{D_{\action}}\) and transition dynamics
@@ -643,50 +643,33 @@ assume that there is a known reward function $r : \stateDomain \times \actionDom
 % \end{align}
 The goal of RL is to find the policy \(\pi : \stateDomain \rightarrow \actionDomain\)
 (from a set of policies $\Pi$) that maximises the sum of discounted rewards
-in expecation over the transition noise,
+in expectation over the transition noise,
 \begin{align} \label{eq-model-free-objective}
 J(\transitionFn, \policy) = \mathbb{E}_{\noise_{0:\infty}} \bigg[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \bigg]
-\quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}
+\quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t},
 \end{align}
-where $\gamma \in [0, 1]$ is a discount factor.
-In this work, we consider model-based RL where a model of the transition dynamics \(f_{\mathbf{w}} \approx \transitionFn\) is learned and then used by a planning algorithm.
-A simple approach is to use the learned dynamic $f_{\mathbf{w}^{*}}$,
-\begin{align} \label{eq-fast-update-mpc}
-  \policy^{\text{Greedy}}(\state) &= \arg \max_{\pi \in \Pi} J(f_{\mathbf{w}^{*}}, \pi)
+where $\gamma \in [0, 1)$ is a discount factor.
+In this work, we consider model-based RL where a model of the transition dynamics is learned \(f_{\mathbf{w}} \approx \transitionFn\) and then used by a planning algorithm.
+A simple approach is to use the learned dynamic model $f_{\mathbf{w}^{*}}$ and maximise the objective in \cref{eq-model-free-objective},
+\begin{align} \label{eq-greedy}
+  \policy^{\text{Greedy}}(\state) &= \arg \max_{\pi \in \Pi} J(f_{\mathbf{w}^{*}}, \pi).
 \end{align}
-However, we can leverage our method to
-$p(\transitionFn_{\mathbf{w}^{*}} \mid \dataset) = \mathcal{N}$
-\cite{osbandWhyPosteriorSampling2017,osbandMoreEfficientReinforcement2013}
-\begin{align} \label{eq-fast-update-mpc}
+However, we can leverage the method in \cref{sec:methods} to obtain a function-space posterior over the learned dynamics $q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset)$,
+where $\mathcal{D}$ represents the state transition data set \(\mathcal{D} = \{(s_{i},a_{i}), s_{i+1}\}_{i=0}^{N}\).
+Importantly, the uncertainty represented by this posterior distribution can be used to balance the exploration-exploitation trade-off,
+using approaches such as posterior sampling \cite{osbandWhyPosteriorSampling2017,osbandMoreEfficientReinforcement2013},
+\begin{align} \label{eq-posterior-sampling}
   \policy^{\text{PS}}(\state) &= \arg \max_{\pi \in \Pi} J(\hat{f}, \pi)
 \quad \text{s.t. } \tilde{\transitionFn} \sim q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset),
 \end{align}
+where a function $\tilde{\transitionFn}$ is sampled from the (approximate) posterior $q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset)$ and used to find a policy as
+in \cref{eq-greedy}.
+Intuitively, this strategy will explore where the model has high uncertainty, which in turn will reduce the model's uncertainty as data is collected and used to
+train the model.
+See \cref{sec-rl-appendix} for more details of how we use
 
-Our exact set up uses
-Model Predictive Path Integral (MPPI) control
-\cite{panSample2015}
-\cite{williamsModel2017}
-\todo{what is correct citation for MPPI?}
-A principled approach
-% Given the posterior dynamics \(p(\transitionFn \mid \mathcal{D})\),
-% an effective and  common approach is to simply take the expecation over both the aleatoric and epistemic uncertainty,
-
-\textbf{Appendix}
-
-% \cref{alg-mbrl} shows the typical model-based RL loop.
-\begin{align} \label{eq-fast-update-mpc}
-  \policy_{i+1}^{\text{PS}}(\state) = \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}}
-\E \bigg[ \sum_{t=0}^{H-1} \gamma^{t} r(\state_{t},\action_{t}) \mid \state_{0}=\state  \bigg] + Q_{\theta}(\state_{\Horizon}, \action_{H})
-\quad \text{s.t. } \state_{t+1} &= \hat{\transitionFn}(\state_{t}, \action_{t}) + \noise_{t} \\
-\hat{\transitionFn} &\sim p(\transitionFn \mid \dataset),
-\end{align}
-with $\hat{\transitionFn} \sim p(\transitionFn \mid \dataset)$
-
-
-
-We use deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016} to learn an action value function $Q_{\theta}$.
-Note that we also learn a policy but its sole purpose is for learning the value function.
-
+\textbf{Pathwise conditioning in function-space??}
+\todo{could try to implement this}
 
 
 

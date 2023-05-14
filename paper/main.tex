@@ -512,7 +512,7 @@ Following the work of \citep{khan2019approximate}, we can view this approximatio
 
 In this paper, we are concerned with learning the posterior $q(\vf)$ directly in the function space, instead of $q(\vw)$. We choose to use a Gaussian process, an extension of the multivariate normal that characterizes a distribution over functions in terms of the first two moments, a mean $\mu(\cdot)$ and covariance  (or kernel) function $\kappa(\cdot,\cdot)$. We aim to derive these two functions based on the neural network to then build the Gaussian process posterior. Gaussian distributions remain tractable under learn transformations. Therefore, a linear function with respect to its parameters can be converted from the weight space to the function space (see Ch.~XXX in \cite{rasmussen2006gaussian} as follows: \todo{this part needs to be improved the linear function pops out of nowhere}
 \begin{equation} \label{eq:weight_func}
-g_\weights(\mathbf{x}_{i}) = \phi^\top\!(\vx) \, \vw \implies \mu(\vx) = 0 \quad \kappa(\mathbf{x}, \mathbf{x}') = \frac{1}{\delta} \phi(\vx)^\top \phi(\vx)
+g_\weights(\mathbf{x}_{i}) = \phi^\top\!(\vx_i) \, \vw \implies \mu(\vx_i) = 0 \quad \kappa(\mathbf{x}_i, \mathbf{x}_i') = \frac{1}{\delta} \phi(\vx)^\top \phi(\vx)
 \end{equation}
 
 Therefore, the GGN approximate linear model can be used to convert our weight space model to the function space by,

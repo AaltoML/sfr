@@ -266,7 +266,7 @@ Deep neural networks are known to lack uncertainty estimates, struggle to incorp
 \section{Introduction}
 \label{sec:intro}
 %
-Deep learning has become the cornerstone of contemporary artificial intelligence, proving remarkably effective in tackling supervised and unsupervised learning tasks in the {\em large data}, {\em offline}, and {\em gradient-based training} regime. Despite its success, gradient-based learning techniques exhibit limitations. Firstly how to incorporate uncertainty quantification over predictions which is needed in many applications. Secondly, in the sequential data regime. 
+Deep learning has become the cornerstone of contemporary artificial intelligence, proving remarkably effective in tackling supervised and unsupervised learning tasks in the {\em large data}, {\em offline}, and {\em gradient-based training} regime. Despite its success, gradient-based learning techniques exhibit limitations. Firstly how to incorporate uncertainty quantification over predictions which is needed in many applications. Secondly, in the sequential data regime data arrives not in batches 
 
 Secondly, how to retain information from previous tasks whilst learning new tasks where the tasks aresuch as Continual Learning (CL, \cite{de2021continual})
 
@@ -501,6 +501,28 @@ If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\
 %
 \todo{You need something like this to bridge from the previous, GPs cannot come from nowhere!}
 The structure of the posterior given by the loss-landscape around the MAP weights $\vw^*$  induces a correlation structure on learned model functions of the neural network. These can be seen as possible perturbed versions of $f_{\vw^*}$ that can be used for characterizing ambiguity and uncertainty in the learned model (see \cref{fig:banana} for an example of sampling in weight-space). This gives rise to a probability {\em distribution} over the possible functions. If we limit the interest to the first two moments, we can characterize the resulting posterior over these functions as a Gaussian process (GP).
+
+- distribution over w given to you by the non-linear function. One could sample over weights pass it over the function and you have distribution over functions. HMC is heavy, structure of the problem around the map estimate. characteruze this as the first two moments of the distributions over the functions restrict to the first two moments.  
+
+Replace with a taylor series at the MAP first order taylor expansion in w. degenerate cov function.
+
+- more citations there.
+
+- GP induced by the trained neural network. not GP prior.
+
+- Add the NTK bit back in.
+
+- assume that when you are at the map estimate when you have converged this should be small. 
+
+- Write out that w beomces zero under the expectation.
+
+-  transition from background to methods. 
+
+- More explination of the dual equation 5 the loss landscape link. Perbutation point linked directly to that here. 
+
+- 
+
+
 
 %A Gaussian process characterizes a distribution over functions in terms of the first two moments. The key quantity of a Gaussian process is the prior covariance function (or kernel function) $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors in $\R^{\mathrm{D}}$. We aim to find a kernel based on the neural network to build the Gaussian process posterior.  A linear function in terms of parameters can easily be converted from the weight space to the function space as follows:
 %\begin{equation}

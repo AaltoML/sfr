@@ -57,7 +57,7 @@ if __name__ == "__main__":
     updates = False
     plot_var = False
     plot_var = True
-    save_dir = "figs"
+    save_dir = "figs/nn2gp"
 
     def func(x, noise=True):
         # x = x + 1e-6

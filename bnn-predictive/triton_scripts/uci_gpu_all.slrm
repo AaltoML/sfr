@@ -42,7 +42,7 @@ esac
 
 echo $dataset
 echo $SEED
-name='sparse_all'
-res_folder='09'
-n_inducing=0
+name='sparse_16'
+res_folder='14'
+n_inducing=16
 srun python3 -u experiments/scripts/classification.py -d ${dataset} --root_dir . --seed ${SEED} --n_layers 2 --activation tanh --logd_min ${logmin} --refine 0 --name ${name} --n_inducing ${n_inducing} --double --res_folder ${res_folder}

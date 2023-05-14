@@ -650,19 +650,26 @@ J(\transitionFn, \policy) = \mathbb{E}_{\noise_{0:\infty}} \bigg[ \sum_{t=0}^{\i
 \end{align}
 where $\gamma \in [0, 1]$ is a discount factor.
 In this work, we consider model-based RL where a model of the transition dynamics \(f_{\mathbf{w}} \approx \transitionFn\) is learned and then used by a planning algorithm.
+A simple approach is to use the learned dynamic $f_{\mathbf{w}^{*}}$,
 \begin{align} \label{eq-fast-update-mpc}
-  \policy^{\text{Greedy}}(\state) &= \arg \max_{\pi \in \Pi} J(f_{\mathbf{w}^{*}}, \pi) \quad   \\
-  \policy^{\text{PS}}(\state) &= \arg \max_{\pi \in \Pi} J(\hat{f}, \pi)
-\quad \text{s.t. } \hat{\transitionFn} \sim p(\transitionFn_{\mathbf{w}} \mid \dataset),
+  \policy^{\text{Greedy}}(\state) &= \arg \max_{\pi \in \Pi} J(f_{\mathbf{w}^{*}}, \pi)
 \end{align}
+However, we can leverage our method to
+$p(\transitionFn_{\mathbf{w}^{*}} \mid \dataset) = \mathcal{N}$
+\cite{osbandWhyPosteriorSampling2017,osbandMoreEfficientReinforcement2013}
+\begin{align} \label{eq-fast-update-mpc}
+  \policy^{\text{PS}}(\state) &= \arg \max_{\pi \in \Pi} J(\hat{f}, \pi)
+\quad \text{s.t. } \tilde{\transitionFn} \sim q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset),
+\end{align}
+
 Our exact set up uses
 Model Predictive Path Integral (MPPI) control
 \cite{panSample2015}
 \cite{williamsModel2017}
+\todo{what is correct citation for MPPI?}
 A principled approach
 % Given the posterior dynamics \(p(\transitionFn \mid \mathcal{D})\),
 % an effective and  common approach is to simply take the expecation over both the aleatoric and epistemic uncertainty,
-\cite{osbandWhyPosteriorSampling2017,osbandMoreEfficientReinforcement2013}
 
 \textbf{Appendix}
 

@@ -7,7 +7,7 @@ svgp:
     size:
       - ${state_dim}
       # - 1
-      - 500 # num_inducing
+      - 128 # num_inducing
       - ${input_dim}
   mean_module:
     _target_: gpytorch.means.ConstantMean

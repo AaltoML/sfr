@@ -184,7 +184,7 @@
 \newcommand{\vw}{\mbf{w}}
 
 \newcommand{\Jac}[2]{\mathcal{J}_{#1}(#2)}
-
+\newcommand{\JacT}[2]{\mathcal{J}_{#1}^\top(#2)}
 
 
 \newcommand{\GP}{\mathcal{GP}}
@@ -266,10 +266,18 @@ Deep neural networks are known to lack uncertainty estimates, struggle to incorp
 \section{Introduction}
 \label{sec:intro}
 %
-Deep learning has become the cornerstone of contemporary artificial intelligence, proving remarkably effective in tackling supervised and unsupervised learning tasks in the {\em large data}, {\em offline}, and {\em gradient-based training} regime. Despite its success, gradient-based learning techniques exhibit limitations when applied to sequential learning paradigms, such as Continual Learning (CL, \cite{add}) and Reinforcement Learning (RL, \cite{sutton2018reinforcement}). In CL, the challenge is retaining a compact representation of the problem and avoid forgetting over the life-long learning horizon (see, \eg, \cite{add}). Similarly in RL, the model would need to adapt to observations of the environment through exploration, but this can be inefficient and would require constant retraining (\eg, \cite{add, add}).
+Deep learning has become the cornerstone of contemporary artificial intelligence, proving remarkably effective in tackling supervised and unsupervised learning tasks in the {\em large data}, {\em offline}, and {\em gradient-based training} regime. Despite its success, gradient-based learning techniques exhibit limitations. Firstly how to incorporate uncertainty quantification over predictions which is needed in many applications. Secondly, in the sequential data regime. 
+
+Secondly, how to retain information from previous tasks whilst learning new tasks where the tasks aresuch as Continual Learning (CL, \cite{de2021continual})
+
+Thirdly and differently from the CL problem is that given some data from the same distribution 
+
+when applied to sequential learning paradigms, such as Continual Learning (CL, \cite{mccloskey1989catastrophic}) and Reinforcement Learning (RL, \cite{sutton2018reinforcement}). Recently there has been some success in tackling uncertainty quantification
+
+In CL, the challenge is retaining a compact representation of the problem and avoid forgetting over the life-long learning horizon (see, \eg, \cite{add}). Similarly in RL, the model would need to adapt to observations of the environment through exploration, but this can be inefficient and would require constant retraining (\eg, \cite{add, add}).
 
 %Current state of affairs 
-Recent work on techniques (\eg, \cite{list}) for converting trained neural networks from weight space to function space allow a principled mathematical approach for analyzing the behaviour \cite{add}, performing probabilistic inference \cite{add}, and quantifying uncertainty in neural networks \cite{add}. The methods rely on linearizing the neural network and capturing the first two moments in function space in terms of a mean function and covariance function (kernel)---defining a Gaussian process (GP, \cite{rasmussen2006}). GPs provide a widely-used probabilistic toolkit with principled uncertainty estimates, and they are a standard surrogate model for Bayesian optimization \citep{garnett_bayesoptbook_2022} and are effective in model-based reinforcement learning \citep{deisenroth2011pilco} with theoretical guarantees on regret bounds \citep{srinivas2009gaussian}. 
+Recent work on techniques (\eg, \cite{list}) for converting trained neural networks from weight space to function space allow a principled mathematical approach for analyzing the behaviour \cite{add}, performing probabilistic inference \cite{add}, and quantifying uncertainty in neural networks \cite{add}. The methods rely on linearizing the neural network and capturing the first two moments in function space in terms of a mean function and covariance function (kernel)---defining a Gaussian process (GP, \cite{rasmussen2006gaussian}). GPs provide a widely-used probabilistic toolkit with principled uncertainty estimates, and they are a standard surrogate model for Bayesian optimization \citep{garnett_bayesoptbook_2022} and are effective in model-based reinforcement learning \citep{deisenroth2011pilco} with theoretical guarantees on regret bounds \citep{srinivas2009gaussian}. 
 %Yet many problems lie in high dimensional input space; for example, images are where GPs cannot learn representations. In such scenarios such as in many reinforcement learning environments neural networks are used as the surrogate model. However, uncertainty is still essential to ensure effective exploration for sequential algorithms. Successful approaches have attempted to blend neural networks with uncertainty estimates around predictions, allowing for sophisticated exploration strategies. However, there has been limited use of hybrid models that possess the feature representation ability of neural networks but also attractive the properties of GPs, such a hybrid method we propose in this paper.
 
 %Need for adaptive learning methods + failures with current methods
@@ -322,28 +330,6 @@ We demonstrate points {\em(i)--(iii)} in the experiments.
 %  \end{itemize}
 %\end{itemize}
 
-\subsection{Related Work}
-\label{sec:related}
-%
-% Introduce the laplace GNN + shortcomings
-One common approach for uncertainty with neural networks is a Laplace GNN approximation \citep{daxbergerLaplace2021}, that takes a trained neural network and linearises it around the optimal weights. The resulting linear model can be used to obtain uncertainty estimates and refine the neural network predictions \citep{immerScalable2021}. The resultant model is linear with respect to the weights, therefor it is possible to convert it to a Gaussian process (GP) as shown in \citep{immerScalable2021, khan2019approximate}. Yet to obtain uncertainty estimates there is the usual computational scaling  cubic in the number of data points of GPs ($\mathcal{O}(n^3)$). Many approaches  apply crude approximations and yet still obtain good uncertainty estimates. 
-
-
-%% CL section 
-%%
-%% EWC, SI, VCL -> weight regularization 
-EWC \cite{kirkpatrick2017overcoming}
-SI \cite{zenke17a}, 
-VCL \cite{nguyen-tuongModel2009},  
-
-%% DER, FROMP, S-FSVI
-DER \cite{buzzega2020dark}
-FROMP \cite{pan2020continual}
-S-FSVI \cite{rudner2022continual}
-
-
-%Why we need uncertainty and adaptiveness
-%How to adapt to new information is a limitation of current machine learning models. The problem is specifically relevant when we combine a model with a decision-making process. In such a sequential setting, an agent typically makes decisions in an environment and obtains new information and would ideally incorporate the information into their parameters. Not only do we need models that adapt to new informatoion but all express uncertainty over the models predictions. The reason being twofold: in many applications, \eg\ healthcare, autonomous driving is an essential requirement, and many advanced exploration techniques require uncertainty to determine where to query next.
 
 
 
@@ -351,7 +337,7 @@ S-FSVI \cite{rudner2022continual}
   \centering\scriptsize
   % Figure options
   \pgfplotsset{axis on top,scale only axis,width=\figurewidth,height=\figureheight, ylabel near ticks,ylabel style={yshift=-2pt},y tick label style={rotate=90},legend style={nodes={scale=1., transform shape}},tick label style={font=\tiny,scale=1}}
-  \pgfplotsset{xlabel={Input, $x$},axis line style={rounded corners=3pt}}
+  \pgfplotsset{xlabel={Input, $x$},axis line style={rounded corners=2pt}}
   % Set figure 
   \setlength{\figurewidth}{.28\textwidth}
   \setlength{\figureheight}{\figurewidth}
@@ -401,6 +387,41 @@ S-FSVI \cite{rudner2022continual}
 \end{figure}
 
 
+
+
+\subsection{Related work}
+\label{sec:related}
+%
+% General Bayesian deep learning
+Bayesian deep learning~\cite{Wilson:ensembles,neal1995bayesian} has recently gained increasing attention in the machine learning community as a means for uncertainty quantification (\eg, \cite{kendall2017what,wilson2020bayes}) and model selection (\eg,~\cite{immer2021marginal,antoran2022marginal}) with advancements in prior specification (\eg, \cite{meronen2020stationary,meronen2021periodic,fortuin2021bayesian,nalisnick2018do}) and efficient approximate inference under the specified model.
+Calculating the posterior distribution of a Bayesian neural network is usually intractable, and approximate inference techniques need to be used, such as variational inference \cite{blei2017variational}, deep ensembles \cite{lakshminarayanan2017simple}, MC dropout \cite{gal2016dropout}, or Laplace approximation \cite{ritter2018kfac,kristiadi2020being,immer2021improving}---each having strengths and weaknesses. % point out strngths and weaknesses for each
+
+% Introduce the laplace GGN + shortcomings
+One common approach for uncertainty with neural networks is a Laplace-GGN approximation \citep{daxberger2021laplace}, which takes a trained neural network and linearises it around the optimal weights. The resulting linear model can be used to obtain uncertainty estimates and refine the neural network predictions \citep{immerScalable2021}, and is linear with respect to the weights. Therefore, as shown in \citep{immerScalable2021, khan2019approximate}, the linear model can be converted to a Gaussian process (GP), which is then used to obtain the uncertainty estimates.
+However, the GP introduces a computational scaling that is cubic in the number of data points ($\mathcal{O}(n^3)$). Many approaches apply crude approximations to alleviate the computational costs, \eg, considering only a subset of the training datas, but are still obtain good uncertainty estimates \citep{immerScalable2021}\todo{other methods?}. 
+
+The Hessian can be efficiently approximated using the generalised Gauss-Newton algorithm \cite{botev2017practical} or by Kronecker factorisation \cite{martens2015optimizing,ritter2018kfac}.
+
+
+%% CL section 
+%%
+%% EWC, SI, VCL -> weight regularization 
+
+EWC \cite{kirkpatrick2017overcoming}
+SI \cite{zenke17a}, 
+VCL \cite{nguyen-tuongModel2009},  
+
+%% DER, FROMP, S-FSVI
+DER \cite{buzzega2020dark}
+FROMP \cite{pan2020continual}
+S-FSVI \cite{rudner2022continual}
+
+
+%Why we need uncertainty and adaptiveness
+%How to adapt to new information is a limitation of current machine learning models. The problem is specifically relevant when we combine a model with a decision-making process. In such a sequential setting, an agent typically makes decisions in an environment and obtains new information and would ideally incorporate the information into their parameters. Not only do we need models that adapt to new informatoion but all express uncertainty over the models predictions. The reason being twofold: in many applications, \eg\ healthcare, autonomous driving is an essential requirement, and many advanced exploration techniques require uncertainty to determine where to query next.
+
+
+
 \begin{figure}[t!]
   \centering
   % Set figure size
@@ -428,136 +449,175 @@ S-FSVI \cite{rudner2022continual}
     \addfig{1.1\figurewidth,0}{banana-nn2svgp}
 
     % The update
-    \addfig{2.2\figurewidth,0}{banana-update}
+    \addfig{2.2\figurewidth,0}{banana-hmc}
 
     % The arrow
     \tikzstyle{myarrow} = [draw=black!80, single arrow, minimum height=14mm, minimum width=2pt, single arrow head extend=4pt, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
+    \tikzstyle{myblock} = [draw=black!80, minimum height=4mm, minimum width=7mm, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
     \node[myarrow] (first-arr) at ($(banana-nn)!0.5!(banana-nn2svgp)$) {};
-    \node[myarrow] (second-arr) at ($(banana-nn2svgp)!0.5!(banana-update)$) {};
+    \node[myblock] (second-arr) at ($(banana-nn2svgp)!0.5!(banana-hmc)$) {};
 
     % Arrow labels
     \node[font=\scriptsize\sc,color=white] at (first-arr) {nn2svgp};
-    \node[font=\scriptsize\sc,color=white] at (second-arr) {new data};   
-     
+    \node[font=\scriptsize\sc,color=white] at (second-arr) {\normalsize$\bm\approx$};
+         
     % Labels
     \node[anchor=north, font=\small] at ($(banana-nn) + (0,-.55\figureheight)$) {Neural network prediction};
     \node[anchor=north, font=\small] at ($(banana-nn2svgp) + (0,-.55\figureheight)$) {Sparse GP representation};
-    \node[anchor=north, font=\small] at ($(banana-update) + (0,-.55\figureheight)$) {Update without re-training};      
+    \node[anchor=north, font=\small] at ($(banana-hmc) + (0,-.55\figureheight)$) {HMC result as baseline};      
 
   \end{tikzpicture}
   \newcommand{\mycircle}{\protect\tikz[baseline=-.5ex]\protect\node[circle,inner sep=2pt,draw=black,fill=C0,opacity=.5]{};}
   \newcommand{\mysquare}{\protect\tikz[baseline=-.5ex]\protect\node[inner sep=2.5pt,draw=black,fill=C1,opacity=.5]{};}
   %
-  \caption{Binary classification (\mysquare~vs.~\mycircle)}
+  \caption{Binary classification (\mysquare~vs.~\mycircle) on the {\sc banana} toy data data set. We convert the left-hand neural network  }
   \label{fig:banana}  
 \end{figure}
 
 
 
-\section{Methods} \label{sec:methods}
-
-\textbf{Neural Network} In supervised learning, given a data set $\dataset = \{(\mathbf{x}_{i} , \mathbf{y}_{i})\}_{i=1}^{n}$, with $\mathbf{x}_i \in \inputDomain$ and $\mathbf{y}_i \in \outputDomain$, the weights $\weights \in \R^{P}$ of a neural network
-, $f_\mathbf{w} : \inputDomain \mapsto \outputDomain$, 
-are usually trained to minimize the (regularized) empirical risk,
-\begin{align} \label{eq-empirical-risk}
+\section{Methods}
+\label{sec:methods}
+%
+In supervised learning, given a data set $\dataset = \{(\mathbf{x}_{i} , \mathbf{y}_{i})\}_{i=1}^{n}$, with input $\mathbf{x}_i \in \inputDomain$ and output $\mathbf{y}_i \in \outputDomain$ pairs, the weights $\weights \in \R^{P}$ of a neural network, $f_\mathbf{w} : \inputDomain \to \outputDomain$, are usually trained to minimize the (regularized) empirical risk,
+%
+\begin{equation} \label{eq-empirical-risk}
   \weights^{*} = 
-  \argmin_{\weights} \mathcal{L}(\dataset,\weights) =
-  \argmin_{\weights} \sum_{i=1}^{n} \ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) + \delta \mathcal{R}(\weights).
-\end{align}
-If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\weights(\mathbf{x}_{i}))$ and $\mathcal{R}(\weights) = \frac{1}{2}\|\weights\|^{2}_2$ then we can view \cref{eq-empirical-risk} as the MAP solution to a Bayesian objective, where $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$.
-
-\textbf{Neural network to GP prior} A Gaussian process characterizes a distribution over functions in terms of the first two moments. The key quantity of a Gaussian process is the prior covariance function $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors in $\R^{\mathrm{D}}$. We aim to find a kernel based on the neural network to build the Gaussian process posterior. If we had the following function parameterization $g(\vx) = \phi(\vx)^\top \vw$ where $\phi(\vx)$ is a feature map, we can convert from weight space prior to function space prior giving the following kernel $\kappa(\vx, \vx') = \delta^{-1} \phi(\vx) \phi(\vx')^\T$ see \citep{rasmussen2006gaussian} for details. We can approximate the feature map of the neural network  $f_\weights(\mathbf{x})$  by using the Jacobian at $\weights^*$ thus our GP prior becomes:
-\begin{align} \label{eq-laplace-approx-function-space}
- g(\vx) \sim \Norm \left( \mu(\vx), k(\vx, \vx') \right) \quad
-  \mu(\vx)
-  = \vzeros \quad
-  k(\mathbf{x}, \mathbf{x}')
-  = \frac{1}{\delta} \Jac{\weights^*}{\mathbf{x}}\Jac{\weights^*}{\mathbf{x}'}^\top,
-\end{align}
-where the kernel is the neural tangent kernel (NTK) with Jacobian given by $\Jac{\weights}{\mathbf{x}} \coloneqq \nabla_\weights f(\mathbf{x})^\top \in \R^{C \times P}$. Alternatively, we could have followed the derivation in \citet{immerImprovingPredictionsBayesian2021} where we perform a local linearization of the neural network prediction function $f^{\textrm{lin}}_{\vw^*}(\vx; \vw) = f_{\vw^*}(\vx) + \Jac{\weights^*}{\mathbf{x}} (\vw - \vw^*)$. The difference between our GP prior mean function and \cref{eq-laplace-approx-function-space} is that we use a different mean prior function coming from $f^{\textrm{lin}}_{\vw^*}(\vx; \vzeros) = f_{\vw^*}(\vx) - \Jac{\weights^*}{\mathbf{x}} \vw^*$, essentially they use the difference from the linear model approximation and the neural network function, which does not seem useful as a prior mean function, so instead we use $ \mu(\vx_i) = \vzeros$ as is common in GP literature and derived from a feature map conversion.
-
-
-As stated in \citet[Lemma~1]{csato2002sparse} the posterior process mean and covariance function of a GP prior combined with a likelihood function and $\dataset$ can be stated as:
-\begin{equation}  \label{eq:gp_pred}
- \myexpect_{p(f\mid\vy)}[f_i] = \vk_{\vx i}^\top \valpha , \quad
-\textrm{Var}_{p(f\mid\vy)}[f_i] = \kappa_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i},
+  \arg \min_{\weights} \mathcal{L}(\dataset,\weights) =
+  \arg \min_{\weights} \sum_{i=1}^{n} \ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) + \delta \mathcal{R}(\weights).
 \end{equation}
-where the $ij$th entry of the matrix $\MKxx \in \R^{m \times m}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$th element is $\kappa(\vx_i, \vx_j)$, and $\kappa_{ii} = \kappa(\vx_i, \vx_i)$.  The dual parameters consist of the vector $\valpha \in \R^{m}$ and vector $\vbeta \in \R^{m}$, defined as:
+%
+If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\weights(\mathbf{x}_{i}))$ and the regularizer $\mathcal{R}(\weights) = \frac{1}{2}\|\weights\|^{2}_2$, then we can view \cref{eq-empirical-risk} as the maximum {\it a~posteriori} (MAP) solution to a Bayesian objective, where $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$, where the regularization weight takes the role of a prior precision parameter.
+
+%
+\subsection{Linearization gives rise to a Gaussian process} 
+\label{sec:nn2gp}
+%
+\todo{You need something like this to bridge from the previous, GPs cannot come from nowhere!}
+The structure of the posterior given by the loss-landscape around the MAP weights $\vw^*$  induces a correlation structure on learned model functions of the neural network. These can be seen as possible perturbed versions of $f_{\vw^*}$ that can be used for characterizing ambiguity and uncertainty in the learned model (see \cref{fig:banana} for an example of sampling in weight-space). This gives rise to a probability {\em distribution} over the possible functions. If we limit the interest to the first two moments, we can characterize the resulting posterior over these functions as a Gaussian process (GP).
+
+%A Gaussian process characterizes a distribution over functions in terms of the first two moments. The key quantity of a Gaussian process is the prior covariance function (or kernel function) $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors in $\R^{\mathrm{D}}$. We aim to find a kernel based on the neural network to build the Gaussian process posterior.  A linear function in terms of parameters can easily be converted from the weight space to the function space as follows:
+%\begin{equation}
+%g_\weights(\mathbf{x}_{i})) = \phi(\vx)^\top \vw \implies \mu(\vx) = \vzeros \quad \kappa(\mathbf{x}, \mathbf{x}') = \frac{1}{\delta} \phi(\vx)^\top \phi(\vx)
+%\end{equation}
+%
+%
+%
+% The approximation can be seen as taking the map solution of \cref{eq-empirical-risk} as the mean of $q(\vw)$ but then substituting the following functional approximation for $\hat{f}_\weights(\mathbf{x}_{i}) = \Jac{\weights^*}{\mathbf{x}} $
+
+
+%A Gaussian procss characterizes a distribution over functions in terms of the first two moments. The key quantity of 
+%A Gaussian process is the prior covariance function (or kernel function) $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors in $\R^{\mathrm{D}}$. We aim to find a kernel based on the neural network to build the Gaussian process posterior. 
+%A GP is fully characterized by a mean $\mu(\cdot)$ and covariance function $\kappa(\cdot,\cdot)$ (kernel).
+%If we had the following function parameterization $g(\vx) = \phi(\vx)^\top \vw$ where $\phi(\vx)$ is a feature map, we can convert from weight space prior to function space prior giving the following kernel $\kappa(\vx, \vx') = \delta^{-1} \phi(\vx) \phi^\T(\vx')$ (see Ch.~XXX in \cite{rasmussen2006gaussian} for details).\todo{this part needs to be rewritten, starts talking about a general function parameterisation and then jumps directly to the neural network} 
+%\subsection{Neural Network to GP Prior} 
+%\label{sec:nn2gp}
+%
+A Gaussian process characterizes a distribution over functions in terms of the first two moments,  a mean $\mu(\cdot)$ and covariance function $\kappa(\cdot,\cdot)$ (kernel). We aim to find a kernel and mean function based on the neural network to build the Gaussian process posterior.  A linear function in terms of parameters can be converted from the weight space to the function space (see Ch.~XXX in \cite{rasmussen2006gaussian} as follows:
+\begin{equation} \label{eq:weight_func}
+g_\weights(\mathbf{x}_{i}) = \phi^\top\!(\vx) \, \vw \implies \mu(\vx) = \vzeros \quad \kappa(\mathbf{x}, \mathbf{x}') = \frac{1}{\delta} \phi(\vx)^\top \phi(\vx)
+\end{equation}
+Given an approximate posterior $q(\vw)$, \citet{immerImprovingPredictionsBayesian2021} proposed to make the following linear approximation
+$f^{\textrm{lin.}}_{\vw^*}(\vx; \vw) = f_{\vw^*}(\vx) + \Jac{\weights^*}{\mathbf{x}} \, (\vw - \vw^*)$ of the neural network, where $\Jac{\weights}{\mathbf{x}} \coloneqq \nabla_\weights f(\mathbf{x})^\top \in \R^{C \times P}$ is the Jacobian. The approximation can be used with any approximate inference technique but in the paper they focus on the Laplace-GNN. They find that the linear approximation helps to improve predictions by correcting the approximate posterior when sampled through a non-Gaussian likelihoods.
+
+Furthermore, under the linear approximation they showed you can now convert your weight space prior to the function space by combining with \cref{eq:weight_func} meaning the converged neural network GP prior is:
+\begin{equation} \label{eq-laplace-approx-function-space}
+% g(\vx) \sim \GP \left( \mu(\vx), \kappa(\vx, \vx') \right) \quad \text{with} \quad
+  \mu(\vx) =  f^{\textrm{lin.}}_{\vw_*}(\vx; \vw = \vzeros) = f_{\vw^*}(\vx) - \Jac{\weights^*}{\mathbf{x}} \vw^* \quad \text{and} \quad
+  \kappa(\mathbf{x}, \mathbf{x}')
+  = \frac{1}{\delta} \Jac{\weights^*}{\mathbf{x}}\JacT{\weights^*}{\mathbf{x}'},
+\end{equation}
+%
+%where the kernel is the so-called Neural Tangent Kernel (NTK, \cite{jacot2018neural}) with Jacobian $\Jac{\weights}{\mathbf{x}} \coloneqq \nabla_\weights f(\mathbf{x})^\top \in \R^{C \times P}$. Alternatively, we could have followed the derivation by \citet{immerImprovingPredictionsBayesian2021}, where they perform a local linearization of the neural network  $f^{\textrm{lin.}}_{\vw^*}(\vx; \vw) = f_{\vw^*}(\vx) + \Jac{\weights^*}{\mathbf{x}} \, (\vw - \vw^*)$. Their mean function differ from ours, \cref{eq-laplace-approx-function-space}, as theirs comes from setting  $\mu(\vx) = f^{\textrm{lin.}}_{\vw_*}(\vx; \vw = \vzeros) = f_{\vw^*}(\vx) - \Jac{\weights^*}{\mathbf{x}} \vw^*$, \ie the difference between the linear model approximation and the neural network function at $\vx$. %which does not seem useful as a prior mean function, 
+%On the other hand, we set $\mu(\vx) = \vzeros$, as common in GP literature and derived from a feature map conversion. \todo{derived what?}
+
+\paragraph{Linearization in the dual parameters}
+As stated in \citet[Lemma~1]{csato2002sparse}, the posterior process mean and covariance functions of a GP prior, combined with a likelihood function and $\dataset$ can be stated as:
+\begin{equation}  \label{eq:gp_pred}
+ \myexpect_{p(f_i \mid\vy)}[f_i] = \vk_{\vx i}^\top \valpha \quad \text{and} \quad
+\mathrm{Var}_{p(f\mid\vy)}[f_i] = \kappa_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i},
+\end{equation}
+where $f_i = f_\weights(\vx_i)$, the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{m \times m}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $\kappa_{ii} = \kappa(\vx_i, \vx_i)$.  The dual parameters consist of the vector $\valpha \in \R^{m}$ and vector $\vbeta \in \R^{m}$, defined as:
 \begin{equation}
 \label{eq:dual_param}
 \alpha_i \coloneqq \myexpect_{p(f_i \mid \vy)}[\nabla_{f_i}\log p(y_i \mid f_i)],  \quad
 \beta_i \coloneqq - \myexpect_{p(f_i \mid \vy)}[\nabla^2_{f_i f_i}\log p(y_i \mid f_i)] ,
 \end{equation}
+%
 The parameters $(\alpha_i, \beta_i)$ are the dual parameters that arise in the dual formulations used in, for example, support vector machines \citep{cortes1995support}, whose origins are found in work by \citet{kimeldorf1971some}. The above relations holds for generic likelihoods, and no approximations are involved as the expectation is under the exact posterior. The question is how do we form the dual variables without access to the exact posterior and different approximate inference techniques solve the question in different ways. Bound techniques such as \citet{jaakkola1997variational} attempt to bound the integral thus making the integral tractable, while Expecation Propogation (EP) as used in \citet{csato2002sparse} iteratively finds dual variables but sets them to log of the expectation of the approximate posterior. Meanwhile variational inference  \cite{khan2017conjugate, adam2021dual} find them using the variational approximation of the posterior to solve the integral.
 
-As we are using the MAP solution of the neural network loss we will use the Laplace approximation for the dual variables but other techniques could be used. As was detailed in \cite{wilkinson2023bayes, rasmussen2006gaussian} the dual variables of the Laplace approximation is the same as removing the posterior averaging from \cref{eq:dual_param} meaning:
+\paragraph{Neural network dual variables}
+As we are using the MAP solution of the neural network loss we will use the Laplace approximation for the dual variables but other techniques could be used. As was detailed in \cite{wilkinson2023bayes, rasmussen2006gaussian}, the dual variables of the Laplace approximation is the same as removing the posterior averaging from \cref{eq:dual_param} meaning:
 \begin{equation}
 \label{eq:dual_param_laplace}
-\hat{\alpha}_i \coloneqq \nabla_{f_i}\log p(y_i \mid f_i),  \quad
-\hat{\beta}_i \coloneqq - \nabla^2_{f_i f_i}\log p(y_i \mid f_i),
+\hat{\alpha}_i \coloneqq \nabla_{f_i}\log p(y_i \mid f_i),  \quad \text{and} \quad
+\hat{\beta}_i \coloneqq - \nabla^2_{f_i f_i}\log p(y_i \mid f_i).
 \end{equation}
 
-Replacing \cref{eq:dual_param_laplace} in to \cref{eq-laplace-approx-function-space} and we arrive at our GP model based on the converged neural network. Again this is similar to what was arrived at for \citet{immerImprovingPredictionsBayesian2021} for the posterior variance function, but they instead use the $f_{\vw^*}(\vx)$ for the posterior mean and fail to spot the significance of the dual variables. The problem with \cref{eq:gp_pred} is that to make predictions and compute variances we must incur a cost of $O(n^3)$ which limits the use of the GP on large datasets.
+Replacing \cref{eq:dual_param_laplace} in to \cref{eq-laplace-approx-function-space} and we arrive at our GP model based on the converged neural network. Again this is similar to what was arrived at for \citet{immerImprovingPredictionsBayesian2021} for the posterior variance function, but they instead use the $f_{\vw^*}(\vx)$ for the posterior mean and fail to spot the significance of the dual variables. The problem with \cref{eq:gp_pred} is that to make predictions and compute variances we must incur a cost of $O(n^3)$ which limits the use of the GP on large data sets.
 
-\textbf{Sparse Dual Gaussian Process} Sparse Gaussian processes are a way to reduce the computational complexity of a full GP using a low-rank approximation. Many sparsifying approaches exist (see \citet{quinonero2005unifying}) for an overview. Given that we have our dual variables derived from our neural network predictions and kernel function, we could use any approximation. We decide to follow the sparsifying approach of \citep{titsias2009variational}, which is to define the marginal distribution as $q_{\vu}(\vf)  = \int p(\vf  \mid \vu) q(\vu)  d\vu$. Given that we have $p(f_i  \mid \vu)$ determined by our GP prior, the goal is to find a $q(\vu)$. As was shown in \cite{adam2021dual}, the posterior under this model has a particular structure similar to \cref{eq:gp_pred}. In that paper, they spot the dual variables' importance for approximate inference but write them in the natural parameter form as this form is more suitable for optimization through natural gradients. In order to make the link to the dual variables defined in \cref{eq:dual_param} we write them in the sparse GP in the dual variable form. 
+
+\subsection{Sparse dual Gaussian process} 
+\label{sec:sparse-dual-gp}
+%
+Sparse Gaussian processes are a way to reduce the computational complexity of a full GP using a low-rank approximation. Many sparsifying approaches exist (see \cite{quinonero2005unifying}) for an overview. Given that we have our dual variables derived from our neural network predictions and kernel function, we could use any approximation. We decide to follow the sparsifying approach of \citet{titsias2009variational} and also used in the DITC approximaton \cite{quinonero2005unifying}, which is to define the marginal distribution as $q_{\vu}(\vf)  = \int p(\vf  \mid \vu) q(\vu)  d\vu$. Given that we have $p(f_i  \mid \vu)$ determined by our GP prior, the goal is to find a $q(\vu)$. As was shown in \cite{adam2021dual}, the posterior under this model has a particular structure similar to \cref{eq:gp_pred}. In the paper, they spot the dual variables' importance for approximate inference but write them in the natural parameter form as this form is more suitable for optimization through natural gradients. In order to make the link to the dual variables defined in \cref{eq:dual_param} we write them in the sparse GP in the dual variable form. 
+
 \begin{equation} 
-	\valpha_{\vu}  = \sum_{i \in \mathcal{D}_{n}}  \vkzi \, \hat{\alpha}_{i}, \quad
-	\vbeta_{\vu} = \sum_{i \in \mathcal{D}_{n}} \vkzi \,\hat{\beta}_{i} \, \vkzi^{\T} ,    
+	\valpha_{\vu}  =  \sum_{i \in \mathcal{D}_{n}}  \vkzi \, \hat{\alpha}_{i}, \quad
+	\vbeta_{\vu} =  \sum_{i \in \mathcal{D}_{n}} \vkzi \,\hat{\beta}_{i} \, \vkzi^{\T} ,    
 \label{eq:dual_sparse}
 \end{equation}
 Using the sparse definition of the dual variables our sparse GP posterior takes the following form:
 \begin{equation}\label{eq:dual_sparse_post}
-   \myexpect_{q_{\vu}(\vf)}[\vf_i] = \vkzs^{\T} \MKzz^{-1}  \valpha_{\vu} , \quad 
+   \myexpect_{q_{\vu}(\vf)}[\vf_i] = \vkzs^{\T} \MKzz^{-1}   \valpha_{\vu} , \quad 
    \textrm{Var}_{q_{\vu}(\vf)}[\vf_i]  = \kappa_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \vbeta_{\vu})^{-1} ]\vkzs
 \end{equation}
-where $\MKzz$ and $\vkzs$ are define similarly to $\MKxx$ and $\vk_{\vx i}$ but now over the $\MZ \in \R^{M \times D} $ inducing points instead of the full dataset $\MX$. The key quantities we need to make predictions from out sparse GP from the converged neural network are $(\hat{\alpha}_i, \hat{\beta}_i)$ and a kernel function $\kappa$ which are then combined in \cref{eq:dual_sparse_post}/ Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred} we can see that the computational complexity is now $\mathcal{O}(m^3)$ to $\mathcal{O}(n^3)$ where $m \ll n$. 
-
-
-Crucially in the dual formulation our posterior contains all the training data given the sum in \cref{eq:dual_sparse}.
-
-mention DITC and consfusion
-
-principled way to contain information
-
-write it out for Gaussian
+where $\MKzz$ and $\vkzs$ are define similarly to $\MKxx$ and $\vk_{\vx i}$ but now over the $\MZ \in \R^{M \times D} $ inducing points instead of the full dataset $\MX$. The key quantities we need to make predictions from our sparse GP from the converged neural network are $(\hat{\alpha}_i, \hat{\beta}_i)$ and a kernel function $\kappa$. Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred} we can see that the computational complexity is now $\mathcal{O}(m^3)$ to $\mathcal{O}(n^3)$ where $m \ll n$.  Crucially given the structure of our probabilistic model, our sparse dual variables \cref{eq:dual_sparse} are a compact form of the full model projected using the kernel. Our approach contrasts to \citet{immerImprovingPredictionsBayesian2021}, which uses a subset of the full model, a less principled approach to build a sparse model given it ignores the information in the dataset. It is important to highlight that the sparsifying approach is independent of the approximate inference technique. The \cref{eq:dual_param} are determined from the neural network. More complicated inference techniques, such as variational inference, could be used, but given its simplicity, we only need a trained neural network; we use a Laplace approximation in our experiments.
 
 
 
 
-
-\textbf{Neural network to sparse GP}
+\section{Sparse function-space sequential learning}
 
 \textbf{Continual learning}
 
-\textbf{Model-based reinforcement learning}
+\subsection{Reinforcement learning}
 We now detail how our method can be used in model-based RL.
-Folling the Markov decision process formulation \cite{bellmanDynamic1956}, we
-denote states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \), actions \(\action \in \actionDomain \subseteq \R^{D_{\action}}\) and
-transition dynamics \(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \) subject to  i.i.d. transition noise \(\noise_{t}\).
-The goal of RL is to find the policy \(\pi \in \Pi \) that maximises the sum of rewards
+We consider stochastic environments with states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \),
+actions \(\action \in \actionDomain \subseteq \R^{D_{\action}}\) and transition dynamics
+\(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \), such that
+$\state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}$, where  $\noise_{t}$
+is i.i.d. transition noise.
+We consider the episodic setting where the system is reset to an initial state $\state_{0}$ at each episode and we
+assume that there is a known reward function $r : \stateDomain \times \actionDomain \rightarrow \R$.
+% Following the Markov decision process formulation \cite{bellmanMarkovianDecisionProcess1957a}, we
+% denote the states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \) and actions \(\action \in \actionDomain \subseteq \R^{D_{\action}}\)
+% of the sytem, the reward function $r : \stateDomain \times \actionDomain \rightarrow \R$, and transition dynamics
+% \(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \), such that
+% $\state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}$ where  $\noise_{t}$
+% is i.i.d. transition noise.
+The goal of RL is to find the policy \(\pi : \stateDomain \rightarrow \actionDomain\) that maximises the sum of discounted rewards
 in expecation over the transition noise,
 \begin{align} \label{eq-model-free-objective}
 \policy^{*} = \arg \max_{\policy \in \policyDomain} J(\transitionFn, \policy) = \arg \max_{\policy \in \policyDomain} \mathbb{E}_{\noise_{0:\infty}} \left[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \right]
-\quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}.
+\quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t},
 \end{align}
-where $\gamma \in [0, 1]$ is a discount factor to account for the infinte sum.
+where $\gamma \in [0, 1]$ is a discount factor and $\Pi$ is a set of policies.
 
 
+\textbf{Model-learning}
 In model-based RL, the state transition data set \(\mathcal{D} = \{\{(s_{t},a_{t}), s_{t+1}\}^{T_{i}}_{t=1}\}_{i=0}^{N}\) is first used to
 learn a dynamic model \(f_{\mathbf{w}})\) using supervised learning.
 \cref{alg-mbrl} shows the typical model-based RL loop.
 
-\begin{subequations}
 \begin{align} \label{eq-fast-update-mpc}
   \policy_{i+1}^{\text{PS}}(\state) &= \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}}
 J^{\Horizon}(\action_{0:\Horizon}, \transitionFn) + \stateValueFn(\state_{\Horizon+1})
+\quad
+  \stateValueFn(\state) &= \mathbb{E} \left[ \sum_{t=0}^{\infty}     \discount^{t} \rewardFn(\state_{t},\action_{t}) \mid \state_{0}=\state \right] %\label{eq-fast-update-mpc-old}
 \end{align}
-\end{subequations}
-\begin{subequations}
-\begin{align} \label{eq-fast-update-mpc-old}
-  \stateValueFn(\state) &= \mathbb{E} \left[ \sum_{t=0}^{\infty}     \discount^{t} \rewardFn(\state_{t},\action_{t}) \mid \state_{0}=\state \right]
-\end{align}
-\end{subequations}
+
+
 
 
 In model-based RL, we obtain the posterior over the dynamics \(p(f\mid\mathcal{D})\) after performing (approximate) Bayesian
@@ -920,54 +980,58 @@ an effective and  common approach is to simply take the expecation over both the
 \subsection{Fast updates in reinforcement learning}
 
 \begin{figure}[!t]
-  \centering
-  \begin{subfigure}{.2\textwidth}
-  \resizebox{\textwidth}{!}{%
-  \begin{tikzpicture}[inner sep=0,outer sep=0]
-  
-    % Draw decorated 'ground'
-    \draw[postaction={draw, decorate, decoration={border, angle=-45,
+ \centering
+ \begin{subfigure}{.2\textwidth}
+ \resizebox{\textwidth}{!}{%
+ \begin{tikzpicture}[inner sep=0,outer sep=0]
+
+   % Draw decorated 'ground'
+   \draw[postaction={draw, decorate, decoration={border, angle=-45,
 					amplitude=1cm, segment length=.5cm}}] (-3,-1.5) -- (12,-1.5);
-  
-    % The cart
-    \draw[draw=black,fill=black!50,draw=black,line width=3pt,rounded corners=1mm] (0,0) rectangle (9cm,3cm);
-    \node[fill=black,circle,minimum size=.5cm] (dot) at (4.5cm,3cm) {};
-    
-    % Wheels
-    \node[fill=white,draw=black,line width=3pt,circle,minimum size=2cm,,fill=black!50] at (2cm,-.5cm) {};
-    \node[fill=white,draw=black,line width=3pt,circle,minimum size=2cm,fill=black!50] at (7cm,-.5cm) {};  
-    
-    % The arm
-    \node[anchor=north,minimum width=1cm,minimum height=14cm,draw=black,rotate=20,rounded corners=5mm,yshift=7mm,xshift=-.3mm,fill=white,draw=black,line width=3pt] at (dot) {};
-    \node[fill=black,circle,minimum size=.5cm] at (dot) {};
-    
-    % Markings
-    \draw[loosely dashed,line width=1pt] (4.5,6) -- (4.5,-10);
-    
-    % Arrow
-    \draw[->,black,line width=3pt,-{Latex[length=7mm,width=7mm]}] (1,5) --node[above,outer sep=6pt]{\large $x$} (4.5,5);
-    
-    \def\centerarc[#1](#2)(#3:#4:#5)% Syntax: [draw options] (center) (initial angle:final angle:radius)
-    { \draw[#1] ($(#2)+({#5*cos(#3)},{#5*sin(#3)})$) arc (#3:#4:#5); }
-    
-    % Draw arc
-    \centerarc[black,line width=3pt](dot)(270:290:11)
-    \node at (6.5,-9) {$\theta$};
-    
-    \node[white,minimum size=1cm] at (4.5,-13) {};
-    
-  \end{tikzpicture}}
-  \end{subfigure}
-  \hfill
-  \begin{subfigure}{.78\textwidth}
-    \tikz\node[minimum width=\textwidth,minimum height=.35\textwidth,fill=black!10,rounded corners=2pt]{RL trjectories or something interesting?};
-  \end{subfigure}
-  \hfill
-  \caption{Add caption.}
-  \label{fig:rl}
+
+   % The cart
+   \draw[draw=black,fill=black!50,draw=black,line width=3pt,rounded corners=1mm] (0,0) rectangle (9cm,3cm);
+   \node[fill=black,circle,minimum size=.5cm] (dot) at (4.5cm,3cm) {};
+
+   % Wheels
+   \node[fill=white,draw=black,line width=3pt,circle,minimum size=2cm,,fill=black!50] at (2cm,-.5cm) {};
+   \node[fill=white,draw=black,line width=3pt,circle,minimum size=2cm,fill=black!50] at (7cm,-.5cm) {};
+
+   % The arm
+   \node[anchor=north,minimum width=1cm,minimum height=14cm,draw=black,rotate=20,rounded corners=5mm,yshift=7mm,xshift=-.3mm,fill=white,draw=black,line width=3pt] at (dot) {};
+   \node[fill=black,circle,minimum size=.5cm] at (dot) {};
+
+   % Markings
+   \draw[loosely dashed,line width=1pt] (4.5,6) -- (4.5,-10);
+
+   % Arrow
+   \draw[->,black,line width=3pt,-{Latex[length=7mm,width=7mm]}] (1,5) --node[above,outer sep=6pt]{\large $x$} (4.5,5);
+
+   \def\centerarc[#1](#2)(#3:#4:#5)% Syntax: [draw options] (center) (initial angle:final angle:radius)
+   { \draw[#1] ($(#2)+({#5*cos(#3)},{#5*sin(#3)})$) arc (#3:#4:#5); }
+
+   % Draw arc
+   \centerarc[black,line width=3pt](dot)(270:290:11)
+   \node at (6.5,-9) {$\theta$};
+
+   \node[white,minimum size=1cm] at (4.5,-13) {};
+
+ \end{tikzpicture}}
+ \end{subfigure}
+ \hfill
+  \setlength{\figurewidth}{.28\textwidth}
+  \setlength{\figureheight}{\figurewidth}
+ \begin{subfigure}{.78\textwidth}
+   % \tikz\node[minimum width=\textwidth,minimum height=.35\textwidth,fill=black!10,rounded corners=2pt]{RL trjectories or something interesting?};
+   % \includegraphics[width=0.5\textwidth]{./fig/rl.pdf}
+   \input{./fig/rl.tex}
+ \end{subfigure}
+ \hfill
+ \caption{Add caption.}
+ \label{fig:rl}
 \end{figure}
 
-
+%
 
 
 % \begin{figure}
@@ -1048,324 +1112,324 @@ iid noise \(\noise_{t}\), given by,
 \begin{assumption}
   (system properties) The environment's dynamics are $L_{\transitionFn}\text{-Lipschitz}$ continuous and the transition noise $\noise_{t}$ is $\sigma\text{-sub-Gaussian}$ for all $t \geq 0$.
 \end{assumption}
-
-\subsection{Model-based Reinforcement Learning (RL)}
-The goal of reinforcement learning is to find a policy \(\pi \in \Pi\) that maximises the sum of discounted
-rewards in expecation under the transition noise (aleatoric uncertainty),
-\begin{align} \label{eq-model-free-objective}
-\policy^{*} = \arg \max_{\policy \in \policyDomain} J(\transitionFn, \policy) = \arg \max_{\policy \in \policyDomain} \mathbb{E}_{\noise_{0:\infty}} \left[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \right],
-\end{align}
-where $\gamma \in [0, 1]$
-
-\textbf{Model-based}
-In Bayesian model-based RL, we obtain the posterior over the dynamics \(p(f\mid\mathcal{D})\) after performing (approximate) Bayesian
-inference given a state transition data set \(\mathcal{D} = \{\{(s_{t},a_{t}), s_{t+1}\}^{T_{i}}_{t=1}\}_{i=0}^{N}\).
-\cref{alg-mbrl} shows the typical model-based RL loop.
-Importantly, the dynamics are usually only updated after an episode $i$.
-
-\begin{algorithm}[!b]
-\caption{Model-based RL}\label{alg-mbrl}
-\begin{algorithmic}[1]
-  \Require Start state $\state_{0}$, initial data set $\dataset_{0}$, dynamics posterior $p(\transitionFn \mid \dataset_{0})$, policy $\policy_{0}$
-\For{$i  \in \{1, 2, \ldots, \text{num episodes} \}$}
-    \State Reset the system to $\state_{0}$ and reset trajectory buffers $\bm\tau_{t} = \emptyset \ \forall t$
-    \For{$t  \in \{1, 2, \ldots, \text{num steps} \}$}
-      % \State Collect  $\tau_{0:t} = \tau_{0:t-1} \cup (\state_{j}, \action_{j}, \state_{j+1}, r_{j+1})$
-      \State Use \cref{eq-greedy}/\cref{eq-posterior-sampling}/\cref{eq-ucrl} to collect data $\bm\tau_{t} = \bm\tau_{t-1} \cup (\state_{t}, \policy_{i}(\state_{t}), \transitionFn(\state_{t}, \policy_{i}(\state_{t})), r_{t+1})$
-      % \State Execute policy $\policy_{i}(\state_{t})$ in environment and update trajectory $\tau_{i+1} = \{\state_{j}, \action_{j}, \state_{j+1}, r_{j+1}) \}_{j=0}^{t}$
-    \EndFor
-    \State Update data set $\dataset_{0:i} = \dataset_{0:i-1} \cup \tau$
-    \State Train dynamics $p(\transitionFn \mid \dataset_{0:i}) \leftarrow \text{update\_dynamics}(\dataset_{0:i}, p(\transitionFn \mid \dataset_{0:i-1}))$
-    % \State Train dynamics $p(\transitionFn \mid \dataset_{0:i+1})$ using $\dataset_{0:i+1}$
-    % \State Improve policy $\pi_{i+1}$ using $p(\transitionFn \mid \dataset_{0:i+1})$ and/or $\dataset_{0:i+1}$
-    \State Improve policy $\pi_{i+1} \leftarrow \text{update\_policy}(p\left(\transitionFn \mid \dataset_{0:i}), \dataset_{0:i} \right)$
-    %\State Improve policy $\pi_{i+1}$ using $p(\transitionFn \mid \dataset_{0:i+1})$ and/or $\dataset_{0:i+1}$
-\EndFor
-\end{algorithmic}
-\end{algorithm}
-
-% \begin{minipage}{0.499\textwidth}
-% \begin{algorithm}[H]
-% \caption{Model-based RL}\label{alg-mbrl}
-% \begin{algorithmic}[1]
-%   \Require Initial data set $\dataset_{0}$, dynamics posterior $p(\transitionFn \mid \dataset_{0})$, policy $\policy_{0}$
-% \For{$i  \in \{0, 1, \ldots, \text{num episodes} \}$}
-%     \For{$t  \in \{0, 1, \ldots, \text{num steps} \}$}
-%       \State Execute policy $\policy_{i}(\state_{t})$ in environment
-%       \State $\tau_{i+1} = \{\state_{j}, \action_{j}, \state_{j+1}, r_{j+1}) \}_{j=0}^{t}$
-%     \EndFor
-%     \State Update data set $\mathcal{D}_{0:i+1} = \mathcal{D}_{0:i} \cup \tau_{i+1}$
-%     \State Train dynamics $p(\transitionFn \mid \dataset_{0:i+1})$
-%     \State Improve policy $\pi_{i+1}$
-%     %\State Improve policy $\pi_{i+1}$ using $p(\transitionFn \mid \dataset_{0:i+1})$ and/or $\dataset_{0:i+1}$
-% \EndFor
-% \end{algorithmic}
-% \end{algorithm}
-% \end{minipage}
-% \hfill
-% \begin{minipage}{0.499\textwidth}
-% \begin{algorithm}[H]
-% \caption{Model-based RL with fast updates}\label{alg-mbrl-fast-updates}
-% \begin{algorithmic}[1]
-%   \Require Initial data set $\dataset_{0}$, dynamics posterior $p(\transitionFn \mid \dataset_{0})$, policy $\policy_{0}$
-%     % ${p(\state_{\timeInd+1} \mid \singleInput, \dataset_{0})}$}
-% \For{$i  \in \{0, 1, \ldots, \text{num episodes} \}$}
-%     \For{$t  \in \{0, 1, \ldots, \text{num steps} \}$}
-%       \State Execute policy $\policy_{i}(\state_{t})$ in environment
-%       % \State Append transition $\state_{t}, \action_{t}, \state_{t+1}, r_{t+1})$ to trajectory $\tau_{i}$
-%       \State $\tau_{i+1} = \{\state_{j}, \action_{j}, \state_{j+1}, r_{j+1}) \}_{j=0}^{t}$
-%       \State {\color{blue}Update dynamics $p(\transitionFn \mid \dataset_{0:i} \cup \tau_{i+1})$}
-%     \EndFor
-%     \State Update data set $\mathcal{D}_{0:i+1} = \mathcal{D}_{0:i} \cup \tau_{i+1}$
-%     \State Train dynamics $p(\transitionFn \mid \dataset_{0:i+1})$
-%     \State Improve policy $\pi_{i+1}$
-%     %\State Improve policy $\pi_{i+1}$ using $p(\transitionFn \mid \dataset_{0:i+1})$ and/or $\dataset_{0:i+1}$
-% \EndFor
-% \end{algorithmic}
-% \end{algorithm}
-% \end{minipage}
-
-
-
-\subsection{Exploration Strategies}
-\textbf{Greedy exploitation}
-Given the posterior dynamics \(p(\transitionFn \mid \mathcal{D})\),
-a common approach is to simply take the expecation over both the aleatoric and epistemic uncertainty,
-\begin{align} \label{eq-greedy}
-\policy_{i+1}^{\text{greedy}} = \arg \max_{\policy \in \policyDomain} \mathbb{E}_{\transitionFn \sim p(\transitionFn \mid \dataset_{0:i})} \left[ J(\transitionFn, \policy) \right],
-\end{align}
-This approach has been widely adopted, for example, in PILCO, PETS, GP-MPC
-\cite{deisenrothPILCO2011,chuaDeepReinforcementLearning2018,kamtheDataEfficient2018}.
-This approach helps to alleviate model bias as the posterior ``knows what the model does not know''.
-This is because the predictive posterior \(p(f(s_{t},a_{t}) \mid (s_{t},a_{t}),  \mathcal{D} )\) will be (or should be) uncertain when making
-predictions far away from the training data.
-The expectation considers all possible dynamics models which prevents the policy optimisation from
-exploiting innacuracies in the model.
-This approach has no guarantees for exploration in the general case.
-However, under specific dynamics and reward structures (e.g. PILCO) this objective can achieve sublinear regret.
-\todo{need to double check sublinear regret statement. And give a reference}
-
-
-\textbf{Posterior sampling}
-\cite{osbandWhyPosteriorSampling2017,osbandMoreEfficientReinforcement2013}
-\begin{align} \label{eq-posterior-sampling}
-\policy_{i+1}^{\text{PS}} = \arg \max_{\policy \in \policyDomain} \left[ J(\transitionFn, \policy) \right] \quad \text{s.t. } \transitionFn \sim p(\transitionFn \mid \dataset_{0:i})
-\end{align}
-
-\textbf{Hallucinated upper confidence RL}
-A more theoretically grounded exploration strategy is UCRL \citep{jakschNearoptimal2010}, which optimises joinly over
-policies and models inside the set
-\(\mathcal{M} = \{ f \mid | f(s,a) - \mu_{i}(s, a) | \leq \beta_{i} \Sigma_{i}(s, a) \quad \forall s, a \in \mathcal{S} \times \mathcal{A} \}\), representing all statistically plausible
-models under the posterior \(p(f(s,a) \mid \mathcal{D}_{0:i} \cup (s,a)) = \mathcal{N}(f(s,a) \mid \mu_{i}(s,a), \Sigma_{i}(s,a))\) at episode \(i\).
-This strategy is given by,
-\begin{align} \label{eq-ucrl}
-\policy_{i+1}^{\text{UCRL}} = \arg \max_{\policy \in \policyDomain} \max_{\transitionFn \in \mathcal{M}} J(\transitionFn, \policy).
-\end{align}
-This strategy optimises an optimistic policy over the set of plausible dynamics models.
-Although this joint optimisation is intractable in general,
-\cite{curiEfficient2020} proposed a practical alternative which is detailed in \cref{sec-hucrl}.
-
-\textbf{MPC vs policy learning}
-It is worth noting that the strategies in \cref{eq-greedy,eq-posterior-sampling,eq-ucrl} can be used with both model predictive control (MPC)
-techniques, such as the cross entoropy method (CEM), and model-free RL techniques, such as soft actor-critic (SAC).
-
-
-In this work we are interested in how we can use \(p(f \mid \mathcal{D})\) to alleviate some of the issues in model-based RL,
-for example, model bias and the exploration-exploitation trade-off.
-
-
-
-\todo{show how to get new $\dualParam{1}$ and $\dualParam{2}$ in Train dynamics line of \cref{alg-mbrl-fast-updates}}
-\begin{algorithm}[!t]
-\caption{Model-based RL with fast updates}\label{alg-mbrl-fast-updates}
-\begin{algorithmic}[1]
-  \Require Start state $\state_{0}$, initial data set $\dataset_{0}$, dynamics posterior $p(\transitionFn \mid \dataset_{0})$ (inc. dual parameters $\dualParam{1}, \dualParam{2}$), policy $\policy_{0}$
-    % ${p(\state_{\timeInd+1} \mid \singleInput, \dataset_{0})}$}
-\For{$i  \in \{1, 2, \ldots, \text{num episodes} \}$}
-    \State Reset the system to $\state_{0}$ and reset trajectory buffers $\bm\tau_{t} = \emptyset \ \forall t$
-    \For{$t  \in \{1, 2, \ldots, \text{num steps} \}$}
-      % \State Execute policy $\policy_{i}(\state_{t})$ (\cref{eq-fast-update-mpc}) in environment
-      \State Use \cref{eq-fast-update-mpc} to collect data $\bm\tau_{t} = \bm\tau_{t-1} \cup (\state_{t}, \policy_{i}(\state_{t}), \transitionFn(\state_{t}, \policy^{\text{fast}}_{i}(\state_{t})), r_{t+1})$
-      % \State Append transition $\state_{t}, \action_{t}, \state_{t+1}, r_{t+1})$ to trajectory $\tau_{i}$
-      % \State $\tau_{i+1} = \{\state_{j}, \action_{j}, \state_{j+1}, r_{j+1}) \}_{j=0}^{t}$
-      %\State {\color{blue}Update dynamics $p(\transitionFn \mid \dataset_{0:i} \cup \tau_{i+1})$}
-      \State {\color{blue}Update dynamics posterior using \cref{eq-dual-update-svgp}, i.e. fast update}
-      % \begin{align}
-      % \dualParam{1}^{t+1} &\leftarrow \dualParam{1}^{t} +  \nabla_{\meanParam{1}} \mathbb{E}_{q_{\inducingVariable}(\latentFn(\state_{t}, \action_{t}))} \left[ \log p(\state_{t+1} \mid \latentFn(\state_{t}, \action_{t}) ) \right] \\
-      % \dualParam{2}^{t+1} &\leftarrow \dualParam{2}^{t} +  \nabla_{\meanParam{2}} \mathbb{E}_{q_{\inducingVariable}(\latentFn(\state_{t}, \action_{t}))}  \left[ \log p(\state_{t+1} \mid \latentFn(\state_{t}, \action_{t}) ) \right]
-      % \end{align}}
-    \EndFor
-    \State Update data set $\dataset_{0:i} = \dataset_{0:i-1} \cup \tau$
-    \State Train dynamics $p(\transitionFn \mid \dataset_{0:i}) \leftarrow \text{update\_dynamics}(\dataset_{0:i}, p(\transitionFn \mid \dataset_{0:i-1}))$
-    \State Improve policy $\pi^{\text{fast}}_{i+1} \leftarrow \text{update\_policy}(p\left(\transitionFn \mid \dataset_{0:i}), \dataset_{0:i} \right)$
-\EndFor
-\end{algorithmic}
-\end{algorithm}
-
-
-\subsubsection{Fast updates}
-
-
-In this section we extend these fast updates to environment's with high dimensional state spaces and large data sets.
-% Our method draws on the connection between BNNs and GPs and formulates a function space SVGP posterior given
-Our method uses a BNN dynamic model and draws on the connection between BNNs and GPs
-\citep{khanApproximate2019} to formulate a function space SVGP posterior,
-where we can apply the fast updates from \cref{eq-dual-update-svgp}.
-At a high-level, we first use Laplace's approximation to obtain a weight space posterior for our BNN.
-We then linearise our BNN around the optimal parameters and interpret it as a GP.
-Finally, we formulate a lower rank approximation of this GP posterior (i.e. a SVGP posterior) using inducing variables.
-% formulates a function space SVGP posterior by drawing on the connection between BNNs and GPs.
-
-
-The strategies in \cref{eq-greedy,eq-posterior-sampling,eq-hucrl} do not update the dynamic model during an episode.
-A better approach would be to update the posterior at every time step during an episode, for example,
-\begin{subequations}
-\begin{align} \label{eq-fast-update-mpc}
-  \policy_{i+1}^{\text{greedy}}(\state) &= \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}}
-\E_{p(\transitionFn \mid \dataset_{0:i})} \left[J^{\Horizon}(\action_{0:\Horizon}, \transitionFn) \right] + \stateValueFn(\state_{\Horizon+1}) \\
-  \policy_{i+1}^{\text{PS}}(\state) &= \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}}
-J^{\Horizon}(\action_{0:\Horizon}, \transitionFn) + \stateValueFn(\state_{\Horizon+1}) \quad \text{s.t. } \transitionFn \sim p(\transitionFn \mid \dataset_{0:i} \cup \bm\tau_{t}) \\
-  \policy_{i+1}^{\text{UCRL}}(\state) &= \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}} \max_{\transitionFn \in \mathcal{M}}
-J^{\Horizon}(\action_{0:\Horizon}, \transitionFn) + \stateValueFn(\state_{\Horizon+1}) \quad \text{s.t. } \mathcal{M} = \{\transitionFn(\state_{t},\action_{t}) - \mu_{i,t}(\state_{t},\action_{t}) \leq \beta_{i,t} \Sigma_{i,t}(\state_{t}, \action_{t})\} \\
-  \stateValueFn(\state) &= \mathbb{E} \left[ \sum_{t=0}^{\infty}     \discount^{t} \rewardFn(\state_{t},\action_{t}) \mid \state_{0}=\state \right] \label{eq-value-fn}
-\end{align}
-\end{subequations}
-\begin{subequations}
-\begin{align} \label{eq-fast-update-mpc-old}
-  \policy^{\text{fast}}(\state) = \arg &\max_{\action_{0}} \max_{\action_{1}, \ldots, \action_{\Horizon}}
-  \mathbb{E}_{\state_{\horizon} \sim p(\state_{\horizon+1} \mid \transitionFn(\state_{\horizon}, \action_{\horizon}))} \left[ \sum_{\horizon=0}^{\Horizon}     \discount^{\horizon} \rewardFn(\state_{\horizon},\action_{\horizon}) \mid \state_{0}=\state \right] + \discount^{\Horizon+1} \stateValueFn(\state_{\Horizon+1}) \\
-  \stateValueFn(\state) &= \mathbb{E} \left[ \sum_{t=0}^{\infty}     \discount^{t} \rewardFn(\state_{t},\action_{t}) \mid \state_{0}=\state \right] \label{eq-fast-update-mpc}
-\end{align}
-\end{subequations}
-
-\begin{align} \label{}
-  \policy(\state) = \arg &\max_{\action_{0}} \max_{\action_{1}, \ldots, \action_{\Horizon}} \max_{\optimisticTransition \in \optimisticTransitionSet}
-  \sum_{\horizon=0}^{\Horizon}  \mathbb{E}_{\noise_{\horizon}} \left[  \discount^{\horizon} \rewardFn(\state_{\horizon},\action_{\horizon}) \right] + \discount^{\Horizon+1} \stateValueFn(\state_{\Horizon+1}) \\
-  \text{s.t. } \state_{\horizon+1} &= \optimisticTransition(\state_{\horizon}, \action_{\horizon}) + \noise_{\horizon} \\
-  \optimisticTransition(\state_{\horizon}, \action_{\horizon}) &=
-\optimisticTransitionMean(\state_{\horizon}, \action_{\horizon}) \pm \beta_{i}
-\optimisticTransitionCov(\state_{\horizon}, \action_{\horizon})
-\end{align}
-
-\input{proof.tex}
-
-
-\section{Hallucinated Upper Confidence Reinforcement Learning (H-UCRL)} \label{sec-hucrl}
-\cite{curiEfficient2020} introduced a tractable approximation which retains some of the theoretical guarantees whilst
-being applicable with deep model-based RL.
-They introduce a function \(\eta: \mathcal{S} \times \mathcal{A} \rightarrow [-1, 1]^{p}\) which acts as a hallucinated control input.
-The strategy is given by,
-\begin{align} \label{eq-hucrl}
-\pi_i^{\text{UCRL}} = \arg \max_{\policy \in \policyDomain} \max_{\eta(\cdot) \in [-1,1]} J(\transitionFn, \policy) \quad \text{s.t.} \quad \transitionFn = \mu_{i}(\state_{t}, \action_{t}) + \beta_{i} \Sigma_{i}(\state_{t}, \action_{t}) \eta(\state_{t},\action_{t}).
-\end{align}
-Intuitively, \(\eta(\state,\action) \in [-1,1]\) enables the optimisation to select any dynamics model
-\(\transitionFn\) within \(\pm \beta \Sigma_{i}(\state_{t}, \action_{t})\) of the posterior mean \(\mu_{i}(\state_{t}, \action_{t})\).
-
-\section{Laplace Approximation} \label{sec-laplace-approximation}
-
-\textbf{Laplace approximation}
-The Laplace approximation \todo{add citation of original paper} constructs a Gaussian approximation of the weight-space posterior $p(\weights \mid \dataset)$
-by using a second-order Taylor expansion of $\mathcal{L}$ around $\weights^{*}$.
-The posterior approximation is given by,
-\begin{align} \label{eq-laplace-approx-weight-space}
-  p(\weights \mid \dataset) \approx \mathcal{N} \left( \weights \mid \weights^{*} , \bm\Sigma_{\weights^{*}} \right)
-  \quad \text{with} \quad \bm\Sigma_{\weights} =
- - \nabla_{\weights \weights}^{2} \mathcal{L} ( \dataset ; \weights)|_{\weights=\weights^{*}}
-\end{align}
-That is, it sets the posterior precision to the Hessian of the loss at the optimal parameters $\weights^{*}$.
-It is worth noting that computing the Hessian of the loss can be computationally intractable for large networks.
-The prior terms are usually trivial, so we focus on the likelihood here.
-The Jacobian and Hessian of the log likelihood can be expressed per data point,
-\begin{align} \label{eq-jac}
-  \nabla_{\weights} \log p(\mathbf{y} \mid \mathbf{f}(\mathbf{x}; \weights)) &= \mathbf{J}(\mathbf{x})^{T} \mathbf{r}(\mathbf{y} ; \mathbf{f}) \\
-  \nabla^{2}_{\weights\weights} \log p(\mathbf{y} \mid \mathbf{f}(\mathbf{x}; \weights)) &= \mathbf{H}(\mathbf{x})^{T}
-  \mathbf{r}(\mathbf{y};\mathbf{f}) - \mathbf{J}(\mathbf{x})^{T} \bm\Lambda(\mathbf{y};\mathbf{f}) \mathbf{J}(\mathbf{x}),
-\label{eq-hess}
-\end{align}
-through the Jacobian $\mathbf{J} \in \R^{C \times P}$ and Hessian $\mathbf{H} \in \R^{C \times P \times P}$ of the feature extractor $\mathbf{f}(\mathbf{x}; \bm\weights)$,
-\begin{align} \label{eq-jac}
-[\mathbf{J}(\cdot)]_{ci} = \odv{f_{c}(\cdot ; \weights)}{\weights_{i}}_{\weights=\weights^{*}} \qquad
-[\mathbf{H}(\cdot)]_{cij} = \odv{f_{c}(\cdot ; \weights)}{\weights_{i}\weights_{j}}_{\weights=\weights^{*}}
-\end{align}
-where
-$\mathbf{r}(\mathbf{y}; \mathbf{f}) = \nabla_{\mathbf{f}} \log p(\mathbf{y} \mid \mathbf{f})$ can be interpreted as a residual and
-$\bm\Lambda(\mathbf{y} ; \mathbf{f}) = \nabla^{2}_{\mathbf{f} \mathbf{f}} \log p(\mathbf{y} \mid \mathbf{f})$
-as per-input noise.
-Many approximations exist and can be used alongsied our method.
-We refer the reader to \cite{daxbergerLaplace2021} for more details.
-See \cref{sec-laplace-approximation} for further details on the Laplace approximation.
-
-
-\section{Experiment details}
-
-\subsection{UCI}
-
-\begin{table}[t!] 
-  \centering\scriptsize
-  \caption{Negative log predictive density (NLPD) (lower better) for the proposed model TODO} 
-	\label{tbl:uci_all}
-	% Control table spacing
-	\renewcommand{\arraystretch}{1.}
-	\setlength{\tabcolsep}{2pt}
-	\setlength{\tblw}{0.14\textwidth}  
-	
-	% Custom error formatting
-	\newcommand{\val}[2]{%
-		$#1$\textcolor{gray}{\tiny ${\pm}#2$}
-	} 
-
-    % THE TABLE NUMBER ARE GENERATED BY A SCRIPT	
-	\input{tables/uci_all.tex}
-\end{table}
-
-\section{Template stuff}
-\subsection{Generate TikZ Figures from Python}
-We can generate figures in \texttt{.tex} format directly from Python:
-\begin{verbatim}
-tikzplotlib.save("fig.tex", axis_width="\\figurewidth", axis_height="\\figureheight")
-\end{verbatim}
-\cref{fig:example} shows that we get nicely formatted lables/titles/etc when we include them in our paper.
-\begin{figure}[h]
-    \centering\footnotesize
-
-    % Set your figure size here
-    \setlength{\figurewidth}{.33\textwidth}
-    \setlength{\figureheight}{.75\figurewidth}
-
-    % Customize your plot here
-    % (scale only axis applies the size to the axis box and not entire figure)
-    \pgfplotsset{grid style={dotted},title={Foo},scale only axis}
-
-    % Use the subcaption package (= subfigure) for sub-plots, that is
-    % plot the separate plots separately in Python
-    \begin{subfigure}{.4\textwidth}
-        \centering
-        \input{./fig/example_fig.tex}
-    \end{subfigure}
-    \hfill
-    \begin{subfigure}{.4\textwidth}
-        \centering
-        \input{./fig/example_fig.tex}
-    \end{subfigure}
-    \caption{Foo}
-    \label{fig:example}
-\end{figure}
-
-\subsection{Generate Tables from Python}
-We can also generate tables straight from python using \href{https://github.com/astanin/python-tabulate}{tabulate}:
-\begin{verbatim}
-table = [["Sun",696000,1989100000],["Earth",6371,5973.6],
-        ["Moon",1737,73.5],["Mars",3390,641.85]]
-headers = ["Planet","R (km)", "mass (x 10^29 kg)"]
-table = tabulate(table, headers=headers, tablefmt="latex")
-with open("table.tex", 'w') as file:
-    file.write(table)
-\end{verbatim}
-
-\begin{table}[h]
-    \centering
-    \input{./tables/example_table.tex}
-\end{table}
+%
+%\subsection{Model-based Reinforcement Learning (RL)}
+%The goal of reinforcement learning is to find a policy \(\pi \in \Pi\) that maximises the sum of discounted
+%rewards in expecation under the transition noise (aleatoric uncertainty),
+%\begin{align} \label{eq-model-free-objective}
+%\policy^{*} = \arg \max_{\policy \in \policyDomain} J(\transitionFn, \policy) = \arg \max_{\policy \in \policyDomain} \mathbb{E}_{\noise_{0:\infty}} \left[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \right],
+%\end{align}
+%where $\gamma \in [0, 1]$
+%
+%\textbf{Model-based}
+%In Bayesian model-based RL, we obtain the posterior over the dynamics \(p(f\mid\mathcal{D})\) after performing (approximate) Bayesian
+%inference given a state transition data set \(\mathcal{D} = \{\{(s_{t},a_{t}), s_{t+1}\}^{T_{i}}_{t=1}\}_{i=0}^{N}\).
+%\cref{alg-mbrl} shows the typical model-based RL loop.
+%Importantly, the dynamics are usually only updated after an episode $i$.
+%
+%\begin{algorithm}[!b]
+%\caption{Model-based RL}\label{alg-mbrl}
+%\begin{algorithmic}[1]
+%  \Require Start state $\state_{0}$, initial data set $\dataset_{0}$, dynamics posterior $p(\transitionFn \mid \dataset_{0})$, policy $\policy_{0}$
+%\For{$i  \in \{1, 2, \ldots, \text{num episodes} \}$}
+%    \State Reset the system to $\state_{0}$ and reset trajectory buffers $\bm\tau_{t} = \emptyset \ \forall t$
+%    \For{$t  \in \{1, 2, \ldots, \text{num steps} \}$}
+%      % \State Collect  $\tau_{0:t} = \tau_{0:t-1} \cup (\state_{j}, \action_{j}, \state_{j+1}, r_{j+1})$
+%      \State Use \cref{eq-greedy}/\cref{eq-posterior-sampling}/\cref{eq-ucrl} to collect data $\bm\tau_{t} = \bm\tau_{t-1} \cup (\state_{t}, \policy_{i}(\state_{t}), \transitionFn(\state_{t}, \policy_{i}(\state_{t})), r_{t+1})$
+%      % \State Execute policy $\policy_{i}(\state_{t})$ in environment and update trajectory $\tau_{i+1} = \{\state_{j}, \action_{j}, \state_{j+1}, r_{j+1}) \}_{j=0}^{t}$
+%    \EndFor
+%    \State Update data set $\dataset_{0:i} = \dataset_{0:i-1} \cup \tau$
+%    \State Train dynamics $p(\transitionFn \mid \dataset_{0:i}) \leftarrow \text{update\_dynamics}(\dataset_{0:i}, p(\transitionFn \mid \dataset_{0:i-1}))$
+%    % \State Train dynamics $p(\transitionFn \mid \dataset_{0:i+1})$ using $\dataset_{0:i+1}$
+%    % \State Improve policy $\pi_{i+1}$ using $p(\transitionFn \mid \dataset_{0:i+1})$ and/or $\dataset_{0:i+1}$
+%    \State Improve policy $\pi_{i+1} \leftarrow \text{update\_policy}(p\left(\transitionFn \mid \dataset_{0:i}), \dataset_{0:i} \right)$
+%    %\State Improve policy $\pi_{i+1}$ using $p(\transitionFn \mid \dataset_{0:i+1})$ and/or $\dataset_{0:i+1}$
+%\EndFor
+%\end{algorithmic}
+%\end{algorithm}
+%
+%% \begin{minipage}{0.499\textwidth}
+%% \begin{algorithm}[H]
+%% \caption{Model-based RL}\label{alg-mbrl}
+%% \begin{algorithmic}[1]
+%%   \Require Initial data set $\dataset_{0}$, dynamics posterior $p(\transitionFn \mid \dataset_{0})$, policy $\policy_{0}$
+%% \For{$i  \in \{0, 1, \ldots, \text{num episodes} \}$}
+%%     \For{$t  \in \{0, 1, \ldots, \text{num steps} \}$}
+%%       \State Execute policy $\policy_{i}(\state_{t})$ in environment
+%%       \State $\tau_{i+1} = \{\state_{j}, \action_{j}, \state_{j+1}, r_{j+1}) \}_{j=0}^{t}$
+%%     \EndFor
+%%     \State Update data set $\mathcal{D}_{0:i+1} = \mathcal{D}_{0:i} \cup \tau_{i+1}$
+%%     \State Train dynamics $p(\transitionFn \mid \dataset_{0:i+1})$
+%%     \State Improve policy $\pi_{i+1}$
+%%     %\State Improve policy $\pi_{i+1}$ using $p(\transitionFn \mid \dataset_{0:i+1})$ and/or $\dataset_{0:i+1}$
+%% \EndFor
+%% \end{algorithmic}
+%% \end{algorithm}
+%% \end{minipage}
+%% \hfill
+%% \begin{minipage}{0.499\textwidth}
+%% \begin{algorithm}[H]
+%% \caption{Model-based RL with fast updates}\label{alg-mbrl-fast-updates}
+%% \begin{algorithmic}[1]
+%%   \Require Initial data set $\dataset_{0}$, dynamics posterior $p(\transitionFn \mid \dataset_{0})$, policy $\policy_{0}$
+%%     % ${p(\state_{\timeInd+1} \mid \singleInput, \dataset_{0})}$}
+%% \For{$i  \in \{0, 1, \ldots, \text{num episodes} \}$}
+%%     \For{$t  \in \{0, 1, \ldots, \text{num steps} \}$}
+%%       \State Execute policy $\policy_{i}(\state_{t})$ in environment
+%%       % \State Append transition $\state_{t}, \action_{t}, \state_{t+1}, r_{t+1})$ to trajectory $\tau_{i}$
+%%       \State $\tau_{i+1} = \{\state_{j}, \action_{j}, \state_{j+1}, r_{j+1}) \}_{j=0}^{t}$
+%%       \State {\color{blue}Update dynamics $p(\transitionFn \mid \dataset_{0:i} \cup \tau_{i+1})$}
+%%     \EndFor
+%%     \State Update data set $\mathcal{D}_{0:i+1} = \mathcal{D}_{0:i} \cup \tau_{i+1}$
+%%     \State Train dynamics $p(\transitionFn \mid \dataset_{0:i+1})$
+%%     \State Improve policy $\pi_{i+1}$
+%%     %\State Improve policy $\pi_{i+1}$ using $p(\transitionFn \mid \dataset_{0:i+1})$ and/or $\dataset_{0:i+1}$
+%% \EndFor
+%% \end{algorithmic}
+%% \end{algorithm}
+%% \end{minipage}
+%
+%
+%
+%\subsection{Exploration Strategies}
+%\textbf{Greedy exploitation}
+%Given the posterior dynamics \(p(\transitionFn \mid \mathcal{D})\),
+%a common approach is to simply take the expecation over both the aleatoric and epistemic uncertainty,
+%\begin{align} \label{eq-greedy}
+%\policy_{i+1}^{\text{greedy}} = \arg \max_{\policy \in \policyDomain} \mathbb{E}_{\transitionFn \sim p(\transitionFn \mid \dataset_{0:i})} \left[ J(\transitionFn, \policy) \right],
+%\end{align}
+%This approach has been widely adopted, for example, in PILCO, PETS, GP-MPC
+%\cite{deisenrothPILCO2011,chuaDeepReinforcementLearning2018,kamtheDataEfficient2018}.
+%This approach helps to alleviate model bias as the posterior ``knows what the model does not know''.
+%This is because the predictive posterior \(p(f(s_{t},a_{t}) \mid (s_{t},a_{t}),  \mathcal{D} )\) will be (or should be) uncertain when making
+%predictions far away from the training data.
+%The expectation considers all possible dynamics models which prevents the policy optimisation from
+%exploiting innacuracies in the model.
+%This approach has no guarantees for exploration in the general case.
+%However, under specific dynamics and reward structures (e.g. PILCO) this objective can achieve sublinear regret.
+%\todo{need to double check sublinear regret statement. And give a reference}
+%
+%
+%\textbf{Posterior sampling}
+%\cite{osbandWhyPosteriorSampling2017,osbandMoreEfficientReinforcement2013}
+%\begin{align} \label{eq-posterior-sampling}
+%\policy_{i+1}^{\text{PS}} = \arg \max_{\policy \in \policyDomain} \left[ J(\transitionFn, \policy) \right] \quad \text{s.t. } \transitionFn \sim p(\transitionFn \mid \dataset_{0:i})
+%\end{align}
+%
+%\textbf{Hallucinated upper confidence RL}
+%A more theoretically grounded exploration strategy is UCRL \citep{jakschNearoptimal2010}, which optimises joinly over
+%policies and models inside the set
+%\(\mathcal{M} = \{ f \mid | f(s,a) - \mu_{i}(s, a) | \leq \beta_{i} \Sigma_{i}(s, a) \quad \forall s, a \in \mathcal{S} \times \mathcal{A} \}\), representing all statistically plausible
+%models under the posterior \(p(f(s,a) \mid \mathcal{D}_{0:i} \cup (s,a)) = \mathcal{N}(f(s,a) \mid \mu_{i}(s,a), \Sigma_{i}(s,a))\) at episode \(i\).
+%This strategy is given by,
+%\begin{align} \label{eq-ucrl}
+%\policy_{i+1}^{\text{UCRL}} = \arg \max_{\policy \in \policyDomain} \max_{\transitionFn \in \mathcal{M}} J(\transitionFn, \policy).
+%\end{align}
+%This strategy optimises an optimistic policy over the set of plausible dynamics models.
+%Although this joint optimisation is intractable in general,
+%\cite{curiEfficient2020} proposed a practical alternative which is detailed in \cref{sec-hucrl}.
+%
+%\textbf{MPC vs policy learning}
+%It is worth noting that the strategies in \cref{eq-greedy,eq-posterior-sampling,eq-ucrl} can be used with both model predictive control (MPC)
+%techniques, such as the cross entoropy method (CEM), and model-free RL techniques, such as soft actor-critic (SAC).
+%
+%
+%In this work we are interested in how we can use \(p(f \mid \mathcal{D})\) to alleviate some of the issues in model-based RL,
+%for example, model bias and the exploration-exploitation trade-off.
+%
+%
+%
+%\todo{show how to get new $\dualParam{1}$ and $\dualParam{2}$ in Train dynamics line of \cref{alg-mbrl-fast-updates}}
+%\begin{algorithm}[!t]
+%\caption{Model-based RL with fast updates}\label{alg-mbrl-fast-updates}
+%\begin{algorithmic}[1]
+%  \Require Start state $\state_{0}$, initial data set $\dataset_{0}$, dynamics posterior $p(\transitionFn \mid \dataset_{0})$ (inc. dual parameters $\dualParam{1}, \dualParam{2}$), policy $\policy_{0}$
+%    % ${p(\state_{\timeInd+1} \mid \singleInput, \dataset_{0})}$}
+%\For{$i  \in \{1, 2, \ldots, \text{num episodes} \}$}
+%    \State Reset the system to $\state_{0}$ and reset trajectory buffers $\bm\tau_{t} = \emptyset \ \forall t$
+%    \For{$t  \in \{1, 2, \ldots, \text{num steps} \}$}
+%      % \State Execute policy $\policy_{i}(\state_{t})$ (\cref{eq-fast-update-mpc}) in environment
+%      \State Use \cref{eq-fast-update-mpc} to collect data $\bm\tau_{t} = \bm\tau_{t-1} \cup (\state_{t}, \policy_{i}(\state_{t}), \transitionFn(\state_{t}, \policy^{\text{fast}}_{i}(\state_{t})), r_{t+1})$
+%      % \State Append transition $\state_{t}, \action_{t}, \state_{t+1}, r_{t+1})$ to trajectory $\tau_{i}$
+%      % \State $\tau_{i+1} = \{\state_{j}, \action_{j}, \state_{j+1}, r_{j+1}) \}_{j=0}^{t}$
+%      %\State {\color{blue}Update dynamics $p(\transitionFn \mid \dataset_{0:i} \cup \tau_{i+1})$}
+%      \State {\color{blue}Update dynamics posterior using \cref{eq-dual-update-svgp}, i.e. fast update}
+%      % \begin{align}
+%      % \dualParam{1}^{t+1} &\leftarrow \dualParam{1}^{t} +  \nabla_{\meanParam{1}} \mathbb{E}_{q_{\inducingVariable}(\latentFn(\state_{t}, \action_{t}))} \left[ \log p(\state_{t+1} \mid \latentFn(\state_{t}, \action_{t}) ) \right] \\
+%      % \dualParam{2}^{t+1} &\leftarrow \dualParam{2}^{t} +  \nabla_{\meanParam{2}} \mathbb{E}_{q_{\inducingVariable}(\latentFn(\state_{t}, \action_{t}))}  \left[ \log p(\state_{t+1} \mid \latentFn(\state_{t}, \action_{t}) ) \right]
+%      % \end{align}}
+%    \EndFor
+%    \State Update data set $\dataset_{0:i} = \dataset_{0:i-1} \cup \tau$
+%    \State Train dynamics $p(\transitionFn \mid \dataset_{0:i}) \leftarrow \text{update\_dynamics}(\dataset_{0:i}, p(\transitionFn \mid \dataset_{0:i-1}))$
+%    \State Improve policy $\pi^{\text{fast}}_{i+1} \leftarrow \text{update\_policy}(p\left(\transitionFn \mid \dataset_{0:i}), \dataset_{0:i} \right)$
+%\EndFor
+%\end{algorithmic}
+%\end{algorithm}
+%
+%
+%\subsubsection{Fast updates}
+%
+%
+%In this section we extend these fast updates to environment's with high dimensional state spaces and large data sets.
+%% Our method draws on the connection between BNNs and GPs and formulates a function space SVGP posterior given
+%Our method uses a BNN dynamic model and draws on the connection between BNNs and GPs
+%\citep{khanApproximate2019} to formulate a function space SVGP posterior,
+%where we can apply the fast updates from \cref{eq-dual-update-svgp}.
+%At a high-level, we first use Laplace's approximation to obtain a weight space posterior for our BNN.
+%We then linearise our BNN around the optimal parameters and interpret it as a GP.
+%Finally, we formulate a lower rank approximation of this GP posterior (i.e. a SVGP posterior) using inducing variables.
+%% formulates a function space SVGP posterior by drawing on the connection between BNNs and GPs.
+%
+%
+%The strategies in \cref{eq-greedy,eq-posterior-sampling,eq-hucrl} do not update the dynamic model during an episode.
+%A better approach would be to update the posterior at every time step during an episode, for example,
+%\begin{subequations}
+%\begin{align} \label{eq-fast-update-mpc}
+%  \policy_{i+1}^{\text{greedy}}(\state) &= \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}}
+%\E_{p(\transitionFn \mid \dataset_{0:i})} \left[J^{\Horizon}(\action_{0:\Horizon}, \transitionFn) \right] + \stateValueFn(\state_{\Horizon+1}) \\
+%  \policy_{i+1}^{\text{PS}}(\state) &= \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}}
+%J^{\Horizon}(\action_{0:\Horizon}, \transitionFn) + \stateValueFn(\state_{\Horizon+1}) \quad \text{s.t. } \transitionFn \sim p(\transitionFn \mid \dataset_{0:i} \cup \bm\tau_{t}) \\
+%  \policy_{i+1}^{\text{UCRL}}(\state) &= \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}} \max_{\transitionFn \in \mathcal{M}}
+%J^{\Horizon}(\action_{0:\Horizon}, \transitionFn) + \stateValueFn(\state_{\Horizon+1}) \quad \text{s.t. } \mathcal{M} = \{\transitionFn(\state_{t},\action_{t}) - \mu_{i,t}(\state_{t},\action_{t}) \leq \beta_{i,t} \Sigma_{i,t}(\state_{t}, \action_{t})\} \\
+%  \stateValueFn(\state) &= \mathbb{E} \left[ \sum_{t=0}^{\infty}     \discount^{t} \rewardFn(\state_{t},\action_{t}) \mid \state_{0}=\state \right] \label{eq-value-fn}
+%\end{align}
+%\end{subequations}
+%\begin{subequations}
+%\begin{align} \label{eq-fast-update-mpc-old}
+%  \policy^{\text{fast}}(\state) = \arg &\max_{\action_{0}} \max_{\action_{1}, \ldots, \action_{\Horizon}}
+%  \mathbb{E}_{\state_{\horizon} \sim p(\state_{\horizon+1} \mid \transitionFn(\state_{\horizon}, \action_{\horizon}))} \left[ \sum_{\horizon=0}^{\Horizon}     \discount^{\horizon} \rewardFn(\state_{\horizon},\action_{\horizon}) \mid \state_{0}=\state \right] + \discount^{\Horizon+1} \stateValueFn(\state_{\Horizon+1}) \\
+%  \stateValueFn(\state) &= \mathbb{E} \left[ \sum_{t=0}^{\infty}     \discount^{t} \rewardFn(\state_{t},\action_{t}) \mid \state_{0}=\state \right] \label{eq-fast-update-mpc}
+%\end{align}
+%\end{subequations}
+%
+%\begin{align} \label{}
+%  \policy(\state) = \arg &\max_{\action_{0}} \max_{\action_{1}, \ldots, \action_{\Horizon}} \max_{\optimisticTransition \in \optimisticTransitionSet}
+%  \sum_{\horizon=0}^{\Horizon}  \mathbb{E}_{\noise_{\horizon}} \left[  \discount^{\horizon} \rewardFn(\state_{\horizon},\action_{\horizon}) \right] + \discount^{\Horizon+1} \stateValueFn(\state_{\Horizon+1}) \\
+%  \text{s.t. } \state_{\horizon+1} &= \optimisticTransition(\state_{\horizon}, \action_{\horizon}) + \noise_{\horizon} \\
+%  \optimisticTransition(\state_{\horizon}, \action_{\horizon}) &=
+%\optimisticTransitionMean(\state_{\horizon}, \action_{\horizon}) \pm \beta_{i}
+%\optimisticTransitionCov(\state_{\horizon}, \action_{\horizon})
+%\end{align}
+%
+%\input{proof.tex}
+%
+%
+%\section{Hallucinated Upper Confidence Reinforcement Learning (H-UCRL)} \label{sec-hucrl}
+%\cite{curiEfficient2020} introduced a tractable approximation which retains some of the theoretical guarantees whilst
+%being applicable with deep model-based RL.
+%They introduce a function \(\eta: \mathcal{S} \times \mathcal{A} \rightarrow [-1, 1]^{p}\) which acts as a hallucinated control input.
+%The strategy is given by,
+%\begin{align} \label{eq-hucrl}
+%\pi_i^{\text{UCRL}} = \arg \max_{\policy \in \policyDomain} \max_{\eta(\cdot) \in [-1,1]} J(\transitionFn, \policy) \quad \text{s.t.} \quad \transitionFn = \mu_{i}(\state_{t}, \action_{t}) + \beta_{i} \Sigma_{i}(\state_{t}, \action_{t}) \eta(\state_{t},\action_{t}).
+%\end{align}
+%Intuitively, \(\eta(\state,\action) \in [-1,1]\) enables the optimisation to select any dynamics model
+%\(\transitionFn\) within \(\pm \beta \Sigma_{i}(\state_{t}, \action_{t})\) of the posterior mean \(\mu_{i}(\state_{t}, \action_{t})\).
+%
+%\section{Laplace Approximation} \label{sec-laplace-approximation}
+%
+%\textbf{Laplace approximation}
+%The Laplace approximation \todo{add citation of original paper} constructs a Gaussian approximation of the weight-space posterior $p(\weights \mid \dataset)$
+%by using a second-order Taylor expansion of $\mathcal{L}$ around $\weights^{*}$.
+%The posterior approximation is given by,
+%\begin{align} \label{eq-laplace-approx-weight-space}
+%  p(\weights \mid \dataset) \approx \mathcal{N} \left( \weights \mid \weights^{*} , \bm\Sigma_{\weights^{*}} \right)
+%  \quad \text{with} \quad \bm\Sigma_{\weights} =
+% - \nabla_{\weights \weights}^{2} \mathcal{L} ( \dataset ; \weights)|_{\weights=\weights^{*}}
+%\end{align}
+%That is, it sets the posterior precision to the Hessian of the loss at the optimal parameters $\weights^{*}$.
+%It is worth noting that computing the Hessian of the loss can be computationally intractable for large networks.
+%The prior terms are usually trivial, so we focus on the likelihood here.
+%The Jacobian and Hessian of the log likelihood can be expressed per data point,
+%\begin{align} \label{eq-jac}
+%  \nabla_{\weights} \log p(\mathbf{y} \mid \mathbf{f}(\mathbf{x}; \weights)) &= \mathbf{J}(\mathbf{x})^{T} \mathbf{r}(\mathbf{y} ; \mathbf{f}) \\
+%  \nabla^{2}_{\weights\weights} \log p(\mathbf{y} \mid \mathbf{f}(\mathbf{x}; \weights)) &= \mathbf{H}(\mathbf{x})^{T}
+%  \mathbf{r}(\mathbf{y};\mathbf{f}) - \mathbf{J}(\mathbf{x})^{T} \bm\Lambda(\mathbf{y};\mathbf{f}) \mathbf{J}(\mathbf{x}),
+%\label{eq-hess}
+%\end{align}
+%through the Jacobian $\mathbf{J} \in \R^{C \times P}$ and Hessian $\mathbf{H} \in \R^{C \times P \times P}$ of the feature extractor $\mathbf{f}(\mathbf{x}; \bm\weights)$,
+%\begin{align} \label{eq-jac}
+%[\mathbf{J}(\cdot)]_{ci} = \odv{f_{c}(\cdot ; \weights)}{\weights_{i}}_{\weights=\weights^{*}} \qquad
+%[\mathbf{H}(\cdot)]_{cij} = \odv{f_{c}(\cdot ; \weights)}{\weights_{i}\weights_{j}}_{\weights=\weights^{*}}
+%\end{align}
+%where
+%$\mathbf{r}(\mathbf{y}; \mathbf{f}) = \nabla_{\mathbf{f}} \log p(\mathbf{y} \mid \mathbf{f})$ can be interpreted as a residual and
+%$\bm\Lambda(\mathbf{y} ; \mathbf{f}) = \nabla^{2}_{\mathbf{f} \mathbf{f}} \log p(\mathbf{y} \mid \mathbf{f})$
+%as per-input noise.
+%Many approximations exist and can be used alongsied our method.
+%We refer the reader to \cite{daxbergerLaplace2021} for more details.
+%See \cref{sec-laplace-approximation} for further details on the Laplace approximation.
+%
+%
+%\section{Experiment details}
+%
+%\subsection{UCI}
+%
+%\begin{table}[t!] 
+%  \centering\scriptsize
+%  \caption{Negative log predictive density (NLPD) (lower better) for the proposed model TODO} 
+%	\label{tbl:uci_all}
+%	% Control table spacing
+%	\renewcommand{\arraystretch}{1.}
+%	\setlength{\tabcolsep}{2pt}
+%	\setlength{\tblw}{0.14\textwidth}  
+%	
+%	% Custom error formatting
+%	\newcommand{\val}[2]{%
+%		$#1$\textcolor{gray}{\tiny ${\pm}#2$}
+%	} 
+%
+%    % THE TABLE NUMBER ARE GENERATED BY A SCRIPT	
+%	\input{tables/uci_all.tex}
+%\end{table}
+%
+%\section{Template stuff}
+%\subsection{Generate TikZ Figures from Python}
+%We can generate figures in \texttt{.tex} format directly from Python:
+%\begin{verbatim}
+%tikzplotlib.save("fig.tex", axis_width="\\figurewidth", axis_height="\\figureheight")
+%\end{verbatim}
+%\cref{fig:example} shows that we get nicely formatted lables/titles/etc when we include them in our paper.
+%\begin{figure}[h]
+%    \centering\footnotesize
+%
+%    % Set your figure size here
+%    \setlength{\figurewidth}{.33\textwidth}
+%    \setlength{\figureheight}{.75\figurewidth}
+%
+%    % Customize your plot here
+%    % (scale only axis applies the size to the axis box and not entire figure)
+%    \pgfplotsset{grid style={dotted},title={Foo},scale only axis}
+%
+%    % Use the subcaption package (= subfigure) for sub-plots, that is
+%    % plot the separate plots separately in Python
+%    \begin{subfigure}{.4\textwidth}
+%        \centering
+%        \input{./fig/example_fig.tex}
+%    \end{subfigure}
+%    \hfill
+%    \begin{subfigure}{.4\textwidth}
+%        \centering
+%        \input{./fig/example_fig.tex}
+%    \end{subfigure}
+%    \caption{Foo}
+%    \label{fig:example}
+%\end{figure}
+%
+%\subsection{Generate Tables from Python}
+%We can also generate tables straight from python using \href{https://github.com/astanin/python-tabulate}{tabulate}:
+%\begin{verbatim}
+%table = [["Sun",696000,1989100000],["Earth",6371,5973.6],
+%        ["Moon",1737,73.5],["Mars",3390,641.85]]
+%headers = ["Planet","R (km)", "mass (x 10^29 kg)"]
+%table = tabulate(table, headers=headers, tablefmt="latex")
+%with open("table.tex", 'w') as file:
+%    file.write(table)
+%\end{verbatim}
+%
+%\begin{table}[h]
+%    \centering
+%    \input{./tables/example_table.tex}
+%\end{table}
 
 \subsection{Biblatex}
 Rember when using biblatex to use 'parencite' for \citep{kamtheDataEfficient2018} and when using natbib to use 'citep'.

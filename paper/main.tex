@@ -482,7 +482,7 @@ S-FSVI \cite{rudner2022continual}
 
 
 
-\section{Methods}
+\section{Background}
 \label{sec:methods}
 %
 In supervised learning, given a data set $\dataset = \{(\mathbf{x}_{i} , \mathbf{y}_{i})\}_{i=1}^{n}$, with input $\mathbf{x}_i \in \inputDomain$ and output $\mathbf{y}_i \in \outputDomain$ pairs, the weights $\weights \in \R^{P}$ of a neural network, $f_\mathbf{w} : \inputDomain \to \outputDomain$, are usually trained to minimize the (regularized) empirical risk,
@@ -501,9 +501,17 @@ If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\
 %
 Quantifying uncertainty in a Bayesian framework boils down to finding a posterior of $p(\vw \mid \dataset)$ from, which represents the uncertainty over our parameters based on the prior and data. The posterior structure is related to the loss-landscape around the MAP weights $\vw^*$, which induces a correlation structure on functions produced from the neural network's deterministic mapping. Samples from the weight posterior are perturbed versions of $f_{\vw^*}$ characterizing uncertainty in the learned model in the function space. Although the true posterior is intractable given the non-linearities of the neural network sampling techniques available such as Hamiltonian Monte-Carlo (HMC), The uncertainty plotted \cref{fig:banana} shows the induced function space posterior by sampling through the model. However, in most cases, sampling techniques like HMC are not available given the computational burden.
 
-A common approach is to approximate the correlation structure of a distribution centred at the MAP estimate such as the Laplace-GNN \citep{khan2019approximate, daxberger2021laplace, maddox2021fast}. The Laplace GNN takes the MAP solution and approximates the Hessian of our loss function  $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i)$ with the GGN approximation. Another way of viewing the approximation is that we build the following approximate model $\hat{f}_\weights(\mathbf{x}_{i}) = \Jac{\weights}{\mathbf{x}_i} \vw $  where $\Jac{\weights}{\mathbf{x}} \coloneqq \nabla_\weights f(\mathbf{x})^\top \in \R^{C \times P}$ is the Jacobian. Using such an approximation we arrive at the Laplace-GGN posterior $q(\vw;  f_{\vw^*}(\vx_i) )$
+A common approach is to approximate the correlation structure of a distribution centred at the MAP estimate as done in the Laplace-GGN \citep{khan2019approximate, daxberger2021laplace, maddox2021fast}. The Laplace GGN takes the MAP solution and approximates the Hessian of our loss function  $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i)$ with the GGN approximation. Another way of viewing the approximation is that we build the following approximate model $\hat{f}_\weights(\mathbf{x}_{i}) = \Jac{\weights}{\mathbf{x}_i} \vw $  where $\Jac{\weights}{\mathbf{x}} \coloneqq \nabla_\weights f(\mathbf{x})^\top \in \R^{C \times P}$ is the Jacobian as was pointed out in \citep{khan2019approximate}. Using the Hessian of the approximate model, we arrive at the Laplace-GGN posterior for $q(\vw)$.
 
-In this paper we are concerned with learning posterior directly in the function space. 
+In this paper we are concerned with learning posterior directly in the function space that is having a $q(\vf)$ instead of a $q(\vw)$. A common choice is to use a Gaussian process characterizes a distribution over functions in terms of the first two moments, a mean $\mu(\cdot)$ and covariance function $\kappa(\cdot,\cdot)$ (kernel). We aim to find a kernel and mean function based on the neural network to build the Gaussian process posterior.  A linear function in terms of parameters can be converted from the weight space to the function space (see Ch.~XXX in \cite{rasmussen2006gaussian} as follows:
+\begin{equation} \label{eq:weight_func}
+g_\weights(\mathbf{x}_{i}) = \phi^\top\!(\vx) \, \vw \implies \mu(\vx) = \vzeros \quad \kappa(\mathbf{x}, \mathbf{x}') = \frac{1}{\delta} \phi(\vx)^\top \phi(\vx)
+\end{equation}
+
+
+
+
+
 
 
 - distribution over w given to you by the non-linear function. One could sample over weights pass it over the function and you have distribution over functions. HMC is heavy, structure of the problem around the map estimate. characteruze this as the first two moments of the distributions over the functions restrict to the first two moments.  
@@ -545,7 +553,7 @@ Replace with a taylor series at the MAP first order taylor expansion in w. degen
 %\subsection{Neural Network to GP Prior} 
 %\label{sec:nn2gp}
 %
-A Gaussian process characterizes a distribution over functions in terms of the first two moments,  a mean $\mu(\cdot)$ and covariance function $\kappa(\cdot,\cdot)$ (kernel). We aim to find a kernel and mean function based on the neural network to build the Gaussian process posterior.  A linear function in terms of parameters can be converted from the weight space to the function space (see Ch.~XXX in \cite{rasmussen2006gaussian} as follows:
+A Gaussian process characterizes a distribution over functions in terms of the first two moments, a mean $\mu(\cdot)$ and covariance function $\kappa(\cdot,\cdot)$ (kernel). We aim to find a kernel and mean function based on the neural network to build the Gaussian process posterior.  A linear function in terms of parameters can be converted from the weight space to the function space (see Ch.~XXX in \cite{rasmussen2006gaussian} as follows:
 \begin{equation} \label{eq:weight_func}
 g_\weights(\mathbf{x}_{i}) = \phi^\top\!(\vx) \, \vw \implies \mu(\vx) = \vzeros \quad \kappa(\mathbf{x}, \mathbf{x}') = \frac{1}{\delta} \phi(\vx)^\top \phi(\vx)
 \end{equation}
@@ -563,6 +571,7 @@ Furthermore, under the linear approximation they showed you can now convert your
 %where the kernel is the so-called Neural Tangent Kernel (NTK, \cite{jacot2018neural}) with Jacobian $\Jac{\weights}{\mathbf{x}} \coloneqq \nabla_\weights f(\mathbf{x})^\top \in \R^{C \times P}$. Alternatively, we could have followed the derivation by \citet{immerImprovingPredictionsBayesian2021}, where they perform a local linearization of the neural network  $f^{\textrm{lin.}}_{\vw^*}(\vx; \vw) = f_{\vw^*}(\vx) + \Jac{\weights^*}{\mathbf{x}} \, (\vw - \vw^*)$. Their mean function differ from ours, \cref{eq-laplace-approx-function-space}, as theirs comes from setting  $\mu(\vx) = f^{\textrm{lin.}}_{\vw_*}(\vx; \vw = \vzeros) = f_{\vw^*}(\vx) - \Jac{\weights^*}{\mathbf{x}} \vw^*$, \ie the difference between the linear model approximation and the neural network function at $\vx$. %which does not seem useful as a prior mean function, 
 %On the other hand, we set $\mu(\vx) = \vzeros$, as common in GP literature and derived from a feature map conversion. \todo{derived what?}
 
+\section{Methods}
 \paragraph{Linearization in the dual parameters}
 As stated in \citet[Lemma~1]{csato2002sparse}, the posterior process mean and covariance functions of a GP prior, combined with a likelihood function and $\dataset$ can be stated as:
 \begin{equation}  \label{eq:gp_pred}

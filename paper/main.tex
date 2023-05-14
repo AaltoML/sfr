@@ -266,7 +266,7 @@ Deep neural networks are known to lack uncertainty estimates, struggle to incorp
 \section{Introduction}
 \label{sec:intro}
 %
-Deep learning has become the cornerstone of contemporary artificial intelligence, proving remarkably effective in tackling supervised and unsupervised learning tasks in the {\em large data}, {\em offline}, and {\em gradient-based training} regime. Despite its success, gradient-based learning techniques exhibit limitations. Firstly how to incorporate uncertainty quantification over predictions which is needed in many applications. Secondly, in the sequential data regime. 
+Deep learning has become the cornerstone of contemporary artificial intelligence, proving remarkably effective in tackling supervised and unsupervised learning tasks in the {\em large data}, {\em offline}, and {\em gradient-based training} regime. Despite its success, gradient-based learning techniques exhibit limitations. Firstly how to incorporate uncertainty quantification over predictions which is needed in many applications. Secondly, in the sequential data regime data arrives not in batches 
 
 Secondly, how to retain information from previous tasks whilst learning new tasks where the tasks aresuch as Continual Learning (CL, \cite{de2021continual})
 
@@ -499,8 +499,34 @@ If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\
 \subsection{Linearization gives rise to a Gaussian process} 
 \label{sec:nn2gp}
 %
-\todo{You need something like this to bridge from the previous, GPs cannot come from nowhere!}
-The structure of the posterior given by the loss-landscape around the MAP weights $\vw^*$  induces a correlation structure on learned model functions of the neural network. These can be seen as possible perturbed versions of $f_{\vw^*}$ that can be used for characterizing ambiguity and uncertainty in the learned model (see \cref{fig:banana} for an example of sampling in weight-space). This gives rise to a probability {\em distribution} over the possible functions. If we limit the interest to the first two moments, we can characterize the resulting posterior over these functions as a Gaussian process (GP).
+Quantifying uncertainty in a Bayesian framework boils down to finding a posterior of $p(\vw \mid \dataset)$ from, which represents the uncertainty over our parameters based on the prior and data. The posterior structure is related to the loss-landscape around the MAP weights $\vw^*$, which induces a correlation structure on functions produced from the neural network's deterministic mapping. Samples from the weight posterior are perturbed versions of $f_{\vw^*}$ characterizing uncertainty in the learned model in the function space. Although the true posterior is intractable given the non-linearities of the neural network sampling techniques available such as Hamiltonian Monte-Carlo (HMC), The uncertainty plotted \cref{fig:banana} shows the induced function space posterior by sampling through the model. However, in most cases, sampling techniques like HMC are not available given the computational burden.
+
+A common approach is to approximate the correlation structure of a distribution centred at the MAP estimate such as the Laplace-GNN \citep{khan2019approximate, daxberger2021laplace, maddox2021fast}. The Laplace GNN takes the MAP solution and approximates the Hessian of our loss function  $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i)$ with the GGN approximation. Another way of viewing the 
+
+In this paper we are concerned with learning posterior directly in the function space. 
+
+
+- distribution over w given to you by the non-linear function. One could sample over weights pass it over the function and you have distribution over functions. HMC is heavy, structure of the problem around the map estimate. characteruze this as the first two moments of the distributions over the functions restrict to the first two moments.  
+
+Replace with a taylor series at the MAP first order taylor expansion in w. degenerate cov function.
+
+- more citations there.
+
+- GP induced by the trained neural network. not GP prior.
+
+- Add the NTK bit back in.
+
+- assume that when you are at the map estimate when you have converged this should be small. 
+
+- Write out that w beomces zero under the expectation.
+
+-  transition from background to methods. 
+
+- More explination of the dual equation 5 the loss landscape link. Perbutation point linked directly to that here. 
+
+- 
+
+
 
 %A Gaussian process characterizes a distribution over functions in terms of the first two moments. The key quantity of a Gaussian process is the prior covariance function (or kernel function) $\kappa(\vx,\vx')$, where $\vx, \vx'$ are input vectors in $\R^{\mathrm{D}}$. We aim to find a kernel based on the neural network to build the Gaussian process posterior.  A linear function in terms of parameters can easily be converted from the weight space to the function space as follows:
 %\begin{equation}
@@ -546,8 +572,8 @@ As stated in \citet[Lemma~1]{csato2002sparse}, the posterior process mean and co
 where $f_i = f_\weights(\vx_i)$, the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{m \times m}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $\kappa_{ii} = \kappa(\vx_i, \vx_i)$.  The dual parameters consist of the vector $\valpha \in \R^{m}$ and vector $\vbeta \in \R^{m}$, defined as:
 \begin{equation}
 \label{eq:dual_param}
-\alpha_i \coloneqq \myexpect_{p(f_i \mid \vy)}[\nabla_{f_i}\log p(y_i \mid f_i)],  \quad
-\beta_i \coloneqq - \myexpect_{p(f_i \mid \vy)}[\nabla^2_{f_i f_i}\log p(y_i \mid f_i)] ,
+\alpha_i \coloneqq \myexpect_{p(\vw \mid \vy)}[\nabla_{f_i}\log p(y_i \mid f_i)],  \quad
+\beta_i \coloneqq - \myexpect_{p(\vw \mid \vy)}[\nabla^2_{f_i f_i}\log p(y_i \mid f_i)] ,
 \end{equation}
 %
 The parameters $(\alpha_i, \beta_i)$ are the dual parameters that arise in the dual formulations used in, for example, support vector machines \citep{cortes1995support}, whose origins are found in work by \citet{kimeldorf1971some}. The above relations holds for generic likelihoods, and no approximations are involved as the expectation is under the exact posterior. The question is how do we form the dual variables without access to the exact posterior and different approximate inference techniques solve the question in different ways. Bound techniques such as \citet{jaakkola1997variational} attempt to bound the integral thus making the integral tractable, while Expecation Propogation (EP) as used in \citet{csato2002sparse} iteratively finds dual variables but sets them to log of the expectation of the approximate posterior. Meanwhile variational inference  \cite{khan2017conjugate, adam2021dual} find them using the variational approximation of the posterior to solve the integral.
@@ -585,10 +611,18 @@ where $\MKzz$ and $\vkzs$ are define similarly to $\MKxx$ and $\vk_{\vx i}$ but 
 
 \section{Sparse function-space sequential learning}
 
-\textbf{Continual learning}
+We have presented a method for converting any trained neural network into a sparse function-space representation.
+In this section, we demonstrate how sequential learning methods can benefit from our function-space representation and it's associated uncertainty estimates.
+
+
+\subsection{Continual learning}
 
 \subsection{Reinforcement learning}
-We now detail how our method can be used in model-based RL.
+A key challenge in RL is to balance the trade-off between exploration and exploitation.
+That is, should the agent select an action that it knows will lead to a high reward (exploitation), or should it select an action that it has
+not selected before, which could lead to either a higher or lower reward (exploration).
+In this section, we detail how our method's principled uncertainty estimates can be used to balance this trade-off using a model-based RL algorithim.
+
 We consider stochastic environments with states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \),
 actions \(\action \in \actionDomain \subseteq \R^{D_{\action}}\) and transition dynamics
 \(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \), such that
@@ -602,45 +636,56 @@ assume that there is a known reward function $r : \stateDomain \times \actionDom
 % \(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \), such that
 % $\state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}$ where  $\noise_{t}$
 % is i.i.d. transition noise.
-The goal of RL is to find the policy \(\pi : \stateDomain \rightarrow \actionDomain\) that maximises the sum of discounted rewards
+% $\mathbb{E}_{\noise_{0:\infty}} \big[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \big]$
+% \begin{align} \label{eq-model-free-objective}
+% \policy^{*} = \arg \max_{\policy \in \policyDomain} J(\transitionFn, \policy) = \arg \max_{\policy \in \policyDomain} \mathbb{E}_{\noise_{0:\infty}} \bigg[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \bigg]
+% \quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t},
+% \end{align}
+The goal of RL is to find the policy \(\pi : \stateDomain \rightarrow \actionDomain\)
+(from a set of policies $\Pi$) that maximises the sum of discounted rewards
 in expecation over the transition noise,
 \begin{align} \label{eq-model-free-objective}
-\policy^{*} = \arg \max_{\policy \in \policyDomain} J(\transitionFn, \policy) = \arg \max_{\policy \in \policyDomain} \mathbb{E}_{\noise_{0:\infty}} \left[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \right]
-\quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t},
+J(\transitionFn, \policy) = \mathbb{E}_{\noise_{0:\infty}} \bigg[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \bigg]
+\quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}
 \end{align}
-where $\gamma \in [0, 1]$ is a discount factor and $\Pi$ is a set of policies.
-
-
-\textbf{Model-learning}
-In model-based RL, the state transition data set \(\mathcal{D} = \{\{(s_{t},a_{t}), s_{t+1}\}^{T_{i}}_{t=1}\}_{i=0}^{N}\) is first used to
-learn a dynamic model \(f_{\mathbf{w}})\) using supervised learning.
-\cref{alg-mbrl} shows the typical model-based RL loop.
-
+where $\gamma \in [0, 1]$ is a discount factor.
+In this work, we consider model-based RL where a model of the transition dynamics \(f_{\mathbf{w}} \approx \transitionFn\) is learned and then used by a planning algorithm.
+A simple approach is to use the learned dynamic $f_{\mathbf{w}^{*}}$,
 \begin{align} \label{eq-fast-update-mpc}
-  \policy_{i+1}^{\text{PS}}(\state) &= \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}}
-J^{\Horizon}(\action_{0:\Horizon}, \transitionFn) + \stateValueFn(\state_{\Horizon+1})
-\quad
-  \stateValueFn(\state) &= \mathbb{E} \left[ \sum_{t=0}^{\infty}     \discount^{t} \rewardFn(\state_{t},\action_{t}) \mid \state_{0}=\state \right] %\label{eq-fast-update-mpc-old}
+  \policy^{\text{Greedy}}(\state) &= \arg \max_{\pi \in \Pi} J(f_{\mathbf{w}^{*}}, \pi)
 \end{align}
-
-
-
-
-In model-based RL, we obtain the posterior over the dynamics \(p(f\mid\mathcal{D})\) after performing (approximate) Bayesian
-inference given a state transition data set \(\mathcal{D} = \{\{(s_{t},a_{t}), s_{t+1}\}^{T_{i}}_{t=1}\}_{i=0}^{N}\).
-\cref{alg-mbrl} shows the typical model-based RL loop.
-Importantly, the dynamics are usually only updated after an episode $i$.
-
-
-\textbf{Posterior sampling}
-Given the posterior dynamics \(p(\transitionFn \mid \mathcal{D})\),
-an effective and  common approach is to simply take the expecation over both the aleatoric and epistemic uncertainty,
-
+However, we can leverage our method to
+$p(\transitionFn_{\mathbf{w}^{*}} \mid \dataset) = \mathcal{N}$
 \cite{osbandWhyPosteriorSampling2017,osbandMoreEfficientReinforcement2013}
-\begin{align} \label{eq-posterior-sampling}
-\policy_{i+1}^{\text{PS}} = \arg \max_{\policy \in \policyDomain} \left[ J(\transitionFn, \policy) \right] \quad \text{s.t. } \transitionFn \sim p(\transitionFn \mid \dataset_{0:i})
+\begin{align} \label{eq-fast-update-mpc}
+  \policy^{\text{PS}}(\state) &= \arg \max_{\pi \in \Pi} J(\hat{f}, \pi)
+\quad \text{s.t. } \tilde{\transitionFn} \sim q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset),
 \end{align}
 
+Our exact set up uses
+Model Predictive Path Integral (MPPI) control
+\cite{panSample2015}
+\cite{williamsModel2017}
+\todo{what is correct citation for MPPI?}
+A principled approach
+% Given the posterior dynamics \(p(\transitionFn \mid \mathcal{D})\),
+% an effective and  common approach is to simply take the expecation over both the aleatoric and epistemic uncertainty,
+
+\textbf{Appendix}
+
+% \cref{alg-mbrl} shows the typical model-based RL loop.
+\begin{align} \label{eq-fast-update-mpc}
+  \policy_{i+1}^{\text{PS}}(\state) = \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}}
+\E \bigg[ \sum_{t=0}^{H-1} \gamma^{t} r(\state_{t},\action_{t}) \mid \state_{0}=\state  \bigg] + Q_{\theta}(\state_{\Horizon}, \action_{H})
+\quad \text{s.t. } \state_{t+1} &= \hat{\transitionFn}(\state_{t}, \action_{t}) + \noise_{t} \\
+\hat{\transitionFn} &\sim p(\transitionFn \mid \dataset),
+\end{align}
+with $\hat{\transitionFn} \sim p(\transitionFn \mid \dataset)$
+
+
+
+We use deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016} to learn an action value function $Q_{\theta}$.
+Note that we also learn a policy but its sole purpose is for learning the value function.
 
 
 
@@ -915,6 +960,11 @@ an effective and  common approach is to simply take the expecation over both the
 
 \todo{Overview of experiments}
 
+Our experiments seek to answer the following questions:
+\begin{itemize}
+  \item Does NN2SFR caputure good uncertainty estimates
+\end{itemize}
+
 \subsection{Capturing uncertainty in UCI tasks under supervised learning}
 %
 
@@ -1025,7 +1075,7 @@ an effective and  common approach is to simply take the expecation over both the
  \end{tikzpicture}}
  \end{subfigure}
  \hfill
-  \setlength{\figurewidth}{.28\textwidth}
+  \setlength{\figurewidth}{.4\textwidth}
   \setlength{\figureheight}{\figurewidth}
  \begin{subfigure}{.78\textwidth}
    % \tikz\node[minimum width=\textwidth,minimum height=.35\textwidth,fill=black!10,rounded corners=2pt]{RL trjectories or something interesting?};
@@ -1033,7 +1083,8 @@ an effective and  common approach is to simply take the expecation over both the
    \input{./fig/rl.tex}
  \end{subfigure}
  \hfill
- \caption{Add caption.}
+ \caption{\textbf{Reinforcement learning experiments} Training curves showing that our model's uncertainty estimates improve sample efficiency in RL.
+   Our method (blue/green) converges to the optimal solution in fewer environment steps than the baseline model-based RL method (magenta) and (DDPG) the model-free baseline  (yellow).}
  \label{fig:rl}
 \end{figure}
 

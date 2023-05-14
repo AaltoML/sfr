@@ -7,7 +7,7 @@ from torch.nn.utils import parameters_to_vector
 
 from preds.optimizers import LaplaceGGN, get_diagonal_ggn
 from preds.models import SiMLP
-from src import BernoulliLh, CategoricalLh, NTKSVGP
+from src import BernoulliLh, CategoricalLh, NTKSVGP, NN2GPSubset
 import src as ntksvgp
 
 # from preds.likelihoods import BernoulliLh, CategoricalLh
@@ -83,23 +83,32 @@ def evaluate(p, y, likelihood, name, data):
 
 
 def create_ntksvgp(
-    X_train, y_train, model, likelihood, prior_prec, n_inducing=64, batch_size=1000, device="cpu"
+    X_train, y_train, model, likelihood, prior_prec, n_inducing=64, batch_size=1000, device="cpu", subset=False
 ):
     data = (X_train, y_train)
     n_classes = model(X_train).shape[-1]
     print(f"N classes: {n_classes}")
     print(f"Prior prec: {prior_prec}")
     prior = ntksvgp.priors.Gaussian(params=model.parameters, delta=prior_prec)
-    svgp = NTKSVGP(
-        network=model,
-        prior=prior,
-        output_dim=n_classes,
-        likelihood=likelihood,
-        num_inducing=n_inducing,
-        dual_batch_size=batch_size,
-        jitter=0,
-        device=device,
-    )
+    if not subset:
+        svgp = NTKSVGP(
+            network=model,
+            prior=prior,
+            output_dim=n_classes,
+            likelihood=likelihood,
+            num_inducing=n_inducing,
+            dual_batch_size=batch_size,
+            jitter=0,
+            device=device,
+        )
+    else:
+       svgp = NN2GPSubset(network=model,
+                          prior=prior,
+                          likelihood=likelihood,
+                          output_dim=n_classes,
+                          subset_size=n_inducing,
+                          jitter=0,
+                          device=device)
     svgp.set_data(data)
     return svgp
 
@@ -133,7 +142,9 @@ def inference(
     res = dict()
     torch.manual_seed(seed)
     if ds_train.C == 2:
-        likelihood = BernoulliLh(EPS=0.000000001)
+        eps = 0.000000001
+        eps = 0
+        likelihood = BernoulliLh(EPS=eps)
         K = 1
     else:
         eps = 0.0000000001
@@ -195,22 +206,17 @@ def inference(
 
     # GP subset predictive
 
-    sparse_idx = torch.randperm(X_train.shape[0])[:n_inducing]
-    sparse_x = X_train[sparse_idx]
-    sparse_y = y_train[sparse_idx]
-    if isinstance(likelihood_svgp, CategoricalLh):
-        sparse_y = sparse_y.squeeze()
-    else:
-        sparse_y = sparse_y.unsqueeze(-1)
+    
     svgp_subset = create_ntksvgp(
-        sparse_x,
-        sparse_y,
+        X_train,
+        y_input,
         model,
         likelihood_svgp,
         prior_prec_n,
         batch_size=batch_size,
         n_inducing=n_inducing,
         device=device,
+        subset=True
     )
     fs_train = preds_svgp(X_train, svgp_subset, likelihood_svgp, samples=n_samples, batch_size=batch_size, device=device)
     fs_test = preds_svgp(X_test, svgp_subset, likelihood_svgp, samples=n_samples, batch_size=batch_size, device=device)

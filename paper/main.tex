@@ -401,7 +401,7 @@ Calculating the posterior distribution of a Bayesian neural network is usually i
 One common approach for uncertainty with neural networks is a Laplace-GGN approximation \citep{daxberger2021laplace}, which takes a trained neural network and linearises it around the optimal weights. The resulting linear model can be used to obtain uncertainty estimates and refine the neural network predictions \citep{immerScalable2021}, and is linear with respect to the weights. Therefore, as shown in \citep{immerScalable2021, khan2019approximate}, the linear model can be converted to a Gaussian process (GP), which is then used to obtain the uncertainty estimates.
 However, the GP introduces a computational scaling that is cubic in the number of data points ($\mathcal{O}(n^3)$). Many approaches apply crude approximations to alleviate the computational costs, \eg, considering only a subset of the training datas, but are still obtain good uncertainty estimates \citep{immerScalable2021}\todo{other methods?}. 
 
-The Hessian can be efficiently approximated using the generalised Gauss-Newton algorithm \cite{botev2017practical} or by Kronecker factorisation \cite{martens2015optimizing,ritter2018kfac}.
+The Hessian can be efficiently approximated using the generalised Gauss-Newton approximation \cite{botev2017practical} or by Kronecker factorisation \cite{martens2015optimizing,ritter2018kfac}.
 
 
 %% CL section 
@@ -490,8 +490,8 @@ In supervised learning, given a data set $\dataset = \{(\mathbf{x}_{i} , \mathbf
 %
 \begin{equation} \label{eq-empirical-risk}
   \weights^{*} = 
-  \arg \min_{\weights} \mathcal{L}(\dataset,\weights) =
-  \arg \min_{\weights} \sum_{i=1}^{n} \ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) + \delta \mathcal{R}(\weights).
+  \argmin_{\weights} \mathcal{L}(\dataset,\weights) =
+  \argmin_{\weights} \sum_{i=1}^{n} \ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) + \delta \mathcal{R}(\weights).
 \end{equation}
 %
 If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\weights(\mathbf{x}_{i}))$ and the regularizer $\mathcal{R}(\weights) = \frac{1}{2}\|\weights\|^{2}_2$, then we can view \cref{eq-empirical-risk} as the maximum {\it a~posteriori} (MAP) solution to a Bayesian objective, where the regularization weight takes the role of a prior precision parameter, \ie, $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$.
@@ -501,25 +501,29 @@ If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\
 \label{sec:nn2gp}
 %
 
-Quantifying uncertainty in a Bayesian framework means finding a posterior of $p(\vw \mid \dataset)$. The posterior represents the uncertainty over our parameters based on the prior and the data. The posterior structure directly relates to the optimization loss around the MAP weights $\vw^*$. Furthermore, the landscape in the weight space induces functions produced by the neural network's deterministic mapping. If one was to sample from the weight posterior, the corresponding functions created can be viewed as perturbed versions of the $f_{\vw^*}$. In most applications, we care about predictions from the neural network, so the distribution in the function space not in the weight space. 
+Quantifying uncertainty in a Bayesian framework means finding a posterior of $p(\vw \mid \dataset)$. The posterior represents the uncertainty over our parameters based on the prior and the data. The posterior structure directly relates to the optimization loss around the MAP weights $\vw^*$. Furthermore, the landscape in the weight space induces functions produced by the neural network's deterministic mapping. If one was to sample from the weight posterior, the corresponding functions created can be viewed as perturbed versions of the $f_{\vw^*}$. In most applications, we care about predictions from the neural network, so the distribution is in the function space and not in the weight space. 
 
-Although the true posterior is intractable given the non-linearities of the neural network sampling techniques are available such as Hamiltonian Monte-Carlo (HMC), The uncertainty plotted \cref{fig:banana} shows the induced function space posterior by sampling through the model. However, in most cases, sampling techniques like HMC are not available, given the computational burden.
+Although the true posterior is intractable given the non-linearities of the neural network, one can restore to sampling techniques such as Hamiltonian Monte-Carlo (HMC). However, even in this case, the high computational costs make them impractical. In \cref{fig:banana}, we show a qualitative example of the induced function space posterior obtained with our method compared to the posterior obtained through HMC sampling on the Banana toy dataset. \todo{make it more straightforward that we are computationally cheaper?}
 
-A common approach is to approximate the correlation structure of a distribution centred at the MAP estimate as done in the Laplace-GGN \citep{khan2019approximate, daxberger2021laplace, maddox2021fast}. The Laplace GGN takes the MAP solution and approximates the Hessian of the loss function  $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i)$ with the GGN approximation. Another way of viewing the approximation is that we build the following approximate model $\hat{f}_\weights(\mathbf{x}_{i}) = \Jac{\weights_*}{\mathbf{x}_i} \vw_i $  where $\Jac{\weights}{\mathbf{x}} \coloneqq \nabla_\weights f(\mathbf{x})^\top \in \R^{C \times P}$ is the Jacobian as was pointed out in \citep{khan2019approximate}. Using the Hessian of the approximate model, we arrive at the Laplace-GGN posterior for $q(\vw)$. As pointed out in \citet{khan2019approximate}, a Gaussian posterior covariance approximation in the weight space implies a covariance structure in the function space.
+A common approach is to approximate the correlation structure of a distribution centred at the MAP estimate as done in the Laplace-GGN \citep{khan2019approximate, daxberger2021laplace, maddox2021fast}. The Laplace-GGN takes the MAP solution and approximates the Hessian of the loss function  
+% $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i)$ 
+with the Generalized Gaussian-Newton approximation (GGN). 
+Following the work of \citep{khan2019approximate}, we can view this approximation as building an approximate linear model of the neural network as $\hat{f}_\weights(\mathbf{x}) = \Jac{\weights_*}{\mathbf{x}} \, \weights$, where $\Jac{\weights}{\mathbf{x}} \coloneqq \nabla_\weights f(\mathbf{x})^\top \in \R^{C \times P}$ is the Jacobian at the MAP. Using the Hessian of the approximate model, we arrive at the Laplace-GGN posterior for $q(\vw)$. As pointed out in \citet{khan2019approximate}, a Gaussian posterior covariance approximation in the weight space implies a covariance structure in the function space. \todo{the last two sentences are not linked to the previous ones}
 
-In this paper we are concerned with learning posterior directly in the function space that is having a $q(\vf)$ instead of a $q(\vw)$. We choose is to use a Gaussian process an extension of the multivariate normal that characterizes a distribution over functions in terms of the first two moments, a mean $\mu(\cdot)$ and covariance function $\kappa(\cdot,\cdot)$ (kernel). We aim to find a kernel and mean function based on the neural network to build the Gaussian process posterior.  A linear function in terms of parameters can be converted from the weight space to the function space (see Ch.~XXX in \cite{rasmussen2006gaussian} as follows:
+In this paper, we are concerned with learning the posterior $q(\vf)$ directly in the function space, instead of $q(\vw)$. We choose to use a Gaussian process, an extension of the multivariate normal that characterizes a distribution over functions in terms of the first two moments, a mean $\mu(\cdot)$ and covariance  (or kernel) function $\kappa(\cdot,\cdot)$. We aim to these two functions based on the neural network to then build the Gaussian process posterior. A function linear with respect to its parameters can be converted from the weight space to the function space (see Ch.~XXX in \cite{rasmussen2006gaussian} as follows: \todo{this part needs to be improved the linear function pops out of nowhere}
 \begin{equation} \label{eq:weight_func}
 g_\weights(\mathbf{x}_{i}) = \phi^\top\!(\vx) \, \vw \implies \mu(\vx) = 0 \quad \kappa(\mathbf{x}, \mathbf{x}') = \frac{1}{\delta} \phi(\vx)^\top \phi(\vx)
 \end{equation}
 
-We can therefore use the approximate linear model defined by the GGN approximation to define our GP derived from the trained neural network,
-\begin{equation} \label{eq-laplace-approx-function-space}
+Therefore, we can use the approximate linear model defined by the Laplace-GGN approximation to define our GP derived from the trained neural network,
+\begin{equation} 
+\label{eq-laplace-approx-function-space}
 % g(\vx) \sim \GP \left( \mu(\vx), \kappa(\vx, \vx') \right) \quad \text{with} \quad
   \mu(\vx) =  0 \quad \text{and} \quad
   \kappa(\mathbf{x}, \mathbf{x}')
   = \frac{1}{\delta} \Jac{\weights^*}{\mathbf{x}}\JacT{\weights^*}{\mathbf{x}'},
 \end{equation}
-where the kernel is the so-called Neural Tangent Kernel (NTK, \cite{jacot2018neural}), given we have a kernel function, we can then combine it with the $\dataset$ to form the posterior. In \citep{khan2019approximate} they took a similar approach but instead of fitting the GP posterior to the actual data they adjusted the data to be pseudo data. Similarly, using a first order approximation of the neural network function to form a GLM model \citet{immerImprovingPredictionsBayesian2021} also arrives at the same NTK function for the GP derived from the neural network, however a different mean function. Both previous approaches have attempted to adjust the GP posterior mean function to ensure the predictions are from the neural network $f_{\vw^*}(\vx)$. In our method, we wish to make predictions from the derived GP and thus do not make such adjustments. We now present the general formulation of the functional representation of our trained neural network
+where the kernel is the so-called Neural Tangent Kernel (NTK, \cite{jacot2018neural}). With this kernel function, we can then combine it with the dataset $\dataset$ to form the posterior $q(\vf)$. \citet{khan2019approximate} took a similar approach, but instead of fitting the GP posterior to the actual data, they adjusted the data to be pseudo-data.\todo{The reader may wonder what is pseudo-data then} Similarly, \citet{immerImprovingPredictionsBayesian2021} obtain the same covariance function but a different mean because they rely on a first order approximation of the neural network to form a Bayesian GLM model. Both approaches attempted to adjust the GP posterior mean function to ensure the predictions are from the neural network $f_{\vw^*}(\vx)$. In our method, we wish to make predictions from the derived GP and thus we avoid such adjustments. We now present the general formulation of the functional representation of our trained neural network. \todo{this sentence can be avoided probably}
 
 
 \section{Methods}
@@ -576,16 +580,25 @@ In this section, we demonstrate how sequential learning methods can benefit from
 
 
 \subsection{Continual Learning}
-In Continal Learning,
+% Definition of CL -> a sequence of tasks 
 
 \begin{equation}
  	\bar{\MB}^{-1}_s = \MKzz^{-1} \vbeta_\vu \MKzz^{-1} \in \R^{m \times m}, \quad \forall s \in [1, t-1]
  \end{equation}
 
 \begin{equation}
-	\mathcal{R_\textit{SFR}}(\mathbf{w}) = \sum_{s=1}^{t-1} \frac{1}{m} \left[\left(f_{\vw}(\MZ_{s}) - f_{\vw_{s}}(\MZ_s) \right)^\T \bar{\MB}^{-1}_{s} \left(f_{\vw}(\MZ_{s}) - f_{\vw_{s}}(\MZ_s) \right) \right]
+	\mathcal{R}_\textit{SFR}(\weights) = \sum_{s=1}^{t-1} \frac{1}{m} \left[\left(f_{\weights}(\MZ_{s}) - f_{\weights_{s}}(\MZ_s) \right)^\T \bar{\MB}^{-1}_{s} \left(f_{\weights}(\MZ_{s}) - f_{\weights_{s}}(\MZ_s) \right) \right]
 \end{equation} 
-with $f_\vw(\MZ_{s}), f_{\vw_s}(\MZ_s) \in \R^m$ are vectors of the outputs of the neural networks with the current weights $\vw$ and stored function outputs after task $s$
+with $f_\vw(\MZ_{s}), f_{\vw_s}(\MZ_s) \in \R^m$ are vectors of the outputs of the neural networks with the current weights $\vw$ and stored function outputs of the neural network at the MAP optimum for task $s$. 
+
+%\begin{equation}
+%	\argmin_{\weights} \sum_{i=1}^{n} \ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) + \delta \mathcal{R}(\weights) + \tau \mathcal{R}_\textit{SFR}(\weights)
+%\end{equation}
+
+\begin{equation}
+	\weights_t^* = \argmin_{\weights} \mathcal{L}(\mathcal{D}_t, \weights) + \tau \mathcal{R}_\textit{SFR}(\weights)
+\end{equation}
+
 
 
 

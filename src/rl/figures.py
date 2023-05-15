@@ -49,10 +49,10 @@ WANDB_RUNS = OmegaConf.create(
 )
 
 LABELS = {
-    "nn2svgp-sample": "NN2SVGP",
-    "nn2svgp-sample-with-updates": "NN2SVGP with updates",
-    "mlp": "MLP",
-    "ddpg-06": "DDPG",
+    "nn2svgp-sample": "\our",
+    "nn2svgp-sample-with-updates": "\our with updates",
+    "mlp": "\sc mlp",
+    "ddpg-06": "\sc ddpg",
 }
 COLORS = {
     "nn2svgp-sample": "c",

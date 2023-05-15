@@ -1150,7 +1150,8 @@ We compare a model-based RL agent using a simple MLP dynamic model with
    \centering\scriptsize
    \setlength{\figurewidth}{\textwidth}
    \setlength{\figureheight}{.5\figurewidth}
-   \pgfplotsset{axis on top}
+   \pgfplotsset{axis on top,ymajorgrids,axis line style={draw=none} }
+   \pgfplotsset{grid style={line width=.1pt, draw=gray!10,dashed}}
    \input{./fig/rl.tex}
  \end{subfigure}
  \hfill

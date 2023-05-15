@@ -291,7 +291,7 @@ In this paper, we demonstrate that any neural network can be represented in term
 
 The contributions of this paper are:
 %
-{\em (i)}~We introduce \our, a new approach for sparse representation of the neural network in the function space.
+{\em (i)}~We introduce \our, a new approach for sparse functional representation of the neural network.
 {\em (ii)}~We demonstrate that, despite its sparsity, our method effectively captures predictive uncertainty, provides means of updating the model post-training, and gives a a compact representation suitable for continual learning.
 {\em (iii)}~We provide extensive experiments for showcasing our approach and demonstrate significance and applicability across supervised, continual, and reinforcement learning, aiming to stimulate future use of the approach.
 
@@ -403,7 +403,7 @@ Calculating the posterior distribution of a Bayesian neural network is usually i
 \textbf{Function-space methods}
 Function-space perspectives on uncertainty in neural networks often use a Laplace-GGN approximation \citep{daxberger2021laplace}, linearizing a trained neural network around optimal weights. The Hessian can be efficiently approximated using the generalized Gauss--Newton approximation (GGN)~\cite{botev2017practical}. While efficient, it suffers from cubic scaling in parameter count, necessitating approximations like Kronecker factorisation \cite{martens2015optimizing, ritter2018kfac}. This linear model, linear in the weights, refines predictions and provides uncertainty estimates \citep{immer2021scalable}. This model has a convenient interpretation as a GP \cite{immer2021scalable, khan2019approximate, maddox2021fast}.
 %
-However, the GP's cubic $\mathcal{O}(N^3)$ scaling with data points $N$ requires costly approximations, often resorting to using data subsets \cite{immer2021scalable}. In the GP community, sparse approximations have mitigated this scaling issue (\eg, \cite{titsias2009variational,hensman2013gaussian}), but combining neural network linearization with sparse methods remains unclear without resorting to subset methods. Our work addresses this by utilizing the GP's dual parameters \cite{csato2002sparse}, previously applied to non-conjugate likelihood models \cite{adam2021dual}.
+However, the GP's cubic $\mathcal{O}(n^3)$ scaling with data points $n$ requires costly approximations, often resorting to using data subsets \cite{immer2021scalable}. In the GP community, sparse approximations have mitigated this scaling issue (\eg, \cite{titsias2009variational,hensman2013gaussian}), but combining neural network linearization with sparse methods remains unclear without resorting to subset methods. Our work addresses this by utilizing the GP's dual parameters \cite{csato2002sparse}, previously applied to non-conjugate likelihood models \cite{adam2021dual}.
 
 %wang2019exact
 %
@@ -416,7 +416,7 @@ However, the GP's cubic $\mathcal{O}(N^3)$ scaling with data points $N$ requires
 %However, encoding functional knowledge in the weights does not guarantee a good quality of the predictions, thus a better to introduce a function-space regularization \citep{li2018lwf, benjamin2018measuring, titsias2019functional, buzzega2020dark, pan2020continual, rudner2022continual}. These methods bridge the gap between objective and rehearsal-based methods since they rely on a subset of the training data for each task to compute the regularization term. Recently proposed methods, such as DER~\citep{buzzega2020dark}, FROMP~\citep{pan2020continual}, and S-FSVI~\citep{rudner2022continual} achieve state-of-the-art performances among the objective-based techniques in several CL benchmarks. 
 
 \textbf{Function-space methods for sequential learning} 
-Continual learning (CL) hinges on how to deal with the non-stationary training distribution, wherein the training process may overwrite previously learned parameters, causing catastrophic forgetting. CL approaches fall into inference-based, rehearsal-based, and model-based methods (see \cite{parisi2019continual, de2021continual} for an overview). The methods in the first category usually tackle this problem with weight-space regularization, such as EWC~\citep{kirkpatrick2017overcoming}, SI~\citep{zenke17a}), or VCL~\citep{nguyen-tuongModel2009} that induce retention of previously learned information in the weights alone. However, encoding functional knowledge in the weights does not guarantee good quality of the predictions. Function-space regularization techniques~\cite{li2018lwf, benjamin2018measuring, titsias2019functional, buzzega2020dark, pan2020continual, rudner2022continual} address this by relying on training data subsets for each task to compute the regularization term. These methods bridge the gap between objective and rehearsal-based methods since they use a subset of the training data for each task to compute the regularization term. Recently proposed methods, \eg DER~\citep{buzzega2020dark}, FROMP~\citep{pan2020continual}, and S-FSVI~\citep{rudner2022continual} achieve state-of-the-art performance among the objective-based techniques in several CL benchmarks. 
+Continual learning (CL) hinges on how to deal with the non-stationary training distribution, wherein the training process may overwrite previously learned parameters, causing catastrophic forgetting \citep{mccloskey1989catastrophic}. CL approaches fall into inference-based, rehearsal-based, and model-based methods (see \cite{parisi2019continual, de2021continual} for an overview). The methods in the first category usually tackle this problem with weight-space regularization, such as EWC~\citep{kirkpatrick2017overcoming}, SI~\citep{zenke17a}), or VCL~\citep{nguyen-tuongModel2009} that induce retention of previously learned information in the weights alone. However, encoding functional knowledge in the weights does not guarantee good quality of the predictions. Function-space regularization techniques~\cite{li2018lwf, benjamin2018measuring, titsias2019functional, buzzega2020dark, pan2020continual, rudner2022continual} address this by relying on training data subsets for each task to compute the regularization term. These methods bridge the gap between objective and rehearsal-based methods since they use a subset of the training data for each task to compute the regularization term. Recently proposed methods, \eg, DER~\citep{buzzega2020dark}, FROMP~\citep{pan2020continual}, and S-FSVI~\citep{rudner2022continual} achieve state-of-the-art performance among the objective-based techniques in several CL benchmarks. 
 
 \textbf{Uncertainty quantification in RL}
 A key challenge in RL is balancing the trade-off between exploration and exploitation \cite{sutton2018reinforcement}.
@@ -557,22 +557,23 @@ While neural networks are deterministic mappings defined by their weights, the u
 
 
 \textbf{Linearization gives rise to a Gaussian process}
-We are concerned with capturing the distribution over the neural network model functions, in terms of the first two moments of the distribution. A Gaussian process is fully characterized by these moments: a mean function $\mu(\cdot)$ and a covariance (kernel) function $\kappa(\cdot,\cdot)$. 
+Our goal is to capture the distribution over the neural network model functions through their first two moments. The first moments characterize a Gaussian process with a mean function $\mu(\cdot)$ and a covariance function (kernel) $\kappa(\cdot,\cdot)$. 
 Recent work \cite{khan2019approximate,maddox2021fast} has shown that linearizing approximations in the weight space lead to function-space equivalent approximations.
-As Gaussian distributions remain tractable under linear transformations, a linear function in terms of parameters can be converted from the weight space to the function space (see Ch.~2.1 in \cite{rasmussen2006gaussian}) as follows:\begin{equation} \label{eq:weight_func}
+As Gaussian distributions remain tractable under linear transformations, a linear function in terms of parameters can be converted from the weight space to the function space (see Ch.~2.1 in \cite{rasmussen2006gaussian}) as follows:
+%
+\begin{equation} \label{eq:weight_func}
 f_\weights(\vx) \approx 
 %g_\weights(\mathbf{x}) = 
-\phi^\top\!(\vx) \, \vw \implies \mu(\vx) = 0 \quad \kappa(\vx, \vx') = \frac{1}{\delta} \phi^\T\!(\vx) \, \phi(\vx')
+\phi^\top\!(\vx) \, \vw \quad\implies\quad \mu(\vx) = 0 \quad \text{and} \quad \kappa(\vx, \vx') = \frac{1}{\delta} \phi^\T\!(\vx) \, \phi(\vx').
 \end{equation}
 % The posterior structure directly relates to the optimization loss around the MAP weights $\vw^*$.
-A common approach is to approximate the correlation structure of a distribution centred at the MAP estimate as done in the Laplace-GGN \citep{khan2019approximate, daxberger2021laplace, maddox2021fast}. The Laplace-GGN takes the MAP solution and approximates the Hessian of the loss function
-% $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i)$
+A common approach is to approximate the correlation structure of a distribution centred at the MAP estimate as done in the Laplace-GGN~\cite{khan2019approximate, daxberger2021laplace, maddox2021fast}. 
+The Laplace-GGN takes the MAP solution and approximates the Hessian of the loss function
 with the GGN.
-Following the work of \citep{khan2019approximate}, we can view this approximation as building an approximate linear model of the neural network as $f_{\weights^*}(\vx) \approx 
+Following the work of \citet{khan2019approximate}, we can view this approximation as building an approximate linear model of the neural network as $f_{\weights^*}(\vx) \approx 
 %g_{\weights}(\vx) = 
 \Jac{\weights_*}{\vx} \, \weights$, where $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{C \times P}$ is the Jacobian at the MAP.
-Using the Hessian of the approximate model, we arrive at the Laplace-GGN approximate posterior for $q(\vw)$.
-\todo{do we need this sentence about the Hessian to get Laplace-GGN??}
+Using the Hessian of the approximate model, we arrive at the Laplace-GGN approximate posterior for $q(\vw)$. 
 Therefore, the Laplace-GGN linear model can be used to convert our weight space model to the function space by,
 \begin{equation} 
 \label{eq-laplace-approx-function-space} 
@@ -581,18 +582,23 @@ Therefore, the Laplace-GGN linear model can be used to convert our weight space 
   \kappa(\vx, \vx')
   = \frac{1}{\delta} \Jac{\weights^*}{\vx} \, \JacT{\weights^*}{\vx'}, 
 \end{equation}
-where the kernel is the so-called Neural Tangent Kernel (NTK, \cite{jacot2018neural}). In \cref{eq-laplace-approx-function-space}, for notational convenience, we restricted the function output to single dimension, but this could be easily extended for the multi-dimensional case. With this kernel function, we can then combine it with the dataset $\dataset$ to form the posterior $q(\vf)$. \citet{khan2019approximate} took a similar approach, but instead of fitting the GP posterior to the actual $\vy$, they rely on a transformation of $\vy$ referred as pseudo-data. Similarly, \citet{immer2021improving} obtain the same covariance function but a different mean because they rely on a first order approximation of the neural network to form a Bayesian GLM model. Both approaches attempted to adjust the GP posterior mean function to ensure the predictions are from the neural network $f_{\vw^*}(\vx)$. In our method, we wish to make predictions from the derived GP and thus we avoid such adjustments. We now present the general formulation of the sparse functional representation of our trained neural network based on the non-sparse approximation. 
+where the kernel is the so-called Neural Tangent Kernel (NTK, \cite{jacot2018neural}). In \cref{eq-laplace-approx-function-space}, we restrict the function output to a single dimension for notational simplicity, yet this formulation can be readily extended to the multi-output scenario. With this kernel function, we can combine it with the data set $\dataset$ to construct the posterior $q(\vf)$. 
+%
+\citet{khan2019approximate} took a similar approach, but instead of fitting the GP posterior to the actual $\vy$, they rely on a transformation of $\vy$ referred as {\em pseudo}-data. Similarly, \citet{immer2021improving} obtain the same covariance function but use a different mean because they rely on a first-order approximation of the neural network to form a Bayesian GLM model. Both approaches attempted to adjust the GP posterior mean function to ensure the predictions are from the neural network $f_{\vw^*}(\vx)$. 
+Contrarily, our methodology intends to make predictions directly from the derived GP, thus evading such adjustments. Next, we will present the general formulation of the sparse functional representation of our trained neural network based on the non-sparse approximation. 
 
 
 
-\section{\our: Sparse Function-space Represenation of neural networks}
-\paragraph{GP in the dual parameters}
-As stated in \citet[Parameterization Lemma~1]{csato2002sparse}, the mean and covariance functions of the posterior process $f_{\textrm{post}}$, found through the Bayesian update using the GP prior and the likelihood function, can be parameterized by the dual parameters, $\valpha$ and $\vbeta$,
+\section{\our: Sparse function-space represenation of neural networks}
+%\paragraph{GP in the dual parameters}
+The early work by \citet{csato2002sparse} (Parameterization Lemma~1) states that the mean and covariance functions of the posterior process $f_{\textrm{post}}$, found through the Bayesian update using the GP prior and the likelihood function, can be parameterized by `dual' parameters, $\valpha$ and $\vbeta$,
+%
 \begin{equation}  \label{eq:gp_pred}
   \myexpect_{p(f_i \mid\vy)}[f_i]= \vk_{\vx i}^\top \valpha \quad \text{and} \quad
-  \mathrm{Var}_{p(f_i \mid \vy)}[f_i] = \kappa_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i},
+  \mathrm{Var}_{p(f_i \mid \vy)}[f_i] = k_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i},
 \end{equation}
-where the $ij$th entry of the matrix $\MKxx \in \R^{n \times n}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$th element is $\kappa(\vx_i, \vx_j)$, and $\kappa_{ii} = \kappa(\vx_i, \vx_i)$.  The dual parameters are the vector $\valpha \in \R^{m}$ and vector $\vbeta \in \R^{m}$, defined as:
+%
+where the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{n \times n}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $k_{ii} = \kappa(\vx_i, \vx_i)$.  The dual parameters are the vector $\valpha \in \R^{m}$ and vector $\vbeta \in \R^{m}$, defined as:
 \begin{equation}
 \label{eq:dual_param}
 \alpha_i \coloneqq \myexpect_{p(\vw \mid \vy)}[\nabla_{f_i}\log p(y_i \mid f_i)],  \quad
@@ -630,7 +636,7 @@ where the sparse dual variables are now a sum over all data points, with $\valph
    \myexpect_{q_{\vu}(\vf)}[f_i] = \vkzs^{\T} \MKzz^{-1}   \valpha_{\vu} , \quad 
    \textrm{Var}_{q_{\vu}(\vf)}[f_i]  = \kappa_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \vbeta_{\vu})^{-1} ]\vkzs
 \end{equation}
-where $\MKzz$ and $\vkzs$ are defined similarly to $\MKxx$ and $\vk_{\vx i}$ but over the inducing points $\MZ \in \R^{M \times D} $  instead of the full dataset $\dataset$. The key quantities we need to make predictions from our sparse GP from the converged neural network are $(\hat{\alpha}_i, \hat{\beta}_i)$ \cref{eq:dual_param_laplac}\todo{these variables need another subscript for differentiate that from the values computed at the data points} and a kernel function $\kappa$ . Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred}, we can see that the computational complexity went from $\mathcal{O}(n^3)$ to $\mathcal{O}(m^3)$, with $m \ll n$.  Crucially, given the structure of our probabilistic model, our sparse dual variables \cref{eq:dual_sparse} are a compact representation of the full model projected using the kernel. 
+where $\MKzz$ and $\vkzs$ are defined similarly to $\MKxx$ and $\vk_{\vx i}$ but over the inducing points $\MZ \in \R^{M \times D} $  instead of the full data set $\dataset$. The key quantities we need to make predictions from our sparse GP from the converged neural network are $(\hat{\alpha}_i, \hat{\beta}_i)$ \cref{eq:dual_param_laplac}\todo{these variables need another subscript for differentiate that from the values computed at the data points} and a kernel function $\kappa$ . Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred}, we can see that the computational complexity went from $\mathcal{O}(n^3)$ to $\mathcal{O}(m^3)$, with $m \ll n$.  Crucially, given the structure of our probabilistic model, our sparse dual variables \cref{eq:dual_sparse} are a compact representation of the full model projected using the kernel. 
 
 In contrast to our approach, \citet{immer2021improving} use a subset of the data points to make a sparse GP model to reduce the computational complexity. As a result, this is a less principled approach for building a sparse model since it ignores the dataset's information. It is important to highlight that the sparsifying process is independent of the approximate inference technique because the dual variables of \cref{eq:dual_param} are computed using \cref{eq-empirical-risk} and a Laplace approximation.
 More complicated inference techniques, such as variational inference, could be used, but given its simplicity, in our experiments we used the Laplace-GGN approximation with the trained neural network. Furthermore, our dual variable view of approximate inference means we do not need to retrain a separate sparse GP model. \todo{shouldn't this sentence be clear from the context? we derive the mean/kernel function that define the process, then we have a sparse GP already}
@@ -643,20 +649,20 @@ In this section, we demonstrate how sequential learning methods can benefit from
 
 \subsection{\our for Continual Learning}
 % Definition of CL -> a sequence of tasks 
-In the Continual learning setting, the training is divided into $T$ tasks, each with its training data set $\dataset_t = \{(\mathbf{x}_{i}, \mathbf{y}_{i})\}_{i=1}^{n_t}$, which after the task is discarded and cannot be accessed in the following stages of the training. Rehearsal and function regularization-based models keep a subset of the training data for each task to help the model alleviate forgetting. In the same way, after each task, we can use our \our to build a compact representation of the neural network and then exploit this representation to build a functional regularizer to add to the training loss for the subsequent tasks. Recently proposed GP-based regularizers \cite{ pan2020continual, rudner2022continual} have shown better performances than weight space equivalents getting state-of-the-art on CL benchmarks. However, they are limited to use subset approximations of the posterior.
+In the Continual learning setting, the training is divided into $T$ tasks, each with its training data set $\dataset_t = \{(\mathbf{x}_{i}, \mathbf{y}_{i})\}_{i=1}^{n_t}$, which after the task is discarded and cannot be accessed in the following stages of the training. Rehearsal and function regularization-based models keep a subset of the trai ning data for each task to help the model alleviate forgetting. In the same way, after each task, we can use our \our to build a compact representation of the neural network and then exploit this representation to build a functional regularizer to add to the training loss for the subsequent tasks. Recently proposed GP-based regularizers \cite{ pan2020continual, rudner2022continual} have shown better performances than weight space equivalents getting state-of-the-art on CL benchmarks. However, they are limited to use subset approximations of the posterior.
 %, which in practice means randomly selecting some data computing its posterior at only those points and then using that as the regularizer. 
-A more principled approach would be to sparsify the resultant GP into a low-rank approximation to ensure information coming from the entire task dataset is not lost.%, essentially what the sparse dual variables do.   \todo{this term is replacing the missing data}
+A more principled approach would be to sparsify the resultant GP into a low-rank approximation to ensure information coming from the entire task dataset is not lost. %, essentially what the sparse dual variables do.   \todo{this term is replacing the missing data}
 % Where the regularizer comes from
-At the end of the training for each task $t$, we compute the Laplace-GGN approximated kernel function for the current model and randomly select $m$ inducing points. Given the issues described in the previous sections, related to computing the full covariance posterior $\MKxx$,\todo{this should be $\kappa(\MX_t, \MX_t)$}, we can exploit the dual parameterization to efficiently encode the information from the $\dataset_t$ using the dual parameterization, as follows, 
+At the end of the training for each task $t$, we compute the Laplace-GGN approximated kernel function for the current model and randomly select $m$ inducing points. Given the issues described in the previous sections, related to computing the full covariance posterior $\MKxx$ for $\dataset_t$,\todo{this should be $\kappa(\MX_t, \MX_t)$} we can exploit the dual parameterization to efficiently encode the information from  $\dataset_t$ using the dual parameterization, as follows, 
 \begin{equation}
  	\bar{\MB}^{-1}_t = \MKzz^{-1} \vbeta_\vu \MKzz^{-1} \in \R^{m \times m}, 
  	\quad 
  	\vbeta_{\vu} =  \sum_{i \in \dataset_t} \vkzi \,\hat{\beta}_{i} \, \vkzi^{\T} ,    
  	% \quad \forall t \in [1, T]
  \end{equation}
- where $\MKzz$ and $\vkzi$ are the kernel function computed on the inducing points $\MZ_t \in \R^{m \times D}$ for task $t$.
- 
-We can then keep a memory buffer $\mathcal{M} = \{(\MZ_t, \vu_t, \bar{\MB}^{-1}_t)\}_{t=1}^T$, where $\MZ_t$ are the inducing points selected from $\dataset_t$ and  $\vu_t = f_{\vw_t^*}(\MZ_t)\in \R^{m}$ are the neural network outputs over them computed with the MAP estimate after task $t$, $\vw_t^*$. Note that, for notational convenience, we are extending our neural network notation to be compatible with multiple inputs points, \ie, each $i$th entry is $f_{\vw_t^*}(\vz_i)\in \R$. Moreover, we restrict ourselves to single-output neural networks and refer the reader to further details on the multi-output setting to \cref{sec:cl_multioutput}. 
+ where $\MKzz$ and $\vkzi$ are the kernel function computed on the inducing points $\MZ_t \in \R^{m \times D}$ for task $t$ .
+  
+We keep a memory buffer $\mathcal{M} = \{(\MZ_t, \vu_t, \bar{\MB}^{-1}_t)\}_{t=1}^T$, where $\MZ_t$ are the inducing points selected from $\dataset_t$ and  $\vu_t = f_{\vw_t^*}(\MZ_t)\in \R^{m}$ are the neural network outputs associated to them, computed with the MAP estimate after task $t$ $\weights_t^*$. Note that, for notational convenience, we are extending our neural network notation to be compatible with multiple inputs points, \ie, each $i$th entry is $f_{\weights_t^*}(\vz_i)\in \R$. Moreover, we restrict ourselves to single-output neural networks and refer the reader to further details on the multi-output setting to \cref{sec:cl_multioutput}. 
 
 After each task, we update $\mathcal{M}$, and we can construct a regularizer term, which aims to reduce the drift of the current model from diverging on the inducing points $\MZ_s$ for all previous tasks $ s \in \left[ 1, t-1 \right]$. The resulting regularizer can be computed as follows
 %\begin{equation}
@@ -664,7 +670,7 @@ After each task, we update $\mathcal{M}$, and we can construct a regularizer ter
 %\end{equation}
 
 \begin{equation}
-	\mathcal{R}_\textit{SFR}(\weights, \mathcal{M}) = \sum_{s=1}^{t-1} \frac{1}{m} 
+	\mathcal{R}_\textit{SFR}(\weights, \mathcal{M}) = \frac{1}{2} \sum_{s=1}^{t-1} \frac{1}{m} 
 	\left\lVert 
 	f_{\weights}(\MZ_{s}) - \vu_t % f_{\weights_{s}}(\MZ_s)
 	\right\rVert_{\bar{\MB}^{-1}_{s}}.
@@ -1038,7 +1044,11 @@ Similarly to the UCI experiments, we trained neural networks (CNN, architexture 
 In addition to uncertainty estimates, our method can update the posterior when given new data. We gave the SVGP model 10 \% of the test dataset used for evaluation, and compare the performance of the SVGP model and the retrained NN in [INSERT TABLE]. 
 
 \subsection{Updating the  network representation for Continual learning}
-The Continual learning setting is a challenging and the training and
+%% Very rough draft
+
+
+% the problem is hard many hyperparams and also a lot of things can make huge differences
+% we restrict ourselves to the SH setting, then some values 
 
 
 \begin{table}[t!] 

@@ -515,18 +515,26 @@ def train(cfg: DictConfig):
                     )
                     wandb.log({"mse_transition_model_nn": mse_transition_model_nn})
 
-                # Log transition model stuff
-                mse_transition_model = torch.mean(
-                    (state_diff_mean - state_diff_output) ** 2
-                )
-                wandb.log({"mse_transition_model_svgp": mse_transition_model})
+                try:
+                    # Log transition model stuff
+                    mse_transition_model = torch.mean(
+                        (state_diff_mean - state_diff_output) ** 2
+                    )
+                    wandb.log({"mse_transition_model_svgp": mse_transition_model})
+                except:
+                    pass
 
-                nlpd_transition_model = -torch.mean(
-                    torch.distributions.Normal(
-                        state_diff_mean, torch.sqrt(state_diff_var)
-                    ).log_prob(state_diff_output)
-                )
-                wandb.log({"nlpd_transition_model": torch.mean(nlpd_transition_model)})
+                try:
+                    nlpd_transition_model = -torch.mean(
+                        torch.distributions.Normal(
+                            state_diff_mean, torch.sqrt(state_diff_var)
+                        ).log_prob(state_diff_output)
+                    )
+                    wandb.log(
+                        {"nlpd_transition_model": torch.mean(nlpd_transition_model)}
+                    )
+                except:
+                    pass
 
                 # print("dataset['reward'] {}".format(dataset["reward"].shape))
                 reward_output = dataset["reward"][:, 0]

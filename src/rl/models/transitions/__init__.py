@@ -2,3 +2,4 @@
 from .nn2svgp import NTKSVGPTransitionModel
 from .svgp import SVGPTransitionModel
 from .laplace import LaplaceTransitionModel
+from .ensemble import EnsembleTransitionModel

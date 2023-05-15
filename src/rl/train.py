@@ -522,30 +522,37 @@ def train(cfg: DictConfig):
                 state_diff_output = (dataset["next_state"] - dataset["state"]).to(
                     cfg.device
                 )
-                (
-                    state_diff_mean,
-                    state_diff_var,
-                ) = agent.transition_model.ntksvgp.predict(state_action_inputs)
-                # print("state_diff_mean {}".format(state_diff_mean.shape))
-                # print("state_diff_var {}".format(state_diff_var.shape))
-                # print("state_diff_pred {}".format(state_diff_pred))
-                # print("state_diff_output {}".format(state_diff_output.shape))
+                if isinstance(
+                    agent.transition_model,
+                    src.rl.models.transitions.NTKSVGPTransitionModel,
+                ):
+                    (
+                        state_diff_mean,
+                        state_diff_var,
+                    ) = agent.transition_model.ntksvgp.predict(state_action_inputs)
+                    state_diff_nn = agent.transition_model.network(state_action_inputs)
+                    mse_transition_model_nn = torch.mean(
+                        (state_diff_nn - state_diff_output) ** 2
+                    )
+                    wandb.log({"mse_transition_model_nn": mse_transition_model_nn})
+                else:
+                    (
+                        state_diff_mean,
+                        state_diff_var,
+                        _,
+                    ) = agent.transition_model.svgp.predict(state_action_inputs)
 
                 # Log transition model stuff
                 mse_transition_model = torch.mean(
                     (state_diff_mean - state_diff_output) ** 2
                 )
+                wandb.log({"mse_transition_model_svgp": mse_transition_model})
+
                 nlpd_transition_model = -torch.mean(
                     torch.distributions.Normal(
                         state_diff_mean, torch.sqrt(state_diff_var)
                     ).log_prob(state_diff_output)
                 )
-                state_diff_nn = agent.transition_model.network(state_action_inputs)
-                mse_transition_model_nn = torch.mean(
-                    (state_diff_nn - state_diff_output) ** 2
-                )
-                wandb.log({"mse_transition_model_svgp": mse_transition_model})
-                wandb.log({"mse_transition_model_nn": mse_transition_model_nn})
                 wandb.log({"nlpd_transition_model": torch.mean(nlpd_transition_model)})
 
                 # print("dataset['reward'] {}".format(dataset["reward"].shape))

@@ -518,24 +518,18 @@ If $\ell(f_\weights(\vx_{i}), \vy_i) = -\log(p(\vy \mid f_\weights(\vx_{i}))$ an
 The posterior over the weights ${p(\vw \mid \dataset) \propto p(\vy \mid f_{\weights}(\vx)) \, p(\weights)}$ is generally not available in closed form. Sampling methods that characterize the posterior with a finite set of samples in weight-space---such as the Hamiltonian Monte Carlo (HMC) baseline used in \cref{fig:banana} (right)---are general-purpose, but comuptationally heavy and impractical for downstream applications.
 
 \textbf{Function space}
-As a neural network is a deterministic mapping, the weight-space posterior induces a distribution over the function values.
-Intuitively, if one was to sample from the weight posterior, the corresponding functions created can
-be viewed as perturbed versions of the function at the MAP estimate $f_{\vw^*}$.
-% \todo{not super sure about the perturbed part here. I know what \textrm{you}'re trying to say but a little confused}
-In most applications, we care about predictions from the neural network and not the weights themselves.
-As such, it is the distribution over function values that we are actually interested in.
+%As a neural network is a deterministic mapping, the weight-space posterior induces a distribution over the function values.
+%Intuitively, if one was to sample from the weight posterior, the corresponding functions created can
+%be viewed as perturbed versions of the function at the MAP estimate $f_{\vw^*}$.
+%In most applications, we care about predictions from the neural network and not the weights themselves.
+%As such, it is the distribution over function values that we are actually interested in.
+While neural networks are deterministic mappings defined by their weights, the ultimate goal of training a neural network is to optimize the function it represents, not the weights themselves. Consequently, the weight-space posterior corresponds to a distribution over function values. Imagine sampling from the weight posterior; the resulting functions could be viewed as perturbations of the function at the MAP estimate $f_{\vw^*}$. This perspective aligns better with the main objective in most applications: making representative predictions given the observations we have.
 
 
 \textbf{Linearization gives rise to a Gaussian process}
-Our goal is to build a sparse function-space representation of a neural network.
-Gaussian processes $f$ are an extension of the multivariate normal that characterizes a distribution over
-functions in terms of the first two moments.
-They are defined by a mean function $\mu(\cdot)$ and a covariance (aka kernel) function $\kappa(\cdot,\cdot)$.
-Thus, we need these two functions based on the neural network to build the Gaussian process posterior.
-Recent work \citep{khan2019approximate,maddox2021fast} has shown that linearizing approximations in the weight space
-lead to function space equivalent approximations.
-As Gaussian distributions remain tractable under linear transformations, a linear function in
-terms of parameters can be converted from the weight space to the function space (see Ch.~2.1 in \cite{rasmussen2006gaussian}) as follows:\begin{equation} \label{eq:weight_func}
+We are concerned with capturing the distribution over the neural network model functions, in terms of the first two moments of the distribution. A Gaussian process is fully characterized by these moments: a mean function $\mu(\cdot)$ and a covariance (kernel) function $\kappa(\cdot,\cdot)$. 
+Recent work \cite{khan2019approximate,maddox2021fast} has shown that linearizing approximations in the weight space lead to function-space equivalent approximations.
+As Gaussian distributions remain tractable under linear transformations, a linear function in terms of parameters can be converted from the weight space to the function space (see Ch.~2.1 in \cite{rasmussen2006gaussian}) as follows:\begin{equation} \label{eq:weight_func}
 f_\weights(\vx) \approx 
 %g_\weights(\mathbf{x}) = 
 \phi^\top\!(\vx) \, \vw \implies \mu(\vx) = 0 \quad \kappa(\vx, \vx') = \frac{1}{\delta} \phi^\T\!(\vx) \, \phi(\vx')

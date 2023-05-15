@@ -481,6 +481,15 @@ def train(cfg: DictConfig):
                 )
                 if isinstance(
                     agent.transition_model,
+                    src.rl.models.transitions.SVGPTransitionModel,
+                ):
+                    (
+                        state_diff_mean,
+                        state_diff_var,
+                        _,
+                    ) = agent.transition_model.svgp.predict(state_action_inputs)
+                elif isinstance(
+                    agent.transition_model,
                     src.rl.models.transitions.NTKSVGPTransitionModel,
                 ):
                     (
@@ -492,12 +501,19 @@ def train(cfg: DictConfig):
                         (state_diff_nn - state_diff_output) ** 2
                     )
                     wandb.log({"mse_transition_model_nn": mse_transition_model_nn})
-                else:
-                    (
-                        state_diff_mean,
-                        state_diff_var,
-                        _,
-                    ) = agent.transition_model.svgp.predict(state_action_inputs)
+                elif isinstance(
+                    agent.transition_model,
+                    src.rl.models.transitions.LaplaceTransitionModel,
+                ):
+                    state_diff_mean, state_diff_var = agent.transition_model.la(
+                        state_action_inputs
+                    )
+                    state_diff_var = torch.diagonal(state_diff_var, dim1=-1, dim2=-2)
+                    state_diff_nn = agent.transition_model.network(state_action_inputs)
+                    mse_transition_model_nn = torch.mean(
+                        (state_diff_nn - state_diff_output) ** 2
+                    )
+                    wandb.log({"mse_transition_model_nn": mse_transition_model_nn})
 
                 # Log transition model stuff
                 mse_transition_model = torch.mean(

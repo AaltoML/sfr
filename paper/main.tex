@@ -553,8 +553,8 @@ where the kernel is the so-called Neural Tangent Kernel (NTK, \cite{jacot2018neu
 \paragraph{GP in the dual parameters}
 As stated in \citet[Parameterization Lemma~1]{csato2002sparse}, the posterior process $f_{\textrm{post}}$ found through the Bayesian update equation using  GP prior and likelihood function can be parameterized by $\valpha$ and $\vbeta$:
 \begin{equation}  \label{eq:gp_pred}
- \mu(\vx_i)_\textrm{post} = \vk_{\vx i}^\top \valpha \quad \text{and} \quad
-  \kappa(\mathbf{x}_i, \mathbf{x}_i')_\textrm{post} = \kappa_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i},
+  \myexpect_{p(f_i \mid\vy)}[f_i]= \vk_{\vx i}^\top \valpha \quad \text{and} \quad
+  \mathrm{Var}_{p(f\mid\vy)}[f_i] = \kappa_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i},
 \end{equation}
 the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{m \times m}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $\kappa_{ii} = \kappa(\vx_i, \vx_i)$.  The dual parameters are the vector $\valpha \in \R^{m}$ and vector $\vbeta \in \R^{m}$, defined as:
 \begin{equation}

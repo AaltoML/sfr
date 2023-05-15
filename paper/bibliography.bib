@@ -1666,3 +1666,80 @@ url={https://openreview.net/forum?id=SkMwpiR9Y7},
   organization={IEEE},
   doi={10.1109/IROS.2012.6386109}
 }
+
+@inproceedings{deisenrothPILCO2011,
+  title = {{{PILCO}}: {{A Model-Based}} and {{Data-Efficient Approach}} to {{Policy Search}}.},
+  shorttitle = {{{PILCO}}},
+  booktitle = {International {{Conference}} on {{Machine Learning}}},
+  author = {Deisenroth, Marc and Rasmussen, Carl},
+  year = {2011},
+  month = jan,
+  volume = {28},
+  pages = {465--472},
+  abstract = {In this paper, we introduce PILCO, a practical, data-efficient model-based policy search method. PILCO reduces model bias, one of the key problems of model-based reinforcement learning, in a principled way. By learning a probabilistic dynamics model and explicitly incorporating model uncertainty into long-term planning, PILCO can cope with very little data and facilitates learning from scratch in only a few trials. Policy evaluation is performed in closed form using state-of-the-art approximate inference. Furthermore, policy gradients are computed analytically for policy improvement. We report unprecedented learning efficiency on challenging and high-dimensional control tasks.},
+  file = {/Users/scannea1/Zotero/storage/9Y6HDXE3/Deisenroth and Rasmussen - 2011 - PILCO A Model-Based and Data-Efficient Approach t.pdf}
+}
+
+@inproceedings{kamtheDataEfficient2018,
+  title = {Data-{{Efficient Reinforcement Learning}} with {{Probabilistic Model Predictive Control}}},
+  booktitle = {International {{Conference}} on {{Artificial Intelligence}} and {{Statistics}}},
+  author = {Kamthe, Sanket and Deisenroth, Marc},
+  year = {2018},
+  month = mar,
+  pages = {1701--1710},
+  publisher = {{PMLR}},
+  issn = {2640-3498},
+  urldate = {2020-11-26},
+  abstract = {Trial-and-error based reinforcement learning (RL) has seen rapid advancements in recent times, especially with the advent of deep neural networks. However, the majority of autonomous RL algorithms...},
+  langid = {english},
+  keywords = {model-based-rl,mpc},
+  file = {/Users/scannea1/Zotero/storage/E96H6LF8/Kamthe and Deisenroth - 2018 - Data-Efficient Reinforcement Learning with Probabi.pdf;/Users/scannea1/Zotero/storage/UGM5DYC9/kamthe18a.html}
+}
+
+@inproceedings{curiEfficient2020,
+  title = {Efficient {{Model-Based Reinforcement Learning}} through {{Optimistic Policy Search}} and {{Planning}}},
+  booktitle = {Advances in {{Neural Information Processing Systems}}},
+  author = {Curi, Sebastian and Berkenkamp, Felix and Krause, Andreas},
+  year = {2020},
+  urldate = {2020-11-26},
+  keywords = {model-based-reinforcement-learning,planning,policy-search},
+  file = {/Users/scannea1/Zotero/storage/ID2FAF6Y/Mukherjee and Fine - 1995 - Asymptotics of Gradient-based Neural Network Train.pdf;/Users/scannea1/Zotero/storage/3WGIBLZ7/a36b598abb934e4528412e5a2127b931-Paper.html}
+}
+
+@inproceedings{galImproving2016,
+  title = {Improving {{PILCO}} with {{Bayesian Neural Network Dynamics Models}}},
+  booktitle = {{{ICML Workshop}} on {{Data-Efficient Machine Learning}}},
+  author = {Gal, Yarin and McAllister, Rowan and Rasmussen, Carl},
+  year = {2016},
+  urldate = {2022-03-09},
+  abstract = {PILCO's framework is extended to use Bayesian deep dynamics models with approximate variational inference, allowing PILCO to scale linearly with number of trials and observation space dimensionality, and it is shown that moment matching is a crucial simplifying assumption made by the model. Model-based reinforcement learning (RL) allows an agent to discover good policies with a small number of trials by generalising observed transitions. Data efficiency can be further improved with a probabilistic model of the agent's ignorance about the world, allowing it to choose actions under uncertainty. Bayesian modelling offers tools for this task, with PILCO [1] being a prominent example, achieving state-of-theart data efficiency on low dimensional RL benchmarks. But PILCO relies on Gaussian processes (GPs), which prohibits its applicability to problems that require a larger number of trials to be solved. Further, PILCO does not consider temporal correlation in model uncertainty between successive state transitions, which results in PILCO underestimating state uncertainty at future time steps [2]. In this paper we extend PILCO's framework to use Bayesian deep dynamics models with approximate variational inference, allowing PILCO to scale linearly with number of trials and observation space dimensionality. Using particle methods we sample dynamics function realisations, and obtain lower cumulative cost than PILCO. We give insights into the modelling assumptions made in PILCO, and show that moment matching is a crucial simplifying assumption made by the model. Our implementation can leverage GPU architectures, offering faster running time than PILCO, and will allow structured observation spaces to be modelled (images or higher dimensional inputs) in the future.},
+  langid = {english},
+  file = {/Users/scannea1/Zotero/storage/7CC35VP4/127d856c8b74d3e54a2f7da7b11b784014832ed9.html}
+}
+
+@article{houthooftVIME2017,
+  title = {{{VIME}}: {{Variational Information Maximizing Exploration}}},
+  shorttitle = {{{VIME}}},
+  author = {Houthooft, Rein and Chen, Xi and Duan, Yan and Schulman, John and De Turck, Filip and Abbeel, Pieter},
+  year = {2017},
+  month = jan,
+  journal = {arXiv:1605.09674 [cs, stat]},
+  eprint = {1605.09674},
+  primaryclass = {cs, stat},
+  urldate = {2021-02-02},
+  abstract = {Scalable and effective exploration remains a key challenge in reinforcement learning (RL). While there are methods with optimality guarantees in the setting of discrete state and action spaces, these methods cannot be applied in high-dimensional deep RL scenarios. As such, most contemporary RL relies on simple heuristics such as epsilon-greedy exploration or adding Gaussian noise to the controls. This paper introduces Variational Information Maximizing Exploration (VIME), an exploration strategy based on maximization of information gain about the agent's belief of environment dynamics. We propose a practical implementation, using variational inference in Bayesian neural networks which efficiently handles continuous state and action spaces. VIME modifies the MDP reward function, and can be applied with several different underlying RL algorithms. We demonstrate that VIME achieves significantly better performance compared to heuristic exploration methods across a variety of continuous control tasks and algorithms, including tasks with very sparse rewards.},
+  archiveprefix = {arxiv},
+  keywords = {Computer Science - Artificial Intelligence,Computer Science - Machine Learning,Computer Science - Robotics,Statistics - Machine Learning},
+  file = {/Users/scannea1/Zotero/storage/JLYSSI3G/Houthooft et al. - 2017 - VIME Variational Information Maximizing Explorati.pdf;/Users/scannea1/Zotero/storage/PTVKGQUZ/1605.html}
+}
+
+@inproceedings{chuaDeepReinforcementLearning2018,
+  title = {Deep {{Reinforcement Learning}} in a {{Handful}} of {{Trials}} Using {{Probabilistic Dynamics Models}}},
+  booktitle = {Advances in {{Neural Information Processing Systems}}},
+  author = {Chua, Kurtland and Calandra, Roberto and McAllister, Rowan and Levine, Sergey},
+  year = {2018},
+  volume = {31},
+  urldate = {2021-07-02},
+  langid = {english},
+  file = {/Users/scannea1/Zotero/storage/K5RIDAIK/Chua et al. - 2018 - Deep Reinforcement Learning in a Handful of Trials.pdf;/Users/scannea1/Zotero/storage/GPK99BVP/3de568f8597b94bda53149c7d7f5958c-Abstract.html}
+}

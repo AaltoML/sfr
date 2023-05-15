@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pickle
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, ConcatDataset
 from torch.utils.data.dataset import Subset
 from torch.distributions import Categorical, Normal
 from tqdm import tqdm
@@ -155,10 +155,46 @@ def update_with_ood(svgp, likelihood,  ds_ood, update_size=100, batch_size=512):
         )
     state[f"svgp_ntk_{name}_ood"] = evaluate_one(lh, yte, gstar_ood)
 
-def retrain_and_update_(svgp, likelihood, ds_test, update_size=100):
+def retrain_and_update(state, svgp, likelihood, ds_test, ds_train, name='sparse_500',
+    update_size=100, batch_size=500, device='cpu'):
+    # get update dataset
+    perm_ixs = torch.randperm(len(test))
+    update_ixs, test_ixs = perm_ixs[:update_size], perm_ixs[update_size:]
+    ds_update = Subset(ds_test, update_ixs)
+    ds_update_test = Subset(ds_test, test_ixs)
+
+    # update SVGP
+    all_update = DataLoader(ds_update, batch_size=len(ds_update))
+    batched_update = DataLoader(ds_update, batch_size=batch_size)
+    (X_update, y_update) = next(iter(all_update))
+    svgp.update(update_X, update_y)
+
+    gstar_update, yte = get_svgp_predictive(
+            batched_update, svgp, use_nn_out=False, likelihood=likelihood
+        )
+    state[f"svgp_ntk_{name}_updated"] = evaluate_one(likelihood, yte, gstar_update)
+
+    # Retrain network
+    ds_train_update = ConcatDataset(ds_train, ds_update)
+    train_update_loader = DataLoader(ds_train_update, batch_size=batch_size)
+
+    model = retrain_nn(svgp, train_update_loader, delta=svgp.prior.delta, device=device)
+    gstar_update, yte = get_map_predictive(model=model, loader=batched_update)
+    state[f'nn_retrain_map'] = evaluate_one(likelihood, yte, gstar_update)
 
 
-
+def retrain_nn(svgp, train_loader, delta, lr=1e-3, device='cpu', n_epochs=500):
+    optim = Adam(svgp.network.parameters(), lr=lr, weight_decay=delta)
+    scheduler = LambdaLR(optim, lr_lambda=lambda epoch: 1/(epoch // 10 + 1))
+    for epoch in tqdm(list(range(n_epochs))):
+        for X, y in train_loader:
+            X, y = X.to(device), y.to(device)
+            loss = svgp.loss(X, y)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+        scheduler.step()
+    return svgp.network
 
 
 def main(
@@ -175,6 +211,7 @@ def main(
     logdelta_min=-5,
     logdelta_max=8,
     res_dir="experiments/results",
+    run_update=False,
     device="cuda",
 ):
     lh = CategoricalLh(EPS=0)  #0.000000000000000001)
@@ -303,6 +340,11 @@ def main(
         )
         state[f"gp_subset_{name}"] = evaluate(lh, yte, gstar_te, yva, gstar_va)
         logging.info(state[f"gp_subset_{name}"])
+
+        # retrain and update
+        if run_update:
+           state = retrain_and_update(state, svgp, likelihood, ds_test, ds_train, name=name,
+                                        update_size=1000, batch_size=batch_size, device=device)
 
 
         torch.save(state, f)
@@ -710,5 +752,6 @@ if __name__ == "__main__":
             args.logdelta_min,
             args.logdelta_max,
             res_dir,
+            run_update=run_update,
             device=device,
         )

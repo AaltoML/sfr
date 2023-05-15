@@ -36,7 +36,7 @@
 \newcommand{\etal}{\textit{et~al.\@}\xspace}
 
 % Our method
-\newcommand{\our}{DNN2SGP}
+\newcommand{\our}{DNN2SGP\xspace}
 
 % Tikz
 \usepackage{tikz}
@@ -270,14 +270,14 @@ Deep neural networks are known to lack uncertainty estimates, struggle to incorp
 \section{Introduction}
 \label{sec:intro}
 %
-Deep learning \cite{goodfellow2016deep} has become the cornerstone of contemporary artificial intelligence, proving remarkably effective in tackling supervised and unsupervised learning tasks in the {\em large data}, {\em offline}, and {\em gradient-based training} regime. Despite its success, gradient-based learning techniques exhibit limitations. Firstly, how can we efficiently quantify uncertainty without resorting to expensive and hard-to-interpret sampling in the model's weight-space? Secondly, how to update the wights of an already trained model with new batches of data without compromising the performance on past data? These questions become central when applied to sequential learning paradigms, such as continual learning (CL, \cite{de2021continual}) and reinforcement learning (RL, \cite{sutton2018reinforcement}). In CL, access to the previous data is lost and the challenge is retaining a compact representation of the problem and avoiding forgetting over the life-long learning horizon~\cite{mccloskey1989catastrophic}. Similarly, in RL, the model must adapt to environmental observations through exploration, while leveraging prediction uncertainties to assess potential future paths.
+Deep learning \cite{goodfellow2016deep} has become the cornerstone of contemporary artificial intelligence, proving remarkably effective in tackling supervised and unsupervised learning tasks in the {\em large data}, {\em offline}, and {\em gradient-based training} regime. Despite its success, gradient-based learning techniques exhibit limitations. Firstly, how can we efficiently quantify uncertainty without resorting to expensive and hard-to-interpret sampling in the model's weight-space? Secondly, how to update the weights of an already trained model with new batches of data without compromising the performance on past data? These questions become central when applied to sequential learning paradigms, such as continual learning (CL, \cite{de2021continual}) and reinforcement learning (RL, \cite{sutton2018reinforcement}). In CL, access to the previous data is lost and the challenge is retaining a compact representation of the problem and avoiding forgetting over the life-long learning horizon~\cite{mccloskey1989catastrophic}. Similarly, in RL, the model must adapt to environmental observations through exploration, while leveraging prediction uncertainties to assess potential future paths.
 
 %Secondly, how to retain information from previous tasks whilst learning new tasks where the tasks are such as Continual Learning (CL, \cite{de2021continual})
 %Thirdly and differently from the CL problem is that given some data from the same distribution 
 
 
 %Current state of affairs 
-Recent work on techniques (\eg, \cite{ritter2018kfac,khan2019approximate,daxberger2021laplace,fortuin2021bayesian,immer2021scalable}) for converting trained neural networks from weight-space to function-space allow a principled mathematical approach for analyzing the behaviour \cite{add}, performing probabilistic inference \cite{khan2019approximate}, and quantifying uncertainty in neural networks \cite{add}. The methods rely on linearizing \cite{jacot2018neural} the neural network and capturing the first two moments in function space in terms of a mean function and covariance function (or kernel)---defining a Gaussian process (GP, \cite{rasmussen2006gaussian}). GPs provide a widely-used probabilistic toolkit with principled uncertainty estimates, and they are a standard surrogate model for Bayesian optimization \citep{garnett_bayesoptbook_2022} and are effective in model-based reinforcement learning \citep{deisenroth2011pilco} with theoretical guarantees on regret bounds \citep{srinivas2009gaussian}. 
+Recent work on techniques (\eg, \cite{ritter2018kfac,khan2019approximate,daxberger2021laplace,fortuin2021bayesian,immer2021scalable}) for converting trained neural networks from weight-space to function-space allow a principled mathematical approach for analyzing the behaviour \cite{cho2009kernel,meronen2020stationary}, performing probabilistic inference \cite{khan2019approximate}, and quantifying uncertainty in neural networks \cite{add}. The methods rely on linearizing \cite{jacot2018neural} the neural network and capturing the first two moments in function space in terms of a mean function and covariance function (or kernel)---defining a Gaussian process (GP, \cite{rasmussen2006gaussian}). GPs provide a widely-used probabilistic toolkit with principled uncertainty estimates, and they are a standard surrogate model for Bayesian optimization \citep{garnett_bayesoptbook_2022} and are effective in model-based reinforcement learning \citep{deisenroth2011pilco} with theoretical guarantees on regret bounds \citep{srinivas2009gaussian}. 
 %Yet many problems lie in high dimensional input space; for example, images are where GPs cannot learn representations. In such scenarios such as in many reinforcement learning environments neural networks are used as the surrogate model. However, uncertainty is still essential to ensure effective exploration for sequential algorithms. Successful approaches have attempted to blend neural networks with uncertainty estimates around predictions, allowing for sophisticated exploration strategies. However, there has been limited use of hybrid models that possess the feature representation ability of neural networks but also attractive the properties of GPs, such a hybrid method we propose in this paper.
 
 %Need for adaptive learning methods + failures with current methods
@@ -393,15 +393,17 @@ We demonstrate points {\em(i)--(iii)} in the experiments.
 \label{sec:related}
 %
 % General Bayesian deep learning
-Bayesian deep learning~\cite{Wilson:ensembles,neal1995bayesian} has recently gained increasing attention in the machine learning community as a means for uncertainty quantification (\eg, \cite{kendall2017what,wilson2020bayes}) and model selection (\eg,~\cite{immer2021scalable,antoran2022marginal}) with advancements in prior specification (\eg, \cite{meronen2020stationary,meronen2021periodic,fortuin2021bayesian,nalisnick2018do}) and efficient approximate inference under the specified model.
+\textbf{Bayesian deep learning}
+Probabilistic method in deep learning~\cite{Wilson:ensembles,neal1995bayesian} have recently gained increasing attention in the machine learning community as a means for uncertainty quantification (\eg, \cite{kendall2017what,wilson2020bayes}) and model selection (\eg,~\cite{immer2021scalable,antoran2022marginal}) with advancements in prior specification (\eg, \cite{cho2009kernel,meronen2020stationary,meronen2021periodic,fortuin2021bayesian,nalisnick2018do}) and efficient approximate inference under the specified model.
 Calculating the posterior distribution of a Bayesian neural network is usually intractable, and approximate inference techniques need to be used, such as variational inference \cite{blei2017variational}, deep ensembles \cite{lakshminarayanan2017simple}, MC dropout \cite{gal2016dropout}, or Laplace approximation \cite{ritter2018kfac,kristiadi2020being,immer2021improving}---each having strengths and weaknesses. % point out strngths and weaknesses for each
 
 % Introduce the laplace GGN + shortcomings
-One common approach for uncertainty with neural networks is a Laplace-GGN approximation \citep{daxberger2021laplace}, which takes a trained neural network and linearises it around the optimal weights. The resulting linear model can be used to obtain uncertainty estimates and refine the neural network predictions \citep{immer2021scalable}, and is linear with respect to the weights. Therefore, as shown in \citep{immer2021scalable, khan2019approximate}, the linear model can be converted to a Gaussian process (GP), which is then used to obtain the uncertainty estimates.
-However, the GP introduces a computational scaling that is cubic in the number of data points ($\mathcal{O}(n^3)$). Many approaches apply crude approximations to alleviate the computational costs, \eg, considering only a subset of the training datas, but are still obtain good uncertainty estimates \citep{immerScalable2021}\todo{other methods?}. 
+\textbf{Function-space methods}
+One common approach for uncertainty with neural networks is a Laplace-GGN approximation \citep{daxberger2021laplace}, which takes a trained neural network and linearises it around the optimal weights. The Hessian can be efficiently approximated using the generalised Gauss--Newton approximation \cite{botev2017practical} or by Kronecker factorisation \cite{martens2015optimizing,ritter2018kfac}. The resulting linear model can be used to obtain uncertainty estimates and refine the neural network predictions \citep{immer2021scalable}, and is linear with respect to the weights. Therefore, as shown in \cite{immer2021scalable, khan2019approximate}, the linear model can be converted to a GP, which is then used to obtain the uncertainty estimates. 
 
-The Hessian can be efficiently approximated using the generalised Gauss-Newton approximation \cite{botev2017practical} or by Kronecker factorisation \cite{martens2015optimizing,ritter2018kfac}.
+However, the GP introduces a computational scaling that is cubic in the number of data points ($\mathcal{O}(n^3)$). Previous approaches apply crude approximations to alleviate the computational costs, \eg, by considering only a subset of the training data \cite{immer2021scalable}. In the GP community, the scaling problem is not seen as an issue any more due to efficient and stochastic methods for sparse approximations (\eg, \cite{hensman2013gaussian,wang2019exact}). However, it is not entirely clear how to combine the linearization of the neural network with sparse methods \cite{titsias2009variational} without falling back to crude subset methods as in \cite{immer2021scalable}. We tackle this problem, by framing the problem in the dual parameters \cite{csato2002sparse} of the GP that has previously been used for non-conjugate likelihood models in GPs \cite{adam2021dual}. 
 
+\textbf{Function-space methods for sequential learning} The central problem in continual learning is the non-stationary nature of the training distribution which causes the training to overwrite the previously learnt parameters---leading to the model forgetting the previous learnt functions. This problem is typically tackled in weight-space with regularisation methods such as EWC, \cite{kirkpatrick2017overcoming}, SI~\cite{zenke17a}), or VCL~\cite{nguyen-tuongModel2009} that induce retention of previously learned information in the weights. However, encoding functional knowledge in the weights directly is challening, and thus recent methods such as DER~\cite{buzzega2020dark}, FROMP~\cite{pan2020continual}, and S-FSVI~\cite{rudner2022continual} have focused on function-space regularization. 
 
 
 
@@ -416,14 +418,14 @@ The Hessian can be efficiently approximated using the generalised Gauss-Newton a
 % 3) People started to try experimenting with the functional regularization -> 
 % In order of complexity -> DER, FROMP, S-FSVI
 % In order of pubblication -> DER/FROMP, K-Priors (?), S-FSVI
-EWC \cite{kirkpatrick2017overcoming}
-SI \cite{zenke17a}, 
-VCL \cite{nguyen-tuongModel2009},  
+%EWC \cite{kirkpatrick2017overcoming}
+%SI \cite{zenke17a}, 
+%VCL \cite{nguyen-tuongModel2009},  
 
 %% DER, FROMP, S-FSVI
-DER \cite{buzzega2020dark}
-FROMP \cite{pan2020continual}
-S-FSVI \cite{rudner2022continual}
+%DER \cite{buzzega2020dark}
+%FROMP \cite{pan2020continual}
+%S-FSVI \cite{rudner2022continual}
 
 
 %Why we need uncertainty and adaptiveness

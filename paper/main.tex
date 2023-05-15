@@ -283,7 +283,7 @@ Recent techniques (\eg, \cite{ritter2018kfac,khan2019approximate,daxberger2021la
 %Yet many problems lie in high dimensional input space; for example, images are where GPs cannot learn representations. In such scenarios such as in many reinforcement learning environments neural networks are used as the surrogate model. However, uncertainty is still essential to ensure effective exploration for sequential algorithms. Successful approaches have attempted to blend neural networks with uncertainty estimates around predictions, allowing for sophisticated exploration strategies. However, there has been limited use of hybrid models that possess the feature representation ability of neural networks but also attractive the properties of GPs, such a hybrid method we propose in this paper.
 
 %Need for adaptive learning methods + failures with current methods
-In this paper, we demonstrate that any neural network can be represented in terms of the so-called `dual' parameters of a GP~\cite{csato2002sparse, adam2021dual, chang2020fast}. In contrast to previous work that utilizes subsets \cite{immer2021scalable}, this parameterization allows for the consolidation of contributions from {\em all} training data into a sparse representation. Crucially, the resulting GP now predicts in the same space as the originally trained neural network, a feature not present in previous approaches, while still avoiding the notorious cubic complexity of vanilla GPs. Through the dual parameter formulation, we establish a connection between the neural network, the resulting full GP, and a sparse approximation similar to variational sparse GPs~\cite{titsias2009variational}. Using the sparse GP we can then take advantage of the property of dual parameters that allows for fast conditioning recently shown in \cite{chang2022fantasizing}. Thus we are able to avoid retraining and condition new data in to our model. The resulting \our method can be applied in any sequential decision-making scenario where retraining is not feasible.
+In this paper, we demonstrate that any neural network can be represented in terms of the so-called `dual' parameters of a GP~\cite{csato2002sparse, adam2021dual, chang2020fast}. In contrast to previous work that utilizes subsets \cite{immer2021scalable}, this parameterization allows for the consolidation of contributions from {\em all} training data into a sparse representation. Crucially, the resulting GP now predicts in the same space as the originally trained neural network, a feature not present in previous approaches, while still avoiding the notorious cubic complexity of vanilla GPs. Through the dual parameter formulation, we establish a connection between the neural network, the resulting full GP, and a sparse approximation similar to variational sparse GPs~\cite{titsias2009variational}. Using the sparse GP we can then take advantage of the property of dual parameters that allows for fast conditioning recently shown in \cite{chang2022fantasizing}. Thus we are able to avoid retraining and condition new data in to our model (see \cref{fig:teaser}). The resulting \our method can be applied in any sequential decision-making scenario where retraining is not feasible.
 
 %Need uncertainty and adaptive methods
 %Dual formulation in GPs space solves this
@@ -637,7 +637,7 @@ As demonstrated in \cite{adam2021dual}, the posterior under this model bears a s
 \label{eq:dual_sparse}
 \end{equation}
 %
-where the sparse dual variables are now a sum over all data points, with $\valpha_{\vu} \in \R^{M}$ and $\MBeta_{\vu} \in \R^{M  \times M}$. Using these sparse definition of the dual variables, our sparse GP posterior takes the following form:
+where the sparse dual variables are now a sum over \emph{all data points}, with $\valpha_{\vu} \in \R^{M}$ and $\MBeta_{\vu} \in \R^{M  \times M}$. Using this sparse definition of the dual variables, our sparse GP posterior takes the following form:
 \begin{equation}\label{eq:dual_sparse_post}
    \myexpect_{q_{\vu}(\vf)}[f_i] = \vkzs^{\T} \MKzz^{-1} \valpha_{\vu}
    \quad \text{and} \quad 
@@ -653,50 +653,65 @@ More complicated inference techniques, such as variational inference, could be u
 
 
 
-\section{Sparse Function-space Sequential Learning}
-
+\section{Sparse function-space sequential learning}
+\label{sec:sequential}
+%
 We have presented a method for converting any trained neural network into a sparse function-space representation.
 In this section, we demonstrate how sequential learning methods can benefit from our function-space representation and it's associated uncertainty estimates.
 
 
 
-\subsection{\our for Continual Learning}
+\paragraph{\our for continual learning}
 % Definition of CL -> a sequence of tasks 
-In the Continual learning setting, the training is divided into $T$ tasks, each with its training data set $\dataset_t = \{(\mathbf{x}_{i}, \mathbf{y}_{i})\}_{i=1}^{n_t}$, which after the task is discarded and cannot be accessed in the following stages of the training. Rehearsal and function regularization-based models keep a subset of the trai ning data for each task to help the model alleviate forgetting. In the same way, after each task, we can use our \our to build a compact representation of the neural network and then exploit this representation to build a functional regularizer to add to the training loss for the subsequent tasks. Recently proposed GP-based regularizers \cite{ pan2020continual, rudner2022continual} have shown better performances than weight space equivalents getting state-of-the-art on CL benchmarks. However, they are limited to use subset approximations of the posterior.
+In the Continual learning setting, the training is divided into $T$ tasks, each with its training data set $\dataset_t = \{(\mathbf{x}_{i}, \mathbf{y}_{i})\}_{i=1}^{N_t}$, which after the task is discarded and cannot be accessed in the following stages of the training. Rehearsal and function regularization-based models keep a subset of the training data for each task to help the model alleviate forgetting. In the same way, after each task, we can use our \our method to build a compact representation of the neural network and then exploit this representation to build a functional regularizer to add to the training loss for the subsequent tasks. Recently proposed GP-based regularizers \cite{ pan2020continual, rudner2022continual} have shown better performances than weight space equivalents getting state-of-the-art on CL benchmarks. However, they are limited to use subset approximations of the posterior.
 %, which in practice means randomly selecting some data computing its posterior at only those points and then using that as the regularizer. 
 A more principled approach would be to sparsify the resultant GP into a low-rank approximation to ensure information coming from the entire task dataset is not lost. %, essentially what the sparse dual variables do.   \todo{this term is replacing the missing data}
 % Where the regularizer comes from
-At the end of the training for each task $t$, we compute the Laplace-GGN approximated kernel function for the current model and randomly select $m$ inducing points. Given the issues described in the previous sections, related to computing the full covariance posterior $\MKxx$ for $\dataset_t$,\todo{this should be $\kappa(\MX_t, \MX_t)$} we can exploit the dual parameterization to efficiently encode the information from  $\dataset_t$ using the dual parameterization, as follows, 
-\begin{equation}
- 	\bar{\MB}^{-1}_t = \MKzz^{-1} \vbeta_\vu \MKzz^{-1} \in \R^{m \times m}, 
- 	\quad 
- 	\vbeta_{\vu} =  \sum_{i \in \dataset_t} \vkzi \,\hat{\beta}_{i} \, \vkzi^{\T} ,    
+At the end of the training for each task $t$, we compute the Laplace-GGN approximated kernel function for the current model and randomly select $M$ inducing points. Given the issues described in the previous sections, related to computing the full covariance posterior $\MKxx$ for $\dataset_t$,\todo{this should be $\kappa(\MX_t, \MX_t)$} we can exploit the dual parameterization to efficiently encode the information from  $\dataset_t$ using the dual parameterization, as follows, 
+%
+\begin{equation}\textstyle
+ 	\bar{\MB}^{-1}_t = \MKzz^{-1} \MBeta_\vu \MKzz^{-1} \in \R^{M \times M}, 
+ 	\quad \text{s.t.} \quad
+ 	\MBeta_{\vu} =  \sum_{i \in \dataset_t} \vkzi \,\hat{\beta}_{i} \, \vkzi^{\T} ,    
  	% \quad \forall t \in [1, T]
- \end{equation}
- where $\MKzz$ and $\vkzi$ are the kernel function computed on the inducing points $\MZ_t \in \R^{m \times D}$ for task $t$ .
-  
-We keep a memory buffer $\mathcal{M} = \{(\MZ_t, \vu_t, \bar{\MB}^{-1}_t)\}_{t=1}^T$, where $\MZ_t$ are the inducing points selected from $\dataset_t$ and  $\vu_t = f_{\vw_t^*}(\MZ_t)\in \R^{m}$ are the neural network outputs associated to them, computed with the MAP estimate after task $t$ $\weights_t^*$. Note that, for notational convenience, we are extending our neural network notation to be compatible with multiple inputs points, \ie, each $i$th entry is $f_{\weights_t^*}(\vz_i)\in \R$. Moreover, we restrict ourselves to single-output neural networks and refer the reader to further details on the multi-output setting to \cref{sec:cl_multioutput}. 
+\end{equation}
+%
+where $\MKzz$ and $\vkzi$ are the gram matrix and vector computed on the inducing points $\MZ_t = \{\vz_i\}_{i=1}^M$ for task $t$ .
+%
+We keep a memory buffer $\mathcal{M} = \{(\MZ_t, \vu_t, \bar{\MB}^{-1}_t)\}_{t=1}^T$, where $\MZ_t$ are the inducing points selected from $\dataset_t$ and  $\vu_t = f_{\vw_t^*}(\MZ_t)\in \R^{M}$ are the neural network outputs associated to them, computed with the MAP estimate $\weights_t^*$ after task $t$. Note that, for notational convenience, we are extending our neural network notation to be compatible with multiple inputs points, \ie, each $i$\textsuperscript{th} entry is $f_{\weights_t^*}(\vz_i)\in \R$. Moreover, we restrict ourselves to single-output neural networks and refer the reader to further details on the multi-output setting to \cref{sec:cl_multioutput}. 
 
-After each task, we update $\mathcal{M}$, and we can construct a regularizer term, which aims to reduce the drift of the current model from diverging on the inducing points $\MZ_s$ for all previous tasks $ s \in \left[ 1, t-1 \right]$. The resulting regularizer can be computed as follows
-%\begin{equation}
-%	\mathcal{R}_\textit{SFR}(\weights, \mathcal{M}) = \sum_{s=1}^{t-1} \frac{1}{m} \left[\left(f_{\weights}(\MZ_{s}) - f_{\weights_{s}}(\MZ_s) \right)^\T \bar{\MB}^{-1}_{s} \left(f_{\weights}(\MZ_{s}) - f_{\weights_{s}}(\MZ_s) \right) \right].
-%\end{equation}
-
-\begin{equation}
-	\mathcal{R}_\textit{SFR}(\weights, \mathcal{M}) = \frac{1}{2} \sum_{s=1}^{t-1} \frac{1}{m} 
+After each task, we update $\mathcal{M}$, and we can construct a regularizer term, which aims to reduce the drift of the current model from diverging on the inducing points $\MZ_s$ for all previous tasks $ s \in \{1, \ldots, t-1 \}$. This means that for training  the successive task, the new objective to minimize becomes $\weights_t^* = \arg\min_{\weights} \mathcal{L}(\mathcal{D}_t, \weights) + \tau \, \mathcal{R}_\textrm{\our}(\weights, \mathcal{M})$, with the regularizer
+%
+\begin{equation}\label{eq-cl-regularizer}
+  \mathcal{R}_\mathrm{\our}(\weights, \mathcal{M}) = \frac{1}{2} \sum_{s=1}^{t-1} \frac{1}{M} 
 	\left\lVert 
 	f_{\weights}(\MZ_{s}) - \vu_t % f_{\weights_{s}}(\MZ_s)
 	\right\rVert_{\bar{\MB}^{-1}_{s}}.
 \end{equation}
-%\todo{choose one option}
-% where $f_\vw(\MZ_{s}) \in \R^m$ are the outputs of neural networks with the current weights $\vw$ and stored function outputs of the neural network at the MAP optimum for task $s$, i.e., each $i$th entry is $f_\cdot(\vz_i) \in \R$.
+
+
+
+
+%%The resulting regularizer can be computed as follows
+%%\begin{equation}
+%%	\mathcal{R}_\textit{SFR}(\weights, \mathcal{M}) = \sum_{s=1}^{t-1} \frac{1}{m} \left[\left(f_{\weights}(\MZ_{s}) - f_{\weights_{s}}(\MZ_s) \right)^\T \bar{\MB}^{-1}_{s} \left(f_{\weights}(\MZ_{s}) - f_{\weights_{s}}(\MZ_s) \right) \right].
+%%\end{equation}
+%%
 %\begin{equation}
-%	\argmin_{\weights} \sum_{i=1}^{n} \ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) + \delta \mathcal{R}(\weights) + \tau \mathcal{R}_\textit{SFR}(\weights)
+%	\mathcal{R}_\mathrm{\our}(\weights, \mathcal{M}) = \frac{1}{2} \sum_{s=1}^{t-1} \frac{1}{M} 
+%	\left\lVert 
+%	f_{\weights}(\MZ_{s}) - \vu_t % f_{\weights_{s}}(\MZ_s)
+%	\right\rVert_{\bar{\MB}^{-1}_{s}}.
 %\end{equation}
-Then, when the training on the successive task, the new objective to minimize takes the following form
-\begin{equation}
-	\weights_t^* = \argmin_{\weights} \mathcal{L}(\mathcal{D}_t, \weights) + \tau \mathcal{R}_\textit{SFR}(\weights, \mathcal{M})
-\end{equation}
+%%\todo{choose one option}
+%% where $f_\vw(\MZ_{s}) \in \R^m$ are the outputs of neural networks with the current weights $\vw$ and stored function outputs of the neural network at the MAP optimum for task $s$, i.e., each $i$th entry is $f_\cdot(\vz_i) \in \R$.
+%%\begin{equation}
+%%	\argmin_{\weights} \sum_{i=1}^{n} \ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) + \delta \mathcal{R}(\weights) + \tau \mathcal{R}_\textit{SFR}(\weights)
+%%\end{equation}
+%Then, when the training on the successive task, the new objective to minimize takes the following form
+%\begin{equation}
+%	\weights_t^* = \argmin_{\weights} \mathcal{L}(\mathcal{D}_t, \weights) + \tau \mathcal{R}_\textit{SFR}(\weights, \mathcal{M})
+%\end{equation}
 
 
 

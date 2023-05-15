@@ -62,10 +62,16 @@ COLORS = {
 }
 LINESTYLES = {
     "nn2svgp-sample": "-",
-    "nn2svgp-sample-with-updates": ":",
-    "mlp": "--",
-    "ddpg-06": "-.",
+    "nn2svgp-sample-with-updates": "-",
+    "mlp": "-",
+    "ddpg-06": "-",
 }
+# LINESTYLES = {
+#     "nn2svgp-sample": "-",
+#     "nn2svgp-sample-with-updates": ":",
+#     "mlp": "--",
+#     "ddpg-06": "-.",
+# }
 
 
 def plot_figures(
@@ -94,7 +100,9 @@ def plot_figures(
     # plt.savefig(os.path.join(save_dir, "example_fig.pdf"), transparent=True)
 
 
-def plot_training_curves(save_dir: str = "../../paper/fig", filename: str = "rl"):
+def plot_training_curves(
+    save_dir: str = "../../paper/fig", filename: str = "rl", window_width: int = 8
+):
     api = wandb.Api()
 
     fig, ax = plt.subplots()
@@ -132,7 +140,16 @@ def plot_training_curves(save_dir: str = "../../paper/fig", filename: str = "rl"
         for r in returns_all:
             returns_all_copy.append(r[0:min_length])
 
-        returns_all = np.stack(returns_all_copy, 0)
+        values_same_length = []
+        for val in returns_all_copy:
+            cumsum_vec = np.cumsum(np.insert(val, 0, 0))
+            ma_vec = (
+                cumsum_vec[window_width:] - cumsum_vec[:-window_width]
+            ) / window_width
+            values_same_length.append(ma_vec)
+
+        returns_all = np.stack(values_same_length, 0)
+        # returns_all = np.stack(returns_all_copy, 0)
         print("returns_all {}".format(returns_all.shape))
         returns_mean = np.mean(returns_all, 0)
         print("returns_mean {}".format(returns_mean.shape))
@@ -155,23 +172,24 @@ def plot_training_curves(save_dir: str = "../../paper/fig", filename: str = "rl"
             # returns_mean + 1.96 * returns_std,
             returns_mean - returns_std,
             returns_mean + returns_std,
-            alpha=0.2,
+            alpha=0.1,
             color=COLORS[experiment_key],
+            # linestyle="",
         )
 
     # TODO set min episodes automatically
     ax.set_xlim(0, 70)
     ax.set_xlabel("Episode")
     ax.set_ylabel("Return")
-    ax.spines["top"].set_visible(False)
-    ax.spines["right"].set_visible(False)
-    ax.spines["bottom"].set_visible(False)
-    ax.spines["left"].set_visible(False)
-    ax.xaxis.set_ticks_position("none")
-    ax.yaxis.set_ticks_position("none")
+    # ax.spines["top"].set_visible(False)
+    # ax.spines["right"].set_visible(False)
+    # ax.spines["bottom"].set_visible(False)
+    # ax.spines["left"].set_visible(False)
+    # ax.xaxis.set_ticks_position("none")
+    # ax.yaxis.set_ticks_position("none")
     # ax.get_xaxis().set_ticks([])
     # ax.get_yaxis().set_ticks([])
-    # plt.legend()
+    plt.legend()
 
     plt.savefig(os.path.join(save_dir, filename + ".pdf"), transparent=True)
     tikzplotlib.save(

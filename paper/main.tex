@@ -186,6 +186,7 @@
 \newcommand{\vx}{\mbf{x}}
 \newcommand{\vy}{\mbf{y}}
 \newcommand{\vw}{\mbf{w}}
+\newcommand{\va}{\mbf{a}}
 
 \newcommand{\Jac}[2]{\mathcal{J}_{#1}(#2)}
 \newcommand{\JacT}[2]{\mathcal{J}_{#1}^\top(#2)}
@@ -598,9 +599,8 @@ where the sparse dual variables are now a sum over all data points, with $\valph
 \end{equation}
 where $\MKzz$ and $\vkzs$ are defined similarly to $\MKxx$ and $\vk_{\vx i}$ but over the inducing points $\MZ \in \R^{M \times D} $  instead of the full dataset $\dataset$. The key quantities we need to make predictions from our sparse GP from the converged neural network are $(\hat{\alpha}_i, \hat{\beta}_i)$\todo{these variables need another subscript for differentiate that from the values computed at the data points} and a kernel function $\kappa$. Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred}, we can see that the computational complexity went from $\mathcal{O}(n^3)$  $\mathcal{O}(m^3)$, with $m \ll n$.  Crucially, given the structure of our probabilistic model, our sparse dual variables \cref{eq:dual_sparse} are a compact form \todo{use representation instead of form here ?} of the full model projected using the kernel. 
 
-In contrast to our approach, \citet{immer2021improving} use a subset of the full GP model \todo{isn't the subset on the data points?} to reduce the computational complexity. As a result, this is a less principled approach for building a sparse model since it ignores the dataset's information. It is important to highlight that the sparsifying process is independent of the approximate inference technique because the dual variables of \cref{eq:dual_param} are computed using the neural network definition \cref{eq-empirical-risk}. 
+In contrast to our approach, \citet{immer2021improving} use a subset of the full GP model \todo{isn't the subset on the data points?} to reduce the computational complexity. As a result, this is a less principled approach for building a sparse model since it ignores the dataset's information. It is important to highlight that the sparsifying process is independent of the approximate inference technique because the dual variables of \cref{eq:dual_param} are computed using \cref{eq-empirical-risk} and a Laplace approximation.
 More complicated inference techniques, such as variational inference, could be used, but given its simplicity, in our experiments we used the Laplace-GGN approximation with the trained neural network. Furthermore, our dual variable view of approximate inference means we do not need to retrain a separate sparse GP model. \todo{shouldn't this sentence be clear from the context? we derive the mean/kernel function that define the process, then we have a sparse GP already}
-
 \section{Sparse Function-space Sequential Learning}
 
 We have presented a method for converting any trained neural network into a sparse function-space representation.
@@ -610,7 +610,17 @@ In this section, we demonstrate how sequential learning methods can benefit from
 
 \subsection{\our for Continual Learning}
 % Definition of CL -> a sequence of tasks 
-In the Continual learning setting, the training is divided into $T$ tasks, each with its training data set $\dataset_t = \{(\mathbf{x}_{i}, \mathbf{y}_{i})\}_{i=1}^{n_t}$, which after the task is discarded and cannot be accessed in the later stages of the training. However, rehearsal and function regularization-based models keep a subset of the training data for each task to help the model alleviate forgetting. After each task, we can use our \our to build a compact representation of the neural network and then use that as an additional term to the training loss to regularize the model. \todo{this term is replacing the missing data}
+In the Continual learning setting, the training is divided into $T$ tasks, each with its training data set $\dataset_t = \{(\mathbf{x}_{i}, \mathbf{y}_{i})\}_{i=1}^{n_t}$, which after the task is discarded and cannot be accessed in the later stages of the training. However, rehearsal and function regularization-based models keep a subset of the training data for each task to help the model alleviate forgetting. After each task, we can use our \our to build a compact representation of the neural network and then use that as an additional term to the training loss to regularize the model. Recent success has shown GP-based regularizers perform better than weight space equivalents getting state-of-the-art on typical CL benchmarks \cite{ pan2020continual, rudner2022continual}. The limitation of such approaches is that they must use subset approximations of the posterior, which in practice means randomly selecting some data computing its posterior at only those points and then using that as the regularizer. A more principled approach would be to sparsify the data into a low-rank approximation to ensure information wasn't lost, essentially what the sparse dual variables do.   \todo{this term is replacing the missing data}
+
+An alternative view of the dual variables is that they parameterize approximate likelihoods, as shown in \citep{adam2021dual, khan2017conjugate}. We can rewrite the GP posterior for $q(\vu)$ in terms of the following approximate normal distributions:
+\begin{equation}
+ q(\vu) \propto \N(0, \MKzz) \prod_{i=1}^n e^{-\frac{\tilde{\beta}_i}{2}(\tilde{y}_i - \va_i^\top \vu)^2 } = \N(0, \MKzz) \, e^{(\bar{\vy} - \vu)^\top \bar{\MSigma}^{-1}(\bar{\vy} - \vu)}  
+\end{equation}
+The first normals are the approximate likelihoods where $\va_i^\top = \vkzi^\top \MKzz^{-1}$ and $\tilde{y}_i = \hat{\alpha}_i + f_{\vw^*}(\vx_i)\hat{\beta}$,  replacing $\va_i^\top \vu$ with $\vx_i^{\top}\vw$ and we can see the similarity between the sparse GP and a linear model where the kernel matrix determines the prior. To arrive at the MVN Gaussian, we need to rearrange the quadratic terms to match the prior sufficient statistics we present a derivation in [appendix]. Performing conjugate summation of prior and likelihood, we would arrive at the sparse GP posterior at the inducing points. The correlated covariance structure $\MSigma$ and the corresponding $\tilde{\vy}$ are simply a different form of the sparse dual variables,
+\begin{equation}
+\quad \bar{\MSigma} =  \MKzz \vbeta_\vu^{-1} \MKzz \quad \bar{\vy} = \MKzz \vbeta_{\vu}\valpha_{\vu}.
+\end{equation}
+Written as above, we can see that the spare dual variables can be interpreted as a sparse MVN representation. We now show how we use this for a regularizer in continual learning with more details in [appendix].
 
 % Where the regularizer comes from
 At the end of the training for each task $t$, we compute the Laplace-GGN approximated kernel function for the current model and randomly select $m$ inducing points. Given the issues described in the previous sections, related to computing the full covariance posterior $\MKxx$,\todo{this should be $\kappa(\MX_t, \MX_t)$}, we can exploit the dual parameterization to efficiently encode the information from the $\dataset_t$ using the dual parameterization, as follows, 
@@ -647,62 +657,6 @@ Then, when the training on the successive task, the new objective to minimize ta
 \end{equation}
 
 
-
-
-
-\subsection{Reinforcement learning}
-A key challenge in RL is to balance the trade-off between exploration and exploitation.
-That is, should the agent select an action that it knows will lead to a high reward (exploitation), or should it
-hope to discover new actions which lead to high reward (exploration) by selecting actions that it has not selected before.
-In this section, we detail how our method's principled uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim.
-
-We consider stochastic environments with states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \),
-actions \(\action \in \actionDomain \subseteq \R^{D_{\action}}\) and transition dynamics
-\(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \), such that
-$\state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}$, where  $\noise_{t}$
-is i.i.d. transition noise.
-We consider the episodic setting where the system is reset to an initial state $\state_{0}$ at each episode and we
-assume that there is a known reward function $r : \stateDomain \times \actionDomain \rightarrow \R$.
-% Following the Markov decision process formulation \cite{bellmanMarkovianDecisionProcess1957a}, we
-% denote the states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \) and actions \(\action \in \actionDomain \subseteq \R^{D_{\action}}\)
-% of the sytem, the reward function $r : \stateDomain \times \actionDomain \rightarrow \R$, and transition dynamics
-% \(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \), such that
-% $\state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}$ where  $\noise_{t}$
-% is i.i.d. transition noise.
-% $\mathbb{E}_{\noise_{0:\infty}} \big[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \big]$
-% \begin{align} \label{eq-model-free-objective}
-% \policy^{*} = \arg \max_{\policy \in \policyDomain} J(\transitionFn, \policy) = \arg \max_{\policy \in \policyDomain} \mathbb{E}_{\noise_{0:\infty}} \bigg[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \bigg]
-% \quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t},
-% \end{align}
-The goal of RL is to find the policy \(\pi : \stateDomain \rightarrow \actionDomain\)
-(from a set of policies $\Pi$) that maximises the sum of discounted rewards
-in expectation over the transition noise,
-\begin{align} \label{eq-model-free-objective}
-J(\transitionFn, \policy) = \mathbb{E}_{\noise_{0:\infty}} \bigg[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \bigg]
-\quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t},
-\end{align}
-where $\gamma \in [0, 1)$ is a discount factor.
-In this work, we consider model-based RL where a model of the transition dynamics is learned \(f_{\mathbf{w}} \approx \transitionFn\) and then used by a planning algorithm.
-A simple approach is to use the learned dynamic model $f_{\mathbf{w}^{*}}$ and maximise the objective in \cref{eq-model-free-objective},
-\begin{align} \label{eq-greedy}
-  \policy^{\text{Greedy}} &= \arg \max_{\pi \in \Pi} J(f_{\mathbf{w}^{*}}, \pi).
-\end{align}
-However, we can leverage the method in \cref{sec:methods} to obtain a function-space posterior over the learned dynamics $q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset)$,
-where $\mathcal{D}$ represents the state transition data set \(\mathcal{D} = \{(s_{i},a_{i}), s_{i+1}\}_{i=0}^{N}\).
-Importantly, the uncertainty represented by this posterior distribution can be used to balance the exploration-exploitation trade-off,
-using approaches such as posterior sampling \cite{osbandWhyPosteriorSampling2017,osbandMoreEfficientReinforcement2013},
-\begin{align} \label{eq-posterior-sampling}
-  \policy^{\text{PS}} &= \arg \max_{\pi \in \Pi} J(\hat{f}, \pi)
-\quad \text{s.t. } \tilde{\transitionFn} \sim q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset),
-\end{align}
-where a function $\tilde{\transitionFn}$ is sampled from the (approximate) posterior $q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset)$ and used to find a policy as
-in \cref{eq-greedy}.
-Intuitively, this strategy will explore where the model has high uncertainty, which in turn will reduce the model's uncertainty as data is collected and used to
-train the model.
-See \cref{sec-rl-appendix} for more details of how we use
-
-\textbf{Pathwise conditioning in function-space??}
-\todo{could try to implement this}
 
 
 
@@ -1086,13 +1040,61 @@ The Continual learning setting is a challenging and the training and
 \end{table}
 
 
-\subsection{Reinforcement Learning}
+\subsection{Reinforcement learning}
+A key challenge in RL is balancing the trade-off between exploration and exploitation.
+That is, should the agent select an action that it knows will lead to a high reward (exploitation), or should it
+hope to discover new actions which lead to high reward (exploration) by selecting actions that it has not selected before.
+In this section, we demonstrate  that our method's principled uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim.
 
-In section \label{sec-rl} we detailed how our method can be used to
+We consider environments with states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \),
+actions \(\action \in \actionDomain \subseteq \R^{D_{\action}}\) and transition dynamics
+\(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \), such that
+$\state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}$, where  $\noise_{t}$
+is i.i.d. transition noise.
+We consider the episodic setting where the system is reset to an initial state $\state_{0}$ at each episode and we
+assume that there is a known reward function $r : \stateDomain \times \actionDomain \rightarrow \R$.
+% Following the Markov decision process formulation \cite{bellmanMarkovianDecisionProcess1957a}, we
+% denote the states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \) and actions \(\action \in \actionDomain \subseteq \R^{D_{\action}}\)
+% of the sytem, the reward function $r : \stateDomain \times \actionDomain \rightarrow \R$, and transition dynamics
+% \(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \), such that
+% $\state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}$ where  $\noise_{t}$
+% is i.i.d. transition noise.
+% $\mathbb{E}_{\noise_{0:\infty}} \big[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \big]$
+% \begin{align} \label{eq-model-free-objective}
+% \policy^{*} = \arg \max_{\policy \in \policyDomain} J(\transitionFn, \policy) = \arg \max_{\policy \in \policyDomain} \mathbb{E}_{\noise_{0:\infty}} \bigg[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \bigg]
+% \quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t},
+% \end{align}
+The goal of RL is to find the policy \(\pi : \stateDomain \rightarrow \actionDomain\)
+(from a set of policies $\Pi$) that maximises the sum of discounted rewards
+in expectation over the transition noise,
+\begin{align} \label{eq-model-free-objective}
+J(\transitionFn, \policy) = \mathbb{E}_{\noise_{0:\infty}} \bigg[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \bigg]
+\quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t},
+\end{align}
+where $\gamma \in [0, 1)$ is a discount factor.
+In this work, we consider model-based RL where a model of the transition dynamics is learned \(f_{\mathbf{w}} \approx \transitionFn\) and then used by a planning algorithm.
+A simple approach is to use the learned dynamic model $f_{\mathbf{w}^{*}}$ and maximise the objective in \cref{eq-model-free-objective}.
+% \begin{align} \label{eq-greedy}
+%   \policy^{\text{Greedy}} &= \arg \max_{\pi \in \Pi} J(f_{\mathbf{w}^{*}}, \pi).
+% \end{align}
+However, we can leverage the method in \cref{sec:methods} to obtain a function-space posterior over the learned dynamics $q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset)$,
+where $\mathcal{D}$ represents the state transition data set \(\mathcal{D} = \{(s_{i},a_{i}), s_{i+1}\}_{i=0}^{N}\).
+Importantly, the uncertainty represented by this posterior distribution can be used to balance the exploration-exploitation trade-off,
+using approaches such as posterior sampling \cite{osbandWhyPosteriorSampling2017,osbandMoreEfficientReinforcement2013},
+\begin{align} \label{eq-posterior-sampling}
+  \policy^{\text{PS}} &= \arg \max_{\pi \in \Pi} J(\hat{f}, \pi)
+\quad \text{s.t. } \tilde{\transitionFn} \sim q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset),
+\end{align}
+where a function $\tilde{\transitionFn}$ is sampled from the (approximate) posterior $q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset)$ and used to find a policy as
+in \cref{eq-greedy}.
+Intuitively, this strategy will explore where the model has high uncertainty, which in turn will reduce the model's uncertainty as data is collected and used to
+train the model.
+See \cref{sec-rl-appendix} for more details of how we use
 
-See \label{sec-rl-experiments-appendix} for more details of our experiments.
+\todo{could try to implement Pathwise conditioning in function-space}
 
 
+See \cref{app:rl} for more details of our experiments.
 
 We compare a model-based RL agent using a simple MLP dynamic model with
 \begin{itemize}
@@ -1103,7 +1105,7 @@ We compare a model-based RL agent using a simple MLP dynamic model with
 
 \begin{figure}[!t]
  \centering
- \begin{subfigure}{.2\textwidth}
+ \begin{subfigure}[c]{.24\textwidth}
  \resizebox{\textwidth}{!}{%
  \begin{tikzpicture}[inner sep=0,outer sep=0]
 
@@ -1120,32 +1122,33 @@ We compare a model-based RL agent using a simple MLP dynamic model with
    \node[fill=white,draw=black,line width=3pt,circle,minimum size=2cm,fill=black!50] at (7cm,-.5cm) {};
 
    % The arm
-   \node[anchor=north,minimum width=1cm,minimum height=14cm,draw=black,rotate=20,rounded corners=5mm,yshift=7mm,xshift=-.3mm,fill=white,draw=black,line width=3pt] at (dot) {};
+   \node[anchor=north,minimum width=1cm,minimum height=14cm,draw=black,rotate=-20,rounded corners=5mm,yshift=7mm,xshift=-.3mm,fill=white,draw=black,line width=3pt] at (dot) {};
    \node[fill=black,circle,minimum size=.5cm] at (dot) {};
 
    % Markings
    \draw[loosely dashed,line width=1pt] (4.5,6) -- (4.5,-10);
 
    % Arrow
-   \draw[->,black,line width=3pt,-{Latex[length=7mm,width=7mm]}] (1,5) --node[above,outer sep=6pt]{\large $x$} (4.5,5);
+   \draw[->,black,line width=3pt,-{Latex[length=7mm,width=7mm]}] (1,5) --node[above,outer sep=8pt]{\scalebox{4}{$x$}} (4.5,5);
 
    \def\centerarc[#1](#2)(#3:#4:#5)% Syntax: [draw options] (center) (initial angle:final angle:radius)
    { \draw[#1] ($(#2)+({#5*cos(#3)},{#5*sin(#3)})$) arc (#3:#4:#5); }
 
    % Draw arc
-   \centerarc[black,line width=3pt](dot)(270:290:11)
-   \node at (6.5,-9) {$\theta$};
+   \centerarc[black,line width=3pt](dot)(250:270:11)
+   \node at (2.5,-9) {\scalebox{4}{$\theta$}};
 
-   \node[white,minimum size=1cm] at (4.5,-13) {};
+   %\node[white,minimum size=1cm] at (4.5,-13) {};
 
  \end{tikzpicture}}
  \end{subfigure}
  \hfill
- \begin{subfigure}{.78\textwidth}
+ \begin{subfigure}[c]{.74\textwidth}
    \centering\scriptsize
    \setlength{\figurewidth}{\textwidth}
    \setlength{\figureheight}{.5\figurewidth}
-   \pgfplotsset{axis on top}
+   \pgfplotsset{axis on top,ymajorgrids,axis line style={draw=none},legend style={at={(1,1)},anchor=north west}}
+   \pgfplotsset{grid style={line width=.1pt, draw=gray!10,dashed},legend style={fill=white}}
    \input{./fig/rl.tex}
  \end{subfigure}
  \hfill

@@ -117,7 +117,7 @@ def train(cfg: DictConfig):
     #     pin_memory=False,
     # )
     print("num_train_steps {}".format(num_train_steps))
-    replay_memory = ReplayMemory(
+    replay_memory = ReplayBuffer(
         capacity=num_train_steps, batch_size=cfg.batch_size, device=cfg.device
     )
     # replay_buffer = ReplayMemory(capacity=num_train_steps, batch_size=cfg.batch_size)

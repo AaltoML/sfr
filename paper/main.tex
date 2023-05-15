@@ -542,7 +542,7 @@ Using the Hessian of the approximate model, we arrive at the Laplace-GGN approxi
 \todo{do we need this sentence about the Hessian to get Laplace-GGN??}
 Therefore, the Laplace-GGN linear model can be used to convert our weight space model to the function space by,
 \begin{equation} 
-\label{eq-laplace-approx-function-space}
+\label{eq-laplace-approx-function-space} 
 % g(\vx) \sim \GP \left( \mu(\vx), \kappa(\vx, \vx') \right) \quad \text{with} \quad
   \mu(\vx) =  0 \quad \text{and} \quad
   \kappa(\vx, \vx')
@@ -568,11 +568,11 @@ where the $ij$th entry of the matrix $\MKxx \in \R^{n \times n}$ is $\kappa(\vx_
 %
 The above relations hold for generic likelihoods, and no approximations are involved as the expectation is under the exact posterior. 
 It also highlights that our approximate inference technique, while usually considered a posterior approximation, can instead be seen as approximating the expectation of gradients of loss/likelihoods. \todo{our approximation is late \cref{eq:dual_param_laplace}, saying this here is misleading}\\
-In \citet{csato2002sparse}, they iteratively find dual variables setting them to log the expectation of the approximate posterior.\todo{what does it mean?} 
+In \citet{csato2002sparse}, they iteratively find dual variables using an Expectation Propogation (EP) method.  
 At the same time, in \cite{adam2021dual, chang2020fast}, they show this relationship for variational Gaussian processes where the above expectation is with respect to the approximate variational posterior. The dual parameter $\valpha$ appears also in non-Bayesian approaches, \eg, support vector machines \citep{cortes1995support}, whose origins are found in work by \citet{kimeldorf1971some}. While in \citet{wilkinson2023bayes}, they show links between linearization methods and how they solve the \cref{eq:dual_param}.\todo{is this last part used/referred somewhere else?}
 
 \paragraph{Dual parameters from NN}
-Given that we use a Laplace approximation of the neural network, we can remove the expectation over the posterior (see Ch.~3.4.1 in \cite{rasmussen2006gaussian} for derivation) and we get the the following formulation of the dual variables,
+Given that we use a Laplace approximation of the neural network, we remove the expectation over the posterior (see Ch.~3.4.1 in \cite{rasmussen2006gaussian} for derivation) and we get the the following formulation of the dual variables,
 \begin{equation}
 \label{eq:dual_param_laplace}
 \hat{\alpha}_i \coloneqq \nabla_{f_i}\log p(y_i \mid f_i),  \quad \text{and} \quad
@@ -597,9 +597,9 @@ where the sparse dual variables are now a sum over all data points, with $\valph
    \myexpect_{q_{\vu}(\vf)}[f_i] = \vkzs^{\T} \MKzz^{-1}   \valpha_{\vu} , \quad 
    \textrm{Var}_{q_{\vu}(\vf)}[f_i]  = \kappa_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \vbeta_{\vu})^{-1} ]\vkzs
 \end{equation}
-where $\MKzz$ and $\vkzs$ are defined similarly to $\MKxx$ and $\vk_{\vx i}$ but over the inducing points $\MZ \in \R^{M \times D} $  instead of the full dataset $\dataset$. The key quantities we need to make predictions from our sparse GP from the converged neural network are $(\hat{\alpha}_i, \hat{\beta}_i)$\todo{these variables need another subscript for differentiate that from the values computed at the data points} and a kernel function $\kappa$. Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred}, we can see that the computational complexity went from $\mathcal{O}(n^3)$  $\mathcal{O}(m^3)$, with $m \ll n$.  Crucially, given the structure of our probabilistic model, our sparse dual variables \cref{eq:dual_sparse} are a compact form \todo{use representation instead of form here ?} of the full model projected using the kernel. 
+where $\MKzz$ and $\vkzs$ are defined similarly to $\MKxx$ and $\vk_{\vx i}$ but over the inducing points $\MZ \in \R^{M \times D} $  instead of the full dataset $\dataset$. The key quantities we need to make predictions from our sparse GP from the converged neural network are $(\hat{\alpha}_i, \hat{\beta}_i)$ \cref{eq:dual_param_laplac}\todo{these variables need another subscript for differentiate that from the values computed at the data points} and a kernel function $\kappa$ . Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred}, we can see that the computational complexity went from $\mathcal{O}(n^3)$ to $\mathcal{O}(m^3)$, with $m \ll n$.  Crucially, given the structure of our probabilistic model, our sparse dual variables \cref{eq:dual_sparse} are a compact representation of the full model projected using the kernel. 
 
-In contrast to our approach, \citet{immer2021improving} use a subset of the full GP model \todo{isn't the subset on the data points?} to reduce the computational complexity. As a result, this is a less principled approach for building a sparse model since it ignores the dataset's information. It is important to highlight that the sparsifying process is independent of the approximate inference technique because the dual variables of \cref{eq:dual_param} are computed using \cref{eq-empirical-risk} and a Laplace approximation.
+In contrast to our approach, \citet{immer2021improving} use a subset of the data points to make a sparse GP model to reduce the computational complexity. As a result, this is a less principled approach for building a sparse model since it ignores the dataset's information. It is important to highlight that the sparsifying process is independent of the approximate inference technique because the dual variables of \cref{eq:dual_param} are computed using \cref{eq-empirical-risk} and a Laplace approximation.
 More complicated inference techniques, such as variational inference, could be used, but given its simplicity, in our experiments we used the Laplace-GGN approximation with the trained neural network. Furthermore, our dual variable view of approximate inference means we do not need to retrain a separate sparse GP model. \todo{shouldn't this sentence be clear from the context? we derive the mean/kernel function that define the process, then we have a sparse GP already}
 \section{Sparse Function-space Sequential Learning}
 

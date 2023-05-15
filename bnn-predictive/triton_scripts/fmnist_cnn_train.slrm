@@ -13,7 +13,8 @@ source activate /scratch/work/tamire1/full-bnn-svgp/conda/bnn-svgp
 
 
 SEEDS=(117 68 187 27 51)
-logd_deltas=(-0.5 0 0.5 1 1.5 2 2.25 2.5 2.75 3)
+#logd_deltas=(-0.5 0 0.5 1 1.5 2 2.25 2.5 2.75 3)
+logd_deltas=(2 2.1 2.2 2.3 2.4 2.5 2.6 2.7 2.8 2.9)
 dataset='FMNIST'
 case $(((SLURM_ARRAY_TASK_ID >= 10) * 1)) in
   (0) firstdigit=0;;
@@ -31,7 +32,11 @@ echo $logd_min
 model='CNN'
 n_deltas=1
 batch_size=500
-lr=1e-4
-res_folder='15'
+lr=1e-5
+res_folder='15_2'
+name='sparse_100_eps_small'
+n_inducing=100
+
 
 srun python3 -u experiments/scripts/imgclassification.py -d ${dataset} -m ${model} --root_dir . -s ${SEED} --n_deltas ${n_deltas} --res_folder ${res_folder} --logd_min ${logd_min} --logd_max ${logd_max} --lr ${lr}
+srun python3 -u experiments/scripts/imginference.py -d ${dataset} -m ${model} -b ${batch_size} --root_dir . -s ${SEED} --loginfo --n_inducing ${n_inducing} --name ${name} --res_folder ${res_folder} --run_with_best 0 --only_map 1 #--logdelta_min ${logd_min} --logdelta_max ${logd_max} --delta_factor ${delta_factor}

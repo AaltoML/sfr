@@ -185,3 +185,6 @@ class SVGPTransitionModel(TransitionModel):
             wandb_loss_name=self.wandb_loss_name,
             early_stopper=self.early_stopper,
         )(data_loader=train_loader, num_epochs=self.num_epochs)
+
+    def update(self, data_new):
+        return self.svgp.update(data_new=data_new)

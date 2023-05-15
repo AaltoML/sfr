@@ -525,24 +525,28 @@ Recent work \citep{khan2019approximate,maddox2021fast} has shown that linearizin
 lead to function space equivalent approximations.
 As Gaussian distributions remain tractable under linear transformations, a linear function in
 terms of parameters can be converted from the weight space to the function space (see Ch.~2.1 in \cite{rasmussen2006gaussian}) as follows:\begin{equation} \label{eq:weight_func}
-g_\weights(\mathbf{x}_{i}) = \phi^\top\!(\vx_i) \, \vw \implies \mu(\vx_i) = 0 \quad \kappa(\mathbf{x}_i, \mathbf{x}_i') = \frac{1}{\delta} \phi(\vx_i)^\top \phi(\vx_i).
+f_\weights(\vx) \approx 
+%g_\weights(\mathbf{x}) = 
+\phi^\top\!(\vx) \, \vw \implies \mu(\vx) = 0 \quad \kappa(\vx, \vx') = \frac{1}{\delta} \phi^\T\!(\vx) \, \phi(\vx')
 \end{equation}
 % The posterior structure directly relates to the optimization loss around the MAP weights $\vw^*$.
 A common approach is to approximate the correlation structure of a distribution centred at the MAP estimate as done in the Laplace-GGN \citep{khan2019approximate, daxberger2021laplace, maddox2021fast}. The Laplace-GGN takes the MAP solution and approximates the Hessian of the loss function
 % $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i)$
 with the GGN.
-Following the work of \citep{khan2019approximate}, we can view this approximation as building an approximate linear model of the neural network as $\hat{f}_\weights(\mathbf{x}_i) = \Jac{\weights_*}{\mathbf{x}_i} \, \weights$, where $\Jac{\weights}{\mathbf{x}_i} \coloneqq \nabla_\weights f(\mathbf{x}_i)^\top \in \R^{C \times P}$ is the Jacobian at the MAP.
-Using the Hessian of the approximate model, we arrive at the Laplace-GGN posterior for $q(\vw)$.
+Following the work of \citep{khan2019approximate}, we can view this approximation as building an approximate linear model of the neural network as $f_{\weights^*}(\vx) \approx 
+%g_{\weights}(\vx) = 
+\Jac{\weights_*}{\vx} \, \weights$, where $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{C \times P}$ is the Jacobian at the MAP.
+Using the Hessian of the approximate model, we arrive at the Laplace-GGN approximate posterior for $q(\vw)$.
 \todo{do we need this sentence about the Hessian to get Laplace-GGN??}
-Therefore, the GGN approximate linear model can be used to convert our weight space model to the function space by,
+Therefore, the Laplace-GGN linear model can be used to convert our weight space model to the function space by,
 \begin{equation} 
 \label{eq-laplace-approx-function-space}
 % g(\vx) \sim \GP \left( \mu(\vx), \kappa(\vx, \vx') \right) \quad \text{with} \quad
-  \mu(\vx_i) =  0 \quad \text{and} \quad
-  \kappa(\mathbf{x}_i, \mathbf{x}_i')
-  = \frac{1}{\delta} \Jac{\weights^*}{\mathbf{x}_i}\JacT{\weights^*}{\mathbf{x}_i'},
+  \mu(\vx) =  0 \quad \text{and} \quad
+  \kappa(\vx, \vx')
+  = \frac{1}{\delta} \Jac{\weights^*}{\vx} \, \JacT{\weights^*}{\vx'}, 
 \end{equation}
-where the kernel is the so-called Neural Tangent Kernel (NTK, \cite{jacot2018neural}). With this kernel function, we can then combine it with the dataset $\dataset$ to form the posterior $q(\vf)$. \citet{khan2019approximate} took a similar approach, but instead of fitting the GP posterior to the actual $\vy$, but a transformation of $\vy$ which they refer to as pseudo-data. Similarly, \citet{immerImprovingPredictionsBayesian2021} obtain the same covariance function but a different mean because they rely on a first order approximation of the neural network to form a Bayesian GLM model. Both approaches attempted to adjust the GP posterior mean function to ensure the predictions are from the neural network $f_{\vw^*}(\vx)$. In our method, we wish to make predictions from the derived GP and thus we avoid such adjustments. We now present the general formulation of the sparse functional representation of our trained neural network based on the non-sparse approximation. 
+where the kernel is the so-called Neural Tangent Kernel (NTK, \cite{jacot2018neural}). In \cref{eq-laplace-approx-function-space}, for notational convenience, we restricted the function output to single dimension, but this could be easily extend for the multi-dimensional case. With this kernel function, we can then combine it with the dataset $\dataset$ to form the posterior $q(\vf)$. \citet{khan2019approximate} took a similar approach, but instead of fitting the GP posterior to the actual $\vy$, but a transformation of $\vy$ which they refer to as pseudo-data. Similarly, \citet{immerImprovingPredictionsBayesian2021} obtain the same covariance function but a different mean because they rely on a first order approximation of the neural network to form a Bayesian GLM model. Both approaches attempted to adjust the GP posterior mean function to ensure the predictions are from the neural network $f_{\vw^*}(\vx)$. In our method, we wish to make predictions from the derived GP and thus we avoid such adjustments. We now present the general formulation of the sparse functional representation of our trained neural network based on the non-sparse approximation. 
 
 
 \section{\our: Sparse function-space represenation of neural networks}
@@ -600,6 +604,9 @@ In this section, we demonstrate how sequential learning methods can benefit from
 
 \subsection{Sparse functional regularization (SFR) in Continual learning}
 % Definition of CL -> a sequence of tasks 
+% Possible storyline:
+after each task we use the model 
+
 In this paper we consider the Continual learning setting were a sequence of disjoint sets 
 
 \begin{equation}

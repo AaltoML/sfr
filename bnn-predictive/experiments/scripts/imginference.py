@@ -11,7 +11,7 @@ from itertools import chain
 
 # from preds.laplace import Laplace, FunctionaLaplace
 from preds.laplace import FunctionaLaplace
-from src import CategoricalLh, NTKSVGP
+from src import CategoricalLh, NTKSVGP, NN2GPSubset
 import src as ntksvgp
 from preds.utils import nll_cls, macc, ece
 from preds.datasets import MNIST, FMNIST, SVHN
@@ -139,6 +139,27 @@ def get_perf_dict():
 def get_quick_loader(loader, device="cuda"):
     return [(X.to(device), y.to(device)) for X, y in loader]
 
+def update_with_ood(svgp, likelihood,  ds_ood, update_size=100, batch_size=512):
+
+    perm_ixs = torch.randperm(len(ds_ood))
+    update_ixs, test_ixs = perm_ixs[:update_size], perm_ixs[int(M / 2) :]
+    ds_ood_update = Subset(ds_ood, val_ixs)
+    ds_ood_test = Subset(ds_ood, test_ixs)
+
+    test_ood_loader = get_quick_loader(DataLoader(ds_ood_test, batch_size=batch_size))
+
+    update_X, update_y = ds_ood
+    svgp.update(update_X, update_y)
+    gstar_ood, yte = get_svgp_predictive(
+            test_ood_loader, svgp, use_nn_out=False, likelihood=likelihood
+        )
+    state[f"svgp_ntk_{name}_ood"] = evaluate_one(lh, yte, gstar_ood)
+
+def retrain_and_update_(svgp, likelihood, ds_test, update_size=100):
+
+
+
+
 
 def main(
     dataset_name,
@@ -151,8 +172,8 @@ def main(
     n_sparse,
     name,
     n_inducing,
-    delta_min=1e-5,
-    delta_max=1e8,
+    logdelta_min=-5,
+    logdelta_max=8,
     res_dir="experiments/results",
     device="cuda",
 ):
@@ -168,8 +189,8 @@ def main(
             ds == dataset_name
             and m == model_name
             and seed == int(s)
-            and (float(delta) >= delta_min)
-            and (float(delta) <= delta_max)
+            and (np.log10(float(delta)) >= delta_min)
+            and (np.log10(float(delta)) <= delta_max)
         ):
             eligible_files.append(os.path.join(res_dir, "models/" + file))
             deltas.append(float(delta))
@@ -259,24 +280,21 @@ def main(
         state[f"svgp_ntk_nn_{name}"] = evaluate(lh, yte, gstar_te, yva, gstar_va)
         logging.info(state[f"svgp_ntk_nn_{name}"])
 
+
         # GP subset
         logging.info("GP subset")
-        sparse_idx = torch.randperm(X_train.shape[0])[:n_inducing]
-        sparse_x = X_train[sparse_idx]
-        sparse_y = y_train[sparse_idx]
-        data_sparse = (sparse_x, sparse_y)
         prior = ntksvgp.priors.Gaussian(params=model.parameters, delta=delta)
-        svgp_subset = NTKSVGP(
+        svgp_subset = NN2GPSubset(
             network=model,
             prior=prior,
             output_dim=output_dim,
             likelihood=lh,
-            num_inducing=n_inducing,
+            subset_size=n_inducing,
             dual_batch_size=batch_size,
             jitter=0,
             device=device,
         )
-        svgp_subset.set_data(data_sparse)
+        svgp_subset.set_data(data)
         gstar_te, yte = get_svgp_predictive(
             test_loader, svgp_subset, use_nn_out=False, likelihood=lh
         )
@@ -285,6 +303,7 @@ def main(
         )
         state[f"gp_subset_{name}"] = evaluate(lh, yte, gstar_te, yva, gstar_va)
         logging.info(state[f"gp_subset_{name}"])
+
 
         torch.save(state, f)
 
@@ -301,8 +320,9 @@ def ood(
     name,
     res_dir="experiments/results",
     device="cuda",
+    run_update=False
 ):
-    lh = CategoricalLh(EPS=0.000000001)
+    lh = CategoricalLh(EPS=0.0)
 
     perf_keys = ["map", f"svgp_ntk_nn_{name}", f"svgp_ntk_{name}"]
     eligible_files = list()
@@ -362,6 +382,7 @@ def ood(
         likelihood=lh,
         num_inducing=n_inducing,
         dual_batch_size=batch_size,
+        jitter=0,
         device=device,
     )
     svgp.set_data(data)
@@ -383,6 +404,11 @@ def ood(
     )
     gstar_va, _ = get_svgp_predictive(ood_loader, svgp, use_nn_out=False, likelihood=lh)
     pred_ents["svgp_ntk"] = predictive_entropies(gstar_te, gstar_od)
+
+
+    # SVGP update
+    if run_update:
+        pred_ents = update_with_ood(pred_ents, svgp, likelihood,  ds_ood, update_size=100, batch_size=512)
 
     # # # Laplace Kron GLM
     # model = get_model(model_name, ds_train)
@@ -586,9 +612,14 @@ if __name__ == "__main__":
     parser.add_argument("--gp", help="functional inference", action="store_true")
     parser.add_argument("--ood", help="out of distribution", action="store_true")
     parser.add_argument("--res_folder", help="Result folder", default="test")
-    parser.add_argument("--delta_min", type=float, default=1e-7)
-    parser.add_argument("--delta_max", type=float, default=1e7)
+    parser.add_argument("--logdelta_min", type=float, default=1e-7)
+    parser.add_argument("--logdelta_max", type=float, default=1e7)
     parser.add_argument("--n_sparse", type=float, default=0.5)
+
+
+    parser.add_argument(
+        "--run_update", help="on/off switch for posterior refinement", type=int
+    )
     parser.add_argument(
         "--n_inducing_points", type=int, default=1000
     )  # TODO: use 3200 (Immer et al.) as default
@@ -608,6 +639,9 @@ if __name__ == "__main__":
     n_inducing_points = args.n_inducing_points
     root_dir = args.root_dir
     res_folder = args.res_folder
+    run_update = args.run_update
+    run_update = bool(run_update)
+    log_delta = args.log_delta
     name = args.name
 
     data_dir = os.path.join(root_dir, "data")
@@ -658,6 +692,7 @@ if __name__ == "__main__":
             name=name,
             res_dir=res_dir,
             device=device,
+            run_update=run_update
         )
     else:
         logging.info(f"Run inference with {dataset} using {model_name}")
@@ -672,8 +707,8 @@ if __name__ == "__main__":
             n_sparse,
             name,
             n_inducing_points,
-            args.delta_min,
-            args.delta_max,
+            args.logdelta_min,
+            args.logdelta_max,
             res_dir,
             device=device,
         )

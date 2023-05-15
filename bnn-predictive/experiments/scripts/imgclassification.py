@@ -218,7 +218,7 @@ if __name__ == '__main__':
     # naming convention: dataset_model_seed_delta
     fname = 'models/' + '_'.join([dataset, model_name, str(seed)]) + '_{delta:.1e}.pt'
     deltas = np.logspace(logd_min, logd_max, n_deltas)
-    deltas = np.insert(deltas, 0, 0)  # add unregularized network
+ #   deltas = np.insert(deltas, 0, 0)  # add unregularized network
     print(f'Train set size: {len(ds_train)}')
     deltas = deltas / len(ds_train)
 

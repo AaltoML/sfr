@@ -5,9 +5,8 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-import gpytorch
 import torch
-from models.svgp import SVGP
+from src.rl.models.svgp import SVGP
 from src.rl.custom_types import Action, State, StatePrediction, Data
 from src.rl.utils import EarlyStopper
 from torch.utils.data import DataLoader, TensorDataset

@@ -549,21 +549,21 @@ Therefore, the GGN approximate linear model can be used to convert our weight sp
 \begin{equation} 
 \label{eq-laplace-approx-function-space}
 % g(\vx) \sim \GP \left( \mu(\vx), \kappa(\vx, \vx') \right) \quad \text{with} \quad
-  \mu(\vx) =  0 \quad \text{and} \quad
-  \kappa(\mathbf{x}, \mathbf{x}')
-  = \frac{1}{\delta} \Jac{\weights^*}{\mathbf{x}}\JacT{\weights^*}{\mathbf{x}'},
+  \mu(\vx_i) =  0 \quad \text{and} \quad
+  \kappa(\mathbf{x}_i, \mathbf{x}_i')
+  = \frac{1}{\delta} \Jac{\weights^*}{\mathbf{x}_i}\JacT{\weights^*}{\mathbf{x}_i'},
 \end{equation}
 where the kernel is the so-called Neural Tangent Kernel (NTK, \cite{jacot2018neural}). With this kernel function, we can then combine it with the dataset $\dataset$ to form the posterior $q(\vf)$. \citet{khan2019approximate} took a similar approach, but instead of fitting the GP posterior to the actual $\vy$, but a transformation of $\vy$ which they refer to as pseudo-data.\todo{The reader may wonder what is pseudo-data then A: Is this better?} Similarly, \citet{immerImprovingPredictionsBayesian2021} obtain the same covariance function but a different mean because they rely on a first order approximation of the neural network to form a Bayesian GLM model. Both approaches attempted to adjust the GP posterior mean function to ensure the predictions are from the neural network $f_{\vw^*}(\vx)$. In our method, we wish to make predictions from the derived GP and thus we avoid such adjustments. We now present the general formulation of the sparse functional representation of our trained neural network based on the non-sparse approximation. \todo{this sentence can be avoided probably, A: its what Aidan calls setting the scene}
 
 
 \section{\our: Sparse function-space represenation of neural networks}
 \paragraph{Linearization in the dual parameters}
-As stated in \citet[Lemma~1]{csato2002sparse}, the posterior process mean and covariance functions of a GP prior, combined with a likelihood function and $\dataset$ can be stated as:
+As stated in \citet[Lemma~1]{csato2002sparse}, the posterior process $f$ mean and covariance functions of a GP prior, combined with a likelihood function and $\dataset$ can be parameterized:
 \begin{equation}  \label{eq:gp_pred}
- \myexpect_{p(f_i \mid\vy)}[f_i] = \vk_{\vx i}^\top \valpha \quad \text{and} \quad
-\mathrm{Var}_{p(f_{i}\mid\vy)}[f_i] = \kappa_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i},
+ \mu(\vx_i)_\textrm{post} = \vk_{\vx i}^\top \valpha \quad \text{and} \quad
+  \kappa(\mathbf{x}_i, \mathbf{x}_i')_\textrm{post} = \kappa_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i},
 \end{equation}
-where $f_i = f_\weights(\vx_i)$, the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{m \times m}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $\kappa_{ii} = \kappa(\vx_i, \vx_i)$.  The dual parameters consist of the vector $\valpha \in \R^{m}$ and vector $\vbeta \in \R^{m}$, defined as:
+, the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{m \times m}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $\kappa_{ii} = \kappa(\vx_i, \vx_i)$.  The dual parameters consist of the vector $\valpha \in \R^{m}$ and vector $\vbeta \in \R^{m}$, defined as:
 \begin{equation}
 \label{eq:dual_param}
 \alpha_i \coloneqq \myexpect_{p(\vw \mid \vy)}[\nabla_{f_i}\log p(y_i \mid f_i)],  \quad

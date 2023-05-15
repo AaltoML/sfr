@@ -1041,66 +1041,31 @@ The Continual learning setting is a challenging and the training and
 
 \subsection{Reinforcement learning}
 A key challenge in RL is balancing the trade-off between exploration and exploitation.
-That is, should the agent select an action that it knows will lead to a high reward (exploitation), or should it
-hope to discover new actions which lead to high reward (exploration) by selecting actions that it has not selected before.
-In this section, we demonstrate  that our method's principled uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim.
-
-We consider environments with states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \),
-actions \(\action \in \actionDomain \subseteq \R^{D_{\action}}\) and transition dynamics
-\(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \), such that
-$\state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}$, where  $\noise_{t}$
-is i.i.d. transition noise.
-We consider the episodic setting where the system is reset to an initial state $\state_{0}$ at each episode and we
-assume that there is a known reward function $r : \stateDomain \times \actionDomain \rightarrow \R$.
-% Following the Markov decision process formulation \cite{bellmanMarkovianDecisionProcess1957a}, we
-% denote the states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \) and actions \(\action \in \actionDomain \subseteq \R^{D_{\action}}\)
-% of the sytem, the reward function $r : \stateDomain \times \actionDomain \rightarrow \R$, and transition dynamics
-% \(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \), such that
-% $\state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}$ where  $\noise_{t}$
-% is i.i.d. transition noise.
-% $\mathbb{E}_{\noise_{0:\infty}} \big[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \big]$
-% \begin{align} \label{eq-model-free-objective}
-% \policy^{*} = \arg \max_{\policy \in \policyDomain} J(\transitionFn, \policy) = \arg \max_{\policy \in \policyDomain} \mathbb{E}_{\noise_{0:\infty}} \bigg[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \bigg]
-% \quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t},
-% \end{align}
-The goal of RL is to find the policy \(\pi : \stateDomain \rightarrow \actionDomain\)
-(from a set of policies $\Pi$) that maximises the sum of discounted rewards
-in expectation over the transition noise,
-\begin{align} \label{eq-model-free-objective}
-J(\transitionFn, \policy) = \mathbb{E}_{\noise_{0:\infty}} \bigg[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \bigg]
-\quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t},
-\end{align}
-where $\gamma \in [0, 1)$ is a discount factor.
-In this work, we consider model-based RL where a model of the transition dynamics is learned \(f_{\mathbf{w}} \approx \transitionFn\) and then used by a planning algorithm.
-A simple approach is to use the learned dynamic model $f_{\mathbf{w}^{*}}$ and maximise the objective in \cref{eq-model-free-objective}.
-% \begin{align} \label{eq-greedy}
-%   \policy^{\text{Greedy}} &= \arg \max_{\pi \in \Pi} J(f_{\mathbf{w}^{*}}, \pi).
-% \end{align}
-However, we can leverage the method in \cref{sec:methods} to obtain a function-space posterior over the learned dynamics $q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset)$,
-where $\mathcal{D}$ represents the state transition data set \(\mathcal{D} = \{(s_{i},a_{i}), s_{i+1}\}_{i=0}^{N}\).
-Importantly, the uncertainty represented by this posterior distribution can be used to balance the exploration-exploitation trade-off,
-using approaches such as posterior sampling \cite{osbandWhyPosteriorSampling2017,osbandMoreEfficientReinforcement2013},
-\begin{align} \label{eq-posterior-sampling}
-  \policy^{\text{PS}} &= \arg \max_{\pi \in \Pi} J(\hat{f}, \pi)
-\quad \text{s.t. } \tilde{\transitionFn} \sim q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset),
-\end{align}
-where a function $\tilde{\transitionFn}$ is sampled from the (approximate) posterior $q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset)$ and used to find a policy as
-in \cref{eq-greedy}.
-Intuitively, this strategy will explore where the model has high uncertainty, which in turn will reduce the model's uncertainty as data is collected and used to
-train the model.
-See \cref{sec-rl-appendix} for more details of how we use
-
-\todo{could try to implement Pathwise conditioning in function-space}
+That is, should an agent select actions that it knows will lead to a high reward (exploitation), or should it
+hope to discover new actions which lead to high reward (exploration)?
+In this section, we show that \our's uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim,
+demonstrating the quality of our uncertainty estimates.
+% In this section, we demonstrate  that our method's principled uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim.
+We refer the reader to \cref{app:rl} for an overview of the problem and details of our experiments.
 
 
+Cart pole swing up task in MuJoCo \cite{todorov2012mujoco}
+We compare our method with deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016} -- a model-free RL baseline --
+which is sample inefficient.
+We test our model's uncertainty estimates by comparing it to using Laplace-GGN with GLM predictions, using an ensemble of neural networks
+(with different initialisations),
+To ensure a fair comparison, we use the same MLP architecture/training scheme and we keep the same model-based RL algorithm.
 See \cref{app:rl} for more details of our experiments.
 
-We compare a model-based RL agent using a simple MLP dynamic model with
-\begin{itemize}
-  \item uncertainty is good for exploration
-\end{itemize}
+We also compare to deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016} -- a model-free RL baseline --
+which we expect to be much more sample inefficient.
+
 
 \cref{fig:rl} shows training curves
+
+
+
+
 
 \begin{figure}[!t]
  \centering

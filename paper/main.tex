@@ -1041,28 +1041,50 @@ The Continual learning setting is a challenging and the training and
 
 
 \subsection{Reinforcement learning}
-A key challenge in RL is balancing the trade-off between exploration and exploitation.
-That is, should an agent select actions that it knows will lead to a high reward (exploitation), or should it
-hope to discover new actions which lead to high reward (exploration)?
-In this section, we show that \our's uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim,
-demonstrating the quality of our uncertainty estimates.
+We now demonstrate the quaility of \our's uncertainty estimates by showing that it can improve sample efficiency in RL when used in conjuction with an
+uncertainty-guided exploration strategy.
+Balancing the trade-off between exploration and exploitation is a key challenge in RL \cite{sutton2018reinforcement}.
+Should an agent select actions that it knows will lead to high reward (exploitation), or actions which it has not select before in the
+hope to discover new high reward actions (exploration)?
+
+Prior work has used GP dynamic models \cite{deisenrothPILCO2011,kamtheDataEfficient2018}, ensembles of neural
+networks \cite{curiEfficient2020,chuaDeepReinforcementLearning2018}
+variational inference \cite{galImproving2016,houthooftVIME2017}
+
+
+% In this section, we show that \our's uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim,
+% demonstrating the quality of our uncertainty estimates.
+
+% A key challenge in RL is balancing the trade-off between exploration and exploitation.
+% That is, should an agent select actions that it knows will lead to a high reward (exploitation), or should it
+% hope to discover new actions which lead to high reward (exploration)?
+% In this section, we show that \our's uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim,
+% demonstrating the quality of our uncertainty estimates.
 % In this section, we demonstrate  that our method's principled uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim.
-We refer the reader to \cref{app:rl} for an overview of the problem and details of our experiments.
+We refer the reader to \cref{app:rl} for an overview of the reinforcement learning problem and more details of our experiments.
+
+% It is an inherently unstable and underactuated mechanical system.
+
+by using it to learn a dynamics model and
+evaluate the
+We test \our by using it to learn a dynamics model
+our method on the cart pole swing up task in MuJoCo \cite{todorov2012mujoco}, a classic benchmark for nonlinear control, see \cref{fig:rl}.
+The goal is to swing the pole up and balance it around the upward position.
+We increase the  difficulty of exploration in this environment by using a sparse reward function.
 
 
-Cart pole swing up task in MuJoCo \cite{todorov2012mujoco}
-We compare our method with deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016} -- a model-free RL baseline --
-which is sample inefficient.
-We test our model's uncertainty estimates by comparing it to using Laplace-GGN with GLM predictions, using an ensemble of neural networks
-(with different initialisations),
-To ensure a fair comparison, we use the same MLP architecture/training scheme and we keep the same model-based RL algorithm.
-See \cref{app:rl} for more details of our experiments.
+We compare our method to a Laplace-GGN with GLM predictions (red), an ensemble of neural networks (green) and a basic MLP wih no uncertainty (magenta).
+To ensure a fair comparison, we use the same MLP architecture/training scheme and use them in the same model-based RL algorithm, detailed in \cref{app:rl}.
+% See \cref{app:rl} for more details of our experiments.
+We also compare to deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016}, a model-free RL algorithim (yellow).
+% As expected DDPG is the least sample inefficient
+The training curves in \cref{fig:rl} show that \our's uncertainty estimates are good for exploration as it converges in fewer episodes.
 
-We also compare to deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016} -- a model-free RL baseline --
-which we expect to be much more sample inefficient.
+% We compare our method with deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016} -- a model-free RL baseline --
+% which is sample inefficient.
 
 
-\cref{fig:rl} shows training curves
+
 
 
 

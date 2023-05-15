@@ -17,7 +17,9 @@ import torch.nn as nn
 from dm_control import suite
 from setuptools.dist import Optional
 from torch.utils.data import DataLoader, TensorDataset
-from torchrl.data import ReplayBuffer
+
+# from torchrl.data import ReplayBuffer
+from .buffer import ReplayBuffer
 
 
 def to_torch(xs, device, dtype=torch.float32):

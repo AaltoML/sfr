@@ -9,9 +9,11 @@ logger = logging.getLogger(__name__)
 import numpy as np
 import src
 import torch
-from src.rl.custom_types import State, Action, ActionTrajectory
+from src.rl.custom_types import Action, ActionTrajectory, State
 from src.rl.models import RewardModel, TransitionModel
-from torchrl.data import ReplayBuffer
+
+# from torchrl.data import ReplayBuffer
+from src.rl.utils.buffer import ReplayBuffer
 
 from .agent import Agent
 from .ddpg import Actor, Critic, DDPGAgent

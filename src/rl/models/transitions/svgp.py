@@ -11,7 +11,9 @@ from src.rl.custom_types import Action, Data, State, StatePrediction
 from src.rl.models.svgp import SVGP
 from src.rl.utils import EarlyStopper
 from torch.utils.data import DataLoader, TensorDataset
-from torchrl.data import ReplayBuffer
+
+# from torchrl.data import ReplayBuffer
+from src.rl.utils.buffer import ReplayBuffer
 
 from .base import TransitionModel
 

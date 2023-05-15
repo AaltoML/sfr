@@ -11,7 +11,9 @@ import torch
 from dm_env import StepType
 from src.rl.agents import Agent
 from tensordict import TensorDict
-from torchrl.data import ReplayBuffer
+
+# from torchrl.data import ReplayBuffer
+from src.rl.utils.buffer import ReplayBuffer
 
 from .video import VideoRecorder
 

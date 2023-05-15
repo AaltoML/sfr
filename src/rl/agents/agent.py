@@ -3,7 +3,10 @@ import abc
 from typing import Any, Optional
 
 from src.rl.custom_types import Action, EvalMode, State, T0
-from torchrl.data import ReplayBuffer
+from src.rl.utils.buffer import ReplayBuffer
+
+
+# from torchrl.data import ReplayBuffer
 
 
 Data = Any

@@ -156,7 +156,7 @@ def update_with_ood(svgp, likelihood,  ds_ood, update_size=100, batch_size=512):
     state[f"svgp_ntk_{name}_ood"] = evaluate_one(lh, yte, gstar_ood)
 
 def retrain_and_update(state, svgp, likelihood, ds_test, ds_train, name='sparse_500',
-    update_size=100, batch_size=500, device='cpu'):
+    update_size=1000, batch_size=500, device='cpu'):
     # get update dataset
     perm_ixs = torch.randperm(len(test))
     update_ixs, test_ixs = perm_ixs[:update_size], perm_ixs[update_size:]
@@ -168,7 +168,6 @@ def retrain_and_update(state, svgp, likelihood, ds_test, ds_train, name='sparse_
     batched_update = DataLoader(ds_update, batch_size=batch_size)
     (X_update, y_update) = next(iter(all_update))
     svgp.update(update_X, update_y)
-
     gstar_update, yte = get_svgp_predictive(
             batched_update, svgp, use_nn_out=False, likelihood=likelihood
         )

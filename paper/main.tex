@@ -621,16 +621,16 @@ In the Continual learning setting, the training is divided into $T$ tasks, each 
 %, which in practice means randomly selecting some data computing its posterior at only those points and then using that as the regularizer. 
 A more principled approach would be to sparsify the resultant GP into a low-rank approximation to ensure information coming from the entire task dataset is not lost. %, essentially what the sparse dual variables do.   \todo{this term is replacing the missing data}
 % Where the regularizer comes from
-At the end of the training for each task $t$, we compute the Laplace-GGN approximated kernel function for the current model and randomly select $m$ inducing points. Given the issues described in the previous sections, related to computing the full covariance posterior $\MKxx$,\todo{this should be $\kappa(\MX_t, \MX_t)$}, we can exploit the dual parameterization to efficiently encode the information from the $\dataset_t$ using the dual parameterization, as follows, 
+At the end of the training for each task $t$, we compute the Laplace-GGN approximated kernel function for the current model and randomly select $m$ inducing points. Given the issues described in the previous sections, related to computing the full covariance posterior $\MKxx$ for $\dataset_t$,\todo{this should be $\kappa(\MX_t, \MX_t)$} we can exploit the dual parameterization to efficiently encode the information from  $\dataset_t$ using the dual parameterization, as follows, 
 \begin{equation}
  	\bar{\MB}^{-1}_t = \MKzz^{-1} \vbeta_\vu \MKzz^{-1} \in \R^{m \times m}, 
  	\quad 
  	\vbeta_{\vu} =  \sum_{i \in \dataset_t} \vkzi \,\hat{\beta}_{i} \, \vkzi^{\T} ,    
  	% \quad \forall t \in [1, T]
  \end{equation}
- where $\MKzz$ and $\vkzi$ are the kernel function computed on the inducing points $\MZ_t \in \R^{m \times D}$ for task $t$.
- 
-We can then keep a memory buffer $\mathcal{M} = \{(\MZ_t, \vu_t, \bar{\MB}^{-1}_t)\}_{t=1}^T$, where $\MZ_t$ are the inducing points selected from $\dataset_t$ and  $\vu_t = f_{\vw_t^*}(\MZ_t)\in \R^{m}$ are the neural network outputs over them computed with the MAP estimate after task $t$, $\vw_t^*$. Note that, for notational convenience, we are extending our neural network notation to be compatible with multiple inputs points, \ie, each $i$th entry is $f_{\vw_t^*}(\vz_i)\in \R$. Moreover, we restrict ourselves to single-output neural networks and refer the reader to further details on the multi-output setting to \cref{sec:cl_multioutput}. 
+ where $\MKzz$ and $\vkzi$ are the kernel function computed on the inducing points $\MZ_t \in \R^{m \times D}$ for task $t$ .
+  
+We keep a memory buffer $\mathcal{M} = \{(\MZ_t, \vu_t, \bar{\MB}^{-1}_t)\}_{t=1}^T$, where $\MZ_t$ are the inducing points selected from $\dataset_t$ and  $\vu_t = f_{\vw_t^*}(\MZ_t)\in \R^{m}$ are the neural network outputs associated to them, computed with the MAP estimate after task $t$ $\weights_t^*$. Note that, for notational convenience, we are extending our neural network notation to be compatible with multiple inputs points, \ie, each $i$th entry is $f_{\weights_t^*}(\vz_i)\in \R$. Moreover, we restrict ourselves to single-output neural networks and refer the reader to further details on the multi-output setting to \cref{sec:cl_multioutput}. 
 
 After each task, we update $\mathcal{M}$, and we can construct a regularizer term, which aims to reduce the drift of the current model from diverging on the inducing points $\MZ_s$ for all previous tasks $ s \in \left[ 1, t-1 \right]$. The resulting regularizer can be computed as follows
 %\begin{equation}
@@ -638,7 +638,7 @@ After each task, we update $\mathcal{M}$, and we can construct a regularizer ter
 %\end{equation}
 
 \begin{equation}
-	\mathcal{R}_\textit{SFR}(\weights, \mathcal{M}) = \sum_{s=1}^{t-1} \frac{1}{m} 
+	\mathcal{R}_\textit{SFR}(\weights, \mathcal{M}) = \frac{1}{2} \sum_{s=1}^{t-1} \frac{1}{m} 
 	\left\lVert 
 	f_{\weights}(\MZ_{s}) - \vu_t % f_{\weights_{s}}(\MZ_s)
 	\right\rVert_{\bar{\MB}^{-1}_{s}}.

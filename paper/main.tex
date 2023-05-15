@@ -598,7 +598,7 @@ the sparse dual variables are now a sum over all data points, with $\valpha_{\vu
 \end{equation}
 where $\MKzz$ and $\vkzs$ are define similarly to $\MKxx$ and $\vk_{\vx i}$ but now over the $\MZ \in \R^{M \times D} $ inducing points instead of the full dataset $\MX$. The key quantities we need to make predictions from our sparse GP from the converged neural network are $(\hat{\alpha}_i, \hat{\beta}_i)$ and a kernel function $\kappa$. Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred} we can see that the computational complexity is now $\mathcal{O}(m^3)$ to $\mathcal{O}(n^3)$ where $m \ll n$.  Crucially given the structure of our probabilistic model, our sparse dual variables \cref{eq:dual_sparse} are a compact form of the full model projected using the kernel. 
 
-Our approach contrasts to \citet{immer2021improving}, which uses a subset of the full model to try to reduce complexity, a less principled approach to build a sparse model given it ignores the information in the dataset. It is important to highlight that the sparsifying process is independent of the approximate inference technique. The \cref{eq:dual_param} are from the neural network definition \cref{eq-empirical-risk}. More complicated inference techniques, such as variational inference, could be used, but given its simplicity, we only need a trained neural network; we use a Laplace approximation in our experiments. Furthermore, our dual variable view of approximate inference means we do not need to resort to retraining a separate sparse GP model.
+Our approach contrasts to \citet{immer2021improving}, which uses a subset of the full model to try to reduce complexity, a less principled approach to build a sparse model given it ignores the information in the dataset. It is important to highlight that the sparsifying process is independent of the approximate inference technique. The \cref{eq:dual_param} is a result of using \cref{eq-empirical-risk} and a Laplace approximation. More complicated inference techniques, such as variational inference, could be used, but given its simplicity, we only need a trained neural network; we use a Laplace approximation in our experiments. Furthermore, our dual variable view of approximate inference means we do not need to resort to retraining a separate sparse GP model.
 
 \section{Sparse Function-space Sequential Learning}
 
@@ -609,13 +609,17 @@ In this section, we demonstrate how sequential learning methods can benefit from
 
 \subsection{\our for Continual Learning}
 % Definition of CL -> a sequence of tasks 
-In the Continual learning setting, the training is divided into $T$ tasks, each with its training data set $\dataset_t = \{(\mathbf{x}_{i}, \mathbf{y}_{i})\}_{i=1}^{n_t}$, which after the task is discarded and cannot be accessed in the later stages of the training. However, rehearsal and function regularization-based models keep a subset of the training data for each task to help the model alleviate forgetting. After each task, we can use our \our to build a compact representation of the neural network and then use that as an additional term to the training loss to regularize the model. \todo{this term is replacing the missing data}
+In the Continual learning setting, the training is divided into $T$ tasks, each with its training data set $\dataset_t = \{(\mathbf{x}_{i}, \mathbf{y}_{i})\}_{i=1}^{n_t}$, which after the task is discarded and cannot be accessed in the later stages of the training. However, rehearsal and function regularization-based models keep a subset of the training data for each task to help the model alleviate forgetting. After each task, we can use our \our to build a compact representation of the neural network and then use that as an additional term to the training loss to regularize the model. Recent success has shown GP-based regularizers perform better than weight space equivalents getting state-of-the-art on typical CL benchmarks \cite{ pan2020continual, rudner2022continual}. The limitation of such approaches is that they must use subset approximations of the posterior, which in practice means randomly selecting some data computing its posterior at only those points and then using that as the regularizer. A more principled approach would be to sparsify the data into a low-rank approximation to ensure information wasn't lost, essentially what the sparse dual variables do.   \todo{this term is replacing the missing data}
 
-An alternative view of the dual variables is that they parameterize approximate likelihoods as was shown in \citep{adam2021dual} we can rewrite the GP posterior in terms of the following approximate normal distributions:
+An alternative view of the dual variables is that they parameterize approximate likelihoods, as shown in \citep{adam2021dual, khan2017conjugate}. We can rewrite the GP posterior for $q(\vu)$ in terms of the following approximate normal distributions:
 \begin{equation}
- q(\vu) \propto \N(0, \MKzz) \prod_{i=1}^n e^{-\frac{\hat{\beta}_i}{2}(\tilde{y}_i - \va_i^\top \vu)^2 } = \N(0, \MKzz) \, e^{(\tilde{\vy} - \vu)^\top\tilde{\MSigma}^{-1}(\tilde{\vy} - \vu)}  
+ q(\vu) \propto \N(0, \MKzz) \prod_{i=1}^n e^{-\frac{\tilde{\beta}_i}{2}(\tilde{y}_i - \va_i^\top \vu)^2 } = \N(0, \MKzz) \, e^{(\bar{\vy} - \vu)^\top \bar{\MSigma}^{-1}(\bar{\vy} - \vu)}  
 \end{equation}
-The first normals are the marginal likelihoods were $\va_i^\top = \vkzi^\top \MKzz^{-1}$ and $\tilde{y}_i = \hat{\alpha}_i + f_{\vw^*}(\vx_i)\hat{\beta}$,  replacing $\va_i^\top \vu$  wtih $\vx_i^{\top}\vw$ and we can see the similarity between the sparse GP and a linear model where the prior is determined by the kernel matrix. To arrive at the MVN Gaussian we need to rearrange the quadratic terms to match the prior sufficient statistics we present a derivation in [appendix]. Performing conjugate summation of prior and likelihood we would arrive at the sparse GP posterior at the inducing points $\MZ$. The correlated covariance structure $\MSigma$ and the corresponding $\tilde{\vy}$ are simply a different form of the sparse dual variables
+The first normals are the approximate likelihoods where $\va_i^\top = \vkzi^\top \MKzz^{-1}$ and $\tilde{y}_i = \hat{\alpha}_i + f_{\vw^*}(\vx_i)\hat{\beta}$,  replacing $\va_i^\top \vu$ with $\vx_i^{\top}\vw$ and we can see the similarity between the sparse GP and a linear model where the kernel matrix determines the prior. To arrive at the MVN Gaussian, we need to rearrange the quadratic terms to match the prior sufficient statistics we present a derivation in [appendix]. Performing conjugate summation of prior and likelihood, we would arrive at the sparse GP posterior at the inducing points. The correlated covariance structure $\MSigma$ and the corresponding $\tilde{\vy}$ are simply a different form of the sparse dual variables,
+\begin{equation}
+\quad \bar{\MSigma} =  \MKzz \vbeta_\vu^{-1} \MKzz \quad \bar{\vy} = \MKzz \vbeta_{\vu}\valpha_{\vu}.
+\end{equation}
+Written as above, we can see that the spare dual variables can be interpreted as a sparse MVN representation. We now show how we use this for a regularizer in continual learning with more details in [appendix].
 
 % Where the regularizer comes from
 At the end of the training for each task $t$, we compute the Laplace-GGN approximated kernel function for the current model and randomly select $m$ inducing points. Given the issues described in the previous sections, related to computing the full covariance posterior $\MKxx$,\todo{this should be $\kappa(\MX_t, \MX_t)$}, we can exploit the dual parameterization to efficiently encode the information from the $\dataset_t$ using the dual parameterization, as follows, 
@@ -1100,7 +1104,7 @@ We compare a model-based RL agent using a simple MLP dynamic model with
 
 \begin{figure}[!t]
  \centering
- \begin{subfigure}{.2\textwidth}
+ \begin{subfigure}[c]{.24\textwidth}
  \resizebox{\textwidth}{!}{%
  \begin{tikzpicture}[inner sep=0,outer sep=0]
 
@@ -1117,33 +1121,33 @@ We compare a model-based RL agent using a simple MLP dynamic model with
    \node[fill=white,draw=black,line width=3pt,circle,minimum size=2cm,fill=black!50] at (7cm,-.5cm) {};
 
    % The arm
-   \node[anchor=north,minimum width=1cm,minimum height=14cm,draw=black,rotate=20,rounded corners=5mm,yshift=7mm,xshift=-.3mm,fill=white,draw=black,line width=3pt] at (dot) {};
+   \node[anchor=north,minimum width=1cm,minimum height=14cm,draw=black,rotate=-20,rounded corners=5mm,yshift=7mm,xshift=-.3mm,fill=white,draw=black,line width=3pt] at (dot) {};
    \node[fill=black,circle,minimum size=.5cm] at (dot) {};
 
    % Markings
    \draw[loosely dashed,line width=1pt] (4.5,6) -- (4.5,-10);
 
    % Arrow
-   \draw[->,black,line width=3pt,-{Latex[length=7mm,width=7mm]}] (1,5) --node[above,outer sep=6pt]{\large $x$} (4.5,5);
+   \draw[->,black,line width=3pt,-{Latex[length=7mm,width=7mm]}] (1,5) --node[above,outer sep=8pt]{\scalebox{4}{$x$}} (4.5,5);
 
    \def\centerarc[#1](#2)(#3:#4:#5)% Syntax: [draw options] (center) (initial angle:final angle:radius)
    { \draw[#1] ($(#2)+({#5*cos(#3)},{#5*sin(#3)})$) arc (#3:#4:#5); }
 
    % Draw arc
-   \centerarc[black,line width=3pt](dot)(270:290:11)
-   \node at (6.5,-9) {$\theta$};
+   \centerarc[black,line width=3pt](dot)(250:270:11)
+   \node at (2.5,-9) {\scalebox{4}{$\theta$}};
 
-   \node[white,minimum size=1cm] at (4.5,-13) {};
+   %\node[white,minimum size=1cm] at (4.5,-13) {};
 
  \end{tikzpicture}}
  \end{subfigure}
  \hfill
- \begin{subfigure}{.78\textwidth}
+ \begin{subfigure}[c]{.74\textwidth}
    \centering\scriptsize
    \setlength{\figurewidth}{\textwidth}
    \setlength{\figureheight}{.5\figurewidth}
-   \pgfplotsset{axis on top,ymajorgrids,axis line style={draw=none} }
-   \pgfplotsset{grid style={line width=.1pt, draw=gray!10,dashed}}
+   \pgfplotsset{axis on top,ymajorgrids,axis line style={draw=none},legend style={at={(1,1)},anchor=north west}}
+   \pgfplotsset{grid style={line width=.1pt, draw=gray!10,dashed},legend style={fill=white}}
    \input{./fig/rl.tex}
  \end{subfigure}
  \hfill

@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pickle
 import torch
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, ConcatDataset
 from torch.utils.data.dataset import Subset
 from torch.distributions import Categorical, Normal
 from tqdm import tqdm
@@ -175,9 +175,10 @@ def retrain_and_update(state, svgp, likelihood, ds_test, ds_train, name='sparse_
     state[f"svgp_ntk_{name}_updated"] = evaluate_one(likelihood, yte, gstar_update)
 
     # Retrain network
-    train_update_loader = ds_train + ds_update
+    ds_train_update = ConcatDataset(ds_train, ds_update)
+    train_update_loader = DataLoader(ds_train_update, batch_size=batch_size)
 
-    model = retrain_nn(svgp, train_update_loader, delta=svgp.prior.delta)
+    model = retrain_nn(svgp, train_update_loader, delta=svgp.prior.delta, device=device)
     gstar_update, yte = get_map_predictive(model=model, loader=batched_update)
     state[f'nn_retrain_map'] = evaluate_one(likelihood, yte, gstar_update)
 
@@ -194,7 +195,6 @@ def retrain_nn(svgp, train_loader, delta, lr=1e-3, device='cpu', n_epochs=500):
             optimizer.step()
         scheduler.step()
     return svgp.network
-
 
 
 def main(

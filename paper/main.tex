@@ -1087,35 +1087,44 @@ In addition to uncertainty estimates, our method can update the posterior when g
 % In this section, we show that \our's uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim,
 % demonstrating the quality of our uncertainty estimates.
 
-A key challenge in RL is balancing the trade-off between exploration and exploitation.
-That is, should an agent select actions that it knows will lead to high reward (exploitation), or should it
-select new ones in hope to discover actions leading to higher reward (exploration).
-One promising direction is to model the uncertainty associated with a learned transition dynamics and use it to guide exploration.
-Prior work has learned dynamics models using GPs \cite{deisenrothPILCO2011,kamtheDataEfficient2018},
-ensembles of neural networks \cite{curiEfficient2020,chuaDeepReinforcementLearning2018}
-and variational inference \cite{galImproving2016,houthooftVIME2017}.
-There are then many ways to leverage uncertainty in model-based RL, for example,
-taking an expectation over epistemic uncertainty  \cite{deisenrothPILCO2011,kamtheDataEfficient2018,chuaDeepReinforcementLearning2018},
-sampling from the posterior, akin to Thompson sampling but referred to as posterior sampling RL
-\cite{osbandMoreEfficientReinforcement2013},
-and methods based on upper confidence bounds (UCB) \cite{curiEfficient2020}.
+% A key challenge in RL is balancing the trade-off between exploration and exploitation.
+% That is, should an agent select actions that it knows will lead to high reward (exploitation), or should it
+% select new ones in hope to discover actions leading to higher reward (exploration).
+% One promising direction is to model the uncertainty associated with a learned transition dynamics and use it to guide exploration.
+% Prior work has learned dynamics models using GPs \cite{deisenrothPILCO2011,kamtheDataEfficient2018},
+% ensembles of neural networks \cite{curiEfficient2020,chuaDeepReinforcementLearning2018}
+% and variational inference \cite{galImproving2016,houthooftVIME2017}.
+% There are then many ways to leverage uncertainty in model-based RL, for example,
+% taking an expectation over epistemic uncertainty  \cite{deisenrothPILCO2011,kamtheDataEfficient2018,chuaDeepReinforcementLearning2018},
+% sampling from the posterior, akin to Thompson sampling but referred to as posterior sampling RL
+% \cite{osbandMoreEfficientReinforcement2013},
+% and methods based on upper confidence bounds (UCB) \cite{curiEfficient2020}.
 
 
+In this section, we show that \our's uncertainty estimates can be used to guide exploration in model-based RL;
+demonstrating the quality of our uncertainty estimates.
 % Uncertainty-guided decision making strategies
-We refer the reader to \cref{app:rl} for an overview of the reinforcement learning problem and more details of our experiments.
-
-We test \our by using it to learn a dynamics model
-our method on the cart pole swing up task in MuJoCo \cite{todorov2012mujoco}, a classic benchmark for nonlinear control, see \cref{fig:rl}.
+We test \our by using it to learn a dynamics model within a model-based RL strategy which uses posterior sampling to guide exploration
+\cite{osbandMoreEfficientReinforcement2013,osbandWhyPosteriorSampling2017}.
+We use the cart pole swing up task in MuJoCo \cite{todorov2012mujoco}, a classic benchmark for nonlinear control, see \cref{fig:rl}.
 The goal is to swing the pole up and balance it around the upward position.
-We increase the  difficulty of exploration in this environment by using a sparse reward function.
+We increase the difficulty of exploration by using a sparse reward function.
+We refer the reader to \cref{app:rl} for an overview of the reinforcement learning problem, details of the algorithim we implement and our experiment's configuration.
 
-
-We compare \our (cyan) to a Laplace-GGN with GLM predictions (red), an ensemble of neural networks (green) and a basic MLP wih no uncertainty (magenta).
+\cref{fig:rl} shows training curves using \our as the dynamic model (cyan) as well as a Laplace-GGN with GLM predictions (red), an ensemble of neural
+networks (green) and a basic MLP wih no uncertainty (magenta).
 To ensure a fair comparison, we use the same MLP architecture/training scheme and use them in the same model-based RL algorithm, detailed in \cref{app:rl}.
-% See \cref{app:rl} for more details of our experiments.
+% that \our's uncertainty estimates are useful for guiding exploration as it converges in fewer episodes.
 We also compare to deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016}, a model-free RL algorithim (yellow).
+The training curves show that \our's uncertainty estimates are useful for guiding exploration as it converges in fewer episodes, i.e.
+it is more sample efficient.
+As expected, the MLP strategy (without uncertainty) was not able to successfuly explore the environment.
+
+% We compare \our (cyan) to a Laplace-GGN with GLM predictions (red), an ensemble of neural networks (green) and a basic MLP wih no uncertainty (magenta).
+% To ensure a fair comparison, we use the same MLP architecture/training scheme and use them in the same model-based RL algorithm, detailed in \cref{app:rl}.
+% See \cref{app:rl} for more details of our experiments.
 % As expected DDPG is the least sample inefficient
-The training curves in \cref{fig:rl} show that \our's uncertainty estimates are useful for guiding exploration as it converges in fewer episodes.
+% The training curves in \cref{fig:rl} show that \our's uncertainty estimates are useful for guiding exploration as it converges in fewer episodes.
 
 % \cite{deisenrothPILCO2011},
 % Posterior sampling

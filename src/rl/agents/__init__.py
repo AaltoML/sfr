@@ -6,3 +6,4 @@ from .utils import *
 from .objectives import *
 from .mppi import MPPIAgent
 from .ddpg import DDPGAgent
+from src.rl.agents.agent import Agent

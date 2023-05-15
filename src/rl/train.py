@@ -19,59 +19,16 @@ import torch
 torch.set_default_dtype(torch.float64)
 
 import src
-import torchrl
+
+# import torchrl
 import wandb
 from dm_env import specs, StepType
 from omegaconf import DictConfig, OmegaConf
 from src.rl.custom_types import Action, State
-from src.rl.utils import EarlyStopper, set_seed_everywhere
+from src.rl.utils import EarlyStopper, set_seed_everywhere, ReplayBuffer
 from tensordict import TensorDict
 
-
-Transition = namedtuple("Transition", ("state", "action", "next_state", "reward"))
-
-
-class ReplayMemory(object):
-    def __init__(self, capacity: int, batch_size: int, device):
-        self.memory = deque([], maxlen=capacity)
-        self.batch_size = batch_size
-        self.device = device
-
-    def push(self, state: State, action: Action, next_state: State, reward):
-        """Save a transition"""
-        self.memory.append(
-            Transition(state=state, action=action, next_state=next_state, reward=reward)
-        )
-        # self.memory.append(Transition(*args))
-
-    def sample(self, batch_size=None):
-        if batch_size is None:
-            batch_size = self.batch_size
-        samples = random.sample(self.memory, batch_size)
-        states = []
-        actions = []
-        rewards = []
-        next_states = []
-        for sample in samples:
-            # print("sample {}".format(sample))
-            states.append(torch.Tensor(sample.state).to(self.device))
-            actions.append(torch.Tensor(sample.action).to(self.device))
-            rewards.append(torch.Tensor(sample.reward).to(self.device))
-            next_states.append(torch.Tensor(sample.next_state))
-        states = torch.stack(states, 0).to(self.device)
-        actions = torch.stack(actions, 0).to(self.device)
-        rewards = torch.stack(rewards, 0).to(self.device)
-        next_states = torch.stack(next_states, 0).to(self.device)
-        return {
-            "state": states,
-            "action": actions,
-            "reward": rewards,
-            "next_state": next_states,
-        }
-        # return random.sample(self.memory, batch_size)
-
-    def __len__(self):
-        return len(self.memory)
+# Transition = namedtuple("Transition", ("state", "action", "next_state", "reward"))
 
 
 @hydra.main(version_base="1.3", config_path="./configs", config_name="main")
@@ -151,16 +108,16 @@ def train(cfg: DictConfig):
     #     pin_memory=False,
     #     # prefetch=prefetch,
     # )
-    replay_buffer = torchrl.data.ReplayBuffer(
-        # storage=torchrl.data.replay_buffers.LazyMemmapStorage(num_train_steps),
-        storage=torchrl.data.replay_buffers.LazyTensorStorage(
-            int(num_train_steps) // max(1, num_workers), device=cfg.device
-        ),
-        batch_size=cfg.batch_size,
-        pin_memory=False,
-    )
+    # replay_buffer = torchrl.data.ReplayBuffer(
+    #     # storage=torchrl.data.replay_buffers.LazyMemmapStorage(num_train_steps),
+    #     storage=torchrl.data.replay_buffers.LazyTensorStorage(
+    #         int(num_train_steps) // max(1, num_workers), device=cfg.device
+    #     ),
+    #     batch_size=cfg.batch_size,
+    #     pin_memory=False,
+    # )
     print("num_train_steps {}".format(num_train_steps))
-    replay_memory = ReplayMemory(
+    replay_memory = ReplayBuffer(
         capacity=num_train_steps, batch_size=cfg.batch_size, device=cfg.device
     )
     # replay_buffer = ReplayMemory(capacity=num_train_steps, batch_size=cfg.batch_size)
@@ -524,6 +481,15 @@ def train(cfg: DictConfig):
                 )
                 if isinstance(
                     agent.transition_model,
+                    src.rl.models.transitions.SVGPTransitionModel,
+                ):
+                    (
+                        state_diff_mean,
+                        state_diff_var,
+                        _,
+                    ) = agent.transition_model.svgp.predict(state_action_inputs)
+                elif isinstance(
+                    agent.transition_model,
                     src.rl.models.transitions.NTKSVGPTransitionModel,
                 ):
                     (
@@ -535,25 +501,40 @@ def train(cfg: DictConfig):
                         (state_diff_nn - state_diff_output) ** 2
                     )
                     wandb.log({"mse_transition_model_nn": mse_transition_model_nn})
-                else:
-                    (
-                        state_diff_mean,
-                        state_diff_var,
-                        _,
-                    ) = agent.transition_model.svgp.predict(state_action_inputs)
+                elif isinstance(
+                    agent.transition_model,
+                    src.rl.models.transitions.LaplaceTransitionModel,
+                ):
+                    state_diff_mean, state_diff_var = agent.transition_model.la(
+                        state_action_inputs
+                    )
+                    state_diff_var = torch.diagonal(state_diff_var, dim1=-1, dim2=-2)
+                    state_diff_nn = agent.transition_model.network(state_action_inputs)
+                    mse_transition_model_nn = torch.mean(
+                        (state_diff_nn - state_diff_output) ** 2
+                    )
+                    wandb.log({"mse_transition_model_nn": mse_transition_model_nn})
 
-                # Log transition model stuff
-                mse_transition_model = torch.mean(
-                    (state_diff_mean - state_diff_output) ** 2
-                )
-                wandb.log({"mse_transition_model_svgp": mse_transition_model})
+                try:
+                    # Log transition model stuff
+                    mse_transition_model = torch.mean(
+                        (state_diff_mean - state_diff_output) ** 2
+                    )
+                    wandb.log({"mse_transition_model_svgp": mse_transition_model})
+                except:
+                    pass
 
-                nlpd_transition_model = -torch.mean(
-                    torch.distributions.Normal(
-                        state_diff_mean, torch.sqrt(state_diff_var)
-                    ).log_prob(state_diff_output)
-                )
-                wandb.log({"nlpd_transition_model": torch.mean(nlpd_transition_model)})
+                try:
+                    nlpd_transition_model = -torch.mean(
+                        torch.distributions.Normal(
+                            state_diff_mean, torch.sqrt(state_diff_var)
+                        ).log_prob(state_diff_output)
+                    )
+                    wandb.log(
+                        {"nlpd_transition_model": torch.mean(nlpd_transition_model)}
+                    )
+                except:
+                    pass
 
                 # print("dataset['reward'] {}".format(dataset["reward"].shape))
                 reward_output = dataset["reward"][:, 0]

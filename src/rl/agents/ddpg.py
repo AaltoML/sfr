@@ -12,8 +12,10 @@ import torch
 import torch.nn as nn
 import wandb
 from src.rl.custom_types import Action, EvalMode, State, T0, Data
-from torchrl.data.replay_buffers import ReplayBuffer
 
+# from torchrl.data.replay_buffers import ReplayBuffer
+
+from src.rl.utils.buffer import ReplayBuffer
 from .agent import Agent
 
 

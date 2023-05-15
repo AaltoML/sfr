@@ -1,14 +1,14 @@
 # @package _global_
 defaults:
   - override /reward_model: cartpole
-  - override /transition_model: svgp
+  - override /transition_model: laplace
 
 # hydra:
 #   sweeper:
 #     params:
 #       random_seed: 42,100,50,1,15
 
-alg_name: "svgp-sample"
+alg_name: "laplace-sample"
 online_updates: false
 
 agent:

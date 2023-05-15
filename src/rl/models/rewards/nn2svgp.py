@@ -12,8 +12,10 @@ import wandb
 from src.rl.custom_types import Action, InputData, OutputData, RewardPrediction, State
 from src.rl.models.util import weights_init_normal
 from src.rl.utils import EarlyStopper
-from torchrl.data import ReplayBuffer
 
+# from torchrl.data import ReplayBuffer
+
+from src.rl.utils.buffer import ReplayBuffer
 from .base import RewardModel
 
 

@@ -281,22 +281,22 @@ Recent techniques (\eg, \cite{ritter2018kfac,khan2019approximate,daxberger2021la
 %Yet many problems lie in high dimensional input space; for example, images are where GPs cannot learn representations. In such scenarios such as in many reinforcement learning environments neural networks are used as the surrogate model. However, uncertainty is still essential to ensure effective exploration for sequential algorithms. Successful approaches have attempted to blend neural networks with uncertainty estimates around predictions, allowing for sophisticated exploration strategies. However, there has been limited use of hybrid models that possess the feature representation ability of neural networks but also attractive the properties of GPs, such a hybrid method we propose in this paper.
 
 %Need for adaptive learning methods + failures with current methods
-In this paper, we demonstrate that any neural network can be represented in terms of the so-called `dual' parameters of a GP~\cite{csato2002sparse, adam2021dual, chang2020fast}. Contrasting to previous work that use subsets \cite{immer2021scalable}, this parameterization allows squashing the contributions of {\em all} training data into a sparse representation. Crucially, the resulting GP now predicts in the same space as the originally trained neural network, a feature not present in previous approaches, while still avoiding the notorious cubic complexity of vanilla GPs. Given the dual parameter formulation, we can convert a full GP to a variational sparse version. Using the sparse GP we can then take advantage of the property of dual parameters that allows for fast conditioning recently shown in \cite{chang2022fantasizing}. Thus we are able to avoid retraining and condition new data in to our model. The resultant \our method can be used in any sequential decision-making scenario where retraining is not available.%and we show its effectiveness in a planning stage of a model based reinforcement algorithim.
-
-\todo{a pragraph on how this can be used for improving CL and RL}
+In this paper, we demonstrate that any neural network can be represented in terms of the so-called `dual' parameters of a GP~\cite{csato2002sparse, adam2021dual, chang2020fast}. Contrasting to previous work that use subsets \cite{immer2021scalable}, this parameterization allows squashing the contributions of {\em all} training data into a sparse representation. Crucially, the resulting GP now predicts in the same space as the originally trained neural network, a feature not present in previous approaches, while still avoiding the notorious cubic complexity of vanilla GPs. Given the dual parameter formulation, we establish a link between the neural network, the resulting full GP, and a sparse approximation of it akin to variational sparse GPs~\cite{titsias2009variational}. Using the sparse GP we can then take advantage of the property of dual parameters that allows for fast conditioning recently shown in \cite{chang2022fantasizing}. Thus we are able to avoid retraining and condition new data in to our model. The resultant \our method can be used in any sequential decision-making scenario where retraining is not available.
+%\todo{a pragraph on how this can be used for improving CL and RL}
 
 %Need uncertainty and adaptive methods
 %Dual formulation in GPs space solves this
 %Talk about planning and exploration in RL.
 
 
-We introduce a sparse representation of the neural network in the function space. 
+The contributions of this paper are as follows.
 %
-{\em (i)}~principled uncertainty quantification.
-{\em (ii)}~A compact representation for continual learning
+{\em (i)}~We introduce \our, a new approah for sparse representation of the neural network in the function space.
+{\em (ii)}~We show that, despite being sparse, the method gives a good   
+A compact representation for continual learning
 {\em (iii)}~Fast updates for adaptive exploration.
 %
-We demonstrate points {\em(i)--(iii)} in the experiments.
+We provide extenive experiments for showcasing our approach and demonstrate importance and applicability across supervised, continual, and reinforcement learning to stimulate future use of the approach.
 
 %List the contributions.
 %The contributions of the paper our is as follows:

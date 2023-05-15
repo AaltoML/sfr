@@ -507,7 +507,7 @@ However, there has been little leveraging
          
     % Labels
     \node[anchor=north, font=\small] at ($(banana-nn) + (0,-.55\figureheight)$) {Neural network prediction};
-    \node[anchor=north, font=\small] at ($(banana-nn2svgp) + (0,-.55\figureheight)$) {Sparse GP representation};
+    \node[anchor=north, font=\small] at ($(banana-nn2svgp) + (0,-.55\figureheight)$) {Sparse function-space representation};
     \node[anchor=north, font=\small] at ($(banana-hmc) + (0,-.55\figureheight)$) {HMC result as baseline};      
 
   \end{tikzpicture}
@@ -591,34 +591,37 @@ Contrarily, our methodology intends to make predictions directly from the derive
 
 \section{\our: Sparse function-space represenation of neural networks}
 %\paragraph{GP in the dual parameters}
-The early work by \citet{csato2002sparse} (Parameterization Lemma~1) states that the mean and covariance functions of the posterior process $f_{\textrm{post}}$, found through the Bayesian update using the GP prior and the likelihood function, can be parameterized by `dual' parameters, $\valpha$ and $\vbeta$,
+The seminal work by \citet{csato2002sparse} (parameterization Lemma~1) gives a parameterization for the posterior process $f_{\textrm{post}}$ that can be found through the Bayesian update using the GP prior and the likelihood function. This gives a `dual' parameterization, $\valpha$ and $\vbeta$,
 %
 \begin{equation}  \label{eq:gp_pred}
   \myexpect_{p(f_i \mid\vy)}[f_i]= \vk_{\vx i}^\top \valpha \quad \text{and} \quad
   \mathrm{Var}_{p(f_i \mid \vy)}[f_i] = k_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i},
 \end{equation}
 %
-where the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{n \times n}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $k_{ii} = \kappa(\vx_i, \vx_i)$.  The dual parameters are the vector $\valpha \in \R^{m}$ and vector $\vbeta \in \R^{m}$, defined as:
+where the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{N \times N}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $k_{ii} = \kappa(\vx_i, \vx_i)$.  The dual parameters are the vector $\valpha \in \R^{m}$ and vector $\vbeta \in \R^{m}$, defined as:
+%
 \begin{equation}
-\label{eq:dual_param}
-\alpha_i \coloneqq \myexpect_{p(\vw \mid \vy)}[\nabla_{f_i}\log p(y_i \mid f_i)],  \quad
-\beta_i \coloneqq - \myexpect_{p(\vw \mid \vy)}[\nabla^2_{f_i f_i}\log p(y_i \mid f_i)] .
+  \label{eq:dual_param}
+  \alpha_i \coloneqq \myexpect_{p(\vw \mid \vy)}[\nabla_{f_i}\log p(y_i \mid f_i)]
+  \quad \text{and} \quad
+  \beta_i \coloneqq - \myexpect_{p(\vw \mid \vy)}[\nabla^2_{f_i f_i}\log p(y_i \mid f_i)] .
 \end{equation}
 %
-The above relations hold for generic likelihoods, and no approximations are involved as the expectation is under the exact posterior. 
-It also highlights that our approximate inference technique, while usually considered a posterior approximation, can instead be seen as approximating the expectation of gradients of loss/likelihoods. \todo{our approximation is late \cref{eq:dual_param_laplace}, saying this here is misleading}\\
-In \citet{csato2002sparse}, they iteratively find dual variables using an Expectation Propogation (EP) method.  
-At the same time, in \cite{adam2021dual, chang2020fast}, they show this relationship for variational Gaussian processes where the above expectation is with respect to the approximate variational posterior. The dual parameter $\valpha$ appears also in non-Bayesian approaches, \eg, support vector machines \citep{cortes1995support}, whose origins are found in work by \citet{kimeldorf1971some}. While in \citet{wilkinson2023bayes}, they show links between linearization methods and how they solve the \cref{eq:dual_param}.\todo{is this last part used/referred somewhere else?}
+The relationships specified above are valid for generic likelihoods, and involve no approximations since the expectation is under the exact posterior. This higlights the fact that our approximate inference technique that will follow, while usually viewed as a posterior approximation, can be alternatively interpreted as an approximation of the expectation of gradients of loss/likelihoods.
+
+Originally \citet{csato2002sparse} iteratively find dual variables using an expectation propogation (EP, \cite{minka2001expectation}) method. More recently \cite{khan2017conjugate,adam2021dual}, has shown this relationship for variational Gaussian processes where the above expectation is with respect to the approximate variational posterior. The dual parameter $\valpha$ appears also in non-Bayesian approaches, \eg, support vector machines \citep{cortes1995support}, whose origins are found in work by \citet{kimeldorf1971some}. While in \citet{wilkinson2023bayes}, they show links between linearization methods and how they solve the \cref{eq:dual_param}.
 
 \paragraph{Dual parameters from NN}
 Given that we use a Laplace approximation of the neural network, we remove the expectation over the posterior (see Ch.~3.4.1 in \cite{rasmussen2006gaussian} for derivation) and we get the the following formulation of the dual variables,
+%
 \begin{equation}
-\label{eq:dual_param_laplace}
-\hat{\alpha}_i \coloneqq \nabla_{f_i}\log p(y_i \mid f_i),  \quad \text{and} \quad
-\hat{\beta}_i \coloneqq - \nabla^2_{f_i f_i}\log p(y_i \mid f_i).
+  \label{eq:dual_param_laplace}
+  \hat{\alpha}_i \coloneqq \nabla_{f}\log p(y_i \mid f) |_{f=f_i}
+  \quad \text{and} \quad
+  \hat{\beta}_i \coloneqq - \nabla^2_{f,f}\log p(y_i \mid f) |_{f=f_i}.
 \end{equation}
-
-Substiuting \cref{eq:dual_param_laplace} into \cref{eq:gp_pred}, we obtain our GP model based on the converged neural network. Again, this is similar to what was derived in \citet{immer2021improving} for the posterior variance function. However, they use the $f_{\vw^*}$ for the posterior mean and do not spot the significance of the dual variables. The problem with \cref{eq:gp_pred} is that to make predictions and compute variances we must incur a cost of $O(n^3)$ which limits the use of the GP on large data sets.
+%
+Substiuting \cref{eq:dual_param_laplace} into \cref{eq:gp_pred}, we obtain our GP model based on the converged neural network. Again, this is similar to what was derived in \citet{immer2021improving} for the posterior variance function. However, they use the $f_{\vw^*}$ for the posterior mean and do not emphasize the significance of the dual variables. The problem with \cref{eq:gp_pred} is that to make predictions and compute variances we must incur a cost of $O(N^3)$ which limits the use of the GP on large data sets.
 
 \paragraph{Sparsifying the NNGP}
 \label{sec:sparse-dual-gp}
@@ -1044,9 +1047,7 @@ Similarly to the UCI experiments, we trained neural networks (CNN, architexture 
 In addition to uncertainty estimates, our method can update the posterior when given new data. We gave the SVGP model 10 \% of the test dataset used for evaluation, and compare the performance of the SVGP model and the retrained NN in [INSERT TABLE]. 
 
 \subsection{Updating the  network representation for Continual learning}
-%% Very rough draft
-
-
+%
 % the problem is hard many hyperparams and also a lot of things can make huge differences
 % we restrict ourselves to the SH setting, then some values 
 

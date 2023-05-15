@@ -19,7 +19,8 @@ import torch
 torch.set_default_dtype(torch.float64)
 
 import src
-import torchrl
+
+# import torchrl
 import wandb
 from dm_env import specs, StepType
 from omegaconf import DictConfig, OmegaConf

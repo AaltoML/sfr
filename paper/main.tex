@@ -418,6 +418,36 @@ However, the GP's cubic $\mathcal{O}(n^3)$ scaling with data points $n$ requires
 \textbf{Function-space methods for sequential learning} 
 Continual learning (CL) hinges on how to deal with the non-stationary training distribution, wherein the training process may overwrite previously learned parameters, causing catastrophic forgetting \citep{mccloskey1989catastrophic}. CL approaches fall into inference-based, rehearsal-based, and model-based methods (see \cite{parisi2019continual, de2021continual} for an overview). The methods in the first category usually tackle this problem with weight-space regularization, such as EWC~\citep{kirkpatrick2017overcoming}, SI~\citep{zenke17a}), or VCL~\citep{nguyen-tuongModel2009} that induce retention of previously learned information in the weights alone. However, encoding functional knowledge in the weights does not guarantee good quality of the predictions. Function-space regularization techniques~\cite{li2018lwf, benjamin2018measuring, titsias2019functional, buzzega2020dark, pan2020continual, rudner2022continual} address this by relying on training data subsets for each task to compute the regularization term. These methods bridge the gap between objective and rehearsal-based methods since they use a subset of the training data for each task to compute the regularization term. Recently proposed methods, \eg, DER~\citep{buzzega2020dark}, FROMP~\citep{pan2020continual}, and S-FSVI~\citep{rudner2022continual} achieve state-of-the-art performance among the objective-based techniques in several CL benchmarks. 
 
+\textbf{Uncertainty quantification in RL}
+A key challenge in RL is balancing the trade-off between exploration and exploitation \cite{sutton2018reinforcement}.
+That is, should an agent select actions that it knows will lead to high reward (exploitation), or should it
+select new ones in hope to discover actions leading to higher reward (exploration).
+One promising direction to balancing this trade-off is to model the uncertainty associated with a learned transition dynamics model and use it to guide exploration.
+Prior work has taken an expectation over the dynamic model's posterior \cite{deisenrothPILCO2011,kamtheDataEfficient2018,chuaDeepReinforcementLearning2018},
+sampled from it (akin to Thompson sampling but referred to as posterior sampling RL)
+\todo{cite thopmson sampling paper dearden et al 1999}
+\cite{osbandMoreEfficientReinforcement2013},
+and used it to implement optimism in the face of uncertainty using upper confidence bounds \cite{curiEfficient2020}.
+\todo{cite UCRL paper}
+No single strategy has emerged as a go to method and we highlight that these strategies are only as good as their uncertainty estimates.
+% Central to these decision-making strategies are the methods for quantifying uncertainty.
+Previous approaches have used GPs \cite{deisenrothPILCO2011,kamtheDataEfficient2018},
+ensembles of neural networks \cite{curiEfficient2020,chuaDeepReinforcementLearning2018}
+and variational inference \cite{galImproving2016,houthooftVIME2017}.
+However, there has been little leveraging
+
+% Another classical and provable exploration theory in RL is based on optimism
+% \todo{cite UCRL paper}
+% Recent work has even extended these ideas to deep RL \cite{curiEfficient2020}.
+
+% An alternative approach is to sample from the dynamic model's posterior, akin to Thompson sampling but referred to as posterior sampling RL
+% Another classical and provable exploration theory in RL is based on optimism in the face of uncertainty.
+% \todo{cite UCRL paper}
+% Recent work has even extended these ideas to deep RL \cite{curiEfficient2020}.
+% These strategies are only as good as their uncertainty estimates.
+% Prior work has learned dynamics models using GPs \cite{deisenrothPILCO2011,kamtheDataEfficient2018},
+% ensembles of neural networks \cite{curiEfficient2020,chuaDeepReinforcementLearning2018}
+% and variational inference \cite{galImproving2016,houthooftVIME2017}.
 
 
 
@@ -477,7 +507,7 @@ Continual learning (CL) hinges on how to deal with the non-stationary training d
          
     % Labels
     \node[anchor=north, font=\small] at ($(banana-nn) + (0,-.55\figureheight)$) {Neural network prediction};
-    \node[anchor=north, font=\small] at ($(banana-nn2svgp) + (0,-.55\figureheight)$) {Sparse GP representation};
+    \node[anchor=north, font=\small] at ($(banana-nn2svgp) + (0,-.55\figureheight)$) {Sparse function-space representation};
     \node[anchor=north, font=\small] at ($(banana-hmc) + (0,-.55\figureheight)$) {HMC result as baseline};      
 
   \end{tikzpicture}
@@ -561,34 +591,37 @@ Contrarily, our methodology intends to make predictions directly from the derive
 
 \section{\our: Sparse function-space represenation of neural networks}
 %\paragraph{GP in the dual parameters}
-The early work by \citet{csato2002sparse} (Parameterization Lemma~1) states that the mean and covariance functions of the posterior process $f_{\textrm{post}}$, found through the Bayesian update using the GP prior and the likelihood function, can be parameterized by `dual' parameters, $\valpha$ and $\vbeta$,
+The seminal work by \citet{csato2002sparse} (parameterization Lemma~1) gives a parameterization for the posterior process $f_{\textrm{post}}$ that can be found through the Bayesian update using the GP prior and the likelihood function. This gives a `dual' parameterization, $\valpha$ and $\vbeta$,
 %
 \begin{equation}  \label{eq:gp_pred}
   \myexpect_{p(f_i \mid\vy)}[f_i]= \vk_{\vx i}^\top \valpha \quad \text{and} \quad
   \mathrm{Var}_{p(f_i \mid \vy)}[f_i] = k_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i},
 \end{equation}
 %
-where the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{n \times n}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $k_{ii} = \kappa(\vx_i, \vx_i)$.  The dual parameters are the vector $\valpha \in \R^{m}$ and vector $\vbeta \in \R^{m}$, defined as:
+where the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{N \times N}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $k_{ii} = \kappa(\vx_i, \vx_i)$.  The dual parameters are the vector $\valpha \in \R^{m}$ and vector $\vbeta \in \R^{m}$, defined as:
+%
 \begin{equation}
-\label{eq:dual_param}
-\alpha_i \coloneqq \myexpect_{p(\vw \mid \vy)}[\nabla_{f_i}\log p(y_i \mid f_i)],  \quad
-\beta_i \coloneqq - \myexpect_{p(\vw \mid \vy)}[\nabla^2_{f_i f_i}\log p(y_i \mid f_i)] .
+  \label{eq:dual_param}
+  \alpha_i \coloneqq \myexpect_{p(\vw \mid \vy)}[\nabla_{f_i}\log p(y_i \mid f_i)]
+  \quad \text{and} \quad
+  \beta_i \coloneqq - \myexpect_{p(\vw \mid \vy)}[\nabla^2_{f_i f_i}\log p(y_i \mid f_i)] .
 \end{equation}
 %
-The above relations hold for generic likelihoods, and no approximations are involved as the expectation is under the exact posterior. 
-It also highlights that our approximate inference technique, while usually considered a posterior approximation, can instead be seen as approximating the expectation of gradients of loss/likelihoods. \todo{our approximation is late \cref{eq:dual_param_laplace}, saying this here is misleading}\\
-In \citet{csato2002sparse}, they iteratively find dual variables using an Expectation Propogation (EP) method.  
-At the same time, in \cite{adam2021dual, chang2020fast}, they show this relationship for variational Gaussian processes where the above expectation is with respect to the approximate variational posterior. The dual parameter $\valpha$ appears also in non-Bayesian approaches, \eg, support vector machines \citep{cortes1995support}, whose origins are found in work by \citet{kimeldorf1971some}. While in \citet{wilkinson2023bayes}, they show links between linearization methods and how they solve the \cref{eq:dual_param}.\todo{is this last part used/referred somewhere else?}
+The relationships specified above are valid for generic likelihoods, and involve no approximations since the expectation is under the exact posterior. This higlights the fact that our approximate inference technique that will follow, while usually viewed as a posterior approximation, can be alternatively interpreted as an approximation of the expectation of gradients of loss/likelihoods.
+
+Originally \citet{csato2002sparse} iteratively find dual variables using an expectation propogation (EP, \cite{minka2001expectation}) method. More recently \cite{khan2017conjugate,adam2021dual}, has shown this relationship for variational Gaussian processes where the above expectation is with respect to the approximate variational posterior. The dual parameter $\valpha$ appears also in non-Bayesian approaches, \eg, support vector machines \citep{cortes1995support}, whose origins are found in work by \citet{kimeldorf1971some}. While in \citet{wilkinson2023bayes}, they show links between linearization methods and how they solve the \cref{eq:dual_param}.
 
 \paragraph{Dual parameters from NN}
 Given that we use a Laplace approximation of the neural network, we remove the expectation over the posterior (see Ch.~3.4.1 in \cite{rasmussen2006gaussian} for derivation) and we get the the following formulation of the dual variables,
+%
 \begin{equation}
-\label{eq:dual_param_laplace}
-\hat{\alpha}_i \coloneqq \nabla_{f_i}\log p(y_i \mid f_i),  \quad \text{and} \quad
-\hat{\beta}_i \coloneqq - \nabla^2_{f_i f_i}\log p(y_i \mid f_i).
+  \label{eq:dual_param_laplace}
+  \hat{\alpha}_i \coloneqq \nabla_{f}\log p(y_i \mid f) |_{f=f_i}
+  \quad \text{and} \quad
+  \hat{\beta}_i \coloneqq - \nabla^2_{f,f}\log p(y_i \mid f) |_{f=f_i}.
 \end{equation}
-
-Substiuting \cref{eq:dual_param_laplace} into \cref{eq:gp_pred}, we obtain our GP model based on the converged neural network. Again, this is similar to what was derived in \citet{immer2021improving} for the posterior variance function. However, they use the $f_{\vw^*}$ for the posterior mean and do not spot the significance of the dual variables. The problem with \cref{eq:gp_pred} is that to make predictions and compute variances we must incur a cost of $O(n^3)$ which limits the use of the GP on large data sets.
+%
+Substiuting \cref{eq:dual_param_laplace} into \cref{eq:gp_pred}, we obtain our GP model based on the converged neural network. Again, this is similar to what was derived in \citet{immer2021improving} for the posterior variance function. However, they use the $f_{\vw^*}$ for the posterior mean and do not emphasize the significance of the dual variables. The problem with \cref{eq:gp_pred} is that to make predictions and compute variances we must incur a cost of $O(N^3)$ which limits the use of the GP on large data sets.
 
 \paragraph{Sparsifying the NNGP}
 \label{sec:sparse-dual-gp}
@@ -1066,44 +1099,85 @@ On P-MNIST we are lower than S-FSVI, however % I'm still running experiments, so
 
 
 \subsection{Reinforcement learning}
-We now demonstrate the quaility of \our's uncertainty estimates by showing that it can improve sample efficiency in RL when used in conjuction with an
-uncertainty-guided exploration strategy.
-Balancing the trade-off between exploration and exploitation is a key challenge in RL \cite{sutton2018reinforcement}.
-Should an agent select actions that it knows will lead to high reward (exploitation), or actions which it has not select before in the
-hope to discover new high reward actions (exploration)?
+% We now demonstrate the quaility of \our's uncertainty estimates by showing that it can improve sample efficiency in RL.
+% Balancing the trade-off between exploration and exploitation is a key challenge in RL \cite{sutton2018reinforcement}.
+% Should an agent select actions that it knows will lead to high reward (exploitation), or actions which it has not select before in the
+% hope to discover new high reward actions (exploration)?
 
-Prior work has used GP dynamic models \cite{deisenrothPILCO2011,kamtheDataEfficient2018}, ensembles of neural
-networks \cite{curiEfficient2020,chuaDeepReinforcementLearning2018}
-variational inference \cite{galImproving2016,houthooftVIME2017}
+% when used in conjuction with an
+% uncertainty-guided exploration strategy.
 
 
 % In this section, we show that \our's uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim,
 % demonstrating the quality of our uncertainty estimates.
 
-% A key challenge in RL is balancing the trade-off between exploration and exploitation.
-% That is, should an agent select actions that it knows will lead to a high reward (exploitation), or should it
-% hope to discover new actions which lead to high reward (exploration)?
-% In this section, we show that \our's uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim,
-% demonstrating the quality of our uncertainty estimates.
-% In this section, we demonstrate  that our method's principled uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim.
+A key challenge in RL is balancing the trade-off between exploration and exploitation.
+That is, should an agent select actions that it knows will lead to high reward (exploitation), or should it
+select new ones in hope to discover actions leading to higher reward (exploration).
+One promising direction is to model the uncertainty associated with a learned transition dynamics and use it to guide exploration.
+Prior work has learned dynamics models using GPs \cite{deisenrothPILCO2011,kamtheDataEfficient2018},
+ensembles of neural networks \cite{curiEfficient2020,chuaDeepReinforcementLearning2018}
+and variational inference \cite{galImproving2016,houthooftVIME2017}.
+There are then many ways to leverage uncertainty in model-based RL, for example,
+taking an expectation over epistemic uncertainty  \cite{deisenrothPILCO2011,kamtheDataEfficient2018,chuaDeepReinforcementLearning2018},
+sampling from the posterior, akin to Thompson sampling but referred to as posterior sampling RL
+\cite{osbandMoreEfficientReinforcement2013},
+and methods based on upper confidence bounds (UCB) \cite{curiEfficient2020}.
+
+
+% Uncertainty-guided decision making strategies
 We refer the reader to \cref{app:rl} for an overview of the reinforcement learning problem and more details of our experiments.
 
-% It is an inherently unstable and underactuated mechanical system.
-
-by using it to learn a dynamics model and
-evaluate the
 We test \our by using it to learn a dynamics model
 our method on the cart pole swing up task in MuJoCo \cite{todorov2012mujoco}, a classic benchmark for nonlinear control, see \cref{fig:rl}.
 The goal is to swing the pole up and balance it around the upward position.
 We increase the  difficulty of exploration in this environment by using a sparse reward function.
 
 
-We compare our method to a Laplace-GGN with GLM predictions (red), an ensemble of neural networks (green) and a basic MLP wih no uncertainty (magenta).
+We compare \our (cyan) to a Laplace-GGN with GLM predictions (red), an ensemble of neural networks (green) and a basic MLP wih no uncertainty (magenta).
 To ensure a fair comparison, we use the same MLP architecture/training scheme and use them in the same model-based RL algorithm, detailed in \cref{app:rl}.
 % See \cref{app:rl} for more details of our experiments.
 We also compare to deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016}, a model-free RL algorithim (yellow).
 % As expected DDPG is the least sample inefficient
-The training curves in \cref{fig:rl} show that \our's uncertainty estimates are good for exploration as it converges in fewer episodes.
+The training curves in \cref{fig:rl} show that \our's uncertainty estimates are useful for guiding exploration as it converges in fewer episodes.
+
+% \cite{deisenrothPILCO2011},
+% Posterior sampling
+
+
+% based on
+
+% Model-based RL algorithims are more sample efficient than their model-free counterparts as they learn a model of the transition dynamics and
+% use it to augment the RL loop.
+
+
+% Prior work has used show that modelling uncertainty in the transition dynamics can further improve exploration and thus sample efficiency.
+% For example, with GPs \cite{deisenrothPILCO2011,kamtheDataEfficient2018},
+% ensembles of neural networks \cite{curiEfficient2020,chuaDeepReinforcementLearning2018}
+% and variational inference \cite{galImproving2016,houthooftVIME2017}
+
+% We now demonstrate the quaility of \our's uncertainty estimates by showing that it can improve sample efficiency in RL.
+
+% In this section, we show that \our's uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim,
+% demonstrating the quality of our uncertainty estimates.
+% In this section, we demonstrate  that our method's principled uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim.
+
+% It is an inherently unstable and underactuated mechanical system.
+
+% by using it to learn a dynamics model and
+% evaluate the
+% We test \our by using it to learn a dynamics model
+% our method on the cart pole swing up task in MuJoCo \cite{todorov2012mujoco}, a classic benchmark for nonlinear control, see \cref{fig:rl}.
+% The goal is to swing the pole up and balance it around the upward position.
+% We increase the  difficulty of exploration in this environment by using a sparse reward function.
+
+
+% We compare our method to a Laplace-GGN with GLM predictions (red), an ensemble of neural networks (green) and a basic MLP wih no uncertainty (magenta).
+% To ensure a fair comparison, we use the same MLP architecture/training scheme and use them in the same model-based RL algorithm, detailed in \cref{app:rl}.
+% % See \cref{app:rl} for more details of our experiments.
+% We also compare to deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016}, a model-free RL algorithim (yellow).
+% % As expected DDPG is the least sample inefficient
+% The training curves in \cref{fig:rl} show that \our's uncertainty estimates are good for exploration as it converges in fewer episodes.
 
 % We compare our method with deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016} -- a model-free RL baseline --
 % which is sample inefficient.
@@ -1115,6 +1189,7 @@ The training curves in \cref{fig:rl} show that \our's uncertainty estimates are 
 
 
 
+ \todo{I'm thinking we should take out the SFR with updates result}
 \begin{figure}[!t]
  \centering
  \begin{subfigure}[c]{.24\textwidth}
@@ -1164,8 +1239,8 @@ The training curves in \cref{fig:rl} show that \our's uncertainty estimates are 
    \input{./fig/rl.tex}
  \end{subfigure}
  \hfill
- \caption{\textbf{Reinforcement learning experiments} Training curves showing that \our's uncertainty estimates improve sample efficiency in RL.
-   Our method (blue/green) converges in fewer environment steps than the baseline model-based RL method (magenta) and (DDPG) the model-free baseline  (yellow).}
+ \caption{\textbf{Cartpole swingup with sparse reward} Training curves showing that \our's uncertainty estimates improve sample efficiency in RL.
+   Our method (blue/green) converges in fewer environment steps than the baseline model-based RL method (magenta) and DDPG, the model-free baseline (yellow).}
  \label{fig:rl}
 \end{figure}
 

@@ -617,9 +617,9 @@ In this section, we demonstrate how sequential learning methods can benefit from
 
 \subsection{\our for Continual Learning}
 % Definition of CL -> a sequence of tasks 
-In the Continual learning setting, the training is divided into $T$ tasks, each with its training data set $\dataset_t = \{(\mathbf{x}_{i}, \mathbf{y}_{i})\}_{i=1}^{n_t}$, which after the task is discarded and cannot be accessed in the following stages of the training. Rehearsal and function regularization-based models keep a subset of the training data for each task to help the model alleviate forgetting. In the same way, after each task, we can use our \our to build a compact representation of the neural network and then exploit this representation to build a functional regularizer to add to the training loss for the subsequent tasks. Recently proposed GP-based regularizers \cite{ pan2020continual, rudner2022continual} have shown better performances than weight space equivalents getting state-of-the-art on CL benchmarks. However, they are limited to use subset approximations of the posterior.
+In the Continual learning setting, the training is divided into $T$ tasks, each with its training data set $\dataset_t = \{(\mathbf{x}_{i}, \mathbf{y}_{i})\}_{i=1}^{n_t}$, which after the task is discarded and cannot be accessed in the following stages of the training. Rehearsal and function regularization-based models keep a subset of the trai ning data for each task to help the model alleviate forgetting. In the same way, after each task, we can use our \our to build a compact representation of the neural network and then exploit this representation to build a functional regularizer to add to the training loss for the subsequent tasks. Recently proposed GP-based regularizers \cite{ pan2020continual, rudner2022continual} have shown better performances than weight space equivalents getting state-of-the-art on CL benchmarks. However, they are limited to use subset approximations of the posterior.
 %, which in practice means randomly selecting some data computing its posterior at only those points and then using that as the regularizer. 
-A more principled approach would be to sparsify the resultant GP into a low-rank approximation to ensure information coming from the entire task dataset is not lost.%, essentially what the sparse dual variables do.   \todo{this term is replacing the missing data}
+A more principled approach would be to sparsify the resultant GP into a low-rank approximation to ensure information coming from the entire task dataset is not lost. %, essentially what the sparse dual variables do.   \todo{this term is replacing the missing data}
 % Where the regularizer comes from
 At the end of the training for each task $t$, we compute the Laplace-GGN approximated kernel function for the current model and randomly select $m$ inducing points. Given the issues described in the previous sections, related to computing the full covariance posterior $\MKxx$,\todo{this should be $\kappa(\MX_t, \MX_t)$}, we can exploit the dual parameterization to efficiently encode the information from the $\dataset_t$ using the dual parameterization, as follows, 
 \begin{equation}
@@ -1012,7 +1012,8 @@ Similarly to the UCI experiments, we trained neural networks (CNN, architexture 
 In addition to uncertainty estimates, our method can update the posterior when given new data. We gave the SVGP model 10 \% of the test dataset used for evaluation, and compare the performance of the SVGP model and the retrained NN in [INSERT TABLE]. 
 
 \subsection{Updating the  network representation for Continual learning}
-The Continual learning setting is a challenging and the training and
+% the problem is hard many hyperparams and also a lot of things can make huge differences
+% we restrict ourselves to the SH setting, then some values 
 
 
 \begin{table}[t!] 
@@ -1038,28 +1039,50 @@ The Continual learning setting is a challenging and the training and
 
 
 \subsection{Reinforcement learning}
-A key challenge in RL is balancing the trade-off between exploration and exploitation.
-That is, should an agent select actions that it knows will lead to a high reward (exploitation), or should it
-hope to discover new actions which lead to high reward (exploration)?
-In this section, we show that \our's uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim,
-demonstrating the quality of our uncertainty estimates.
+We now demonstrate the quaility of \our's uncertainty estimates by showing that it can improve sample efficiency in RL when used in conjuction with an
+uncertainty-guided exploration strategy.
+Balancing the trade-off between exploration and exploitation is a key challenge in RL \cite{sutton2018reinforcement}.
+Should an agent select actions that it knows will lead to high reward (exploitation), or actions which it has not select before in the
+hope to discover new high reward actions (exploration)?
+
+Prior work has used GP dynamic models \cite{deisenrothPILCO2011,kamtheDataEfficient2018}, ensembles of neural
+networks \cite{curiEfficient2020,chuaDeepReinforcementLearning2018}
+variational inference \cite{galImproving2016,houthooftVIME2017}
+
+
+% In this section, we show that \our's uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim,
+% demonstrating the quality of our uncertainty estimates.
+
+% A key challenge in RL is balancing the trade-off between exploration and exploitation.
+% That is, should an agent select actions that it knows will lead to a high reward (exploitation), or should it
+% hope to discover new actions which lead to high reward (exploration)?
+% In this section, we show that \our's uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim,
+% demonstrating the quality of our uncertainty estimates.
 % In this section, we demonstrate  that our method's principled uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim.
-We refer the reader to \cref{app:rl} for an overview of the problem and details of our experiments.
+We refer the reader to \cref{app:rl} for an overview of the reinforcement learning problem and more details of our experiments.
+
+% It is an inherently unstable and underactuated mechanical system.
+
+by using it to learn a dynamics model and
+evaluate the
+We test \our by using it to learn a dynamics model
+our method on the cart pole swing up task in MuJoCo \cite{todorov2012mujoco}, a classic benchmark for nonlinear control, see \cref{fig:rl}.
+The goal is to swing the pole up and balance it around the upward position.
+We increase the  difficulty of exploration in this environment by using a sparse reward function.
 
 
-Cart pole swing up task in MuJoCo \cite{todorov2012mujoco}
-We compare our method with deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016} -- a model-free RL baseline --
-which is sample inefficient.
-We test our model's uncertainty estimates by comparing it to using Laplace-GGN with GLM predictions, using an ensemble of neural networks
-(with different initialisations),
-To ensure a fair comparison, we use the same MLP architecture/training scheme and we keep the same model-based RL algorithm.
-See \cref{app:rl} for more details of our experiments.
+We compare our method to a Laplace-GGN with GLM predictions (red), an ensemble of neural networks (green) and a basic MLP wih no uncertainty (magenta).
+To ensure a fair comparison, we use the same MLP architecture/training scheme and use them in the same model-based RL algorithm, detailed in \cref{app:rl}.
+% See \cref{app:rl} for more details of our experiments.
+We also compare to deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016}, a model-free RL algorithim (yellow).
+% As expected DDPG is the least sample inefficient
+The training curves in \cref{fig:rl} show that \our's uncertainty estimates are good for exploration as it converges in fewer episodes.
 
-We also compare to deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016} -- a model-free RL baseline --
-which we expect to be much more sample inefficient.
+% We compare our method with deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016} -- a model-free RL baseline --
+% which is sample inefficient.
 
 
-\cref{fig:rl} shows training curves
+
 
 
 
@@ -1114,8 +1137,8 @@ which we expect to be much more sample inefficient.
    \input{./fig/rl.tex}
  \end{subfigure}
  \hfill
- \caption{\textbf{Reinforcement learning experiments} Training curves showing that our model's uncertainty estimates improve sample efficiency in RL.
-   Our method (blue/green) converges to the optimal solution in fewer environment steps than the baseline model-based RL method (magenta) and (DDPG) the model-free baseline  (yellow).}
+ \caption{\textbf{Reinforcement learning experiments} Training curves showing that \our's uncertainty estimates improve sample efficiency in RL.
+   Our method (blue/green) converges in fewer environment steps than the baseline model-based RL method (magenta) and (DDPG) the model-free baseline  (yellow).}
  \label{fig:rl}
 \end{figure}
 
@@ -1267,10 +1290,10 @@ J(\transitionFn, \policy) = \mathbb{E}_{\noise_{0:\infty}} \bigg[ \sum_{t=0}^{\i
 \end{align}
 where $\gamma \in [0, 1)$ is a discount factor.
 In this work, we consider model-based RL where a model of the transition dynamics is learned \(f_{\mathbf{w}} \approx \transitionFn\) and then used by a planning algorithm.
-A simple approach is to use the learned dynamic model $f_{\mathbf{w}^{*}}$ and maximise the objective in \cref{eq-model-free-objective}.
-% \begin{align} \label{eq-greedy}
-%   \policy^{\text{Greedy}} &= \arg \max_{\pi \in \Pi} J(f_{\mathbf{w}^{*}}, \pi).
-% \end{align}
+A simple approach is to use the learned dynamic model $f_{\mathbf{w}^{*}}$ and maximise the objective in \cref{eq-model-free-objective},
+\begin{align} \label{eq-greedy}
+  \policy^{\text{Greedy}} &= \arg \max_{\pi \in \Pi} J(f_{\mathbf{w}^{*}}, \pi).
+\end{align}
 However, we can leverage the method in \cref{sec:methods} to obtain a function-space posterior over the learned dynamics $q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset)$,
 where $\mathcal{D}$ represents the state transition data set \(\mathcal{D} = \{(s_{i},a_{i}), s_{i+1}\}_{i=0}^{N}\).
 Importantly, the uncertainty represented by this posterior distribution can be used to balance the exploration-exploitation trade-off,
@@ -1283,7 +1306,6 @@ where a function $\tilde{\transitionFn}$ is sampled from the (approximate) poste
 in \cref{eq-greedy}.
 Intuitively, this strategy will explore where the model has high uncertainty, which in turn will reduce the model's uncertainty as data is collected and used to
 train the model.
-See \cref{sec-rl-appendix} for more details of how we use
 
 \todo{could try to implement Pathwise conditioning in function-space}
 

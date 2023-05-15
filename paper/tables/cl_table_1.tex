@@ -1,22 +1,22 @@
 \begin{tabular}{@{}lcccc@{}}
 \toprule
  Method           & 
-\begin{tabular}[c]{c}S-MNIST (SH) \\  40 points\end{tabular} & 
 \begin{tabular}[c]{c}S-MNIST (SH) \\ 200 points\end{tabular} & 
-\begin{tabular}[c]{c}S-FMNIST (SH)\\ 200 points\end{tabular} & 
-\begin{tabular}[c]{c}P-MNIST (SH) \\ 200 points\end{tabular} \\ \midrule
+\begin{tabular}[c]{c}S-MNIST (SH) \\ 1000 points\end{tabular} & 
+\begin{tabular}[c]{c}S-FMNIST (SH)\\ 1000 points\end{tabular} & 
+\begin{tabular}[c]{c}P-MNIST (SH) \\ 1000 points\end{tabular} \\ \midrule
 %% Weight Regularization Methods
 {\sc Online-EWC}~\cite{schwarz2018progress}$^*$ & \val{19.95}{0.28} & \val{19.95}{0.28} & \val{19.48}{0.01} & \val{74.87}{1.81}\\
 {\sc SI}~\cite{zenke2017continual}$^*$ & \val{19.82}{0.09} & \val{19.82}{0.09} & \val{19.80}{0.21} & \val{88.39}{1.37}\\
-{\sc VCL} (with coresets)~\cite{nguyen2018variational} & \val{22.31}{2.00} & \color{blue}{\val{32.11}{1.16}} & \val{53.59}{3.74} &  \val{92.84}{0.34}\\
+{\sc VCL} (with coresets)~\cite{nguyen2018variational} & \val{22.31}{2.00} & \val{32.11}{1.16}\color{blue}{*} & \val{53.59}{3.74} &  \val{92.84}{0.34}\\
 %{\sc VCL} (no coreset) & \val{}{} & \color{blue}{\val{17.74}{1.20}} & \val{}{} & \color{blue}{\val{87.50}{0.61}}\\
 \midrule
 %% Functional Regularization Methods
-{\sc DER}~\cite{buzzega2020dark} & \val{85.26}{0.54} & \val{92.13}{0.45} & \val{82.03}{0.57} & \val{91.53}{0.26} \\
-{\sc FROMP}~\cite{pan2020continual} & \val{75.21}{2.05} & \val{89.54}{0.72} & \val{78.83}{0.46} & \color{blue}{\val{94.90}{0.04}} \\
-{\sc S-FSVI}~\cite{rudner2022continual} & \val{84.51}{1.30} & \color{blue}{\val{92.87}{0.14}} & \val{77.54}{0.40} & \color{blue}{\val{95.76}{0.02}} \\
-{\sc SFR}~(Ours) & \val{88.73}{0.31} & \val{94.11}{0.15} & \val{81.71}{0.57} & \val{94.95}{0.14}\\
+{\sc DER}~\cite{buzzega2020dark} & \val{85.26}{0.54} & \val{92.13}{0.45} & \val{\bf 82.03}{0.57} & \val{91.53}{0.26} \\
+{\sc FROMP}~\cite{pan2020continual} & \val{75.21}{2.05} & \val{89.54}{0.72} & \val{78.83}{0.46} & \val{94.90}{0.04}\color{blue}{*}\\
+{\sc S-FSVI}~\cite{rudner2022continual} & \val{84.51}{1.30} & \val{92.87}{0.14}\color{blue}{*} & \val{77.54}{0.40} & \val{\bf 95.76}{0.02}\color{blue}{*} \\
+{\sc SFR}~(Ours) & \val{88.73}{0.31} & \val{94.19}{0.26} & \val{\bf 81.96}{0.24} & \val{94.95}{0.14}\\
 %{\sc L2} & \val{87.48}{0.81} & \val{93.98}{0.17} & \val{81.20}{0.30} & \val{93.89}{0.07}\\
- \hspace{2mm} {\sc L2} (Ours) abl. & \val{88.14}{0.86} & \val{93.90}{0.05} & \val{81.21}{0.36} & \val{94.54}{0.11}\\
+ \hspace{2mm} {\sc L2} (Ours) abl. & \val{88.14}{0.86} & \val{\bf 93.72}{0.10} & \val{81.21}{0.36} & \val{94.54}{0.11}\\
 \bottomrule
 \end{tabular}

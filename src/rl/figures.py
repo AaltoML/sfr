@@ -45,6 +45,20 @@ WANDB_RUNS = OmegaConf.create(
             "aalto-ml/nn2svgp/rbq90bf5",  # 69
             "aalto-ml/nn2svgp/1ytpofrx",  # 54
         ],
+        "laplace": [
+            "aalto-ml/nn2svgp/ovi8ooil",  # 100
+            "aalto-ml/nn2svgp/ttgleyig",  # 666
+            "aalto-ml/nn2svgp/r6j12038",  # 50
+            "aalto-ml/nn2svgp/zc55qobv",  # 69
+            "aalto-ml/nn2svgp/p92x5hkv",  # 54
+        ],
+        "ensemble": [
+            "aalto-ml/nn2svgp/zzcv9ew2",  # 100
+            "aalto-ml/nn2svgp/bg3cgoze",  # 666
+            "aalto-ml/nn2svgp/4jtgz6l5",  # 50
+            "aalto-ml/nn2svgp/afpm5hc2",  # 69
+            "aalto-ml/nn2svgp/jlumgtyu",  # 54
+        ],
     }
 )
 
@@ -53,18 +67,24 @@ LABELS = {
     "nn2svgp-sample-with-updates": "\our with updates",
     "mlp": "\sc mlp",
     "ddpg-06": "\sc ddpg",
+    "laplace": "\sc laplace",
+    "ensemble": "\sc ensemble",
 }
 COLORS = {
     "nn2svgp-sample": "c",
     "nn2svgp-sample-with-updates": "b",
     "mlp": "m",
     "ddpg-06": "y",
+    "laplace": "r",
+    "ensemble": "g",
 }
 LINESTYLES = {
     "nn2svgp-sample": "-",
     "nn2svgp-sample-with-updates": "-",
     "mlp": "-",
     "ddpg-06": "-",
+    "laplace": "-",
+    "ensemble": "-",
 }
 # LINESTYLES = {
 #     "nn2svgp-sample": "-",

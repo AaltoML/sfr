@@ -546,7 +546,7 @@ Therefore, the Laplace-GGN linear model can be used to convert our weight space 
   \kappa(\vx, \vx')
   = \frac{1}{\delta} \Jac{\weights^*}{\vx} \, \JacT{\weights^*}{\vx'}, 
 \end{equation}
-where the kernel is the so-called Neural Tangent Kernel (NTK, \cite{jacot2018neural}). In \cref{eq-laplace-approx-function-space}, for notational convenience, we restricted the function output to single dimension, but this could be easily extend for the multi-dimensional case. With this kernel function, we can then combine it with the dataset $\dataset$ to form the posterior $q(\vf)$. \citet{khan2019approximate} took a similar approach, but instead of fitting the GP posterior to the actual $\vy$, but a transformation of $\vy$ which they refer to as pseudo-data. Similarly, \citet{immerImprovingPredictionsBayesian2021} obtain the same covariance function but a different mean because they rely on a first order approximation of the neural network to form a Bayesian GLM model. Both approaches attempted to adjust the GP posterior mean function to ensure the predictions are from the neural network $f_{\vw^*}(\vx)$. In our method, we wish to make predictions from the derived GP and thus we avoid such adjustments. We now present the general formulation of the sparse functional representation of our trained neural network based on the non-sparse approximation. 
+where the kernel is the so-called Neural Tangent Kernel (NTK, \cite{jacot2018neural}). In \cref{eq-laplace-approx-function-space}, for notational convenience, we restricted the function output to single dimension, but this could be easily extend for the multi-dimensional case. With this kernel function, we can then combine it with the dataset $\dataset$ to form the posterior $q(\vf)$. \citet{khan2019approximate} took a similar approach, but instead of fitting the GP posterior to the actual $\vy$, but a transformation of $\vy$ which they refer to as pseudo-data. Similarly, \citet{immer2021improving} obtain the same covariance function but a different mean because they rely on a first order approximation of the neural network to form a Bayesian GLM model. Both approaches attempted to adjust the GP posterior mean function to ensure the predictions are from the neural network $f_{\vw^*}(\vx)$. In our method, we wish to make predictions from the derived GP and thus we avoid such adjustments. We now present the general formulation of the sparse functional representation of our trained neural network based on the non-sparse approximation. 
 
 
 \section{\our: Sparse function-space represenation of neural networks}
@@ -573,7 +573,7 @@ As we are using the MAP solution of the neural network loss, we will use the Lap
 \hat{\beta}_i \coloneqq - \nabla^2_{f_i f_i}\log p(y_i \mid f_i).
 \end{equation}
 
-Replacing \cref{eq:dual_param_laplace} in to \cref{eq-laplace-approx-function-space} and we arrive at our GP model based on the converged neural network. Again this is similar to what was arrived at for \citet{immerImprovingPredictionsBayesian2021} for the posterior variance function, but they instead use the $f_{\vw^*}(\vx)$ for the posterior mean and fail to spot the significance of the dual variables. The problem with \cref{eq:gp_pred} is that to make predictions and compute variances we must incur a cost of $O(n^3)$ which limits the use of the GP on large data sets.
+Replacing \cref{eq:dual_param_laplace} in to \cref{eq-laplace-approx-function-space} and we arrive at our GP model based on the converged neural network. Again this is similar to what was arrived at for \citet{immer2021improving} for the posterior variance function, but they instead use the $f_{\vw^*}(\vx)$ for the posterior mean and fail to spot the significance of the dual variables. The problem with \cref{eq:gp_pred} is that to make predictions and compute variances we must incur a cost of $O(n^3)$ which limits the use of the GP on large data sets.
 
 
 \subsection{Sparse dual Gaussian process} 
@@ -591,7 +591,7 @@ Using the sparse definition of the dual variables our sparse GP posterior takes 
    \myexpect_{q_{\vu}(\vf)}[f_i] = \vkzs^{\T} \MKzz^{-1}   \valpha_{\vu} , \quad 
    \textrm{Var}_{q_{\vu}(\vf)}[f_i]  = \kappa_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \vbeta_{\vu})^{-1} ]\vkzs
 \end{equation}
-where $\MKzz$ and $\vkzs$ are define similarly to $\MKxx$ and $\vk_{\vx i}$ but now over the $\MZ \in \R^{M \times D} $ inducing points instead of the full dataset $\MX$. The key quantities we need to make predictions from our sparse GP from the converged neural network are $(\hat{\alpha}_i, \hat{\beta}_i)$ and a kernel function $\kappa$. Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred} we can see that the computational complexity is now $\mathcal{O}(m^3)$ to $\mathcal{O}(n^3)$ where $m \ll n$.  Crucially given the structure of our probabilistic model, our sparse dual variables \cref{eq:dual_sparse} are a compact form of the full model projected using the kernel. Our approach contrasts to \citet{immerImprovingPredictionsBayesian2021}, which uses a subset of the full model, a less principled approach to build a sparse model given it ignores the information in the dataset. It is important to highlight that the sparsifying approach is independent of the approximate inference technique. The \cref{eq:dual_param} are determined from the neural network. More complicated inference techniques, such as variational inference, could be used, but given its simplicity, we only need a trained neural network; we use a Laplace approximation in our experiments.
+where $\MKzz$ and $\vkzs$ are define similarly to $\MKxx$ and $\vk_{\vx i}$ but now over the $\MZ \in \R^{M \times D} $ inducing points instead of the full dataset $\MX$. The key quantities we need to make predictions from our sparse GP from the converged neural network are $(\hat{\alpha}_i, \hat{\beta}_i)$ and a kernel function $\kappa$. Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred} we can see that the computational complexity is now $\mathcal{O}(m^3)$ to $\mathcal{O}(n^3)$ where $m \ll n$.  Crucially given the structure of our probabilistic model, our sparse dual variables \cref{eq:dual_sparse} are a compact form of the full model projected using the kernel. Our approach contrasts to \citet{immer2021improving}, which uses a subset of the full model, a less principled approach to build a sparse model given it ignores the information in the dataset. It is important to highlight that the sparsifying approach is independent of the approximate inference technique. The \cref{eq:dual_param} are determined from the neural network. More complicated inference techniques, such as variational inference, could be used, but given its simplicity, we only need a trained neural network; we use a Laplace approximation in our experiments.
 
 
 
@@ -1035,7 +1035,7 @@ We trained a two-layer MLP for each of the $8$ classification tasks in UCI, see 
 	%\input{tables/img_super.tex}
 \end{table}
 
-Similarly to the UCI experiments, we trained neural networks (CNN, architexture matches \citet{immerImprovingPredictionsBayesian2021}) for the FMNIST and CIFAR10 classification tasks. After training, we computed the duals for NN2SVGP and used the resulting SVGP for uncertainty estimates, see \cref{tbl:imagesuper}. We performed hyperparameter optimization over the prior precision, and found the optimal value to be [insert]. We ran the experiment over $5$ seeds. During the NN training, we used a batch size of $512$ and an Adam optimizer with learning rate $1e-3$.
+Similarly to the UCI experiments, we trained neural networks (CNN, architexture matches \citet{immer2021improving}) for the FMNIST and CIFAR10 classification tasks. After training, we computed the duals for NN2SVGP and used the resulting SVGP for uncertainty estimates, see \cref{tbl:imagesuper}. We performed hyperparameter optimization over the prior precision, and found the optimal value to be [insert]. We ran the experiment over $5$ seeds. During the NN training, we used a batch size of $512$ and an Adam optimizer with learning rate $1e-3$.
 
 In addition to uncertainty estimates, our method can update the posterior when given new data. We gave the SVGP model 10 \% of the test dataset used for evaluation, and compare the performance of the SVGP model and the retrained NN in [INSERT TABLE]. 
 
@@ -1194,7 +1194,7 @@ A reference implementation of the methods presented in this paper is currently a
 \begingroup
 \small
 \bibliographystyle{abbrvnat}
-\bibliography{zotero-library,bibliography}
+\bibliography{bibliography}%zotero-library
 \endgroup
 
 \clearpage

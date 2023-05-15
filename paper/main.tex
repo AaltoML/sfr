@@ -186,6 +186,7 @@
 \newcommand{\vx}{\mbf{x}}
 \newcommand{\vy}{\mbf{y}}
 \newcommand{\vw}{\mbf{w}}
+\newcommand{\va}{\mbf{a}}
 
 \newcommand{\Jac}[2]{\mathcal{J}_{#1}(#2)}
 \newcommand{\JacT}[2]{\mathcal{J}_{#1}^\top(#2)}
@@ -609,6 +610,12 @@ In this section, we demonstrate how sequential learning methods can benefit from
 \subsection{\our for Continual Learning}
 % Definition of CL -> a sequence of tasks 
 In the Continual learning setting, the training is divided into $T$ tasks, each with its training data set $\dataset_t = \{(\mathbf{x}_{i}, \mathbf{y}_{i})\}_{i=1}^{n_t}$, which after the task is discarded and cannot be accessed in the later stages of the training. However, rehearsal and function regularization-based models keep a subset of the training data for each task to help the model alleviate forgetting. After each task, we can use our \our to build a compact representation of the neural network and then use that as an additional term to the training loss to regularize the model. \todo{this term is replacing the missing data}
+
+An alternative view of the dual variables is that they parameterize approximate likelihoods as was shown in \citep{adam2021dual} we can rewrite the GP posterior in terms of the following approximate normals:
+\begin{equation}
+ q(\vu) \propto \N(0, \MKzz) \prod_{i=1}^n e^{-\frac{\beta}{2}(y_i - \va_i^\top \vu)^2 } = \N(0, \MKzz) \, e^{(\tilde{\vy} - \vu)^\top\tilde{\MSigma}^{-1}(\tilde{\vy} - \vu)}  
+\end{equation}
+
 
 % Where the regularizer comes from
 At the end of the training for each task $t$, we compute the Laplace-GGN approximated kernel function for the current model and randomly select $m$ inducing points. Given the issues described in the previous sections, related to computing the full covariance posterior $\MKxx$,\todo{this should be $\kappa(\MX_t, \MX_t)$}, we can exploit the dual parameterization to efficiently encode the information from the $\dataset_t$ using the dual parameterization, as follows, 

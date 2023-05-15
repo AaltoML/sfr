@@ -484,8 +484,8 @@ However, encoding functional knowledge in the weights does not guarantee a good 
 
 % by linearising a neural network around the Maximum a Posteriori (MAP) weights.
 % a GP posterior -- can be obtained
-
-In supervised learning, given a data set $\dataset = \dataset = \{(\mathbf{x}_{i} , \mathbf{y}_{i})\}_{i=1}^{n}$, with input $\mathbf{x}_i \in \inputDomain$ and output $\mathbf{y}_i \in \outputDomain$ pairs, the weights $\weights \in \R^{P}$ of a neural network, $f_\mathbf{w} : \inputDomain \to \outputDomain$, are usually trained to minimize the (regularized) empirical risk,
+%
+In supervised learning, given a data set $\dataset = \{(\vx_{i} , \vy_{i})\}_{i=1}^{n}$, with input $\vx_i \in \inputDomain$ and output $\vy_i \in \outputDomain$ pairs, the weights $\weights \in \R^{P}$ of a neural network, $f_\mathbf{w} : \inputDomain \to \outputDomain$, are usually trained to minimize the (regularized) empirical risk,
 %
 \begin{equation} \label{eq-empirical-risk}
   \weights^{*} = 
@@ -493,20 +493,13 @@ In supervised learning, given a data set $\dataset = \dataset = \{(\mathbf{x}_{i
   \arg \min_{\weights} \sum_{i=1}^{n} \ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) + \delta \mathcal{R}(\weights).
 \end{equation}
 %
-If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\weights(\mathbf{x}_{i}))$ and the regularizer $\mathcal{R}(\weights) = \frac{1}{2}\|\weights\|^{2}_2$, then we can view \cref{eq-empirical-risk} as the maximum {\it a~posteriori} (MAP) solution to a Bayesian objective, where the regularization weight takes the role of a prior precision parameter, \ie, $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$.
-
-%
-% \subsection{Linearization gives rise to a Gaussian process}
-% \label{sec:nn2gp}
-%
-
-\textbf{Uncertainty quantification} \todo{Move this section to the related work}
-Bayesian inference offers a principled approach to quantifying uncertainty in neural networks.
-The goal is to find the posterior over the weights ${p(\vw \mid \vy) \propto p(\vy \mid f_{\weights}(\vx)) p(\weights)}$ as
-it represents our belief in the parameters after combining data $\dataset$ with our prior $p(\vw)$.
-Although the true posterior $p(\vw \mid \dataset)$ is intractable given the non-linearities of the neural network, one can resort to sampling techniques such as Hamiltonian Monte-Carlo (HMC).
-However, for most applications their high computational costs make them impractical so we need approximate inference techniques.
-In \cref{fig:banana}, we show a qualitative example of the induced function-space posterior obtained with our method compared to the posterior obtained through HMC sampling on the Banana toy dataset. 
+If $\ell(f_\weights(\vx_{i}), \vy_i) = -\log(p(\vy \mid f_\weights(\vx_{i}))$ and the regularizer $\mathcal{R}(\weights) = \frac{1}{2}\|\weights\|^{2}_2$, then we can view \cref{eq-empirical-risk} as the maximum {\it a~posteriori} (MAP) solution to a Bayesian objective, where the regularization weight takes the role of a prior precision parameter, \ie, $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$.
+%Bayesian inference offers a principled approach to quantifying uncertainty in neural networks.
+%The goal is to find the posterior over the weights ${p(\vw \mid \vy) \propto p(\vy \mid f_{\weights}(\vx)) \, p(\weights)}$ as it represents our belief in the parameters after combining data $\dataset$ with our prior $p(\vw)$.
+%Although the true posterior $p(\vw \mid \dataset)$ is intractable given the non-linearities of the neural network, one can resort to sampling techniques such as Hamiltonian Monte-Carlo (HMC).
+%However, for most applications their high computational costs make them impractical so we need approximate inference techniques.
+%In \cref{fig:banana}, we show a qualitative example of the induced function-space posterior obtained with our method compared to the posterior obtained through HMC sampling on the Banana toy dataset. 
+The posterior over the weights ${p(\vw \mid \dataset) \propto p(\vy \mid f_{\weights}(\vx)) \, p(\weights)}$ is generally not available in closed form. Sampling methods---such as the Hamiltonian Monte Carlo (HMC) baseline used in \cref{fig:banana} (right)---are general-prupose, but comutationally heavy and impractical for downstream applications.
 
 \textbf{Function space}
 As a neural network is a deterministic mapping, the weight-space posterior induces a distribution over the function values.

@@ -36,7 +36,7 @@
 \newcommand{\etal}{\textit{et~al.\@}\xspace}
 
 % Our method
-\newcommand{\our}{DNN2SGP\xspace}
+\newcommand{\our}{{\sc dnn2sgp}\xspace}
 
 % Tikz
 \usepackage{tikz}
@@ -338,7 +338,7 @@ The contributions of this paper are:
   \setlength{\figurewidth}{.28\textwidth}
   \setlength{\figureheight}{\figurewidth}
   %
-  \def\inducing{\normalsize Sparse inducing points}
+  \def\inducing{\large Sparse inducing points}
   %
   \begin{subfigure}[c]{.34\textwidth}
     \raggedleft
@@ -367,7 +367,7 @@ The contributions of this paper are:
     \pgfplotsset{yticklabels={,,},ytick={\empty}}        
     \input{./fig/regression-update.tex}%
   \end{subfigure}
-  \caption{\textbf{Regression example on an MLP with two hidden layers.} Left:~Predictions from the trained neural network. Center:~Our approach summarizes the...}
+  \caption{\textbf{Regression example on an MLP with two hidden layers.} Left:~Predictions from the trained neural network. Middle:~Our approach summarizes all the training data with the help of an iducing set of points. The model captures the predictive mean and uncertainty, and (right) makes it possible to update the model with new data without degrading previous performance.}
   \label{fig:teaser} 
   % 
   \begin{tikzpicture}[remember picture,overlay]
@@ -377,7 +377,7 @@ The contributions of this paper are:
     \node[myarrow] (p0-arr) at ($(p0) + (1em,1.5em)$) {};
     \node[myarrow] (p1-arr) at ($(p1) + (1em,1.5em)$) {};
     % Arrow labels
-    \node[font=\scriptsize\sc,color=white] at (p0-arr) {nn2svgp};
+    \node[font=\scriptsize\sc,color=white] at (p0-arr) {\our};
     \node[font=\scriptsize\sc,color=white] at (p1-arr) {new data};   
   \end{tikzpicture}
 \end{figure}
@@ -465,7 +465,7 @@ However, the GP introduces a cubic scaling $\mathcal{O}(N^3)$ in the number of d
     \node[myblock] (second-arr) at ($(banana-nn2svgp)!0.5!(banana-hmc)$) {};
 
     % Arrow labels
-    \node[font=\scriptsize\sc,color=white] at (first-arr) {nn2svgp};
+    \node[font=\scriptsize\sc,color=white] at (first-arr) {\our};
     \node[font=\scriptsize\sc,color=white] at (second-arr) {\normalsize$\bm\approx$};
          
     % Labels
@@ -474,10 +474,11 @@ However, the GP introduces a cubic scaling $\mathcal{O}(N^3)$ in the number of d
     \node[anchor=north, font=\small] at ($(banana-hmc) + (0,-.55\figureheight)$) {HMC result as baseline};      
 
   \end{tikzpicture}
-  \newcommand{\mycircle}{\protect\tikz[baseline=-.5ex]\protect\node[circle,inner sep=2pt,draw=black,fill=C0,opacity=.5]{};}
-  \newcommand{\mysquare}{\protect\tikz[baseline=-.5ex]\protect\node[inner sep=2.5pt,draw=black,fill=C1,opacity=.5]{};}
+  \newcommand{\mycircle}{\protect\tikz[baseline=-.6ex]\protect\node[circle,inner sep=2pt,draw=black,fill=C0,opacity=.5]{};}
+  \newcommand{\mysquare}{\protect\tikz[baseline=-.6ex]\protect\node[inner sep=2.5pt,draw=black,fill=C1,opacity=.5]{};}
+  \newcommand{\myinducing}{\protect\tikz[baseline=-.7ex]\protect\node[circle,inner sep=1.5pt,draw=black,fill=black]{};}
   %
-  \caption{Binary classification (\mysquare~vs.~\mycircle) on the {\sc banana} toy data data set. We convert the left-hand neural network  }
+  \caption{\textbf{Uncertainty quantification} for binary classification (\mysquare~vs.~\mycircle). We convert the trained neural network (left) to a sparse GP model that summarizes all data onto a sparse set of inducing points~\myinducing\ (middle). This gives similar behaviour as would running full Hamiltonian Monte Carlo (HMC) on the original neural network model weights (right). Marginal uncertainty depicted by colour intensity.\looseness-1}
   \label{fig:banana}  
 \end{figure}
 

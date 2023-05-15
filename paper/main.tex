@@ -392,20 +392,36 @@ The contributions of this paper are:
 %
 % General Bayesian deep learning
 \textbf{Bayesian deep learning}
-Probabilistic method in deep learning~\cite{Wilson:ensembles,neal1995bayesian} have recently gained increasing attention in the machine learning community as a means for uncertainty quantification (\eg, \cite{kendall2017what,wilson2020bayes}) and model selection (\eg,~\cite{immer2021scalable,antoran2022marginal}) with advancements in prior specification (\eg, \cite{cho2009kernel,meronen2020stationary,meronen2021periodic,fortuin2021bayesian,nalisnick2018do}) and efficient approximate inference under the specified model.
-Calculating the posterior distribution of a Bayesian neural network is usually intractable, and approximate inference techniques need to be used, such as variational inference \cite{blei2017variational}, deep ensembles \cite{lakshminarayanan2017simple}, MC dropout \cite{gal2016dropout}, or Laplace approximation \cite{ritter2018kfac,kristiadi2020being,immer2021improving}---each having strengths and weaknesses. % point out strngths and weaknesses for each
+Probabilistic methods in deep learning~\cite{Wilson:ensembles,neal1995bayesian} have recently gained increasing attention in the machine learning community as a means for uncertainty quantification (\eg, \cite{kendall2017what,wilson2020bayes}) and model selection (\eg,~\cite{immer2021scalable,antoran2022marginal}) with advancements in prior specification (\eg, \cite{cho2009kernel,meronen2020stationary,meronen2021periodic,fortuin2021bayesian,nalisnick2018do}) and efficient approximate inference under the specified model.
+Calculating the posterior distribution of a Bayesian neural network is usually intractable, and approximate inference techniques need to be used, such as variational inference \cite{blei2017variational}, deep ensembles \cite{lakshminarayanan2017simple}, MC dropout \cite{gal2016dropout}, or Laplace approximation \cite{ritter2018kfac,kristiadi2020being,immer2021improving}---each with its own set of strengths and weaknesses.
+
+
+%\textbf{Function-space methods}
+%One common approach for uncertainty with neural networks is a Laplace-GGN approximation \citep{daxberger2021laplace}, which takes a trained neural network and linearises it around the optimal weights. The Hessian can be efficiently approximated using the generalized Gauss--Newton approximation (GGN)~\cite{botev2017practical} but typically involves a cubic scaling in the number of parameters, in practice a further approximation such as the Kronecker factorisation \cite{martens2015optimizing,ritter2018kfac} is needed. The resulting linear model can be used to obtain uncertainty estimates and refine the neural network predictions \citep{immer2021scalable}, and is linear with respect to the weights. Therefore, as shown in \cite{immer2021scalable, khan2019approximate,maddox2021fast}, the linear model can be converted to a GP, which is then used to obtain the uncertainty estimates. 
 
 % Introduce the laplace GGN + shortcomings
-%\textbf{Function-space methods}
-One common approach for uncertainty with neural networks is a Laplace-GGN approximation \citep{daxberger2021laplace}, which takes a trained neural network and linearises it around the optimal weights. The Hessian can be efficiently approximated using the generalized Gauss--Newton approximation (GGN)~\cite{botev2017practical} but typically involves a cubic scaling in the number of parameters, in practice a further approximation such as the Kronecker factorisation \cite{martens2015optimizing,ritter2018kfac} is needed. The resulting linear model can be used to obtain uncertainty estimates and refine the neural network predictions \citep{immer2021scalable}, and is linear with respect to the weights. Therefore, as shown in \cite{immer2021scalable, khan2019approximate,maddox2021fast}, the linear model can be converted to a GP, which is then used to obtain the uncertainty estimates. 
+\textbf{Function-space methods}
+Function-space perspectives on uncertainty in neural networks often use a Laplace-GGN approximation \citep{daxberger2021laplace}, linearizing a trained neural network around optimal weights. The Hessian can be efficiently approximated using the generalized Gauss--Newton approximation (GGN)~\cite{botev2017practical}. While efficient, it suffers from cubic scaling in parameter count, necessitating approximations like Kronecker factorisation \cite{martens2015optimizing, ritter2018kfac}. This linear model, linear in the weights, refines predictions and provides uncertainty estimates \citep{immer2021scalable}. This model has a convenient interpretation as a GP \cite{immer2021scalable, khan2019approximate, maddox2021fast}.
 %
-However, the GP introduces a cubic scaling $\mathcal{O}(N^3)$ in the number of data points $N$. Previous approaches apply crude approximations to alleviate the computational costs, \eg, by considering only a subset of the training data \cite{immer2021scalable}. In the GP community, the scaling problem is not seen as an issue any more due to efficient and stochastic methods for sparse approximations (\eg, \cite{hensman2013gaussian,wang2019exact}). However, it is not entirely clear how to combine the linearization of the neural network with sparse methods \cite{titsias2009variational} without falling back to crude subset methods. We tackle this problem by framing the problem in the dual parameters \cite{csato2002sparse} of the GP that has previously been used for non-conjugate likelihood models in GPs \cite{adam2021dual}. 
+However, the GP's cubic $\mathcal{O}(N^3)$ scaling with data points $N$ requires costly approximations, often resorting to using data subsets \cite{immer2021scalable}. In the GP community, sparse approximations have mitigated this scaling issue (\eg, \cite{titsias2009variational,hensman2013gaussian}), but combining neural network linearization with sparse methods remains unclear without resorting to subset methods. Our work addresses this by utilizing the GP's dual parameters \cite{csato2002sparse}, previously applied to non-conjugate likelihood models \cite{adam2021dual}.
+
+%wang2019exact
+%
+%However, the GP introduces a cubic $\mathcal{O}(N^3)$ scaling in the number of data points $N$. Previous approaches apply crude approximations to alleviate the computational costs, \eg, by considering only a subset of the training data \cite{immer2021scalable}. In the GP community, the scaling problem is not seen as an issue any more due to efficient and stochastic methods for sparse approximations (\eg, \cite{hensman2013gaussian,wang2019exact}). However, it is not entirely clear how to combine the linearization of the neural network with sparse methods \cite{titsias2009variational} without falling back to crude subset methods. We tackle this problem by framing the problem in the dual parameters \cite{csato2002sparse} of the GP that has previously been used for non-conjugate likelihood models in GPs \cite{adam2021dual}. 
 
 
 % CL section
-\textbf{Function-space methods for sequential learning} The central problem in continual learning is how to deal with the non-stationary nature of the training distribution, which causes the training process to overwrite the previously learnt parameters---leading to the model forgetting the previously learnt functions. 
-The approaches proposed in the CL literature can be categorized into inference-based, rehearsal-based, and model-based methods; we refer the reader to \citep{parisi2019continual, de2021continual} for complete reviews. The methods in the first category usually tackle this problem with weight-space regularization, such as EWC~\citep{kirkpatrick2017overcoming}, SI~\citep{zenke17a}), or VCL~\citep{nguyen-tuongModel2009} that induce retention of previously learned information in the weights alone.
-However, encoding functional knowledge in the weights does not guarantee a good quality of the predictions, thus a better to introduce a function-space regularization \citep{li2018lwf, benjamin2018measuring, titsias2019functional, buzzega2020dark, pan2020continual, rudner2022continual}. These methods bridge the gap between objective and rehearsal-based methods since they rely on a subset of the training data for each task to compute the regularization term. Recently proposed methods, such as DER~\citep{buzzega2020dark}, FROMP~\citep{pan2020continual}, and S-FSVI~\citep{rudner2022continual} achieve state-of-the-art performances among the objective-based techniques in several CL benchmarks. 
+%\textbf{Function-space methods for sequential learning} The central problem in continual learning is how to deal with the non-stationary nature of the training distribution, which causes the training process to overwrite the previously learnt parameters---leading to the model forgetting the previously learnt functions. 
+%The approaches proposed in the CL literature can be categorized into inference-based, rehearsal-based, and model-based methods; we refer the reader to \citep{parisi2019continual, de2021continual} for complete reviews. The methods in the first category usually tackle this problem with weight-space regularization, such as EWC~\citep{kirkpatrick2017overcoming}, SI~\citep{zenke17a}), or VCL~\citep{nguyen-tuongModel2009} that induce retention of previously learned information in the weights alone.
+%However, encoding functional knowledge in the weights does not guarantee a good quality of the predictions, thus a better to introduce a function-space regularization \citep{li2018lwf, benjamin2018measuring, titsias2019functional, buzzega2020dark, pan2020continual, rudner2022continual}. These methods bridge the gap between objective and rehearsal-based methods since they rely on a subset of the training data for each task to compute the regularization term. Recently proposed methods, such as DER~\citep{buzzega2020dark}, FROMP~\citep{pan2020continual}, and S-FSVI~\citep{rudner2022continual} achieve state-of-the-art performances among the objective-based techniques in several CL benchmarks. 
+
+\textbf{Function-space methods for sequential learning} 
+Continual learning (CL) hinges on how to deal with the non-stationary training distribution, wherein the training process may overwrite previously learned parameters, causing catastrophic forgetting. CL approaches fall into inference-based, rehearsal-based, and model-based methods (see \cite{parisi2019continual, de2021continual} for an overview). The methods in the first category usually tackle this problem with weight-space regularization, such as EWC~\citep{kirkpatrick2017overcoming}, SI~\citep{zenke17a}), or VCL~\citep{nguyen-tuongModel2009} that induce retention of previously learned information in the weights alone. However, encoding functional knowledge in the weights does not guarantee good quality of the predictions. Function-space regularization techniques~\cite{li2018lwf, benjamin2018measuring, titsias2019functional, buzzega2020dark, pan2020continual, rudner2022continual} address this by relying on training data subsets for each task to compute the regularization term. These methods bridge the gap between objective and rehearsal-based methods since they use a subset of the training data for each task to compute the regularization term. Recently proposed methods, \eg DER~\citep{buzzega2020dark}, FROMP~\citep{pan2020continual}, and S-FSVI~\citep{rudner2022continual} achieve state-of-the-art performance among the objective-based techniques in several CL benchmarks. 
+
+
+
+
+%%
 
 % It should be written clearly that our method actually is doing a "functional" reharsal, because we store a set of inducing points that are replayed in order to check if the logits change.
 
@@ -484,49 +500,36 @@ However, encoding functional knowledge in the weights does not guarantee a good 
 
 % by linearising a neural network around the Maximum a Posteriori (MAP) weights.
 % a GP posterior -- can be obtained
-
-In supervised learning, given a data set $\dataset = \dataset = \{(\mathbf{x}_{i} , \mathbf{y}_{i})\}_{i=1}^{n}$, with input $\mathbf{x}_i \in \inputDomain$ and output $\mathbf{y}_i \in \outputDomain$ pairs, the weights $\weights \in \R^{P}$ of a neural network, $f_\mathbf{w} : \inputDomain \to \outputDomain$, are usually trained to minimize the (regularized) empirical risk,
+%
+In supervised learning, given a data set $\dataset = \{(\vx_{i} , \vy_{i})\}_{i=1}^{N}$, with input $\vx_i \in \inputDomain$ and output $\vy_i \in \outputDomain$ pairs, the weights $\weights \in \R^{P}$ of a neural network, $f_\mathbf{w} : \inputDomain \to \outputDomain$, are usually trained to minimize the (regularized) empirical risk,
 %
 \begin{equation} \label{eq-empirical-risk}
   \weights^{*} = 
   \arg \min_{\weights} \mathcal{L}(\dataset,\weights) =
-  \arg \min_{\weights} \sum_{i=1}^{n} \ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) + \delta \mathcal{R}(\weights).
+  \arg \min_{\weights} \textstyle\sum_{i=1}^{N} \ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) + \delta \mathcal{R}(\weights).
 \end{equation}
 %
-If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\weights(\mathbf{x}_{i}))$ and the regularizer $\mathcal{R}(\weights) = \frac{1}{2}\|\weights\|^{2}_2$, then we can view \cref{eq-empirical-risk} as the maximum {\it a~posteriori} (MAP) solution to a Bayesian objective, where the regularization weight takes the role of a prior precision parameter, \ie, $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$.
-
-%
-% \subsection{Linearization gives rise to a Gaussian process}
-% \label{sec:nn2gp}
-%
-
-\textbf{Uncertainty quantification} \todo{Move this section to the related work}
-Bayesian inference offers a principled approach to quantifying uncertainty in neural networks.
-The goal is to find the posterior over the weights ${p(\vw \mid \vy) \propto p(\vy \mid f_{\weights}(\vx)) p(\weights)}$ as
-it represents our belief in the parameters after combining data $\dataset$ with our prior $p(\vw)$.
-Although the true posterior $p(\vw \mid \dataset)$ is intractable given the non-linearities of the neural network, one can resort to sampling techniques such as Hamiltonian Monte-Carlo (HMC).
-However, for most applications their high computational costs make them impractical so we need approximate inference techniques.
-In \cref{fig:banana}, we show a qualitative example of the induced function-space posterior obtained with our method compared to the posterior obtained through HMC sampling on the Banana toy dataset. 
+If $\ell(f_\weights(\vx_{i}), \vy_i) = -\log(p(\vy \mid f_\weights(\vx_{i}))$ and the regularizer $\mathcal{R}(\weights) = \frac{1}{2}\|\weights\|^{2}_2$, then we can view \cref{eq-empirical-risk} as the maximum {\it a~posteriori} (MAP) solution to a Bayesian objective, where the regularization weight takes the role of a prior precision parameter, \ie, $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$.
+%Bayesian inference offers a principled approach to quantifying uncertainty in neural networks.
+%The goal is to find the posterior over the weights ${p(\vw \mid \vy) \propto p(\vy \mid f_{\weights}(\vx)) \, p(\weights)}$ as it represents our belief in the parameters after combining data $\dataset$ with our prior $p(\vw)$.
+%Although the true posterior $p(\vw \mid \dataset)$ is intractable given the non-linearities of the neural network, one can resort to sampling techniques such as Hamiltonian Monte-Carlo (HMC).
+%However, for most applications their high computational costs make them impractical so we need approximate inference techniques.
+%In \cref{fig:banana}, we show a qualitative example of the induced function-space posterior obtained with our method compared to the posterior obtained through HMC sampling on the Banana toy dataset. 
+The posterior over the weights ${p(\vw \mid \dataset) \propto p(\vy \mid f_{\weights}(\vx)) \, p(\weights)}$ is generally not available in closed form. Sampling methods that characterize the posterior with a finite set of samples in weight-space---such as the Hamiltonian Monte Carlo (HMC) baseline used in \cref{fig:banana} (right)---are general-purpose, but comuptationally heavy and impractical for downstream applications.
 
 \textbf{Function space}
-As a neural network is a deterministic mapping, the weight-space posterior induces a distribution over the function values.
-Intuitively, if one was to sample from the weight posterior, the corresponding functions created can
-be viewed as perturbed versions of the function at the MAP estimate $f_{\vw^*}$.
-% \todo{not super sure about the perturbed part here. I know what \textrm{you}'re trying to say but a little confused}
-In most applications, we care about predictions from the neural network and not the weights themselves.
-As such, it is the distribution over function values that we are actually interested in.
+%As a neural network is a deterministic mapping, the weight-space posterior induces a distribution over the function values.
+%Intuitively, if one was to sample from the weight posterior, the corresponding functions created can
+%be viewed as perturbed versions of the function at the MAP estimate $f_{\vw^*}$.
+%In most applications, we care about predictions from the neural network and not the weights themselves.
+%As such, it is the distribution over function values that we are actually interested in.
+While neural networks are deterministic mappings defined by their weights, the ultimate goal of training a neural network is to optimize the function it represents, not the weights themselves. Consequently, the weight-space posterior corresponds to a distribution over function values. Imagine sampling from the weight posterior; the resulting functions could be viewed as perturbations of the function at the MAP estimate $f_{\vw^*}$. This perspective aligns better with the main objective in most applications: making representative predictions given the observations we have.
 
 
 \textbf{Linearization gives rise to a Gaussian process}
-Our goal is to build a sparse function-space representation of a neural network.
-Gaussian processes $f$ are an extension of the multivariate normal that characterizes a distribution over
-functions in terms of the first two moments.
-They are defined by a mean function $\mu(\cdot)$ and a covariance (aka kernel) function $\kappa(\cdot,\cdot)$.
-Thus, we need these two functions based on the neural network to build the Gaussian process posterior.
-Recent work \citep{khan2019approximate,maddox2021fast} has shown that linearizing approximations in the weight space
-lead to function space equivalent approximations.
-As Gaussian distributions remain tractable under linear transformations, a linear function in
-terms of parameters can be converted from the weight space to the function space (see Ch.~2.1 in \cite{rasmussen2006gaussian}) as follows:\begin{equation} \label{eq:weight_func}
+We are concerned with capturing the distribution over the neural network model functions, in terms of the first two moments of the distribution. A Gaussian process is fully characterized by these moments: a mean function $\mu(\cdot)$ and a covariance (kernel) function $\kappa(\cdot,\cdot)$. 
+Recent work \cite{khan2019approximate,maddox2021fast} has shown that linearizing approximations in the weight space lead to function-space equivalent approximations.
+As Gaussian distributions remain tractable under linear transformations, a linear function in terms of parameters can be converted from the weight space to the function space (see Ch.~2.1 in \cite{rasmussen2006gaussian}) as follows:\begin{equation} \label{eq:weight_func}
 f_\weights(\vx) \approx 
 %g_\weights(\mathbf{x}) = 
 \phi^\top\!(\vx) \, \vw \implies \mu(\vx) = 0 \quad \kappa(\vx, \vx') = \frac{1}{\delta} \phi^\T\!(\vx) \, \phi(\vx')
@@ -1032,28 +1035,50 @@ In addition to uncertainty estimates, our method can update the posterior when g
 
 
 \subsection{Reinforcement learning}
-A key challenge in RL is balancing the trade-off between exploration and exploitation.
-That is, should an agent select actions that it knows will lead to a high reward (exploitation), or should it
-hope to discover new actions which lead to high reward (exploration)?
-In this section, we show that \our's uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim,
-demonstrating the quality of our uncertainty estimates.
+We now demonstrate the quaility of \our's uncertainty estimates by showing that it can improve sample efficiency in RL when used in conjuction with an
+uncertainty-guided exploration strategy.
+Balancing the trade-off between exploration and exploitation is a key challenge in RL \cite{sutton2018reinforcement}.
+Should an agent select actions that it knows will lead to high reward (exploitation), or actions which it has not select before in the
+hope to discover new high reward actions (exploration)?
+
+Prior work has used GP dynamic models \cite{deisenrothPILCO2011,kamtheDataEfficient2018}, ensembles of neural
+networks \cite{curiEfficient2020,chuaDeepReinforcementLearning2018}
+variational inference \cite{galImproving2016,houthooftVIME2017}
+
+
+% In this section, we show that \our's uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim,
+% demonstrating the quality of our uncertainty estimates.
+
+% A key challenge in RL is balancing the trade-off between exploration and exploitation.
+% That is, should an agent select actions that it knows will lead to a high reward (exploitation), or should it
+% hope to discover new actions which lead to high reward (exploration)?
+% In this section, we show that \our's uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim,
+% demonstrating the quality of our uncertainty estimates.
 % In this section, we demonstrate  that our method's principled uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim.
-We refer the reader to \cref{app:rl} for an overview of the problem and details of our experiments.
+We refer the reader to \cref{app:rl} for an overview of the reinforcement learning problem and more details of our experiments.
+
+% It is an inherently unstable and underactuated mechanical system.
+
+by using it to learn a dynamics model and
+evaluate the
+We test \our by using it to learn a dynamics model
+our method on the cart pole swing up task in MuJoCo \cite{todorov2012mujoco}, a classic benchmark for nonlinear control, see \cref{fig:rl}.
+The goal is to swing the pole up and balance it around the upward position.
+We increase the  difficulty of exploration in this environment by using a sparse reward function.
 
 
-Cart pole swing up task in MuJoCo \cite{todorov2012mujoco}
-We compare our method with deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016} -- a model-free RL baseline --
-which is sample inefficient.
-We test our model's uncertainty estimates by comparing it to using Laplace-GGN with GLM predictions, using an ensemble of neural networks
-(with different initialisations),
-To ensure a fair comparison, we use the same MLP architecture/training scheme and we keep the same model-based RL algorithm.
-See \cref{app:rl} for more details of our experiments.
+We compare our method to a Laplace-GGN with GLM predictions (red), an ensemble of neural networks (green) and a basic MLP wih no uncertainty (magenta).
+To ensure a fair comparison, we use the same MLP architecture/training scheme and use them in the same model-based RL algorithm, detailed in \cref{app:rl}.
+% See \cref{app:rl} for more details of our experiments.
+We also compare to deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016}, a model-free RL algorithim (yellow).
+% As expected DDPG is the least sample inefficient
+The training curves in \cref{fig:rl} show that \our's uncertainty estimates are good for exploration as it converges in fewer episodes.
 
-We also compare to deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016} -- a model-free RL baseline --
-which we expect to be much more sample inefficient.
+% We compare our method with deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016} -- a model-free RL baseline --
+% which is sample inefficient.
 
 
-\cref{fig:rl} shows training curves
+
 
 
 
@@ -1108,8 +1133,8 @@ which we expect to be much more sample inefficient.
    \input{./fig/rl.tex}
  \end{subfigure}
  \hfill
- \caption{\textbf{Reinforcement learning experiments} Training curves showing that our model's uncertainty estimates improve sample efficiency in RL.
-   Our method (blue/green) converges to the optimal solution in fewer environment steps than the baseline model-based RL method (magenta) and (DDPG) the model-free baseline  (yellow).}
+ \caption{\textbf{Reinforcement learning experiments} Training curves showing that \our's uncertainty estimates improve sample efficiency in RL.
+   Our method (blue/green) converges in fewer environment steps than the baseline model-based RL method (magenta) and (DDPG) the model-free baseline  (yellow).}
  \label{fig:rl}
 \end{figure}
 
@@ -1261,10 +1286,10 @@ J(\transitionFn, \policy) = \mathbb{E}_{\noise_{0:\infty}} \bigg[ \sum_{t=0}^{\i
 \end{align}
 where $\gamma \in [0, 1)$ is a discount factor.
 In this work, we consider model-based RL where a model of the transition dynamics is learned \(f_{\mathbf{w}} \approx \transitionFn\) and then used by a planning algorithm.
-A simple approach is to use the learned dynamic model $f_{\mathbf{w}^{*}}$ and maximise the objective in \cref{eq-model-free-objective}.
-% \begin{align} \label{eq-greedy}
-%   \policy^{\text{Greedy}} &= \arg \max_{\pi \in \Pi} J(f_{\mathbf{w}^{*}}, \pi).
-% \end{align}
+A simple approach is to use the learned dynamic model $f_{\mathbf{w}^{*}}$ and maximise the objective in \cref{eq-model-free-objective},
+\begin{align} \label{eq-greedy}
+  \policy^{\text{Greedy}} &= \arg \max_{\pi \in \Pi} J(f_{\mathbf{w}^{*}}, \pi).
+\end{align}
 However, we can leverage the method in \cref{sec:methods} to obtain a function-space posterior over the learned dynamics $q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset)$,
 where $\mathcal{D}$ represents the state transition data set \(\mathcal{D} = \{(s_{i},a_{i}), s_{i+1}\}_{i=0}^{N}\).
 Importantly, the uncertainty represented by this posterior distribution can be used to balance the exploration-exploitation trade-off,
@@ -1277,7 +1302,6 @@ where a function $\tilde{\transitionFn}$ is sampled from the (approximate) poste
 in \cref{eq-greedy}.
 Intuitively, this strategy will explore where the model has high uncertainty, which in turn will reduce the model's uncertainty as data is collected and used to
 train the model.
-See \cref{sec-rl-appendix} for more details of how we use
 
 \todo{could try to implement Pathwise conditioning in function-space}
 

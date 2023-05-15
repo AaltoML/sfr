@@ -156,7 +156,7 @@ def update_with_ood(svgp, likelihood,  ds_ood, update_size=100, batch_size=512):
     state[f"svgp_ntk_{name}_ood"] = evaluate_one(lh, yte, gstar_ood)
 
 def retrain_and_update(state, svgp, likelihood, ds_test, ds_train, name='sparse_500',
-    update_size=100, batch_size=500, device='cpu'):
+    update_size=1000, batch_size=500, device='cpu'):
     # get update dataset
     perm_ixs = torch.randperm(len(test))
     update_ixs, test_ixs = perm_ixs[:update_size], perm_ixs[update_size:]
@@ -168,7 +168,6 @@ def retrain_and_update(state, svgp, likelihood, ds_test, ds_train, name='sparse_
     batched_update = DataLoader(ds_update, batch_size=batch_size)
     (X_update, y_update) = next(iter(all_update))
     svgp.update(update_X, update_y)
-
     gstar_update, yte = get_svgp_predictive(
             batched_update, svgp, use_nn_out=False, likelihood=likelihood
         )
@@ -211,44 +210,43 @@ def main(
     logdelta_min=-5,
     logdelta_max=8,
     res_dir="experiments/results",
+    run_with_best=False,
     run_update=False,
+    only_map=False,
+    delta_factor=None,
     device="cuda",
 ):
     lh = CategoricalLh(EPS=0)  #0.000000000000000001)
 
     eligible_files = list()
     deltas = list()
+    perfs = list()
     for file in os.listdir(os.path.join(res_dir, "models")):
         # strip off filename ending using indexing
         print(file)
         ds, m, s, delta = file[:-3].split("_")
+        if float(delta) == 0:
+            continue
         if (
             ds == dataset_name
             and m == model_name
             and seed == int(s)
-            and (np.log10(float(delta)) >= delta_min)
-            and (np.log10(float(delta)) <= delta_max)
+            and (np.log10(float(delta)) >= logdelta_min)
+            and (np.log10(float(delta)) <= logdelta_max)
         ):
             eligible_files.append(os.path.join(res_dir, "models/" + file))
             deltas.append(float(delta))
-    logging.info(f"Deltas: {deltas}")
-    # start with smallest delta and continue
-    ixlist = np.argsort(deltas)
-    deltas = np.array(deltas)[ixlist]
-    eligible_files = list(np.array(eligible_files)[ixlist])
+            state = torch.load(os.path.join(res_dir, "models/" + file))
+            if "map" not in state:
+                continue
+            perfs.append(state["map"]["nll_va"])
 
-    train_loader = DataLoader(ds_train, batch_size=256)
-    all_train = DataLoader(ds_train, batch_size=len(ds_train))
-    (X_train, y_train) = next(iter(all_train))
-    X_train = X_train.to(device)
-    y_train = y_train.to(device)
-
+    # Create train, test and val
     torch.manual_seed(seed)
     M = len(ds_test)
     n_inducing = n_inducing_points  # int(len(ds_train)*n_sparse)
     logging.info(f"Train set size: {len(ds_train)}")
     logging.info(f"Num inducing points: {n_inducing}")
-    print(X_train.shape)
     perm_ixs = torch.randperm(M)
     val_ixs, test_ixs = perm_ixs[: int(M / 2)], perm_ixs[int(M / 2) :]
     ds_val = Subset(ds_test, val_ixs)
@@ -259,95 +257,128 @@ def main(
     test_loader = get_quick_loader(
         DataLoader(ds_test, batch_size=batch_size), device=device
     )
+    train_loader = DataLoader(ds_train, batch_size=256)
+    all_train = DataLoader(ds_train, batch_size=len(ds_train))
+    (X_train, y_train) = next(iter(all_train))
+    X_train = X_train.to(device)
+    y_train = y_train.to(device)
 
-    for f, delta in tqdm(list(zip(eligible_files, deltas))):
-        logging.info(f"inference for delta={delta}")
-        state = torch.load(f)
-        # if 'map' in state and not rerun:
-        #     # do not recompute the metrics
-        #     print("map in state")
-        #     continue
+    # start with smallest delta and continue
+    if not run_with_best:
+        print('Run with various deltas')
+        logging.info(f"Deltas: {deltas}")
+        ixlist = np.argsort(deltas)
+        deltas = np.array(deltas)[ixlist]
+        eligible_files = list(np.array(eligible_files)[ixlist])
+        
+        for f, delta in tqdm(list(zip(eligible_files, deltas))):
+            logging.info(f"inference for delta={delta}")
+            state = torch.load(f)
+            state = run_inference(state,model, lh, test_loader, val_loader, ds_train, X_train, y_train,
+                    n_inducing, delta, batch_size=batch_size, model_name=model_name, name=name, only_map=only_map, device=device)
+            torch.save(state, f)
+    else:
+        print('Only consider delta with best MAP NLPD and optimize SVGP around it')
+        if delta_factor is None:
+            delta_factors = np.logspace(-1, 3, 13)
+        else:
+            delta_factors = [(10**(delta_factor))]
+            print(f'Run only with delta factor {delta_factor}')
+        best_file = eligible_files[np.argmin(perfs)]
+        state = torch.load(best_file)
+        delta_nn = state['delta']
+        output_dir = os.path.join(res_dir, 'svgp_runs')
+        if not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        for delta_factor_i in tqdm(delta_factors):
+            delta = delta_factor_i *  delta_nn
+            logging.info(f'Test with delta {delta}')
+            state = run_inference(state, lh, test_loader, val_loader, ds_train, X_train, y_train,
+                    n_inducing, delta, batch_size=batch_size, model_name=model_name, name=name, device=device)
+            file = f'{seed}' + '_{delta:.1e}.pt'.format(delta=delta)
+            torch.save(state, os.path.join(output_dir, file))
 
-        model = get_model(model_name, ds_train)
-        model.load_state_dict(state["model"])
-        model = model.to(device)
+def run_inference(state, likelihood, test_loader, val_loader, ds_train, X_train, y_train,
+                 num_inducing, delta, batch_size=500, model_name='CNN', name='sparse_500', only_map=False, device='cpu',
+                   ):
+    model = get_model(model_name, ds_train)
+    model.load_state_dict(state["model"])
+    model = model.to(device)
 
-        if device == "cuda":
-            model = model.cuda()
-
+    if device == "cuda":
+        model = model.cuda()
         # MAP
-        logging.info("MAP performance")
-        gstar_te, yte = get_map_predictive(test_loader, model)
-        gstar_va, yva = get_map_predictive(val_loader, model)
-        state["map"] = evaluate(lh, yte, gstar_te, yva, gstar_va)
-        logging.info(state['map'])
-
+    logging.info("MAP performance")
+    gstar_te, yte = get_map_predictive(test_loader, model)
+    gstar_va, yva = get_map_predictive(val_loader, model)
+    state["map"] = evaluate(likelihood, yte, gstar_te, yva, gstar_va)
+    logging.info(state['map'])
+    if only_map:
+        return state
         # SVGP
-        logging.info("SVGP performance")
+    logging.info("SVGP performance")
 
-        data = (X_train, y_train)
-        prior = ntksvgp.priors.Gaussian(params=model.parameters, delta=delta)
-        output_dim = model(X_train[:10].to(device)).shape[-1]
-        svgp = NTKSVGP(
+    data = (X_train, y_train)
+    prior = ntksvgp.priors.Gaussian(params=model.parameters, delta=delta)
+    output_dim = model(X_train[:10].to(device)).shape[-1]
+    svgp = NTKSVGP(
             network=model,
             prior=prior,
             output_dim=output_dim,
-            likelihood=lh,
-            num_inducing=n_inducing,
+            likelihood=likelihood,
+            num_inducing=num_inducing,
             dual_batch_size=batch_size,
             jitter=0,#10**(-9),
             device=device,
         )
-        svgp.set_data(data)
-        gstar_te, yte = get_svgp_predictive(
-            test_loader, svgp, use_nn_out=False, likelihood=lh
+    svgp.set_data(data)
+    gstar_te, yte = get_svgp_predictive(
+            test_loader, svgp, use_nn_out=False, likelihood=likelihood
         )
-        gstar_va, yva = get_svgp_predictive(
-            val_loader, svgp, use_nn_out=False, likelihood=lh
+    gstar_va, yva = get_svgp_predictive(
+            val_loader, svgp, use_nn_out=False, likelihood=likelihood
         )
-        state[f"svgp_ntk_{name}"] = evaluate(lh, yte, gstar_te, yva, gstar_va)
-        logging.info(state[f"svgp_ntk_{name}"])
+    state[f"svgp_ntk_{name}"] = evaluate(likelihood, yte, gstar_te, yva, gstar_va)
+    logging.info(state[f"svgp_ntk_{name}"])
 
-        gstar_te, yte = get_svgp_predictive(
-            test_loader, svgp, use_nn_out=True, likelihood=lh
+    gstar_te, yte = get_svgp_predictive(
+            test_loader, svgp, use_nn_out=True, likelihood=likelihood
         )
-        gstar_va, yva = get_svgp_predictive(
-            val_loader, svgp, use_nn_out=True, likelihood=lh
+    gstar_va, yva = get_svgp_predictive(
+            val_loader, svgp, use_nn_out=True, likelihood=likelihood
         )
-        state[f"svgp_ntk_nn_{name}"] = evaluate(lh, yte, gstar_te, yva, gstar_va)
-        logging.info(state[f"svgp_ntk_nn_{name}"])
+    state[f"svgp_ntk_nn_{name}"] = evaluate(likelihood, yte, gstar_te, yva, gstar_va)
+    logging.info(state[f"svgp_ntk_nn_{name}"])
 
 
         # GP subset
-        logging.info("GP subset")
-        prior = ntksvgp.priors.Gaussian(params=model.parameters, delta=delta)
-        svgp_subset = NN2GPSubset(
+    logging.info("GP subset")
+    prior_subset = ntksvgp.priors.Gaussian(params=model.parameters, delta=delta*len(ds_train)/num_inducing)
+    svgp_subset = NN2GPSubset(
             network=model,
             prior=prior,
             output_dim=output_dim,
-            likelihood=lh,
-            subset_size=n_inducing,
+            likelihood=likelihood,
             dual_batch_size=batch_size,
+            subset_size=num_inducing,
             jitter=0,
             device=device,
         )
-        svgp_subset.set_data(data)
-        gstar_te, yte = get_svgp_predictive(
-            test_loader, svgp_subset, use_nn_out=False, likelihood=lh
+    svgp_subset.set_data(data)
+    gstar_te, yte = get_svgp_predictive(
+            test_loader, svgp_subset, use_nn_out=False, likelihood=likelihood
         )
-        gstar_va, yva = get_svgp_predictive(
-            val_loader, svgp_subset, use_nn_out=False, likelihood=lh
+    gstar_va, yva = get_svgp_predictive(
+            val_loader, svgp_subset, use_nn_out=False, likelihood=likelihood
         )
-        state[f"gp_subset_{name}"] = evaluate(lh, yte, gstar_te, yva, gstar_va)
-        logging.info(state[f"gp_subset_{name}"])
+    state[f"gp_subset_{name}"] = evaluate(likelihood, yte, gstar_te, yva, gstar_va)
+    logging.info(state[f"gp_subset_{name}"])
 
         # retrain and update
-        if run_update:
-           state = retrain_and_update(state, svgp, likelihood, ds_test, ds_train, name=name,
+    if run_update:
+        state = retrain_and_update(state, svgp, likelihood, ds_test, ds_train, name=name,
                                         update_size=1000, batch_size=batch_size, device=device)
-
-
-        torch.save(state, f)
+    return state
 
 
 def ood(
@@ -654,13 +685,20 @@ if __name__ == "__main__":
     parser.add_argument("--gp", help="functional inference", action="store_true")
     parser.add_argument("--ood", help="out of distribution", action="store_true")
     parser.add_argument("--res_folder", help="Result folder", default="test")
-    parser.add_argument("--logdelta_min", type=float, default=1e-7)
-    parser.add_argument("--logdelta_max", type=float, default=1e7)
+    parser.add_argument("--logdelta_min", type=float, default=-7)
+    parser.add_argument("--logdelta_max", type=float, default=7)
+    parser.add_argument("--delta_factor", type=float, default=None)
     parser.add_argument("--n_sparse", type=float, default=0.5)
 
 
     parser.add_argument(
-        "--run_update", help="on/off switch for posterior refinement", type=int
+        "--run_update", help="on/off switch for testing SVGP update", type=int
+    )
+    parser.add_argument(
+        "--run_with_best", help="on/off switch for only running with best MAP delta", type=int
+    )
+    parser.add_argument(
+        "--only_map", help="on/off switch for only running a MAP estimate", type=int
     )
     parser.add_argument(
         "--n_inducing_points", type=int, default=1000
@@ -683,7 +721,11 @@ if __name__ == "__main__":
     res_folder = args.res_folder
     run_update = args.run_update
     run_update = bool(run_update)
-    log_delta = args.log_delta
+
+    run_with_best = args.run_with_best
+    run_with_best = bool(run_with_best)
+    only_map = args.only_map
+    only_map = bool(only_map)
     name = args.name
 
     data_dir = os.path.join(root_dir, "data")
@@ -752,6 +794,9 @@ if __name__ == "__main__":
             args.logdelta_min,
             args.logdelta_max,
             res_dir,
+            run_with_best=run_with_best,
             run_update=run_update,
+            only_map=only_map,
+            delta_factor=args.delta_factor,
             device=device,
         )

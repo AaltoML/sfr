@@ -5,9 +5,19 @@
 \definecolor{darkturquoise0191191}{RGB}{0,191,191}
 \definecolor{darkviolet1910191}{RGB}{191,0,191}
 \definecolor{goldenrod1911910}{RGB}{191,191,0}
+\definecolor{lightgray204}{RGB}{204,204,204}
 
 \begin{axis}[
 height=\figureheight,
+legend cell align={left},
+legend style={
+  fill opacity=0.8,
+  draw opacity=1,
+  text opacity=1,
+  at={(0.03,0.97)},
+  anchor=north west,
+  draw=lightgray204
+},
 tick align=outside,
 tick pos=left,
 width=\figurewidth,
@@ -3019,6 +3029,7 @@ table {%
 60 389.504644012451
 61 389.274957275391
 };
+\addlegendentry{NN2SVGP}
 \addplot [semithick, blue]
 table {%
 0 11.3618476986885
@@ -3081,6 +3092,7 @@ table {%
 57 392.690916442871
 58 392.704920196533
 };
+\addlegendentry{NN2SVGP with updates}
 \addplot [semithick, darkviolet1910191]
 table {%
 0 0.817695951461792
@@ -3232,6 +3244,7 @@ table {%
 146 281.479968214035
 147 282.357855939865
 };
+\addlegendentry{MLP}
 \addplot [semithick, goldenrod1911910]
 table {%
 0 0.694817978143692
@@ -4423,6 +4436,7 @@ table {%
 1186 309.76501159668
 1187 309.853490447998
 };
+\addlegendentry{DDPG}
 \end{axis}
 
 \end{tikzpicture}

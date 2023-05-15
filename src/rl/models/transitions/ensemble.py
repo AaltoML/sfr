@@ -36,6 +36,8 @@ class EnsembleTransitionModel(TransitionModel):
         # prediction_type: str = "NN",  # "NN" or TODO
         logging_freq: int = 500,
     ):
+        for network in networks:
+            network.apply(weights_init_normal)
         if "cuda" in device:
             for network in networks:
                 network.cuda()

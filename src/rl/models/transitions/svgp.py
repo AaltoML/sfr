@@ -5,14 +5,17 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+import src
 import torch
+from src.rl.custom_types import Action, Data, State, StatePrediction
 from src.rl.models.svgp import SVGP
-from src.rl.custom_types import Action, State, StatePrediction, Data
 from src.rl.utils import EarlyStopper
 from torch.utils.data import DataLoader, TensorDataset
 from torchrl.data import ReplayBuffer
-import src
+
 from .base import TransitionModel
+
+from src.rl.models.svgp import train
 
 
 class SVGPTransitionModel(TransitionModel):
@@ -170,7 +173,8 @@ class SVGPTransitionModel(TransitionModel):
                         self.svgp.variational_strategy.variational_distribution.covariance_matrix
                     )
                 )
-        return src.rl.models.svgp.train(
+        return train(
+            # return src.rl.models.svgp.train(
             svgp=self.svgp,
             # svgp=svgp_new,
             # likelihood=likelihood,

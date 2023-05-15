@@ -418,6 +418,36 @@ However, the GP's cubic $\mathcal{O}(N^3)$ scaling with data points $N$ requires
 \textbf{Function-space methods for sequential learning} 
 Continual learning (CL) hinges on how to deal with the non-stationary training distribution, wherein the training process may overwrite previously learned parameters, causing catastrophic forgetting. CL approaches fall into inference-based, rehearsal-based, and model-based methods (see \cite{parisi2019continual, de2021continual} for an overview). The methods in the first category usually tackle this problem with weight-space regularization, such as EWC~\citep{kirkpatrick2017overcoming}, SI~\citep{zenke17a}), or VCL~\citep{nguyen-tuongModel2009} that induce retention of previously learned information in the weights alone. However, encoding functional knowledge in the weights does not guarantee good quality of the predictions. Function-space regularization techniques~\cite{li2018lwf, benjamin2018measuring, titsias2019functional, buzzega2020dark, pan2020continual, rudner2022continual} address this by relying on training data subsets for each task to compute the regularization term. These methods bridge the gap between objective and rehearsal-based methods since they use a subset of the training data for each task to compute the regularization term. Recently proposed methods, \eg DER~\citep{buzzega2020dark}, FROMP~\citep{pan2020continual}, and S-FSVI~\citep{rudner2022continual} achieve state-of-the-art performance among the objective-based techniques in several CL benchmarks. 
 
+\textbf{Uncertainty quantification in RL}
+A key challenge in RL is balancing the trade-off between exploration and exploitation \cite{sutton2018reinforcement}.
+That is, should an agent select actions that it knows will lead to high reward (exploitation), or should it
+select new ones in hope to discover actions leading to higher reward (exploration).
+One promising direction to balancing this trade-off is to model the uncertainty associated with a learned transition dynamics model and use it to guide exploration.
+Prior work has taken an expectation over the dynamic model's posterior \cite{deisenrothPILCO2011,kamtheDataEfficient2018,chuaDeepReinforcementLearning2018},
+sampled from it (akin to Thompson sampling but referred to as posterior sampling RL)
+\todo{cite thopmson sampling paper dearden et al 1999}
+\cite{osbandMoreEfficientReinforcement2013},
+and used it to implement optimism in the face of uncertainty using upper confidence bounds \cite{curiEfficient2020}.
+\todo{cite UCRL paper}
+No single strategy has emerged as a go to method and we highlight that these strategies are only as good as their uncertainty estimates.
+% Central to these decision-making strategies are the methods for quantifying uncertainty.
+Previous approaches have used GPs \cite{deisenrothPILCO2011,kamtheDataEfficient2018},
+ensembles of neural networks \cite{curiEfficient2020,chuaDeepReinforcementLearning2018}
+and variational inference \cite{galImproving2016,houthooftVIME2017}.
+However, there has been little leveraging
+
+% Another classical and provable exploration theory in RL is based on optimism
+% \todo{cite UCRL paper}
+% Recent work has even extended these ideas to deep RL \cite{curiEfficient2020}.
+
+% An alternative approach is to sample from the dynamic model's posterior, akin to Thompson sampling but referred to as posterior sampling RL
+% Another classical and provable exploration theory in RL is based on optimism in the face of uncertainty.
+% \todo{cite UCRL paper}
+% Recent work has even extended these ideas to deep RL \cite{curiEfficient2020}.
+% These strategies are only as good as their uncertainty estimates.
+% Prior work has learned dynamics models using GPs \cite{deisenrothPILCO2011,kamtheDataEfficient2018},
+% ensembles of neural networks \cite{curiEfficient2020,chuaDeepReinforcementLearning2018}
+% and variational inference \cite{galImproving2016,houthooftVIME2017}.
 
 
 

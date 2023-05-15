@@ -36,7 +36,7 @@
 \newcommand{\etal}{\textit{et~al.\@}\xspace}
 
 % Our method
-\newcommand{\our}{\textsc{dnn2sgp}\xspace}
+\newcommand{\our}{\textsc{sfr}\xspace}
 
 % Tikz
 \usepackage{tikz}
@@ -186,6 +186,7 @@
 \newcommand{\vx}{\mbf{x}}
 \newcommand{\vy}{\mbf{y}}
 \newcommand{\vw}{\mbf{w}}
+\newcommand{\va}{\mbf{a}}
 
 \newcommand{\Jac}[2]{\mathcal{J}_{#1}(#2)}
 \newcommand{\JacT}[2]{\mathcal{J}_{#1}^\top(#2)}
@@ -402,9 +403,10 @@ However, the GP introduces a cubic scaling $\mathcal{O}(N^3)$ in the number of d
 
 
 % CL section
-\textbf{Function-space methods for sequential learning} The central problem in continual learning is how to deal with the non-stationary nature of the training distribution which causes the training process to overwrite the previously learnt parameters---leading to the model forgetting the previous learnt functions. 
-The approaches proposed in the CL literature can be categorized into inference-based, reharsal-based, and model-based methods, we refer the reader to \citep{parisi2019continual, de2021continual} for complete reviews. The methods in the first category usually tackle this problem with weight-space regularization, such as EWC~\cite{kirkpatrick2017overcoming}, SI~\cite{zenke17a}), or VCL~\cite{nguyen-tuongModel2009} that induce retention of previously learned information in the weights alone.
-However, encoding functional knowledge in the weights does not guarantees a good quality of the predictions, thus a better to introduce a function-space regularization \citep{li2018lwf, benjamin2018measuring, titsias2019functional, buzzega2020dark, pan2020continual, rudner2022continual}. These methods bridge the gap between objective and reharsal-based methods, since they rely on a subset of the training data for each task to compute the regularization term. Recent methods, such as DER~\cite{buzzega2020dark}, FROMP~\cite{pan2020continual}, and S-FSVI~\cite{rudner2022continual} achieve state-of-the-art performances among the objective-based techniques in several CL benchmarks. 
+\textbf{Function-space methods for sequential learning} The central problem in continual learning is how to deal with the non-stationary nature of the training distribution, which causes the training process to overwrite the previously learnt parameters---leading to the model forgetting the previously learnt functions. 
+The approaches proposed in the CL literature can be categorized into inference-based, rehearsal-based, and model-based methods; we refer the reader to \citep{parisi2019continual, de2021continual} for complete reviews. The methods in the first category usually tackle this problem with weight-space regularization, such as EWC~\citep{kirkpatrick2017overcoming}, SI~\citep{zenke17a}), or VCL~\citep{nguyen-tuongModel2009} that induce retention of previously learned information in the weights alone.
+However, encoding functional knowledge in the weights does not guarantee a good quality of the predictions, thus a better to introduce a function-space regularization \citep{li2018lwf, benjamin2018measuring, titsias2019functional, buzzega2020dark, pan2020continual, rudner2022continual}. These methods bridge the gap between objective and rehearsal-based methods since they rely on a subset of the training data for each task to compute the regularization term. Recently proposed methods, such as DER~\citep{buzzega2020dark}, FROMP~\citep{pan2020continual}, and S-FSVI~\citep{rudner2022continual} achieve state-of-the-art performances among the objective-based techniques in several CL benchmarks. 
+
 % It should be written clearly that our method actually is doing a "functional" reharsal, because we store a set of inducing points that are replayed in order to check if the logits change.
 
 % Other methods that could be worth citing are 
@@ -482,29 +484,22 @@ However, encoding functional knowledge in the weights does not guarantees a good
 
 % by linearising a neural network around the Maximum a Posteriori (MAP) weights.
 % a GP posterior -- can be obtained
-
-In supervised learning, given a data set $\dataset = \{(\mathbf{x}_{i} , \mathbf{y}_{i})\}_{i=1}^{n}$, with input $\mathbf{x}_i \in \inputDomain$ and output $\mathbf{y}_i \in \outputDomain$ pairs, the weights $\weights \in \R^{P}$ of a neural network, $f_\mathbf{w} : \inputDomain \to \outputDomain$, are usually trained to minimize the (regularized) empirical risk,
+%
+In supervised learning, given a data set $\dataset = \{(\vx_{i} , \vy_{i})\}_{i=1}^{n}$, with input $\vx_i \in \inputDomain$ and output $\vy_i \in \outputDomain$ pairs, the weights $\weights \in \R^{P}$ of a neural network, $f_\mathbf{w} : \inputDomain \to \outputDomain$, are usually trained to minimize the (regularized) empirical risk,
 %
 \begin{equation} \label{eq-empirical-risk}
   \weights^{*} = 
   \arg \min_{\weights} \mathcal{L}(\dataset,\weights) =
-  \arg \min_{\weights} \sum_{i=1}^{n} \ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) + \delta \mathcal{R}(\weights).
+  \arg \min_{\weights} \textstyle\sum_{i=1}^{n} \ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) + \delta \mathcal{R}(\weights).
 \end{equation}
 %
-If $\ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) = -\log(p(\mathbf{y} \mid f_\weights(\mathbf{x}_{i}))$ and the regularizer $\mathcal{R}(\weights) = \frac{1}{2}\|\weights\|^{2}_2$, then we can view \cref{eq-empirical-risk} as the maximum {\it a~posteriori} (MAP) solution to a Bayesian objective, where the regularization weight takes the role of a prior precision parameter, \ie, $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$.
-
-%
-% \subsection{Linearization gives rise to a Gaussian process}
-% \label{sec:nn2gp}
-%
-
-\textbf{Uncertainty quantification} \todo{Move this section to the related work}
-Bayesian inference offers a principled approach to quantifying uncertainty in neural networks.
-The goal is to find the posterior over the weights ${p(\vw \mid \vy) \propto p(\vy \mid f_{\weights}(\vx)) p(\weights)}$ as
-it represents our belief in the parameters after combining data $\dataset$ with our prior $p(\vw)$.
-Although the true posterior $p(\vw \mid \dataset)$ is intractable given the non-linearities of the neural network, one can resort to sampling techniques such as Hamiltonian Monte-Carlo (HMC).
-However, for most applications their high computational costs make them impractical so we need approximate inference techniques.
-In \cref{fig:banana}, we show a qualitative example of the induced function-space posterior obtained with our method compared to the posterior obtained through HMC sampling on the Banana toy dataset. 
+If $\ell(f_\weights(\vx_{i}), \vy_i) = -\log(p(\vy \mid f_\weights(\vx_{i}))$ and the regularizer $\mathcal{R}(\weights) = \frac{1}{2}\|\weights\|^{2}_2$, then we can view \cref{eq-empirical-risk} as the maximum {\it a~posteriori} (MAP) solution to a Bayesian objective, where the regularization weight takes the role of a prior precision parameter, \ie, $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$.
+%Bayesian inference offers a principled approach to quantifying uncertainty in neural networks.
+%The goal is to find the posterior over the weights ${p(\vw \mid \vy) \propto p(\vy \mid f_{\weights}(\vx)) \, p(\weights)}$ as it represents our belief in the parameters after combining data $\dataset$ with our prior $p(\vw)$.
+%Although the true posterior $p(\vw \mid \dataset)$ is intractable given the non-linearities of the neural network, one can resort to sampling techniques such as Hamiltonian Monte-Carlo (HMC).
+%However, for most applications their high computational costs make them impractical so we need approximate inference techniques.
+%In \cref{fig:banana}, we show a qualitative example of the induced function-space posterior obtained with our method compared to the posterior obtained through HMC sampling on the Banana toy dataset. 
+The posterior over the weights ${p(\vw \mid \dataset) \propto p(\vy \mid f_{\weights}(\vx)) \, p(\weights)}$ is generally not available in closed form. Sampling methods that characterize the posterior with a finite set of samples in weight-space---such as the Hamiltonian Monte Carlo (HMC) baseline used in \cref{fig:banana} (right)---are general-purpose, but comuptationally heavy and impractical for downstream applications.
 
 \textbf{Function space}
 As a neural network is a deterministic mapping, the weight-space posterior induces a distribution over the function values.
@@ -540,149 +535,111 @@ Using the Hessian of the approximate model, we arrive at the Laplace-GGN approxi
 \todo{do we need this sentence about the Hessian to get Laplace-GGN??}
 Therefore, the Laplace-GGN linear model can be used to convert our weight space model to the function space by,
 \begin{equation} 
-\label{eq-laplace-approx-function-space}
+\label{eq-laplace-approx-function-space} 
 % g(\vx) \sim \GP \left( \mu(\vx), \kappa(\vx, \vx') \right) \quad \text{with} \quad
   \mu(\vx) =  0 \quad \text{and} \quad
   \kappa(\vx, \vx')
   = \frac{1}{\delta} \Jac{\weights^*}{\vx} \, \JacT{\weights^*}{\vx'}, 
 \end{equation}
-where the kernel is the so-called Neural Tangent Kernel (NTK, \cite{jacot2018neural}). In \cref{eq-laplace-approx-function-space}, for notational convenience, we restricted the function output to single dimension, but this could be easily extend for the multi-dimensional case. With this kernel function, we can then combine it with the dataset $\dataset$ to form the posterior $q(\vf)$. \citet{khan2019approximate} took a similar approach, but instead of fitting the GP posterior to the actual $\vy$, but a transformation of $\vy$ which they refer to as pseudo-data. Similarly, \citet{immer2021improving} obtain the same covariance function but a different mean because they rely on a first order approximation of the neural network to form a Bayesian GLM model. Both approaches attempted to adjust the GP posterior mean function to ensure the predictions are from the neural network $f_{\vw^*}(\vx)$. In our method, we wish to make predictions from the derived GP and thus we avoid such adjustments. We now present the general formulation of the sparse functional representation of our trained neural network based on the non-sparse approximation. 
+where the kernel is the so-called Neural Tangent Kernel (NTK, \cite{jacot2018neural}). In \cref{eq-laplace-approx-function-space}, for notational convenience, we restricted the function output to single dimension, but this could be easily extended for the multi-dimensional case. With this kernel function, we can then combine it with the dataset $\dataset$ to form the posterior $q(\vf)$. \citet{khan2019approximate} took a similar approach, but instead of fitting the GP posterior to the actual $\vy$, they rely on a transformation of $\vy$ referred as pseudo-data. Similarly, \citet{immer2021improving} obtain the same covariance function but a different mean because they rely on a first order approximation of the neural network to form a Bayesian GLM model. Both approaches attempted to adjust the GP posterior mean function to ensure the predictions are from the neural network $f_{\vw^*}(\vx)$. In our method, we wish to make predictions from the derived GP and thus we avoid such adjustments. We now present the general formulation of the sparse functional representation of our trained neural network based on the non-sparse approximation. 
 
 
-\section{\our: Sparse function-space represenation of neural networks}
+
+\section{\our: Sparse Function-space Represenation of neural networks}
 \paragraph{GP in the dual parameters}
-As stated in \citet[Parameterization Lemma~1]{csato2002sparse}, the posterior process $f_{\textrm{post}}$ found through the Bayesian update equation using  GP prior and likelihood function can be parameterized by $\valpha$ and $\vbeta$:
+As stated in \citet[Parameterization Lemma~1]{csato2002sparse}, the mean and covariance functions of the posterior process $f_{\textrm{post}}$, found through the Bayesian update using the GP prior and the likelihood function, can be parameterized by the dual parameters, $\valpha$ and $\vbeta$,
 \begin{equation}  \label{eq:gp_pred}
- \mu(\vx_i)_\textrm{post} = \vk_{\vx i}^\top \valpha \quad \text{and} \quad
-  \kappa(\mathbf{x}_i, \mathbf{x}_i')_\textrm{post} = \kappa_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i},
+  \myexpect_{p(f_i \mid\vy)}[f_i]= \vk_{\vx i}^\top \valpha \quad \text{and} \quad
+  \mathrm{Var}_{p(f_i \mid \vy)}[f_i] = \kappa_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i},
 \end{equation}
-the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{m \times m}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $\kappa_{ii} = \kappa(\vx_i, \vx_i)$.  The dual parameters are the vector $\valpha \in \R^{m}$ and vector $\vbeta \in \R^{m}$, defined as:
+where the $ij$th entry of the matrix $\MKxx \in \R^{n \times n}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$th element is $\kappa(\vx_i, \vx_j)$, and $\kappa_{ii} = \kappa(\vx_i, \vx_i)$.  The dual parameters are the vector $\valpha \in \R^{m}$ and vector $\vbeta \in \R^{m}$, defined as:
 \begin{equation}
 \label{eq:dual_param}
 \alpha_i \coloneqq \myexpect_{p(\vw \mid \vy)}[\nabla_{f_i}\log p(y_i \mid f_i)],  \quad
 \beta_i \coloneqq - \myexpect_{p(\vw \mid \vy)}[\nabla^2_{f_i f_i}\log p(y_i \mid f_i)] .
 \end{equation}
 %
-The above relations hold for generic likelihoods, and no approximations are involved as the expectation is under the exact posterior. It also highlights that our approximate inference technique, while usually considered a posterior approximation, can instead be seen as approximating the expectation of gradients of loss/likelihoods. In \citet{csato2002sparse}, they iteratively find dual variables setting them to log the expectation of the approximate posterior. At the same time, in \cite{adam2021dual, chang2020fast}, they showed this relationship for variational Gaussian processes where the above expectation is with respect to the approximate posterior from the variational approximation. The parameter $\alpha$ relates to non-Bayesian approaches, for example, support vector machines \citep{cortes1995support}, whose origins are found in work by \citet{kimeldorf1971some}. The above relations hold for generic likelihoods, and no approximations are involved as the expectation is under the exact posterior. For more detail, see \citet{wilkinson2023bayes}, which shows the links between approximate inference methods and how they solve the \cref{eq:dual_param}. 
+The above relations hold for generic likelihoods, and no approximations are involved as the expectation is under the exact posterior. 
+It also highlights that our approximate inference technique, while usually considered a posterior approximation, can instead be seen as approximating the expectation of gradients of loss/likelihoods. \todo{our approximation is late \cref{eq:dual_param_laplace}, saying this here is misleading}\\
+In \citet{csato2002sparse}, they iteratively find dual variables using an Expectation Propogation (EP) method.  
+At the same time, in \cite{adam2021dual, chang2020fast}, they show this relationship for variational Gaussian processes where the above expectation is with respect to the approximate variational posterior. The dual parameter $\valpha$ appears also in non-Bayesian approaches, \eg, support vector machines \citep{cortes1995support}, whose origins are found in work by \citet{kimeldorf1971some}. While in \citet{wilkinson2023bayes}, they show links between linearization methods and how they solve the \cref{eq:dual_param}.\todo{is this last part used/referred somewhere else?}
 
 \paragraph{Dual parameters from NN}
-Given we are making a Laplace approximation of the neural network we can remove the expectation over the posterior (see Ch.~3.4.1 in \cite{rasmussen2006gaussian} for derivation). Meaning we arrive at the following dual variables.
+Given that we use a Laplace approximation of the neural network, we remove the expectation over the posterior (see Ch.~3.4.1 in \cite{rasmussen2006gaussian} for derivation) and we get the the following formulation of the dual variables,
 \begin{equation}
 \label{eq:dual_param_laplace}
 \hat{\alpha}_i \coloneqq \nabla_{f_i}\log p(y_i \mid f_i),  \quad \text{and} \quad
 \hat{\beta}_i \coloneqq - \nabla^2_{f_i f_i}\log p(y_i \mid f_i).
 \end{equation}
 
-Substiuting \cref{eq:dual_param_laplace} in to \cref{eq:gp_pred} and we arrive at our GP model based on the converged neural network. Again this is similar to what was derived in \citet{immerImprovingPredictionsBayesian2021} for the posterior variance function, but they instead use the $f_{\vw^*}$ for the posterior mean and fail to spot the significance of the dual variables. The problem with \cref{eq:gp_pred} is that to make predictions and compute variances we must incur a cost of $O(n^3)$ which limits the use of the GP on large data sets.
-
+Substiuting \cref{eq:dual_param_laplace} into \cref{eq:gp_pred}, we obtain our GP model based on the converged neural network. Again, this is similar to what was derived in \citet{immer2021improving} for the posterior variance function. However, they use the $f_{\vw^*}$ for the posterior mean and do not spot the significance of the dual variables. The problem with \cref{eq:gp_pred} is that to make predictions and compute variances we must incur a cost of $O(n^3)$ which limits the use of the GP on large data sets.
 
 \paragraph{Sparsifying the NNGP}
 \label{sec:sparse-dual-gp}
 %
-Sparse Gaussian processes are a way to reduce the computational complexity of a full GP using a low-rank approximation. Many sparsifying approaches exist, we refer the reader to \cite{quinonero2005unifying} for an overview. Given that we have our dual variables derived from our neural network predictions and a kernel function, we could essentially use any approximation. We decide to follow the sparsifying approach of \citet{titsias2009variational} and also used in the DTC appeoximation \cite{quinonero2005unifying}, which is to define the marginal predictive distribution as $q_{\vu}(f_i)  = \int p(f_i  \mid \vu) q(\vu)  d\vu$. Given that we have $p(f_i  \mid \vu)$ determined by our GP prior, the goal is to find a $q(\vu)$. 
+Sparse Gaussian processes are a way to reduce the computational complexity of a full GP using a low-rank approximation. Many sparsifying approaches exist and we refer the reader to \cite{quinonero2005unifying} for an overview. Given that we computed the dual variables derived from our neural network predictions and a kernel function, we could essentially use any approximation.\todo{approximation to get what? kernel and dual variables} We decide to follow the sparsifying approach of \citet{titsias2009variational} and also used in the DTC approximation \citep{quinonero2005unifying}, which defines the marginal predictive distribution as $q_{\vu}(f_i)  = \int p(f_i  \mid \vu) q(\vu)  d\vu$. Given that we have $p(f_i  \mid \vu)$ determined by our GP prior, the goal is to find a $q(\vu)$. 
 
-As was shown in \cite{adam2021dual}, the posterior under this model has a particular structure similar to \cref{eq:gp_pred}. In the paper, they spot the dual variables' importance for approximate inference but write them in the natural parameter form as this form is more suitable for optimization through natural gradients. In order to make the link to the dual variables defined in \cref{eq:dual_param} we write them in the sparse GP in the dual variable form. 
-%
+As was shown in \cite{adam2021dual}, the posterior under this model has a particular structure similar to \cref{eq:gp_pred}. In the paper, the authors spot the dual variables' importance for approximate inference, but write them with the natural parameterization as this form is more suitable for optimization through natural gradients. In order to link the dual variables defined in \cref{eq:dual_param}, we write them in the sparse GP using the dual variables
 \begin{equation} 
 	\valpha_{\vu}  =  \sum_{i \in \mathcal{D}_{n}}  \vkzi \, \hat{\alpha}_{i}, \quad
 	\vbeta_{\vu} =  \sum_{i \in \mathcal{D}_{n}} \vkzi \,\hat{\beta}_{i} \, \vkzi^{\T} ,    
 \label{eq:dual_sparse}
 \end{equation}
-the sparse dual variables are now a sum over all data points, with $\valpha_{\vu} \in \R^{M}$ and $\vbeta_{\vu} \in \R^{M  \times M}$. Using the sparse definition of the dual variables our sparse GP posterior takes the following form:
+where the sparse dual variables are now a sum over all data points, with $\valpha_{\vu} \in \R^{M}$ and $\vbeta_{\vu} \in \R^{M  \times M}$. Using these sparse definition of the dual variables, our sparse GP posterior takes the following form:
 \begin{equation}\label{eq:dual_sparse_post}
    \myexpect_{q_{\vu}(\vf)}[f_i] = \vkzs^{\T} \MKzz^{-1}   \valpha_{\vu} , \quad 
    \textrm{Var}_{q_{\vu}(\vf)}[f_i]  = \kappa_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \vbeta_{\vu})^{-1} ]\vkzs
 \end{equation}
-where $\MKzz$ and $\vkzs$ are define similarly to $\MKxx$ and $\vk_{\vx i}$ but now over the $\MZ \in \R^{M \times D} $ inducing points instead of the full dataset $\MX$. The key quantities we need to make predictions from our sparse GP from the converged neural network are $(\hat{\alpha}_i, \hat{\beta}_i)$ and a kernel function $\kappa$. Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred} we can see that the computational complexity is now $\mathcal{O}(m^3)$ to $\mathcal{O}(n^3)$ where $m \ll n$.  Crucially given the structure of our probabilistic model, our sparse dual variables \cref{eq:dual_sparse} are a compact form of the full model projected using the kernel. 
+where $\MKzz$ and $\vkzs$ are defined similarly to $\MKxx$ and $\vk_{\vx i}$ but over the inducing points $\MZ \in \R^{M \times D} $  instead of the full dataset $\dataset$. The key quantities we need to make predictions from our sparse GP from the converged neural network are $(\hat{\alpha}_i, \hat{\beta}_i)$ \cref{eq:dual_param_laplac}\todo{these variables need another subscript for differentiate that from the values computed at the data points} and a kernel function $\kappa$ . Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred}, we can see that the computational complexity went from $\mathcal{O}(n^3)$ to $\mathcal{O}(m^3)$, with $m \ll n$.  Crucially, given the structure of our probabilistic model, our sparse dual variables \cref{eq:dual_sparse} are a compact representation of the full model projected using the kernel. 
 
-Our approach contrasts to \citet{immer2021improving}, which uses a subset of the full model to try to reduce complexity, a less principled approach to build a sparse model given it ignores the information in the dataset. It is important to highlight that the sparsifying process is independent of the approximate inference technique. The \cref{eq:dual_param} are from the neural network definition \cref{eq-empirical-risk}. More complicated inference techniques, such as variational inference, could be used, but given its simplicity, we only need a trained neural network; we use a Laplace approximation in our experiments.
-
-\section{Sparse function-space sequential learning}
+In contrast to our approach, \citet{immer2021improving} use a subset of the data points to make a sparse GP model to reduce the computational complexity. As a result, this is a less principled approach for building a sparse model since it ignores the dataset's information. It is important to highlight that the sparsifying process is independent of the approximate inference technique because the dual variables of \cref{eq:dual_param} are computed using \cref{eq-empirical-risk} and a Laplace approximation.
+More complicated inference techniques, such as variational inference, could be used, but given its simplicity, in our experiments we used the Laplace-GGN approximation with the trained neural network. Furthermore, our dual variable view of approximate inference means we do not need to retrain a separate sparse GP model. \todo{shouldn't this sentence be clear from the context? we derive the mean/kernel function that define the process, then we have a sparse GP already}
+\section{Sparse Function-space Sequential Learning}
 
 We have presented a method for converting any trained neural network into a sparse function-space representation.
 In this section, we demonstrate how sequential learning methods can benefit from our function-space representation and it's associated uncertainty estimates.
 
 
-\subsection{Sparse functional regularization (SFR) in continual learning}
+
+\subsection{\our for Continual Learning}
 % Definition of CL -> a sequence of tasks 
-% Possible storyline:
-after each task we use the model 
-
-In this paper we consider the Continual learning setting were a sequence of disjoint sets 
-
+In the Continual learning setting, the training is divided into $T$ tasks, each with its training data set $\dataset_t = \{(\mathbf{x}_{i}, \mathbf{y}_{i})\}_{i=1}^{n_t}$, which after the task is discarded and cannot be accessed in the following stages of the training. Rehearsal and function regularization-based models keep a subset of the training data for each task to help the model alleviate forgetting. In the same way, after each task, we can use our \our to build a compact representation of the neural network and then exploit this representation to build a functional regularizer to add to the training loss for the subsequent tasks. Recently proposed GP-based regularizers \cite{ pan2020continual, rudner2022continual} have shown better performances than weight space equivalents getting state-of-the-art on CL benchmarks. However, they are limited to use subset approximations of the posterior.
+%, which in practice means randomly selecting some data computing its posterior at only those points and then using that as the regularizer. 
+A more principled approach would be to sparsify the resultant GP into a low-rank approximation to ensure information coming from the entire task dataset is not lost.%, essentially what the sparse dual variables do.   \todo{this term is replacing the missing data}
+% Where the regularizer comes from
+At the end of the training for each task $t$, we compute the Laplace-GGN approximated kernel function for the current model and randomly select $m$ inducing points. Given the issues described in the previous sections, related to computing the full covariance posterior $\MKxx$,\todo{this should be $\kappa(\MX_t, \MX_t)$}, we can exploit the dual parameterization to efficiently encode the information from the $\dataset_t$ using the dual parameterization, as follows, 
 \begin{equation}
- 	\bar{\MB}^{-1}_s = \MKzz^{-1} \vbeta_\vu \MKzz^{-1} \in \R^{m \times m}, \quad \forall s \in [1, t-1]
+ 	\bar{\MB}^{-1}_t = \MKzz^{-1} \vbeta_\vu \MKzz^{-1} \in \R^{m \times m}, 
+ 	\quad 
+ 	\vbeta_{\vu} =  \sum_{i \in \dataset_t} \vkzi \,\hat{\beta}_{i} \, \vkzi^{\T} ,    
+ 	% \quad \forall t \in [1, T]
  \end{equation}
+ where $\MKzz$ and $\vkzi$ are the kernel function computed on the inducing points $\MZ_t \in \R^{m \times D}$ for task $t$.
+ 
+We can then keep a memory buffer $\mathcal{M} = \{(\MZ_t, \vu_t, \bar{\MB}^{-1}_t)\}_{t=1}^T$, where $\MZ_t$ are the inducing points selected from $\dataset_t$ and  $\vu_t = f_{\vw_t^*}(\MZ_t)\in \R^{m}$ are the neural network outputs over them computed with the MAP estimate after task $t$, $\vw_t^*$. Note that, for notational convenience, we are extending our neural network notation to be compatible with multiple inputs points, \ie, each $i$th entry is $f_{\vw_t^*}(\vz_i)\in \R$. Moreover, we restrict ourselves to single-output neural networks and refer the reader to further details on the multi-output setting to \cref{sec:cl_multioutput}. 
 
-\begin{equation}
-	\mathcal{R}_\textit{SFR}(\weights) = \sum_{s=1}^{t-1} \frac{1}{m} \left[\left(f_{\weights}(\MZ_{s}) - f_{\weights_{s}}(\MZ_s) \right)^\T \bar{\MB}^{-1}_{s} \left(f_{\weights}(\MZ_{s}) - f_{\weights_{s}}(\MZ_s) \right) \right]
-\end{equation} 
-with $f_\vw(\MZ_{s}), f_{\vw_s}(\MZ_s) \in \R^m$ are vectors of the outputs of the neural networks with the current weights $\vw$ and stored function outputs of the neural network at the MAP optimum for task $s$. 
-
+After each task, we update $\mathcal{M}$, and we can construct a regularizer term, which aims to reduce the drift of the current model from diverging on the inducing points $\MZ_s$ for all previous tasks $ s \in \left[ 1, t-1 \right]$. The resulting regularizer can be computed as follows
 %\begin{equation}
-%	\argmin_{\weights} \sum_{i=1}^{n} \ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) + \delta \mathcal{R}(\weights) + \tau \mathcal{R}_\textit{SFR}(\weights)
+%	\mathcal{R}_\textit{SFR}(\weights, \mathcal{M}) = \sum_{s=1}^{t-1} \frac{1}{m} \left[\left(f_{\weights}(\MZ_{s}) - f_{\weights_{s}}(\MZ_s) \right)^\T \bar{\MB}^{-1}_{s} \left(f_{\weights}(\MZ_{s}) - f_{\weights_{s}}(\MZ_s) \right) \right].
 %\end{equation}
 
 \begin{equation}
-	\weights_t^* = \argmin_{\weights} \mathcal{L}(\mathcal{D}_t, \weights) + \tau \mathcal{R}_\textit{SFR}(\weights)
+	\mathcal{R}_\textit{SFR}(\weights, \mathcal{M}) = \sum_{s=1}^{t-1} \frac{1}{m} 
+	\left\lVert 
+	f_{\weights}(\MZ_{s}) - \vu_t % f_{\weights_{s}}(\MZ_s)
+	\right\rVert_{\bar{\MB}^{-1}_{s}}.
+\end{equation}
+%\todo{choose one option}
+% where $f_\vw(\MZ_{s}) \in \R^m$ are the outputs of neural networks with the current weights $\vw$ and stored function outputs of the neural network at the MAP optimum for task $s$, i.e., each $i$th entry is $f_\cdot(\vz_i) \in \R$.
+%\begin{equation}
+%	\argmin_{\weights} \sum_{i=1}^{n} \ell(f_\weights(\mathbf{x}_{i}), \mathbf{y}_i) + \delta \mathcal{R}(\weights) + \tau \mathcal{R}_\textit{SFR}(\weights)
+%\end{equation}
+Then, when the training on the successive task, the new objective to minimize takes the following form
+\begin{equation}
+	\weights_t^* = \argmin_{\weights} \mathcal{L}(\mathcal{D}_t, \weights) + \tau \mathcal{R}_\textit{SFR}(\weights, \mathcal{M})
 \end{equation}
 
 
-
-
-\subsection{Reinforcement learning}
-A key challenge in RL is to balance the trade-off between exploration and exploitation.
-That is, should the agent select an action that it knows will lead to a high reward (exploitation), or should it
-hope to discover new actions which lead to high reward (exploration) by selecting actions that it has not selected before.
-In this section, we detail how our method's principled uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim.
-
-We consider stochastic environments with states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \),
-actions \(\action \in \actionDomain \subseteq \R^{D_{\action}}\) and transition dynamics
-\(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \), such that
-$\state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}$, where  $\noise_{t}$
-is i.i.d. transition noise.
-We consider the episodic setting where the system is reset to an initial state $\state_{0}$ at each episode and we
-assume that there is a known reward function $r : \stateDomain \times \actionDomain \rightarrow \R$.
-% Following the Markov decision process formulation \cite{bellmanMarkovianDecisionProcess1957a}, we
-% denote the states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \) and actions \(\action \in \actionDomain \subseteq \R^{D_{\action}}\)
-% of the sytem, the reward function $r : \stateDomain \times \actionDomain \rightarrow \R$, and transition dynamics
-% \(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \), such that
-% $\state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}$ where  $\noise_{t}$
-% is i.i.d. transition noise.
-% $\mathbb{E}_{\noise_{0:\infty}} \big[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \big]$
-% \begin{align} \label{eq-model-free-objective}
-% \policy^{*} = \arg \max_{\policy \in \policyDomain} J(\transitionFn, \policy) = \arg \max_{\policy \in \policyDomain} \mathbb{E}_{\noise_{0:\infty}} \bigg[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \bigg]
-% \quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t},
-% \end{align}
-The goal of RL is to find the policy \(\pi : \stateDomain \rightarrow \actionDomain\)
-(from a set of policies $\Pi$) that maximises the sum of discounted rewards
-in expectation over the transition noise,
-\begin{align} \label{eq-model-free-objective}
-J(\transitionFn, \policy) = \mathbb{E}_{\noise_{0:\infty}} \bigg[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \bigg]
-\quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t},
-\end{align}
-where $\gamma \in [0, 1)$ is a discount factor.
-In this work, we consider model-based RL where a model of the transition dynamics is learned \(f_{\mathbf{w}} \approx \transitionFn\) and then used by a planning algorithm.
-A simple approach is to use the learned dynamic model $f_{\mathbf{w}^{*}}$ and maximise the objective in \cref{eq-model-free-objective},
-\begin{align} \label{eq-greedy}
-  \policy^{\text{Greedy}} &= \arg \max_{\pi \in \Pi} J(f_{\mathbf{w}^{*}}, \pi).
-\end{align}
-However, we can leverage the method in \cref{sec:methods} to obtain a function-space posterior over the learned dynamics $q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset)$,
-where $\mathcal{D}$ represents the state transition data set \(\mathcal{D} = \{(s_{i},a_{i}), s_{i+1}\}_{i=0}^{N}\).
-Importantly, the uncertainty represented by this posterior distribution can be used to balance the exploration-exploitation trade-off,
-using approaches such as posterior sampling \cite{osbandWhyPosteriorSampling2017,osbandMoreEfficientReinforcement2013},
-\begin{align} \label{eq-posterior-sampling}
-  \policy^{\text{PS}} &= \arg \max_{\pi \in \Pi} J(\hat{f}, \pi)
-\quad \text{s.t. } \tilde{\transitionFn} \sim q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset),
-\end{align}
-where a function $\tilde{\transitionFn}$ is sampled from the (approximate) posterior $q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset)$ and used to find a policy as
-in \cref{eq-greedy}.
-Intuitively, this strategy will explore where the model has high uncertainty, which in turn will reduce the model's uncertainty as data is collected and used to
-train the model.
-See \cref{sec-rl-appendix} for more details of how we use
-
-\textbf{Pathwise conditioning in function-space??}
-\todo{could try to implement this}
 
 
 
@@ -1066,24 +1023,37 @@ The Continual learning setting is a challenging and the training and
 \end{table}
 
 
-\subsection{Reinforcement Learning}
+\subsection{Reinforcement learning}
+A key challenge in RL is balancing the trade-off between exploration and exploitation.
+That is, should an agent select actions that it knows will lead to a high reward (exploitation), or should it
+hope to discover new actions which lead to high reward (exploration)?
+In this section, we show that \our's uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim,
+demonstrating the quality of our uncertainty estimates.
+% In this section, we demonstrate  that our method's principled uncertainty estimates can be used to balance this trade-off in a model-based RL algorithim.
+We refer the reader to \cref{app:rl} for an overview of the problem and details of our experiments.
 
-In section \label{sec-rl} we detailed how our method can be used to
 
-See \label{sec-rl-experiments-appendix} for more details of our experiments.
+Cart pole swing up task in MuJoCo \cite{todorov2012mujoco}
+We compare our method with deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016} -- a model-free RL baseline --
+which is sample inefficient.
+We test our model's uncertainty estimates by comparing it to using Laplace-GGN with GLM predictions, using an ensemble of neural networks
+(with different initialisations),
+To ensure a fair comparison, we use the same MLP architecture/training scheme and we keep the same model-based RL algorithm.
+See \cref{app:rl} for more details of our experiments.
 
+We also compare to deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016} -- a model-free RL baseline --
+which we expect to be much more sample inefficient.
 
-
-We compare a model-based RL agent using a simple MLP dynamic model with
-\begin{itemize}
-  \item uncertainty is good for exploration
-\end{itemize}
 
 \cref{fig:rl} shows training curves
 
+
+
+
+
 \begin{figure}[!t]
  \centering
- \begin{subfigure}{.2\textwidth}
+ \begin{subfigure}[c]{.24\textwidth}
  \resizebox{\textwidth}{!}{%
  \begin{tikzpicture}[inner sep=0,outer sep=0]
 
@@ -1100,32 +1070,33 @@ We compare a model-based RL agent using a simple MLP dynamic model with
    \node[fill=white,draw=black,line width=3pt,circle,minimum size=2cm,fill=black!50] at (7cm,-.5cm) {};
 
    % The arm
-   \node[anchor=north,minimum width=1cm,minimum height=14cm,draw=black,rotate=20,rounded corners=5mm,yshift=7mm,xshift=-.3mm,fill=white,draw=black,line width=3pt] at (dot) {};
+   \node[anchor=north,minimum width=1cm,minimum height=14cm,draw=black,rotate=-20,rounded corners=5mm,yshift=7mm,xshift=-.3mm,fill=white,draw=black,line width=3pt] at (dot) {};
    \node[fill=black,circle,minimum size=.5cm] at (dot) {};
 
    % Markings
    \draw[loosely dashed,line width=1pt] (4.5,6) -- (4.5,-10);
 
    % Arrow
-   \draw[->,black,line width=3pt,-{Latex[length=7mm,width=7mm]}] (1,5) --node[above,outer sep=6pt]{\large $x$} (4.5,5);
+   \draw[->,black,line width=3pt,-{Latex[length=7mm,width=7mm]}] (1,5) --node[above,outer sep=8pt]{\scalebox{4}{$x$}} (4.5,5);
 
    \def\centerarc[#1](#2)(#3:#4:#5)% Syntax: [draw options] (center) (initial angle:final angle:radius)
    { \draw[#1] ($(#2)+({#5*cos(#3)},{#5*sin(#3)})$) arc (#3:#4:#5); }
 
    % Draw arc
-   \centerarc[black,line width=3pt](dot)(270:290:11)
-   \node at (6.5,-9) {$\theta$};
+   \centerarc[black,line width=3pt](dot)(250:270:11)
+   \node at (2.5,-9) {\scalebox{4}{$\theta$}};
 
-   \node[white,minimum size=1cm] at (4.5,-13) {};
+   %\node[white,minimum size=1cm] at (4.5,-13) {};
 
  \end{tikzpicture}}
  \end{subfigure}
  \hfill
- \begin{subfigure}{.78\textwidth}
+ \begin{subfigure}[c]{.74\textwidth}
    \centering\scriptsize
    \setlength{\figurewidth}{\textwidth}
    \setlength{\figureheight}{.5\figurewidth}
-   \pgfplotsset{axis on top}
+   \pgfplotsset{axis on top,ymajorgrids,axis line style={draw=none},legend style={at={(1,1)},anchor=north west}}
+   \pgfplotsset{grid style={line width=.1pt, draw=gray!10,dashed},legend style={fill=white}}
    \input{./fig/rl.tex}
  \end{subfigure}
  \hfill
@@ -1202,7 +1173,7 @@ A reference implementation of the methods presented in this paper is currently a
 
 \nipstitle{
     {\Large Supplementary Material:} \\
-    PAPER TITLE GOES HERE}
+    Sparse Function-space Representation \\ of Neural Networks}
 \pagestyle{empty}
 
 \appendix
@@ -1226,9 +1197,18 @@ This section will often be part of the supplemental material.
 
 
 
-\section{Sparse functional regularisation in continual learning}
+\section{\our for continual learning}
 \label{app:cl}
-
+\subsection{Derivation of the regularizer term}
+An alternative view of the dual variables is that they parameterize approximate likelihoods, as shown in \citep{adam2021dual, khan2017conjugate}. We can rewrite the GP posterior for $q(\vu)$ in terms of the following approximate normal distributions:
+\begin{equation}
+ q(\vu) \propto \Norm(0, \MKzz) \prod_{i=1}^n \exp \! \left(-\frac{\tilde{\beta}_i}{2}(\tilde{y}_i - \va_i^\top \vu)^2 \right) = \Norm(0, \MKzz) \, \exp\left((\bar{\vy} - \vu)^\top \bar{\MSigma}^{-1}(\bar{\vy} - \vu)\right)  
+\end{equation}
+The first normals are the approximate likelihoods where $\va_i^\top = \vkzi^\top \MKzz^{-1}$ and $\tilde{y}_i = \hat{\alpha}_i + f_{\vw^*}(\vx_i)\hat{\beta}$,  replacing $\va_i^\top \vu$ with $\vx_i^{\top}\vw$ and we can see the similarity between the sparse GP and a linear model where the kernel matrix determines the prior. To arrive at the MVN Gaussian, we need to rearrange the quadratic terms to match the prior sufficient statistics we present a derivation in [appendix]. Performing conjugate summation of prior and likelihood, we would arrive at the sparse GP posterior at the inducing points. The correlated covariance structure $\MSigma$ and the corresponding $\tilde{\vy}$ are simply a different form of the sparse dual variables,
+\begin{equation}
+\quad \bar{\MSigma} =  \MKzz \vbeta_\vu^{-1} \MKzz \quad \bar{\vy} = \MKzz \vbeta_{\vu}\valpha_{\vu}.
+\end{equation}
+Written as above, we can see that the spare dual variables can be interpreted as a sparse MVN representation. We now show how we use this for a regularizer in continual learning with more details in [appendix].
 
 \subsection{Extending the CL regularizer to multi-class settings}
 \begin{equation}
@@ -1245,6 +1225,53 @@ This section will often be part of the supplemental material.
 
 \section{Sparse functional model-based reinforcement learning}
 \label{app:rl}
+
+We consider environments with states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \),
+actions \(\action \in \actionDomain \subseteq \R^{D_{\action}}\) and transition dynamics
+\(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \), such that
+$\state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}$, where  $\noise_{t}$
+is i.i.d. transition noise.
+We consider the episodic setting where the system is reset to an initial state $\state_{0}$ at each episode and we
+assume that there is a known reward function $r : \stateDomain \times \actionDomain \rightarrow \R$.
+% Following the Markov decision process formulation \cite{bellmanMarkovianDecisionProcess1957a}, we
+% denote the states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \) and actions \(\action \in \actionDomain \subseteq \R^{D_{\action}}\)
+% of the sytem, the reward function $r : \stateDomain \times \actionDomain \rightarrow \R$, and transition dynamics
+% \(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \), such that
+% $\state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}$ where  $\noise_{t}$
+% is i.i.d. transition noise.
+% $\mathbb{E}_{\noise_{0:\infty}} \big[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \big]$
+% \begin{align} \label{eq-model-free-objective}
+% \policy^{*} = \arg \max_{\policy \in \policyDomain} J(\transitionFn, \policy) = \arg \max_{\policy \in \policyDomain} \mathbb{E}_{\noise_{0:\infty}} \bigg[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \bigg]
+% \quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t},
+% \end{align}
+The goal of RL is to find the policy \(\pi : \stateDomain \rightarrow \actionDomain\)
+(from a set of policies $\Pi$) that maximises the sum of discounted rewards
+in expectation over the transition noise,
+\begin{align} \label{eq-model-free-objective}
+J(\transitionFn, \policy) = \mathbb{E}_{\noise_{0:\infty}} \bigg[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \bigg]
+\quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t},
+\end{align}
+where $\gamma \in [0, 1)$ is a discount factor.
+In this work, we consider model-based RL where a model of the transition dynamics is learned \(f_{\mathbf{w}} \approx \transitionFn\) and then used by a planning algorithm.
+A simple approach is to use the learned dynamic model $f_{\mathbf{w}^{*}}$ and maximise the objective in \cref{eq-model-free-objective}.
+% \begin{align} \label{eq-greedy}
+%   \policy^{\text{Greedy}} &= \arg \max_{\pi \in \Pi} J(f_{\mathbf{w}^{*}}, \pi).
+% \end{align}
+However, we can leverage the method in \cref{sec:methods} to obtain a function-space posterior over the learned dynamics $q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset)$,
+where $\mathcal{D}$ represents the state transition data set \(\mathcal{D} = \{(s_{i},a_{i}), s_{i+1}\}_{i=0}^{N}\).
+Importantly, the uncertainty represented by this posterior distribution can be used to balance the exploration-exploitation trade-off,
+using approaches such as posterior sampling \cite{osbandWhyPosteriorSampling2017,osbandMoreEfficientReinforcement2013},
+\begin{align} \label{eq-posterior-sampling}
+  \policy^{\text{PS}} &= \arg \max_{\pi \in \Pi} J(\hat{f}, \pi)
+\quad \text{s.t. } \tilde{\transitionFn} \sim q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset),
+\end{align}
+where a function $\tilde{\transitionFn}$ is sampled from the (approximate) posterior $q_{\mathbf{u}}(\hat{\transitionFn} \mid \dataset)$ and used to find a policy as
+in \cref{eq-greedy}.
+Intuitively, this strategy will explore where the model has high uncertainty, which in turn will reduce the model's uncertainty as data is collected and used to
+train the model.
+See \cref{sec-rl-appendix} for more details of how we use
+
+\todo{could try to implement Pathwise conditioning in function-space}
 
 
 Model Predictive Path Integral (MPPI) control
@@ -1302,9 +1329,6 @@ We train the DDPG agent using Adam for $500$ iterations at each episode, using a
 
 
 
-
-
-
 \section{Experiment details}
 \label{app:experiments}
 
@@ -1318,9 +1342,17 @@ We train the DDPG agent using Adam for $500$ iterations at each episode, using a
 \label{app:image}
 
 
-\subsection{Sparse functional regularisation in continual learning}
+\subsection{\our for continual learning}
 \label{app:cl-experiment}
+\section{Extending the CL regularizer to multi-class settings}
+\label{sec:cl_multioutput}
+\begin{equation}
+	\bar{\MB}^{-1}_s = \MKzz^{-1} \vbeta_\vu \MKzz^{-1} \in \R^{C \times m \times m} \quad \MKzz \in \R^{C \times m \times m} 
+\end{equation}
 
+\begin{equation}
+	\mathcal{R_\textit{SFR}}(\mathbf{w}) = \sum_{s=1}^{t-1}	\sum_{k \in 	C}\left[\left(f_{\vw, k}(\MZ_{s}) - f_{\vw_{s}, k}(\MZ_s) \right)^\T \bar{\MB}^{-1}_{s} \left(f_{\vw, k}(\MZ_{s}) - f_{\vw_{s, k}}(\MZ_s) \right) \right] 
+\end{equation}
 
 
 \subsection{Reinforcement learning experiment}

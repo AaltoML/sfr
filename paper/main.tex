@@ -1050,9 +1050,33 @@ Similarly to the UCI experiments, we trained neural networks (CNN, architexture 
 In addition to uncertainty estimates, our method can update the posterior when given new data. We gave the SVGP model 10 \% of the test dataset used for evaluation, and compare the performance of the SVGP model and the retrained NN in [INSERT TABLE]. 
 
 \subsection{Updating the  network representation for Continual learning}
-%
-% the problem is hard many hyperparams and also a lot of things can make huge differences
-% we restrict ourselves to the SH setting, then some values 
+%% Very rough draft
+This experiment's section is meant to demonstrate the quality of our sparse representation to retain previous knowledge in the Continual learning setting. Unfortunately the CL literature is based on methods that require very diverse set of hyperparameters 
+% Idea: it is very difficult to have everything under control, because model changes, settings change, optimizer change, and so on. Then what we did was trying to replicate as close as possible the results for the competing methods by using their codebases where available and choosing the hyperpameters accordingly to their choices.
+
+% Why SH?
+% TODO: there are at least two papers that clearly say MH is unrealistic and too simple as a consequence is not a good way to assess the quality of the method
+
+% Architectures
+We conduct the experiments on a set of three CL benchmarks Sequential-MNIST (S-MNIST), Sequential-FashionMNIST (S-FMNIST), and Permuted-MNIST (P-MNIST).  Following \cite{rudner2022continual, pan2020continual}, we used a two-layer MLP with 256 hidden units with ReLU activation for S-MNIST and S-FMNIST, and a two-layer with 100 hidden units for P-MNIST. 
+
+% Methods
+We compared our method to 1) weight-regularization based methods EWC, SI and VCL (which also has the addition of coresets); 2) function-based regularization based methods DER, FROMP, S-FSVI, SFR; 3) an ablation for which we replace $\bar{\MB}^{-1}$ with an identity matrix $\MI_m$, \ie which is equivalent to assuming a GP with iid realization \todo{Not sure this is 100$\%$ correct}.
+% Inducing points
+Following \citep{rudner2022continual}, we use 200 inducing points per tasks % this one can be difficult to justify since S-FSVI samples 200 context points and then iteratively samples 40 coresets points (or at least that's what I got)
+on all the inducing points, and a lower number of inducing point for S-MNIST, to investigate if our method was still capable of capture more information due to its sparse formulation, as explained in \cref{todo}.
+
+%% Questions: Should we also mention the Identity outside when not trained on those classes or just leave that for the appendix?
+
+
+%% Comments on the results:
+We get the best results on S-MNIST both 40 and 200 pts. per task
+
+On S-FMNIST we are on par with DER, which is however exploiting a reservoir buffer technique, that iteratively samples new "inducing points"
+
+On P-MNIST we are lower than S-FSVI, however % I'm still running experiments, so we can hope that it is not the best overall in the end
+
+
 
 
 \begin{table}[t!] 
@@ -1168,6 +1192,7 @@ The training curves in \cref{fig:rl} show that \our's uncertainty estimates are 
 
 
 
+ \todo{I'm thinking we should take out the SFR with updates result}
 \begin{figure}[!t]
  \centering
  \begin{subfigure}[c]{.24\textwidth}

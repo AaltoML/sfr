@@ -1108,7 +1108,7 @@ We compare a model-based RL agent using a simple MLP dynamic model with
 
 \begin{figure}[!t]
  \centering
- \begin{subfigure}{.2\textwidth}
+ \begin{subfigure}[c]{.24\textwidth}
  \resizebox{\textwidth}{!}{%
  \begin{tikzpicture}[inner sep=0,outer sep=0]
 
@@ -1125,33 +1125,33 @@ We compare a model-based RL agent using a simple MLP dynamic model with
    \node[fill=white,draw=black,line width=3pt,circle,minimum size=2cm,fill=black!50] at (7cm,-.5cm) {};
 
    % The arm
-   \node[anchor=north,minimum width=1cm,minimum height=14cm,draw=black,rotate=20,rounded corners=5mm,yshift=7mm,xshift=-.3mm,fill=white,draw=black,line width=3pt] at (dot) {};
+   \node[anchor=north,minimum width=1cm,minimum height=14cm,draw=black,rotate=-20,rounded corners=5mm,yshift=7mm,xshift=-.3mm,fill=white,draw=black,line width=3pt] at (dot) {};
    \node[fill=black,circle,minimum size=.5cm] at (dot) {};
 
    % Markings
    \draw[loosely dashed,line width=1pt] (4.5,6) -- (4.5,-10);
 
    % Arrow
-   \draw[->,black,line width=3pt,-{Latex[length=7mm,width=7mm]}] (1,5) --node[above,outer sep=6pt]{\large $x$} (4.5,5);
+   \draw[->,black,line width=3pt,-{Latex[length=7mm,width=7mm]}] (1,5) --node[above,outer sep=8pt]{\scalebox{4}{$x$}} (4.5,5);
 
    \def\centerarc[#1](#2)(#3:#4:#5)% Syntax: [draw options] (center) (initial angle:final angle:radius)
    { \draw[#1] ($(#2)+({#5*cos(#3)},{#5*sin(#3)})$) arc (#3:#4:#5); }
 
    % Draw arc
-   \centerarc[black,line width=3pt](dot)(270:290:11)
-   \node at (6.5,-9) {$\theta$};
+   \centerarc[black,line width=3pt](dot)(250:270:11)
+   \node at (2.5,-9) {\scalebox{4}{$\theta$}};
 
-   \node[white,minimum size=1cm] at (4.5,-13) {};
+   %\node[white,minimum size=1cm] at (4.5,-13) {};
 
  \end{tikzpicture}}
  \end{subfigure}
  \hfill
- \begin{subfigure}{.78\textwidth}
+ \begin{subfigure}[c]{.74\textwidth}
    \centering\scriptsize
    \setlength{\figurewidth}{\textwidth}
    \setlength{\figureheight}{.5\figurewidth}
-   \pgfplotsset{axis on top,ymajorgrids,axis line style={draw=none} }
-   \pgfplotsset{grid style={line width=.1pt, draw=gray!10,dashed}}
+   \pgfplotsset{axis on top,ymajorgrids,axis line style={draw=none},legend style={at={(1,1)},anchor=north west}}
+   \pgfplotsset{grid style={line width=.1pt, draw=gray!10,dashed},legend style={fill=white}}
    \input{./fig/rl.tex}
  \end{subfigure}
  \hfill

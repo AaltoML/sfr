@@ -280,13 +280,15 @@ def train(cfg: DictConfig):
         "delta": cfg.prior.delta,
     }
     res_dir = "./saved_models"
+    if not os.path.exists(res_dir):
+        os.makedirs(res_dir)
     fname = (
         "./"
         + "_".join([cfg.dataset, cfg.model_name, str(cfg.random_seed)])
-        + "_{cfg.prior.delta:.1e}.pt"
+        + f"_{cfg.prior.delta:.1e}.pt"
     )
     logger.info("Saving model and optimiser etc...")
-    torch.save(state, os.path.join(res_dir, fname.format(delta=cfg.prior.delta)))
+    torch.save(state, os.path.join(res_dir, fname))
     logger.info("Finished saving model and optimiser etc")
 
 

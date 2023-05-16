@@ -281,7 +281,7 @@ def train(cfg: DictConfig):
     }
     res_dir = "./saved_models"
     fname = (
-        "saved_models/"
+        "./"
         + "_".join([cfg.dataset, cfg.model_name, str(cfg.random_seed)])
         + "_{cfg.prior.delta:.1e}.pt"
     )

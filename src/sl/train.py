@@ -91,6 +91,11 @@ def get_model(model_name, ds_train):
         hidden_sizes = [1024, 512, 256, 128]
         output_size = ds_train.K
         return MLPS(input_size, hidden_sizes, output_size, "tanh", flatten=True)
+    elif model_name == "SmallMLP":
+        input_size = ds_train.pixels**2 * ds_train.channels
+        hidden_sizes = [128, 128]
+        output_size = ds_train.K
+        return MLPS(input_size, hidden_sizes, output_size, "tanh", flatten=True)
     elif model_name == "CNN":
         return CIFAR10Net(ds_train.channels, ds_train.K, use_tanh=True)
     elif model_name == "AllCNN":

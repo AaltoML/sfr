@@ -89,11 +89,11 @@ def sample_svgp(X, likelihood, svgp, use_nn_out: bool, n_samples: int):
 def evaluate(lh, yte, gstar_te, yva, gstar_va):
     res = dict()
     res["nll_te"] = nll_cls(gstar_te, yte, lh)
-    res["nll_va"] = nll_cls(gstar_va, yva, lh)
+    # res["nll_va"] = nll_cls(gstar_va, yva, lh)
     res["acc_te"] = macc(gstar_te, yte)
-    res["acc_va"] = macc(gstar_va, yva)
+    # res["acc_va"] = macc(gstar_va, yva)
     res["ece_te"] = ece(gstar_te, yte)
-    res["ece_va"] = ece(gstar_va, yva)
+    # res["ece_va"] = ece(gstar_va, yva)
     return res
 
 

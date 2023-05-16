@@ -64,7 +64,6 @@ gp_subset:
   jitter: 1e-4
   device: ${device} # TODO should this always be cpu??
 
-
 prior:
   _target_: src.nn2svgp.priors.Gaussian
   # params: ???
@@ -72,6 +71,7 @@ prior:
 
 likelihood:
   _target_: src.nn2svgp.likelihoods.CategoricalLh
+  EPS: 0.0
 
 # network:
 #   _target_: src.sl.train.get_model

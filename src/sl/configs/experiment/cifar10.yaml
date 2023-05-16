@@ -1,3 +1,5 @@
+# @package _global_
+
 dataset: "CIFAR10"
 model_name: "AllCNN"
 lr: 1e-3

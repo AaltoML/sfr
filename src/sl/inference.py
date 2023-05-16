@@ -324,15 +324,18 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
             ys = []
             for i in range(100):
                 print("sample {}".format(i))
-                ys.append(
-                    la.predictive_samples(
+                try:
+                    p = la.predictive_samples(
                         x=x,
                         pred_type="nn",
                         n_samples=1,
                         diagonal_output=False,
                         # generator=cfg.random_seed,
                     )
-                )
+                except Exception as e:
+                    print("e {}".format(e))
+                print("p {}".format(p.shape))
+                ys.append(p)
                 torch.cuda.empty_cache()
             return torch.stack(ys, 0)
 

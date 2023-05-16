@@ -745,7 +745,7 @@ We present a series of experiments designed to demonstrate the versatility and e
 
 \begin{table}[t!] 
   \centering\scriptsize
-  \caption{Negative log predictive density (NLPD) (lower better) for the proposed model TODO} 
+  \caption{Negative log predictive density (NLPD) (lower better) for SVGP (sparse GP mean and variance), SVGP NN (NN mean and sparse GP variance), GP subset (subset GP mean and variance) and GP NN subset (NN mean and GP subset variance). } 
 	\label{tbl:uci}
 	% Control table spacing
 	\renewcommand{\arraystretch}{1.}
@@ -769,7 +769,7 @@ We trained a two-layer MLP for each of the $8$ classification tasks in UCI, see 
 
 \begin{table}[t!] 
   \centering\scriptsize
-  \caption{Metrics for supervised learning with image data. SVGP is our method, and the number inside parentheses is the number of inducing points. SVGP NN is a modification of our method, where the mean is from the NN directly and the variance is from the GP model} 
+  \caption{Metrics for supervised learning with image data. SVGP is our method, and the number inside parentheses is the number of inducing points. SVGP NN is a modification of our method, where the mean is from the NN directly and the variance is from the GP model.} 
 	\label{tbl:imagesuper}
 	% Control table spacing
 	\renewcommand{\arraystretch}{1.}

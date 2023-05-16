@@ -3,6 +3,7 @@
 import logging
 import os
 import random
+from functools import partial
 
 import hydra
 import laplace
@@ -46,6 +47,22 @@ def get_svgp_predictive(
             torch.manual_seed(711)
         ps.append(
             sample_svgp(X, likelihood, svgp, use_nn_out, n_samples=100).mean(dim=0)
+        )
+        ys.append(y)
+    ps = torch.cat(ps)
+    ys = torch.cat(ys)
+    return ps, ys
+
+
+def get_la_predictive(loader, la_pred, seeding: bool = False):
+    ys, ps = list(), list()
+    for X, y in loader:  # tqdm(loader):
+        X, y = X.cuda(), y.cuda()
+        if seeding:
+            torch.manual_seed(711)
+        ps.append(
+            la_pred(x=X).mean(dim=0)
+            # sample_svgp(X, likelihood, svgp, use_nn_out, n_samples=100).mean(dim=0)
         )
         ys.append(y)
     ps = torch.cat(ps)
@@ -247,11 +264,17 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
         # GLM predictive
         conf_name = "glm"
         logging.info("GLM")
-        checkpoint[conf_name] = la.predictive_samples(
+        la_pred = partial(
+            la.predictive_samples,
             pred_type="glm",
             n_samples=100,
             diagonal_output=False,
             generator=cfg.random_seed,
+        )
+        gstar_te, yte = get_la_predictive(test_loader, la_pred, seeding=True)
+        gstar_va, yva = get_la_predictive(val_loader, la_pred, seeding=True)
+        checkpoint[conf_name] = evaluate(
+            gp_subset.likelihood, yte, gstar_te, yva, gstar_va
         )
         logging.info(checkpoint[conf_name])
         wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
@@ -259,11 +282,17 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
         # BNN predictive
         conf_name = "bnn"
         logging.info("BNN predictive")
-        checkpoint[conf_name] = la.predictive_samples(
+        la_pred = partial(
+            la.predictive_samples,
             pred_type="nn",
             n_samples=100,
             diagonal_output=False,
             generator=cfg.random_seed,
+        )
+        gstar_te, yte = get_la_predictive(test_loader, la_pred, seeding=True)
+        gstar_va, yva = get_la_predictive(val_loader, la_pred, seeding=True)
+        checkpoint[conf_name] = evaluate(
+            gp_subset.likelihood, yte, gstar_te, yva, gstar_va
         )
         logging.info(checkpoint[conf_name])
         wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})

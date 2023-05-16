@@ -916,7 +916,7 @@ On P-MNIST we are lower than S-FSVI, however % I'm still running experiments, so
 % and methods based on upper confidence bounds (UCB) \cite{curiEfficient2020}.
 
 % Make custom TikZ command (argument: colour)
-\newcommand{\lab}[1]{\tikz[baseline=-.5ex]{\node[minimum width=1.5em,minimum height=.8em,fill=#1,opacity=.1](a){};\draw[#1,thick](a.west)--(a.east);}}
+\newcommand{\lab}[1]{\protect\tikz[baseline=-.5ex]{\protect\node[minimum width=1.5em,minimum height=.8em,fill=#1,opacity=.1](a){};\protect\draw[#1,thick](a.west)--(a.east);}}
 
 % The methods
 \definecolor{darkgray176}{RGB}{176,176,176} % darkgray176
@@ -1043,8 +1043,8 @@ The training curves clearly show that \our's uncertainty estimates help explorat
    \input{./fig/rl.tex}
  \end{subfigure}
  \hfill
- \caption{\textbf{Cartpole swingup with sparse reward} Training curves showing that \our's uncertainty estimates improve sample efficiency in RL.
-   Our method (blue/green) converges in fewer environment steps than the baseline model-based RL method (magenta) and DDPG, the model-free baseline (yellow).}
+ \caption{\textbf{Cartpole swingup with sparse reward.} Training curves showing that \our's uncertainty estimates improve sample efficiency in RL.
+   Our method (\lab{color-our}) converges in fewer environment steps than the baseline model-based RL method (\lab{black}) and DDPG, the model-free baseline (\lab{black}).}
  \label{fig:rl}
 \end{figure}
 

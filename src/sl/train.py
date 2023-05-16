@@ -91,7 +91,7 @@ def evaluate(model, data_loader, device):
     loss, loss_mean, acc = 0, 0, 0
     with torch.no_grad():
         for X, y in data_loader:
-            X, y = X.to(device), y.to(device)
+            # X, y = X.to(device), y.to(device)
             fs = model(X)
             acc += (torch.argmax(fs, dim=-1) == y).sum().cpu().float().item()
             loss += criterion(fs, y).item()
@@ -177,7 +177,7 @@ def train(cfg: DictConfig):
     # print("DATA_DIR {}".format(DATA_DIR))
     # logger.info("cfg {}".format(cfg))
     ds_train, ds_test = src.sl.train.get_dataset(
-        dataset=cfg.dataset, double=True, dir="./", device="cpu"
+        dataset=cfg.dataset, double=True, dir="./", device=cfg.device
     )
     # print("ds_train {}".format(ds_train.D[0].shape))
     # print("ds_train {}".format(ds_train.D[1].shape))
@@ -215,10 +215,10 @@ def train(cfg: DictConfig):
     # print("ntksvgp {}".format(ntksvgp))
 
     train_loader = DataLoader(
-        ds_train, batch_size=cfg.batch_size, shuffle=True, num_workers=cfg.num_workers
+        ds_train, batch_size=cfg.batch_size, shuffle=True
     )
     test_loader = DataLoader(
-        ds_test, batch_size=cfg.batch_size, shuffle=False, num_workers=cfg.num_workers
+        ds_test, batch_size=cfg.batch_size, shuffle=False
     )
 
     optimizer = torch.optim.Adam([{"params": sfr.parameters()}], lr=cfg.lr)

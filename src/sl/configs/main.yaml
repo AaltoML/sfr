@@ -16,10 +16,12 @@ model_name: "CNN"
 device: ???
 output_dim: ???
 batch_size: 512
-lr: 1e-4
-# n_epochs: 500
-n_epochs: 1
+lr: 1e-3
+n_epochs: 500
+# n_epochs: 1
 double: True
+
+num_workers: 8
 
 logging_epoch_freq: 10
 random_seed: 117

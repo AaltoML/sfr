@@ -212,8 +212,12 @@ def train(cfg: DictConfig):
     # ntksvgp = hydra.utils.instantiate(cfg.ntksvgp)
     # print("ntksvgp {}".format(ntksvgp))
 
-    train_loader = DataLoader(ds_train, batch_size=cfg.batch_size, shuffle=True)
-    test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=False)
+    train_loader = DataLoader(
+        ds_train, batch_size=cfg.batch_size, shuffle=True, num_workers=cfg.num_workers
+    )
+    test_loader = DataLoader(
+        ds_test, batch_size=cfg.batch_size, shuffle=False, num_workers=cfg.num_workers
+    )
 
     optimizer = torch.optim.Adam([{"params": sfr.parameters()}], lr=cfg.lr)
 

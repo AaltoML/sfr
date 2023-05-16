@@ -102,24 +102,16 @@ def get_model(model_name, ds_train):
         raise ValueError("Invalid model name")
 
 
-def evaluate(model, data_loader, device):
-    criterion = torch.nn.CrossEntropyLoss(reduction="sum")
-    criterion_mean = torch.nn.CrossEntropyLoss(reduction="mean")
+def evaluate(model, data_loader, criterion, device):
     model.eval()
-    loss, loss_mean, acc = 0, 0, 0
+    loss, acc = 0, 0
     with torch.no_grad():
         for X, y in data_loader:
-            # X, y = X.to(device), y.to(device)
+            X, y = X.to(device), y.to(device)
             fs = model(X)
             acc += (torch.argmax(fs, dim=-1) == y).sum().cpu().float().item()
             loss += criterion(fs, y).item()
-            loss_mean += criterion_mean(fs, y).item()
-
-    return (
-        loss / len(data_loader.dataset),
-        loss_mean / len(data_loader.dataset),
-        acc / len(data_loader.dataset),
-    )
+    return loss / len(data_loader.dataset), acc / len(data_loader.dataset)
 
 
 # def acc(g, y, likelihood=None):

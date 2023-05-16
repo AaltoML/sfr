@@ -11,6 +11,7 @@ defaults:
   - _self_
 
 dataset: "FMIST"
+# dataset: "CIFAR10"
 model_name: "CNN"
 
 device: ???
@@ -63,7 +64,7 @@ wandb:
   entity: "aidanscannell"
   project: "nn2svgp-sl"
   use_wandb: True
-  run_name: delta=${prior.delta}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
+  run_name: delta=${prior.delta}-lr=${lr}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   # run_name: ${alg_name}-${online_update_freq}-${agent.horizon}-${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   tags:
     - "delta=${prior.delta}"

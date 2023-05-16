@@ -174,9 +174,10 @@ def train(cfg: DictConfig):
     cfg.device = "cpu"
     print("Using device: {}".format(cfg.device))
 
-    print("DATA_DIR {}".format(DATA_DIR))
+    # print("DATA_DIR {}".format(DATA_DIR))
+    # logger.info("cfg {}".format(cfg))
     ds_train, ds_test = src.sl.train.get_dataset(
-        dataset="FMNIST", double=True, dir="./", device=cfg.device
+        dataset=cfg.dataset, double=True, dir="./", device=cfg.device
     )
     # print("ds_train {}".format(ds_train.D[0].shape))
     # print("ds_train {}".format(ds_train.D[1].shape))
@@ -184,15 +185,15 @@ def train(cfg: DictConfig):
     # print("ds_test {}".format(ds_test.D[1].shape))
 
     n_classes = next(iter(ds_train))[0].shape[-1]
-    print("n_classes {}".format(n_classes))
+    # print("n_classes {}".format(n_classes))
     cfg.output_dim = n_classes
 
     network = get_model(model_name=cfg.model_name, ds_train=ds_train)
-    print("network {}".format(network))
+    # print("network {}".format(network))
     prior = hydra.utils.instantiate(cfg.prior, params=network.parameters)
-    print("prior {}".format(prior))
+    # print("prior {}".format(prior))
     sfr = hydra.utils.instantiate(cfg.sfr, prior=prior, network=network)
-    print("sfr {}".format(sfr))
+    # print("sfr {}".format(sfr))
 
     if cfg.wandb.use_wandb:  # Initialise WandB
         run = wandb.init(
@@ -204,7 +205,7 @@ def train(cfg: DictConfig):
                 cfg, resolve=True, throw_on_missing=True
             ),
         )
-    print("cfg {}".format(cfg))
+    logger.info("cfg {}".format(cfg))
 
     # dataset = hydra.utils.instantiate(cfg.dataset)
     # print("dataset {}".format(dataset))
@@ -236,13 +237,14 @@ def train(cfg: DictConfig):
             te_loss_sum, te_loss_mean, te_acc = evaluate(
                 network, test_loader, cfg.device
             )
-            wandb.log({"training/loss": tr_loss_sum})
-            wandb.log({"test/loss": te_loss_sum})
-            wandb.log({"training/loss": tr_loss_mean})
-            wandb.log({"test/loss": te_loss_mean})
+            wandb.log({"training/loss_sum": tr_loss_sum})
+            wandb.log({"test/loss_sum": te_loss_sum})
+            wandb.log({"training/loss_mean": tr_loss_mean})
+            wandb.log({"test/loss_mean": te_loss_mean})
             wandb.log({"training/acc": tr_acc})
             wandb.log({"test/acc": te_acc})
 
+    logger.info("Finished training")
     # # evaluation
     # model = svgp.network
     # criterion = torch.nn.CrossEntropyLoss(reduction="sum")
@@ -264,12 +266,15 @@ def train(cfg: DictConfig):
         # "metrics": metrics,
         "delta": cfg.prior.delta,
     }
+    res_dir = "./saved_models"
     fname = (
         "saved_models/"
         + "_".join([cfg.dataset, cfg.model_name, str(cfg.random_seed)])
         + "_{cfg.prior.delta:.1e}.pt"
     )
+    logger.info("Saving model and optimiser etc...")
     torch.save(state, os.path.join(res_dir, fname.format(delta=cfg.prior.delta)))
+    logger.info("Finished saving model and optimiser etc")
 
 
 if __name__ == "__main__":

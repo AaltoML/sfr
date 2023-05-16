@@ -194,8 +194,10 @@ def train(cfg: DictConfig):
         torch.set_default_dtype(torch.double)
 
     # Ensure that all operations are deterministic on GPU (if used) for reproducibility
-    torch.backends.cudnn.determinstic = True
-    torch.backends.cudnn.benchmark = False
+    # torch.backends.cudnn.determinstic = True
+    # torch.backends.cudnn.benchmark = False
+    eval('setattr(torch.backends.cudnn, "determinstic", True)')
+    eval('setattr(torch.backends.cudnn, "benchmark", False)')
 
     cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
     # cfg.device = "cpu"

@@ -16,7 +16,8 @@ defaults:
 
 dataset: "FMNIST"
 model_name: "CNN"
-checkpoint: "./saved_models/FMNIST_CNN_117_1.0e-04.pt"
+# checkpoint: "./saved_models/FMNIST_CNN_117_1.0e-04.pt"
+checkpoint: "./wandb/run-20230516_223936-fcu9vg8r/files/saved_models/FMNIST_CNN_117_3.0e-03.pt"
 
 subset_of_weights: "all"
 hessian_structure: "diag"

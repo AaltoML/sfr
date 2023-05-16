@@ -284,7 +284,7 @@ Recent techniques (\eg, \cite{ritter2018kfac,khan2019approximate,daxberger2021la
 %Yet many problems lie in high dimensional input space; for example, images are where GPs cannot learn representations. In such scenarios such as in many reinforcement learning environments neural networks are used as the surrogate model. However, uncertainty is still essential to ensure effective exploration for sequential algorithms. Successful approaches have attempted to blend neural networks with uncertainty estimates around predictions, allowing for sophisticated exploration strategies. However, there has been limited use of hybrid models that possess the feature representation ability of neural networks but also attractive the properties of GPs, such a hybrid method we propose in this paper.
 
 %Need for adaptive learning methods + failures with current methods
-Given an approximate inference technique, we demonstrate that the neural network emits`dual' parameters which are the building blocks of a GP~\cite{csato2002sparse, adam2021dual, chang2020fast}. In contrast to previous work that utilizes subsets \cite{immer2021scalable}, this parameterization allows consolidating contributions from {\em all} training data into a sparse representation, essential for predictive uncertainty. Crucially, the resulting GP now predicts in the same space as the original trained neural network, a feature not present in previous approaches, while avoiding the notorious cubic complexity of vanilla GPs. Through the dual parameter formulation, we establish a connection between the neural network, full GPs, and a sparse approximation similar to sparse variational GPs~\cite{titsias2009variational}. We call our method \our. A sparse GP derived from a trained neural network. As \our is in the dual parameters, we can perform dual conditioning recently shown effective in \cite{chang2022fantasizing}, that is, avoid retraining and condition new data into our model (see \cref{fig:teaser}). 
+Given an approximate inference technique, we demonstrate that the neural network emits `dual' parameters which are the building blocks of a GP~\cite{csato2002sparse, adam2021dual, chang2020fast}. In contrast to previous work that utilizes subsets \cite{immer2021scalable}, this parameterization allows consolidating contributions from {\em all} training data into a sparse representation, essential for predictive uncertainty. Crucially, the resulting GP now predicts in the same space as the original trained neural network, a feature not present in previous approaches, while avoiding the notorious cubic complexity of vanilla GPs. Through the dual parameter formulation, we establish a connection between the neural network, full GPs, and a sparse approximation similar to sparse variational GPs~\cite{titsias2009variational}. We refer to our method as \our---a sparse GP derived from a trained neural network. As \our is in the dual parameters, we can perform dual conditioning recently shown effective in \cite{chang2022fantasizing}, that is, avoid retraining and condition new data into our model (see \cref{fig:teaser}).\looseness-2
 %Need uncertainty and adaptive methods
 %Dual formulation in GPs space solves this
 %Talk about planning and exploration in RL.
@@ -421,8 +421,8 @@ Continual learning (CL) hinges on how to deal with the non-stationary training d
 
 \textbf{Uncertainty quantification in RL}
 A key challenge in RL is balancing the trade-off between exploration and exploitation \cite{sutton2018reinforcement}.
-That is, should an agent select actions that it knows will lead to high reward (exploitation), or should it
-select new ones in hope to discover actions leading to higher reward (exploration).
+%That is, should an agent select actions that it knows will lead to high reward %(exploitation), or should it
+%select new ones in hope to discover actions leading to higher reward (exploration).
 One promising direction to balancing this trade-off is to model the uncertainty associated with a learned transition dynamics model and use it to guide exploration.
 Prior work has taken an expectation over the dynamic model's posterior \cite{deisenrothPILCO2011,kamtheDataEfficient2018,chuaDeepReinforcementLearning2018},
 sampled from it (akin to Thompson sampling but referred to as posterior sampling RL)
@@ -915,7 +915,7 @@ On P-MNIST we are lower than S-FSVI, however % I'm still running experiments, so
 % and methods based on upper confidence bounds (UCB) \cite{curiEfficient2020}.
 
 % Make custom TikZ command (argument: colour)
-\newcommand{\lab}[1]{\protect\tikz[baseline=-.5ex]{\protect\node[minimum width=1.5em,minimum height=.8em,fill=#1,opacity=.1](a){};\protect\draw[#1,thick](a.west)--(a.east);}}
+\newcommand{\lab}[1]{\protect\tikz[baseline=-.5ex]{\protect\node[minimum width=1.5em,minimum height=.8em,fill=#1,opacity=.1](a){};\protect\draw[#1,semithick](a.west)--(a.east);}}
 
 % The methods
 \definecolor{darkgray176}{RGB}{176,176,176} % darkgray176
@@ -1030,20 +1030,21 @@ The training curves clearly show that \our's uncertainty estimates help explorat
 
    %\node[white,minimum size=1cm] at (4.5,-13) {};
 
- \end{tikzpicture}}
+ \end{tikzpicture}}\\[2em]~
  \end{subfigure}
  \hfill
- \begin{subfigure}[c]{.74\textwidth}
+ \begin{subfigure}[c]{.7\textwidth}
    \raggedleft\scriptsize
    \setlength{\figurewidth}{\textwidth}
-   \setlength{\figureheight}{.5\figurewidth}
-   \pgfplotsset{axis on top,ymajorgrids,axis line style={draw=none},legend style={at={(1,1)},anchor=north west}}
-   \pgfplotsset{grid style={line width=.1pt, draw=gray!10,dashed},legend style={fill=white}}
+   \setlength{\figureheight}{.55\figurewidth}
+   \pgfplotsset{axis on top,ymajorgrids,axis line style={draw=none},legend style={at={(-.1,-.1)},anchor=north east}}
+   \pgfplotsset{grid style={line width=.1pt, draw=gray!10,densely dotted}}
+   \hspace*{-1.7cm}%
+   \def\our{{\sc sfr} (ours)}
    \input{./fig/rl.tex}
- \end{subfigure}
- \hfill
+ \end{subfigure}\\[-1em]
  \caption{\textbf{Cartpole swingup with sparse reward.} Training curves showing that \our's uncertainty estimates improve sample efficiency in RL.
-   Our method (\lab{color-our}) converges in fewer environment steps than the baseline model-based RL method (\lab{black}) and DDPG, the model-free baseline (\lab{black}).}
+   Our method (\lab{color-our}) converges in fewer environment steps than the baseline model-based RL method and DDPG, the model-free baseline. The dashed lines mark the asymptotic return for the methods not coverged in the plot.}
  \label{fig:rl}
 \end{figure}
 

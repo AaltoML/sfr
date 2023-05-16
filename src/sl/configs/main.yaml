@@ -22,7 +22,7 @@ n_epochs: 500
 # n_epochs: 1
 double: True
 
-num_workers: 8
+# num_workers: 8
 # num_workers: 1
 
 logging_epoch_freq: 10

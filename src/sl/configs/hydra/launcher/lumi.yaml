@@ -14,7 +14,8 @@ name: ${hydra.job.name}
 qos: null
 comment: null
 exclude: null
-gres: gpu:1
+gpus_per_node: 1
+# gres: gpu:1
 # gres: null
 # cpus_per_gpu: 8
 # gpus_per_task: 1

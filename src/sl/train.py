@@ -108,15 +108,26 @@ def get_model(model_name, ds_train):
 
 
 def evaluate(model, data_loader, criterion, device):
+    likelihood = src.nn2svgp.likelihoods.CategoricalLh()
     model.eval()
-    loss, acc = 0, 0
+    loss, acc, nll = 0, 0, 0
     with torch.no_grad():
         for X, y in data_loader:
             X, y = X.to(device), y.to(device)
             fs = model(X)
             acc += (torch.argmax(fs, dim=-1) == y).sum().cpu().float().item()
             loss += criterion(fs, y).item()
-    return loss / len(data_loader.dataset), acc / len(data_loader.dataset)
+            # p = likelihood.prob(fs)
+            # p_dist = torch.distributions.Categorical(probs=p)
+            nll += -likelihood.log_prob(f=fs, y=y).sum().item()
+            # nll = -p_dist.log_prob(y).mean().item()
+            # f = model(X)
+            # nll += -likelihood.log_prob(f=f, y=y).mean()
+    return (
+        loss / len(data_loader.dataset),
+        acc / len(data_loader.dataset),
+        nll / len(data_loader.dataset),
+    )
 
 
 # def acc(g, y, likelihood=None):
@@ -202,6 +213,7 @@ def train(cfg: DictConfig):
 
     # n_classes = next(iter(ds_train))[1].shape[-1]
     n_classes = 10
+    # TODO this is bad
     print("n_classes {}".format(n_classes))
     cfg.output_dim = n_classes
 
@@ -239,23 +251,26 @@ def train(cfg: DictConfig):
     for epoch in tqdm(list(range(cfg.n_epochs))):
         for X, y in train_loader:
             X, y = X.to(cfg.device), y.to(cfg.device)
-            f = network(X)
             # loss = torch.nn.CrossEntropyLoss(reduction="mean")(f, y)
             loss = sfr.loss(X, y)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             wandb.log({"loss": loss})
-            nll = -sfr.likelihood.log_prob(f=f, y=y).mean()
-            wandb.log({"nll": nll})
         if epoch % cfg.logging_epoch_freq == 0:
             # tr_loss_sum, tr_loss_mean, tr_acc = evaluate(network, train_loader, cfg.device)
             # te_loss_sum, te_loss_mean, te_acc = evaluate(network, test_loader, cfg.device)
             criterion = torch.nn.CrossEntropyLoss(reduction="sum")
-            tr_loss, tr_acc = evaluate(network, train_loader, criterion, cfg.device)
-            te_loss, te_acc = evaluate(network, test_loader, criterion, cfg.device)
+            tr_loss, tr_acc, tr_nll = evaluate(
+                network, train_loader, criterion, cfg.device
+            )
+            te_loss, te_acc, te_nll = evaluate(
+                network, test_loader, criterion, cfg.device
+            )
             wandb.log({"training/loss": tr_loss})
             wandb.log({"test/loss": te_loss})
+            wandb.log({"training/nll": tr_nll})
+            wandb.log({"test/nll": te_nll})
             # wandb.log({"training/loss_mean": tr_loss_mean})
             # wandb.log({"test/loss_mean": te_loss_mean})
             wandb.log({"training/acc": tr_acc})
@@ -284,7 +299,8 @@ def train(cfg: DictConfig):
         # "metrics": metrics,
         "delta": cfg.prior.delta,
     }
-    res_dir = "./saved_models"
+
+    res_dir = os.path.join(run.dir, "./saved_models")
     if not os.path.exists(res_dir):
         os.makedirs(res_dir)
     fname = (

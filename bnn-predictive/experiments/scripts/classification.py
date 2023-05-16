@@ -98,7 +98,7 @@ def create_ntksvgp(
             likelihood=likelihood,
             num_inducing=n_inducing,
             dual_batch_size=batch_size,
-            jitter=0,
+            jitter=10**(-6),
             device=device,
         )
     else:
@@ -107,7 +107,7 @@ def create_ntksvgp(
                           likelihood=likelihood,
                           output_dim=n_classes,
                           subset_size=n_inducing,
-                          jitter=0,
+                          jitter=10**(-6),
                           device=device)
     svgp.set_data(data)
     return svgp
@@ -203,6 +203,14 @@ def inference(
     res.update(evaluate(fs_train, y_train, lh, "svgp_ntk", "train"))
     res.update(evaluate(fs_test, y_test, lh, "svgp_ntk", "test"))
     res.update(evaluate(fs_valid, y_valid, lh, "svgp_ntk", "valid"))
+
+
+    fs_train = preds_svgp(X_train, svgp, likelihood_svgp, samples=n_samples, batch_size=batch_size, nn_mean=True,device=device)
+    fs_test = preds_svgp(X_test, svgp, likelihood_svgp, samples=n_samples, batch_size=batch_size, nn_mean=True,device=device)
+    fs_valid = preds_svgp(X_valid, svgp, likelihood_svgp, samples=n_samples, batch_size=batch_size, nn_mean=True, device=device)
+    res.update(evaluate(fs_train, y_train, lh, "svgp_ntk_nn", "train"))
+    res.update(evaluate(fs_test, y_test, lh, "svgp_ntk_nn", "test"))
+    res.update(evaluate(fs_valid, y_valid, lh, "svgp_ntk_nn", "valid"))
 
     # GP subset predictive
 

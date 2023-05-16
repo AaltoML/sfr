@@ -284,7 +284,7 @@ Recent techniques (\eg, \cite{ritter2018kfac,khan2019approximate,daxberger2021la
 %Yet many problems lie in high dimensional input space; for example, images are where GPs cannot learn representations. In such scenarios such as in many reinforcement learning environments neural networks are used as the surrogate model. However, uncertainty is still essential to ensure effective exploration for sequential algorithms. Successful approaches have attempted to blend neural networks with uncertainty estimates around predictions, allowing for sophisticated exploration strategies. However, there has been limited use of hybrid models that possess the feature representation ability of neural networks but also attractive the properties of GPs, such a hybrid method we propose in this paper.
 
 %Need for adaptive learning methods + failures with current methods
-Given an approximate inference technique, we demonstrate that the neural network emits`dual' parameters which are the building blocks of a GP~\cite{csato2002sparse, adam2021dual, chang2020fast}. In contrast to previous work that utilizes subsets \cite{immer2021scalable}, this parameterization allows consolidating contributions from {\em all} training data into a sparse representation, essential for predictive uncertainty. Crucially, the resulting GP now predicts in the same space as the original trained neural network, a feature not present in previous approaches, while avoiding the notorious cubic complexity of vanilla GPs. Through the dual parameter formulation, we establish a connection between the neural network, full GPs, and a sparse approximation similar to sparse variational GPs~\cite{titsias2009variational}. We call our method \our. A sparse GP derived from a trained neural network. As \our is in the dual parameters, we can perform dual conditioning recently shown effective in \cite{chang2022fantasizing}, that is, avoid retraining and condition new data into our model (see \cref{fig:teaser}). 
+Given an approximate inference technique, we demonstrate that the neural network emits `dual' parameters which are the building blocks of a GP~\cite{csato2002sparse, adam2021dual, chang2020fast}. In contrast to previous work that utilizes subsets \cite{immer2021scalable}, this parameterization allows consolidating contributions from {\em all} training data into a sparse representation, essential for predictive uncertainty. Crucially, the resulting GP now predicts in the same space as the original trained neural network, a feature not present in previous approaches, while avoiding the notorious cubic complexity of vanilla GPs. Through the dual parameter formulation, we establish a connection between the neural network, full GPs, and a sparse approximation similar to sparse variational GPs~\cite{titsias2009variational}. We refer to our method as \our---a sparse GP derived from a trained neural network. As \our is in the dual parameters, we can perform dual conditioning recently shown effective in \cite{chang2022fantasizing}, that is, avoid retraining and condition new data into our model (see \cref{fig:teaser}).\looseness-2
 %Need uncertainty and adaptive methods
 %Dual formulation in GPs space solves this
 %Talk about planning and exploration in RL.
@@ -421,17 +421,17 @@ Continual learning (CL) hinges on how to deal with the non-stationary training d
 
 \textbf{Uncertainty quantification in RL}
 A key challenge in RL is balancing the trade-off between exploration and exploitation \cite{sutton2018reinforcement}.
-That is, should an agent select actions that it knows will lead to high reward (exploitation), or should it
-select new ones in hope to discover actions leading to higher reward (exploration).
+%That is, should an agent select actions that it knows will lead to high reward %(exploitation), or should it
+%select new ones in hope to discover actions leading to higher reward (exploration).
 One promising direction to balancing this trade-off is to model the uncertainty associated with a learned transition dynamics model and use it to guide exploration.
-Prior work has taken an expectation over the dynamic model's posterior \cite{deisenrothPILCO2011,kamtheDataEfficient2018,chuaDeepReinforcementLearning2018},
+Prior work has taken an expectation over the dynamic model's posterior \cite{deisenroth2011pilco,kamtheDataEfficient2018,chuaDeepReinforcementLearning2018},
 sampled from it (akin to Thompson sampling but referred to as posterior sampling RL)
 \todo{cite thopmson sampling paper dearden et al 1999}
 \cite{osbandMoreEfficientReinforcement2013},
 and used it to implement optimism in the face of uncertainty using upper confidence bounds \cite{curiEfficient2020}.
 \todo{cite UCRL paper}
 No single strategy has emerged as a go to method and we highlight that these strategies are only as good as their uncertainty estimates.
-Previous approaches have used GPs \cite{deisenrothPILCO2011,kamtheDataEfficient2018},
+Previous approaches have used GPs \cite{deisenroth2011pilco,kamtheDataEfficient2018},
 ensembles of neural networks \cite{curiEfficient2020,chuaDeepReinforcementLearning2018}
 and variational inference \cite{galImproving2016,houthooftVIME2017}.
 %However, there has been little leveraging
@@ -582,14 +582,14 @@ Therefore, the Laplace-GGN linear model can be used to convert our weight space 
   \kappa(\vx, \vx')
   = \frac{1}{\delta} \Jac{\weights^*}{\vx} \, \JacT{\weights^*}{\vx'}, 
 \end{equation}
-where the kernel is the so-called Neural Tangent Kernel (NTK, \cite{jacot2018neural}). In \cref{eq-laplace-approx-function-space}, we restrict the function output to a single dimension for notational simplicity, yet this formulation can be readily extended to the multi-output scenario. With this kernel function, we can combine it with the data set $\dataset$ to construct the posterior $q(\vf)$. 
+where the kernel is the so-called Neural Tangent Kernel (NTK, \cite{jacot2018neural}). In \cref{eq-laplace-approx-function-space}, we restrict the function output to a single dimension for notational simplicity, yet this formulation can be readily extended to the multi-output scenario. With this kernel function, we can combine it with the data set $\dataset$ to construct the posterior. 
 %
-\citet{khan2019approximate} took a similar approach, but instead of fitting the GP posterior to the actual $\vy$, they rely on a transformation of $\vy$ referred as {\em pseudo}-data. Similarly, \citet{immer2021improving} obtain the same covariance function but use a different mean because they rely on a first-order approximation of the neural network to form a Bayesian GLM model. Both approaches attempted to adjust the GP posterior mean function to ensure the predictions are from the neural network $f_{\vw^*}(\vx)$. 
+\citet{khan2019approximate} took a similar approach, but instead of fitting the GP posterior to the actual $\vy$, they rely on a transformation of $\vy$. Similarly, \citet{immer2021improving} obtain the same covariance function but use a different mean because they rely on a first-order approximation of the neural network to form a Bayesian GLM model. Both approaches attempted to adjust the GP posterior mean function to ensure the predictions are from the neural network $f_{\vw^*}(\vx)$. 
 Contrarily, our methodology intends to make predictions directly from the derived GP, thus evading such adjustments. Next, we will present the general formulation of the sparse functional representation of our trained neural network based on the non-sparse approximation. 
 
 
 
-\section{\our: Sparse function-space represenation of neural networks}
+\section{\our: Sparse function-space representation of neural networks}
 %\paragraph{GP in the dual parameters}
 The seminal work by \citet{csato2002sparse} (parameterization Lemma~1) gives a parameterization for the posterior process $f_{\textrm{post}}$ that can be found through the Bayesian update using the GP prior and the likelihood function. This gives a `dual' parameterization, $\valpha$ and $\vbeta$,
 %
@@ -607,7 +607,7 @@ where the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{N \times N
   \beta_i \coloneqq - \myexpect_{p(\vw \mid \vy)}[\nabla^2_{f f}\log p(y_i \mid f_i) |_{f=f_i}],
 \end{equation}
 %
-where $f_\vw(\vx_i) = f_i$ above. The relationships specified above are valid for generic likelihoods, and involve no approximations since the expectation is under the exact posterior. This higlights the fact that our approximate inference technique that will follow, while usually viewed as a posterior approximation, can be alternatively interpreted as an approximation of the expectation of gradients of loss/likelihoods.
+where $f_\vw(\vx_i) = f_i$ is the function output at input $\vx_i$. The relationships specified are valid for generic likelihoods, and involve no approximations since the expectation is under the exact posterior. \cref{eq:gp_pred} and \cref{eq:dual_param} highlight that the approximate inference technique, usually viewed as a posterior approximation, can be alternatively interpreted as an approximation of the expectation of gradients of loss/likelihoods.
 
 Originally \citet{csato2002sparse} iteratively find dual variables using an expectation propogation (EP, \cite{minka2001expectation}) method. More recently \cite{khan2017conjugate,adam2021dual}, has shown this relationship for variational Gaussian processes where the above expectation is with respect to the approximate variational posterior. Meanwhile in \citet{wilkinson2023bayes}, they show links between linearization methods and how they solve the \cref{eq:dual_param}.
 
@@ -643,10 +643,9 @@ where the sparse dual variables are now a sum over \emph{all data points}, with 
    \quad \text{and} \quad 
    \textrm{Var}_{q_{\vu}(\vf)}[f_i]  = k_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \MBeta_{\vu})^{-1} ]\vkzs
 \end{equation}
-where $\MKzz$ and $\vkzs$ are defined similarly to $\MKxx$ and $\vk_{\vx i}$ but over the inducing points $\{\vz_j\}_{i=1}^M$, $\vz \in \R^{D}$ \todo{These are already defined}, instead of the full data set $\dataset$. The key quantities we need to make predictions from our sparse GP from the converged neural network are $(\hat{\alpha}_i, \hat{\beta}_i)$ \cref{eq:dual_param_laplace} and a kernel function $\kappa$ . Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred}, we can see that the computational complexity went from $\mathcal{O}(N^3)$ to $\mathcal{O}(M^3)$, with $M \ll N$.  Crucially, given the structure of our probabilistic model, our sparse dual variables \cref{eq:dual_sparse} are a compact representation of the full model projected using the kernel. 
+where $\MKzz$ and $\vkzs$ are defined similarly to $\MKxx$ and $\vk_{\vx i}$ but over the inducing points $\{\vz_j\}_{i=1}^M$, $\vz \in \R^{D}$, instead of the full data set $\dataset$. The key quantities we need to make predictions from our sparse GP from the converged neural network are $(\hat{\alpha}_i, \hat{\beta}_i)$ (\cref{eq:dual_param_laplace}) and a kernel function $\kappa$ (\cref{eq-laplace-approx-function-space}). Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred}, we can see that the computational complexity went from $\mathcal{O}(N^3)$ to $\mathcal{O}(M^3)$, with $M \ll N$.  Crucially, given the structure of our probabilistic model, our sparse dual variables \cref{eq:dual_sparse} are a compact representation of the full model projected using the kernel. 
 
-Unlike our approach, \citet{immer2021improving} employ a subset of the data points to construct a sparse GP model, reducing computational complexity. However, this method could be considered less principled for building a sparse model, as it ignores contribution from data. It is important to note that the sparsifying process is independent of the approximate inference technique because the dual variables of \cref{eq:dual_param} are computed using \cref{eq-empirical-risk} and a Laplace approximation.
-More complicated inference techniques, such as variational inference, could be used, but given its simplicity, in our experiments we used the Laplace-GGN approximation with the trained neural network. Furthermore, our dual variable view of approximate inference means we do not need to retrain a separate sparse GP model.%\todo{shouldn't this sentence be clear from the context? we derive the mean/kernel function that define the process, then we have a sparse GP already}
+Unlike our approach, \citet{immer2021improving} employ a subset of the data points to construct a sparse GP model, reducing computational complexity. However, the method could be considered less principled for building a sparse model, as it ignores contribution from the complete dataset. It is important to note that the sparsifying process is independent of the approximate inference technique because the dual variables of \cref{eq:dual_param} are computed using \cref{eq-empirical-risk} and a Laplace approximation. More complicated inference techniques, such as variational inference, could be used, but given its simplicity, in our experiments we used the Laplace-GGN approximation with the trained neural network. Furthermore, our dual variable view of approximate inference means we do not need to retrain a separate sparse GP model.%\todo{shouldn't this sentence be clear from the context? we derive the mean/kernel function that define the process, then we have a sparse GP already}
 
 
 
@@ -663,11 +662,12 @@ We have presented a method for converting any trained neural network into a spar
 
 \paragraph{\our for continual learning}
 % Definition of CL -> a sequence of tasks 
-In the continual learning setting, the training is divided into $T$ tasks, each with its training data set $\dataset_t = \{(\mathbf{x}_{i}, \mathbf{y}_{i})\}_{i=1}^{N_t}$, which after the task is discarded and cannot be accessed in the following stages of the training. Rehearsal and function regularization-based models keep a subset of the training data for each task to help the model alleviate forgetting. In the same way, after each task, we can use our \our method to build a compact representation of the neural network and then exploit this representation to build a functional regularizer to add to the training loss for the subsequent tasks. Recently proposed GP-based regularizers \cite{ pan2020continual, rudner2022continual} have shown better performances than weight space equivalents getting state-of-the-art on CL benchmarks. However, they are limited to use subset approximations of the posterior \cref{app:cl-experiment}.
+In the continual learning setting, the training is divided into $T$ tasks, each with its training data set $\dataset_t = \{(\mathbf{x}_{i}, \mathbf{y}_{i})\}_{i=1}^{N_t}$, which after the task is discarded and cannot be accessed in the following stages of the training. Rehearsal and function regularization-based models keep a subset of the training data for each task to help the model alleviate forgetting. In the same way, after each task, we can use our \our method to build a compact representation of the neural network and then exploit this representation to build a functional regularizer to add to the training loss for the subsequent tasks. Recently proposed GP-based regularizers \cite{ pan2020continual, rudner2022continual} have shown better performances than weight space equivalents getting state-of-the-art on CL benchmarks. However, they are limited to use subset approximations of the posterior \cref{app:cl}.
 %, which in practice means randomly selecting some data computing its posterior at only those points and then using that as the regularizer. 
-A more principled approach would be to sparsify the resultant GP into a low-rank approximation to ensure information coming from the entire task dataset is not lost. %, essentially what the sparse dual variables do.   \todo{this term is replacing the missing data}
+\our is a more principled approach since it sparsifies the resultant GP into a low-rank approximation to ensure information coming from the entire task dataset is not lost. %, essentially what the sparse dual variables do.   \todo{this term is replacing the missing data}
 % Where the regularizer comes from
-At the end of the training for each task $t$, we compute the Laplace-GGN approximated kernel function for the current model and randomly select $M$ inducing points. Given the issues described in the previous sections, related to computing the full covariance posterior $\MKxx$ for $\dataset_t$,\todo{this should be $\kappa(\MX_t, \MX_t)$} we can exploit the dual parameterization to efficiently encode the information from  $\dataset_t$ using the dual parameterization, as follows, 
+
+In practice this means,  at the end of the training for each task $t$, we compute the approximated kernel function for the current model and randomly select $M$ inducing points. Given the issues described in the previous sections, related to computing the full covariance posterior $\MKxx$ for $\dataset_t$,\todo{this should be $\kappa(\MX_t, \MX_t)$} we can exploit the dual parameterization to efficiently encode the information from  $\dataset_t$ using the dual parameterization, as follows, 
 %
 \begin{equation}\textstyle
  	\bar{\MB}^{-1}_t = \MKzz^{-1} \MBeta_\vu \MKzz^{-1} \in \R^{M \times M}, 
@@ -680,7 +680,7 @@ where $\MKzz$ and $\vkzi$ are the gram matrix and vector computed on the inducin
 %
 We keep a memory buffer $\mathcal{M} = \{(\mathcal{Z}_t, \vu_t, \bar{\MB}^{-1}_t)\}_{t=1}^T$, where $\vu_t \in \R^{M}$ is a vector with entries $u_{t, i} = f_{\vw_t^*}(\vz_i), \forall \vz_i \in \mathcal{Z}_t$, are the neural network outputs computed on the inducing points with the MAP estimate $\weights_t^*$ after task $t$. For notational convenience, we restrict ourselves here to single-output neural networks and refer the reader to \cref{sec:cl_multioutput} for details on the multi-output setting. 
 
-After each task, we update $\mathcal{M}$, and we can construct a regularizer term, which aims to reduce the drift of the current model from diverging on the inducing points $\MZ_s$ for all previous tasks $ s = 1, \ldots, t-1$. This means that for training  the successive task, the new objective to minimize becomes $\weights_t^* = \arg\min_{\weights} \mathcal{L}(\mathcal{D}_t, \weights) + \tau \, \mathcal{R}_\textrm{\our}(\weights, \mathcal{M})$, with weight $\tau$ and regularizer
+After each task, we update $\mathcal{M}$, and can construct a regularizer term, which aims to reduce the drift of the current model from diverging on the inducing points $\MZ_s$ for all previous tasks $ s = 1, \ldots, t-1$. This means that for training  the successive task, the new objective to minimize becomes $\weights_t^* = \arg\min_{\weights} \mathcal{L}(\mathcal{D}_t, \weights) + \tau \, \mathcal{R}_\textrm{\our}(\weights, \mathcal{M})$, with weight $\tau$ and regularizer
 %
 \begin{equation}\label{eq-cl-regularizer}\textstyle
   \mathcal{R}_\mathrm{\our}(\weights, \mathcal{M}) = \frac{1}{2} \sum_{s=1}^{t-1} \frac{1}{M} 
@@ -689,7 +689,7 @@ After each task, we update $\mathcal{M}$, and we can construct a regularizer ter
 	\right\rVert_{\bar{\MB}^{-1}_{s}}, \quad \vu_t \in \R^M \text{~with~} u_{s,i} = f_{\weights}(\vz_{i}),~\forall {\vz_i} \in \mathcal{Z}_s .
 \end{equation}
 
-\paragraph{\our for dual conditioning} Adding new data to a trained neural network without retraining from scratch is a non-trivial problem. Some approaches exist \citep{kirsch2022marginal, spiegelhalter1990sequential} but are in the weight space formulation, which makes conditioning harder to formulate. As pointed out in \cite{chang2022fantasizing}, dual parameter conditioning updates are straightforward and were the original motivation of \cite{csato2002sparse}. This involves integrating data into the sum in \cref{eq:dual_sparse}. Thus, we need to find the data dual variables $\hat{\alpha}$ and $\hat{\beta}$ for the new data subset $\mathcal{D}_\textrm{new} = \{\vx_i,\vy_i\}_{i=1}^{N_{\textrm{new}}}$ and compute the corresponding kernel terms. As pointed out in \cite{chang2022fantasizing}, for GPs, these updates are exact under a Gaussian likelihood and the kernel remains constant. For non-Gaussian likelihoods, the results are almost the same as retraining with all the data. Clearly, in practice, given our NN-derived kernel's dependency on the Jacobian of the trained neural network $\Jac{\weights_*}{\vx}$ as we add more data, the Jacobians become outdated. But we find we can still improve predictions by conditioning data without retraining. 
+\paragraph{\our for dual conditioning} Adding new data to a trained neural network without retraining from scratch is a non-trivial problem. Some approaches exist \citep{kirsch2022marginal, spiegelhalter1990sequential} but are in the weight space formulation, which makes conditioning harder to formulate. As pointed out in \cite{chang2022fantasizing}, dual parameter conditioning updates are straightforward and were the original motivation of \cite{csato2002sparse}. This involves integrating data into the sum in \cref{eq:dual_sparse}. Thus, we need to find the data dual variables $\hat{\alpha}$ and $\hat{\beta}$ for the new data subset $\mathcal{D}_\textrm{new} = \{(\vx_i,\vy_i)\}_{i=1}^{N_{\textrm{new}}}$ and compute the corresponding kernel terms. As pointed out in \cite{chang2022fantasizing}, for GPs, these updates are exact under a Gaussian likelihood and the kernel remains constant. For non-Gaussian likelihoods, the results are almost the same as retraining with all the data. In practice, given our NN-derived kernel's dependency on the Jacobian of the trained neural network $\Jac{\weights_*}{\vx}$, the Jacobians become outdated as we add more data. However, we can still improve predictions by conditioning data without retraining. 
 %[SEE EXPERIMENT ???].
 %%The resulting regularizer can be computed as follows
 %%\begin{equation}
@@ -727,6 +727,14 @@ We present a series of experiments designed to demonstrate the versatility and e
 \textbf{Representation:} Can a sparse function-space representation help retain knowlegde from previous tasks in CL? (\cref{sec:cl-exp})
 \textbf{Uncertainty:} Can our uncertainty estimates help exploration in RL under sparse rewards? (\cref{sec:rl-exp})
 
+
+
+\paragraph{Implementation} We implement all methods in PyTorch~\ref{todo} 
+
+
+\paragraph{Toy examples} \cref{fig:teaser} and \cref{fig:banana}
+
+
 %Initially, we explore the capability of our method to capture predictive uncertainty through supervised learning tasks using UCI datasets. Subsequently, we extend our supervised learning experiment to image datasets, demonstrating our method's robustness and adaptability to more complex, high-dimensional data. Next, we investigate the potential of our method in a continual learning context, where we update the neural network representation in response to incoming data without necessitating retraining. Lastly, we delve into the realm of reinforcement learning to ascertain the applicability of our approach in an environment that requires sequential decision-making. Each experiment is designed to illuminate a different facet of our method, thereby exemplifying its broad range of applicability and potential for future utilization.
 
 %
@@ -746,7 +754,7 @@ We present a series of experiments designed to demonstrate the versatility and e
 
 \begin{table}[t!] 
   \centering\scriptsize
-  \caption{Negative log predictive density (NLPD) (lower better) for the proposed model TODO} 
+  \caption{Negative log predictive density (NLPD) (lower better) for SVGP (sparse GP mean and variance), SVGP NN (NN mean and sparse GP variance), GP subset (subset GP mean and variance) and GP NN subset (NN mean and GP subset variance). } 
 	\label{tbl:uci}
 	% Control table spacing
 	\renewcommand{\arraystretch}{1.}
@@ -770,7 +778,7 @@ We trained a two-layer MLP for each of the $8$ classification tasks in UCI, see 
 
 \begin{table}[t!] 
   \centering\scriptsize
-  \caption{Metrics for supervised learning with image data. SVGP is our method, and the number inside parentheses is the number of inducing points. SVGP NN is a modification of our method, where the mean is from the NN directly and the variance is from the GP model} 
+  \caption{Metrics for supervised learning with image data. SVGP is our method, and the number inside parentheses is the number of inducing points. SVGP NN is a modification of our method, where the mean is from the NN directly and the variance is from the GP model.} 
 	\label{tbl:imagesuper}
 	% Control table spacing
 	\renewcommand{\arraystretch}{1.}
@@ -915,14 +923,14 @@ On P-MNIST we are lower than S-FSVI, however % I'm still running experiments, so
 % and methods based on upper confidence bounds (UCB) \cite{curiEfficient2020}.
 
 % Make custom TikZ command (argument: colour)
-\newcommand{\lab}[1]{\protect\tikz[baseline=-.5ex]{\protect\node[minimum width=1.5em,minimum height=.8em,fill=#1,opacity=.1](a){};\protect\draw[#1,thick](a.west)--(a.east);}}
+\newcommand{\lab}[1]{\protect\tikz[baseline=-.5ex]{\protect\node[minimum width=1.5em,minimum height=.8em,fill=#1,opacity=.1](a){};\protect\draw[#1,semithick](a.west)--(a.east);}}
 
 % The methods
 \definecolor{darkgray176}{RGB}{176,176,176} % darkgray176
 \definecolor{color-our}{RGB}{0,191,191} %darkturquoise0191191
 \definecolor{color-mlp}{RGB}{191,0,191} % darkviolet1910191
 \definecolor{color-ddpg}{RGB}{191,191,0} % goldenrod1911910
-\definecolor{green01270}{RGB}{0,127,0} % green01270
+\definecolor{color-ensemble}{RGB}{0,127,0} % green01270
 \definecolor{lightgray204}{RGB}{204,204,204} % lightgray204
 
 
@@ -937,7 +945,7 @@ See \cref{app:rl} for an overview of the reinforcement learning problem, details
 
 %\cref{fig:rl} shows training curves using \our as the dynamic model (cyan) as well as a Laplace-GGN with GLM predictions (red), an ensemble of neuralnetworks (green) and a basic MLP wih no uncertainty (magenta). To ensure a fair comparison, we use the same MLP architecture/training scheme and use them in the same model-based RL algorithm, detailed in \cref{app:rl}. We also compare to deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016}, a model-free RL algorithim (yellow). The training curves show that \our's uncertainty estimates are useful for guiding exploration as it converges in fewer episodes, i.e. it is more sample efficient. As expected, the MLP strategy (without uncertainty) was not able to successfuly explore the environment.(), (\lab{color-mlp}),
 
-\cref{fig:rl} shows training curves for using \our as the dynamic model (\lab{color-our}), along with a Laplace-GGN~\cite{ADD} with GLM predictions (\lab{black})\todo{Arno cannot see these colour, someone help}, an ensemble of neural networks (\lab{black}), and a basic MLP without uncertainty (\lab{color-mlp}). To ensure a fair comparison, we maintain the same MLP architecture/training scheme across all these methods and incorporate them into the same model-based RL algorithm (see \cref{app:rl}). We also compare our results with Deep Deterministic Policy Gradient (DDPG, \cite{lillicrapContinuousControlDeep2016}), a model-free RL algorithm (\lab{color-ddpg}).
+\cref{fig:rl} shows training curves for using \our as the dynamic model (\lab{color-our}), along with a Laplace-GGN~\cite{ADD} with GLM predictions (\lab{red}), an ensemble of neural networks (\lab{color-ensemble}), and a basic MLP without uncertainty (\lab{color-mlp}). To ensure a fair comparison, we maintain the same MLP architecture/training scheme across all these methods and incorporate them into the same model-based RL algorithm (see \cref{app:rl}). We also compare our results with Deep Deterministic Policy Gradient (DDPG, \cite{lillicrapContinuousControlDeep2016}), a model-free RL algorithm (\lab{color-ddpg}).
 %
 The training curves clearly show that \our's uncertainty estimates help exploration as it converges in fewer episodes, demonstrating higher sample efficiency. As expected, the MLP strategy (without uncertainty) was not able to successfuly explore the environment.
 
@@ -1030,20 +1038,21 @@ The training curves clearly show that \our's uncertainty estimates help explorat
 
    %\node[white,minimum size=1cm] at (4.5,-13) {};
 
- \end{tikzpicture}}
+ \end{tikzpicture}}\\[2em]~
  \end{subfigure}
  \hfill
- \begin{subfigure}[c]{.74\textwidth}
+ \begin{subfigure}[c]{.7\textwidth}
    \raggedleft\scriptsize
    \setlength{\figurewidth}{\textwidth}
-   \setlength{\figureheight}{.5\figurewidth}
-   \pgfplotsset{axis on top,ymajorgrids,axis line style={draw=none},legend style={at={(1,1)},anchor=north west}}
-   \pgfplotsset{grid style={line width=.1pt, draw=gray!10,dashed},legend style={fill=white}}
+   \setlength{\figureheight}{.55\figurewidth}
+   \pgfplotsset{axis on top,ymajorgrids,axis line style={draw=none},legend style={at={(-.1,-.1)},anchor=north east}}
+   \pgfplotsset{grid style={line width=.1pt, draw=gray!10,densely dotted}}
+   \hspace*{-1.7cm}%
+   \def\our{{\sc sfr} (ours)}
    \input{./fig/rl.tex}
- \end{subfigure}
- \hfill
+ \end{subfigure}\\[-1em]
  \caption{\textbf{Cartpole swingup with sparse reward.} Training curves showing that \our's uncertainty estimates improve sample efficiency in RL.
-   Our method (\lab{color-our}) converges in fewer environment steps than the baseline model-based RL method (\lab{black}) and DDPG, the model-free baseline (\lab{black}).}
+   Our method (\lab{color-our}) converges in fewer environment steps than the baseline model-based RL method and DDPG, the model-free baseline. The dashed lines mark the asymptotic return for the methods not coverged in the plot.}
  \label{fig:rl}
 \end{figure}
 

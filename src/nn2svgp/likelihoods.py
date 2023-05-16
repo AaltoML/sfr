@@ -141,16 +141,28 @@ class BernoulliLh(Likelihood):
 
 
 class CategoricalLh(Likelihood):
-    def __init__(self, EPS: float = 0.01):
+    def __init__(self, EPS: float = 0.01, num_classes: int = None):
         self.EPS = EPS
+        self.num_classes = num_classes
 
     def __call__(
         self, f_mean: Union[FuncData, FuncMean], f_var: Optional[FuncVar] = None
     ):
-        p = self.prob(f_mean=f_mean, f_var=f_var)
-        mean = p
+        if f_var is None:
+            p = self.prob(f=f_mean)
+            mean = p
+        else:
+            # TODO expectation over f
+            raise NotImplementedError
         var = p - torch.square(p)
         return mean, var
+
+    def prob(self, f):
+        if self.num_classes is None:
+            num_classes = f.shape[-1]
+            return torch.nn.Softmax(dim=num_classes)(f)
+        else:
+            return torch.nn.Softmax(dim=self.num_classes)(f)
 
     def log_prob(self, f: FuncData, y: OutputData):
         dist = Categorical(logits=f)

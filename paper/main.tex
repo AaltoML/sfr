@@ -884,9 +884,7 @@ On S-FMNIST we are on par with DER, which is however exploiting a reservoir buff
 
 On P-MNIST we are lower than S-FSVI, however % I'm still running experiments, so we can hope that it is not the best overall in the end
 
-\cref{fig:rl} shows training curves for using \our as the dynamic model (cyan), along with a Laplace-GGN with GLM predictions (red), an ensemble of neural networks (green), and a basic MLP without uncertainty (magenta). To ensure an equitable comparison, we maintain the same MLP architecture/training scheme across all these methods and incorporate them into the same model-based RL algorithm, as detailed in \cref{app:rl}. We also compare our results with Deep Deterministic Policy Gradient (DDPG) \cite{lillicrapContinuousControlDeep2016}, a model-free RL algorithm (yellow).
 
-The training curves clearly show that \our's uncertainty estimates are instrumental in guiding exploration as it converges in fewer episodes, which demonstrates higher sample efficiency. As anticipated, the MLP strategy, devoid of uncertainty, was unable to successfully explore the environment."
 
 
 
@@ -945,6 +943,11 @@ We also compare to deep deterministic policy gradient (DDPG) \cite{lillicrapCont
 The training curves show that \our's uncertainty estimates are useful for guiding exploration as it converges in fewer episodes, i.e.
 it is more sample efficient.
 As expected, the MLP strategy (without uncertainty) was not able to successfuly explore the environment.(\lab{color-our}), (\lab{color-mlp}),
+
+%\cref{fig:rl} shows training curves for using \our as the dynamic model (cyan), along with a Laplace-GGN with GLM predictions (red), an ensemble of neural networks (green), and a basic MLP without uncertainty (magenta). To ensure an equitable comparison, we maintain the same MLP architecture/training scheme across all these methods and incorporate them into the same model-based RL algorithm, as detailed in \cref{app:rl}. We also compare our results with Deep Deterministic Policy Gradient (DDPG) \cite{lillicrapContinuousControlDeep2016}, a model-free RL algorithm (yellow).
+%
+%The training curves clearly show that \our's uncertainty estimates are instrumental in guiding exploration as it converges in fewer episodes, which demonstrates higher sample efficiency. As anticipated, the MLP strategy, devoid of uncertainty, was unable to successfully explore the environment.
+
 
 % We compare \our (cyan) to a Laplace-GGN with GLM predictions (red), an ensemble of neural networks (green) and a basic MLP wih no uncertainty (magenta).
 % To ensure a fair comparison, we use the same MLP architecture/training scheme and use them in the same model-based RL algorithm, detailed in \cref{app:rl}.

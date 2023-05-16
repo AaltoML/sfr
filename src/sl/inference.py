@@ -1,19 +1,21 @@
 #!/usr/bin/env python3
 
+import logging
+import os
 import random
+
+import hydra
+import laplace
+import torch
 import wandb
 from omegaconf import DictConfig, OmegaConf
-import os
-import hydra
-import torch
-from torch.utils.data import DataLoader, ConcatDataset
-from torch.utils.data.dataset import Subset
+from preds.utils import ece, macc, nll_cls
 from torch.distributions import Categorical, Normal
-import logging
-from preds.utils import nll_cls, macc, ece
+from torch.utils.data import ConcatDataset, DataLoader
+from torch.utils.data.dataset import Subset
+from tqdm import tqdm
 from train import get_dataset, get_model, set_seed_everywhere
 
-from tqdm import tqdm
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -224,45 +226,48 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
         )
         logging.info(checkpoint[conf_name])
         wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
-    # elif cfg.predictive_model == "bnn" or cfg.predictive_model == "glm":
-    #     conf_name = f"gp_subset_nn_sparse{cfg.gp_subset.subset_size}"
-    #     la = laplace.Laplace(
-    #         network,
-    #         "classification",
-    #         subset_of_weights=cfg.subset_of_weights,
-    #         hessian_structure=cfg.hessian_structure,
-    #         prior_precision=prior.delta,
-    #         backend=laplace.curvature.BackPackGGN,
-    #     )
-    #     if "cuda" in cfg.device:
-    #         la.cuda()
+    elif cfg.predictive_model == "bnn" or cfg.predictive_model == "glm":
+        la = laplace.Laplace(
+            sfr.network,
+            "classification",
+            subset_of_weights=cfg.subset_of_weights,
+            hessian_structure=cfg.hessian_structure,
+            prior_precision=sfr.prior.delta,
+            backend=laplace.curvature.BackPackGGN,
+        )
+        if "cuda" in cfg.device:
+            la.cuda()
 
-    #     train_loader = DataLoader(ds_train, batch_size=len(ds_train))
-    #     print("made train_loader {}".format(train_loader))
+        train_loader = DataLoader(ds_train, batch_size=len(ds_train))
+        print("made train_loader {}".format(train_loader))
 
-    #     logger.info("Fitting laplace...")
-    #     la.fit(train_loader)
-    #     logger.info("Finished fitting laplace")
+        logger.info("Fitting laplace...")
+        la.fit(train_loader)
+        logger.info("Finished fitting laplace")
 
-    #     if cfg.predictive_model == "glm":
-    #         # GLM predictive
-    #         logging.info("GLM")
-    #         checkpoint[conf_name] = la.predictive_samples(
-    #             pred_type="glm",
-    #             n_samples=cfg.num_samples,
-    #             diagonal_output=False,
-    #             generator=cfg.random_seed,
-    #         )
+        # GLM predictive
+        conf_name = "glm"
+        logging.info("GLM")
+        checkpoint[conf_name] = la.predictive_samples(
+            pred_type="glm",
+            n_samples=100,
+            diagonal_output=False,
+            generator=cfg.random_seed,
+        )
+        logging.info(checkpoint[conf_name])
+        wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
 
-    #     if cfg.predictive_model == "bnn":
-    #         # BNN predictive
-    #         logging.info("BNN predictive")
-    #         checkpoint[conf_name] = la.predictive_samples(
-    #             pred_type="nn",
-    #             n_samples=cfg.num_samples,
-    #             diagonal_output=False,
-    #             generator=cfg.random_seed,
-    #         )
+        # BNN predictive
+        conf_name = "bnn"
+        logging.info("BNN predictive")
+        checkpoint[conf_name] = la.predictive_samples(
+            pred_type="nn",
+            n_samples=100,
+            diagonal_output=False,
+            generator=cfg.random_seed,
+        )
+        logging.info(checkpoint[conf_name])
+        wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
 
     res_dir = "./saved_inference_results"
     if not os.path.exists(res_dir):

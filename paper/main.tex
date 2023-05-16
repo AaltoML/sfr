@@ -916,7 +916,7 @@ On P-MNIST we are lower than S-FSVI, however % I'm still running experiments, so
 % and methods based on upper confidence bounds (UCB) \cite{curiEfficient2020}.
 
 % Make custom TikZ command (argument: colour)
-\newcommand{\lab}[1]{\tikz[baseline=-.8ex]{\node[minimum width=2em,minimum height=.8em,fill=#1,opacity=.1](a){};\draw[#1,thick](a.west)--(a.east);}}
+\newcommand{\lab}[1]{\tikz[baseline=-.5ex]{\node[minimum width=1.5em,minimum height=.8em,fill=#1,opacity=.1](a){};\draw[#1,thick](a.west)--(a.east);}}
 
 % The methods
 \definecolor{darkgray176}{RGB}{176,176,176} % darkgray176
@@ -936,17 +936,11 @@ We increase the difficulty of exploration by using a sparse reward function.
 See \cref{app:rl} for an overview of the reinforcement learning problem, details of the algorithm, and the experiment setup.
 
 
-\cref{fig:rl} shows training curves using \our as the dynamic model (cyan) as well as a Laplace-GGN with GLM predictions (red), an ensemble of neural
-networks (green) and a basic MLP wih no uncertainty (magenta).
-To ensure a fair comparison, we use the same MLP architecture/training scheme and use them in the same model-based RL algorithm, detailed in \cref{app:rl}.
-We also compare to deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016}, a model-free RL algorithim (yellow).
-The training curves show that \our's uncertainty estimates are useful for guiding exploration as it converges in fewer episodes, i.e.
-it is more sample efficient.
-As expected, the MLP strategy (without uncertainty) was not able to successfuly explore the environment.(\lab{color-our}), (\lab{color-mlp}),
+%\cref{fig:rl} shows training curves using \our as the dynamic model (cyan) as well as a Laplace-GGN with GLM predictions (red), an ensemble of neuralnetworks (green) and a basic MLP wih no uncertainty (magenta). To ensure a fair comparison, we use the same MLP architecture/training scheme and use them in the same model-based RL algorithm, detailed in \cref{app:rl}. We also compare to deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016}, a model-free RL algorithim (yellow). The training curves show that \our's uncertainty estimates are useful for guiding exploration as it converges in fewer episodes, i.e. it is more sample efficient. As expected, the MLP strategy (without uncertainty) was not able to successfuly explore the environment.(), (\lab{color-mlp}),
 
-%\cref{fig:rl} shows training curves for using \our as the dynamic model (cyan), along with a Laplace-GGN with GLM predictions (red), an ensemble of neural networks (green), and a basic MLP without uncertainty (magenta). To ensure an equitable comparison, we maintain the same MLP architecture/training scheme across all these methods and incorporate them into the same model-based RL algorithm, as detailed in \cref{app:rl}. We also compare our results with Deep Deterministic Policy Gradient (DDPG) \cite{lillicrapContinuousControlDeep2016}, a model-free RL algorithm (yellow).
+\cref{fig:rl} shows training curves for using \our as the dynamic model (\lab{color-our}), along with a Laplace-GGN~\cite{ADD} with GLM predictions (\lab{black})\todo{Arno cannot see these colour, someone help}, an ensemble of neural networks (\lab{black}), and a basic MLP without uncertainty (\lab{color-mlp}). To ensure a fair comparison, we maintain the same MLP architecture/training scheme across all these methods and incorporate them into the same model-based RL algorithm (see \cref{app:rl}). We also compare our results with Deep Deterministic Policy Gradient (DDPG, \cite{lillicrapContinuousControlDeep2016}), a model-free RL algorithm (\lab{color-ddpg}).
 %
-%The training curves clearly show that \our's uncertainty estimates are instrumental in guiding exploration as it converges in fewer episodes, which demonstrates higher sample efficiency. As anticipated, the MLP strategy, devoid of uncertainty, was unable to successfully explore the environment.
+The training curves clearly show that \our's uncertainty estimates help exploration as it converges in fewer episodes, demonstrating higher sample efficiency. As expected, the MLP strategy (without uncertainty) was not able to successfuly explore the environment.
 
 
 % We compare \our (cyan) to a Laplace-GGN with GLM predictions (red), an ensemble of neural networks (green) and a basic MLP wih no uncertainty (magenta).

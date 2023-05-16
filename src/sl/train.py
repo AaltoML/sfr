@@ -189,6 +189,7 @@ def train(cfg: DictConfig):
     cfg.output_dim = n_classes
 
     network = get_model(model_name=cfg.model_name, ds_train=ds_train)
+    network = network.to(cfg.device)
     # print("network {}".format(network))
     prior = hydra.utils.instantiate(cfg.prior, params=network.parameters)
     # print("prior {}".format(prior))
@@ -224,7 +225,7 @@ def train(cfg: DictConfig):
 
     for epoch in tqdm(list(range(cfg.n_epochs))):
         for X, y in train_loader:
-            # X, y = X.to(device), y.to(device)
+            X, y = X.to(cfg.device), y.to(cfg.device)
             loss = sfr.loss(X, y)
             optimizer.zero_grad()
             loss.backward()

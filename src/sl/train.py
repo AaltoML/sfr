@@ -103,7 +103,7 @@ def get_model(model_name, ds_train):
 
 
 def evaluate(model, data_loader, criterion, device):
-    likelihood = src.ntksvgp.likelihoods.CategoricalLh()
+    likelihood = src.nn2svgp.likelihoods.CategoricalLh()
     model.eval()
     loss, acc, nll = 0, 0, 0
     with torch.no_grad():
@@ -112,8 +112,12 @@ def evaluate(model, data_loader, criterion, device):
             fs = model(X)
             acc += (torch.argmax(fs, dim=-1) == y).sum().cpu().float().item()
             loss += criterion(fs, y).item()
-            f = model(X)
-            nll += -likelihood.log_prob(f=f, y=y).mean()
+            # p = likelihood.prob(fs)
+            # p_dist = torch.distributions.Categorical(probs=p)
+            nll += -likelihood.log_prob(f=fs, y=y).sum().item()
+            # nll = -p_dist.log_prob(y).mean().item()
+            # f = model(X)
+            # nll += -likelihood.log_prob(f=f, y=y).mean()
     return (
         loss / len(data_loader.dataset),
         acc / len(data_loader.dataset),

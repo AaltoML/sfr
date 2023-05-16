@@ -679,7 +679,7 @@ At the end of the training for each task $t$, we compute the Laplace-GGN approxi
 %
 where $\MKzz$ and $\vkzi$ are the gram matrix and vector computed on the inducing points $\mathcal{Z}_t = \{\vz_i\}_{i=1}^M$ selected from $\dataset_t$.\
 %
-We keep a memory buffer $\mathcal{M} = \{(\mathcal{Z}_t, \vu_t, \bar{\MB}^{-1}_t)\}_{t=1}^T$, where $\vu_t \in \R^{M}$ is a vector with entries $u_{t, i} = f_{\vw_t^*}(\vz_i), \forall \vz_i \in \mathcal{Z}_t$ are the neural network outputs computed on the inducing points with the MAP estimate $\weights_t^*$ after task $t$. For notational convenience, we restrict here to single-output neural networks and refer the reader to further details on the multi-output setting to \cref{sec:cl_multioutput}. 
+We keep a memory buffer $\mathcal{M} = \{(\mathcal{Z}_t, \vu_t, \bar{\MB}^{-1}_t)\}_{t=1}^T$, where $\vu_t \in \R^{M}$ is a vector with entries $u_{t, i} = f_{\vw_t^*}(\vz_i), \forall \vz_i \in \mathcal{Z}_t$, are the neural network outputs computed on the inducing points with the MAP estimate $\weights_t^*$ after task $t$. For notational convenience, we restrict ourselves here to single-output neural networks and refer the reader to \cref{sec:cl_multioutput} for details on the multi-output setting. 
 
 After each task, we update $\mathcal{M}$, and we can construct a regularizer term, which aims to reduce the drift of the current model from diverging on the inducing points $\MZ_s$ for all previous tasks $ s = 1, \ldots, t-1$. This means that for training  the successive task, the new objective to minimize becomes $\weights_t^* = \arg\min_{\weights} \mathcal{L}(\mathcal{D}_t, \weights) + \tau \, \mathcal{R}_\textrm{\our}(\weights, \mathcal{M})$, with weight $\tau$ and regularizer
 %
@@ -687,7 +687,7 @@ After each task, we update $\mathcal{M}$, and we can construct a regularizer ter
   \mathcal{R}_\mathrm{\our}(\weights, \mathcal{M}) = \frac{1}{2} \sum_{s=1}^{t-1} \frac{1}{M} 
 	\left\lVert 
 	\vu_t - \vu_s % f_{\weights_{s}}(\MZ_s)
-	\right\rVert_{\bar{\MB}^{-1}_{s}}, \quad \vu_t \in \R^M, \text{with } u_{s,i} = f_{\weights}(\vz_{i}) \forall {\vz_i} \in \mathcal{Z}_s .
+	\right\rVert_{\bar{\MB}^{-1}_{s}}, \quad \vu_t \in \R^M \text{~with~} u_{s,i} = f_{\weights}(\vz_{i}),~\forall {\vz_i} \in \mathcal{Z}_s .
 \end{equation}
 
 \paragraph{\our for dual conditioning} Adding new data to a trained neural network without retraining from scratch is a non-trivial problem. Some approaches exist \citep{kirsch2022marginal, spiegelhalter1990sequential} but are in the weight space formulation, which makes conditioning harder to formulate. As pointed out in \cite{chang2022fantasizing}, dual parameter conditioning updates are straightforward and were the original motivation of \cite{csato2002sparse}. This involves integrating data into the sum in \cref{eq:dual_sparse}. Thus, we need to find the data dual variables $\hat{\alpha}$ and $\hat{\beta}$ for the new data subset $\mathcal{D}_\textrm{new} = \{\vx_i,\vy_i\}_{i=1}^{N_{\textrm{new}}}$ and compute the corresponding kernel terms. As pointed out in \cite{chang2022fantasizing}, for GPs, these updates are exact under a Gaussian likelihood and the kernel remains constant. For non-Gaussian likelihoods, the results are almost the same as retraining with all the data. Clearly, in practice, given our NN-derived kernel's dependency on the Jacobian of the trained neural network $\Jac{\weights_*}{\vx}$ as we add more data, the Jacobians become outdated. But we find we can still improve predictions by conditioning data without retraining. 

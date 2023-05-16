@@ -270,7 +270,7 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
             pred_type="glm",
             n_samples=100,
             diagonal_output=False,
-            generator=cfg.random_seed,
+            # generator=cfg.random_seed,
         )
         gstar_te, yte = get_la_predictive(test_loader, la_pred, seeding=True)
         gstar_va, yva = get_la_predictive(val_loader, la_pred, seeding=True)
@@ -307,7 +307,7 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
             pred_type="nn",
             n_samples=100,
             diagonal_output=False,
-            generator=cfg.random_seed,
+            # generator=cfg.random_seed,
         )
         gstar_te, yte = get_la_predictive(test_loader, la_pred, seeding=True)
         gstar_va, yva = get_la_predictive(val_loader, la_pred, seeding=True)

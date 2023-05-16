@@ -96,10 +96,13 @@ def evaluate(lh, yte, gstar_te, yva, gstar_va):
     print("inside evaluate")
     res = dict()
     res["nll_te"] = nll_cls(gstar_te, yte, lh)
+    print("after nll_cls")
     # res["nll_va"] = nll_cls(gstar_va, yva, lh)
     res["acc_te"] = macc(gstar_te, yte)
+    print("after macc")
     # res["acc_va"] = macc(gstar_va, yva)
     res["ece_te"] = ece(gstar_te, yte)
+    print("after ece")
     # res["ece_va"] = ece(gstar_va, yva)
     return res
 
@@ -329,22 +332,23 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
 
         def la_pred(x):
             ys = []
-            for i in range(100):
-                print("sample {}".format(i))
-                try:
-                    p = la.predictive_samples(
-                        x=x,
-                        pred_type="nn",
-                        n_samples=1,
-                        # diagonal_output=False,
-                        # generator=cfg.random_seed,
-                    )
-                except Exception as e:
-                    print("e {}".format(e))
-                print("p {}".format(p.shape))
-                ys.append(p)
-                torch.cuda.empty_cache()
-            return torch.stack(ys, 0)
+            # for i in range(100):
+            #     print("sample {}".format(i))
+            #     try:
+            #         p = la.predictive_samples(
+            #             x=x,
+            #             pred_type="nn",
+            #             n_samples=1,
+            #             # diagonal_output=False,
+            #             # generator=cfg.random_seed,
+            #         )
+            #     except Exception as e:
+            #         print("e {}".format(e))
+            #     print("p {}".format(p.shape))
+            #     ys.append(p)
+            #     torch.cuda.empty_cache()
+            # return torch.stack(ys, 0)
+            return la.predictive_samples(x=x, pred_type="nn", n_samples=100)
 
         gstar_te, yte = get_la_predictive(test_loader, la_pred, seeding=True)
         gstar_va, yva = get_la_predictive(val_loader, la_pred, seeding=True)

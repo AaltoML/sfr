@@ -265,13 +265,27 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
         # GLM predictive
         conf_name = "glm"
         logging.info("GLM")
-        la_pred = partial(
-            la.predictive_samples,
-            pred_type="glm",
-            n_samples=100,
-            diagonal_output=False,
-            # generator=cfg.random_seed,
-        )
+
+        def la_pred(x):
+            ys = []
+            for _ in range(100):
+                ys.append(
+                    la.predictive_samples,
+                    pred_type="glm",
+                    n_samples=1,
+                    diagonal_output=False,
+                    # generator=cfg.random_seed,
+                )
+                torch.cuda.empty_cache()
+            return torch.stack(ys, 0)
+
+        # la_pred = partial(
+        #     la.predictive_samples,
+        #     pred_type="glm",
+        #     n_samples=100,
+        #     diagonal_output=False,
+        #     # generator=cfg.random_seed,
+        # )
         gstar_te, yte = get_la_predictive(test_loader, la_pred, seeding=True)
         gstar_va, yva = get_la_predictive(val_loader, la_pred, seeding=True)
         checkpoint[conf_name] = evaluate(
@@ -302,13 +316,20 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
         # BNN predictive
         conf_name = "bnn"
         logging.info("BNN predictive")
-        la_pred = partial(
-            la.predictive_samples,
-            pred_type="nn",
-            n_samples=100,
-            diagonal_output=False,
-            # generator=cfg.random_seed,
-        )
+
+        def la_pred(x):
+            ys = []
+            for _ in range(100):
+                ys.append(
+                    la.predictive_samples,
+                    pred_type="nn",
+                    n_samples=1,
+                    diagonal_output=False,
+                    # generator=cfg.random_seed,
+                )
+                torch.cuda.empty_cache()
+            return torch.stack(ys, 0)
+
         gstar_te, yte = get_la_predictive(test_loader, la_pred, seeding=True)
         gstar_va, yva = get_la_predictive(val_loader, la_pred, seeding=True)
         checkpoint[conf_name] = evaluate(

@@ -90,9 +90,10 @@ def main(cfg: DictConfig):
         torch.set_default_dtype(torch.double)
 
     # Ensure that all operations are deterministic on GPU (if used) for reproducibility
-    torch.backends.cudnn.determinstic = True
+    # torch.backends.cudnn.determinstic = True
+    eval('setattr(torch.backends.cudnn, "determinstic", True)')
     # torch.backends.cudnn.benchmark = False
-    eval('setattr(torch.backends.cudnn, "benchmark", True)')
+    eval('setattr(torch.backends.cudnn, "benchmark", False)')
 
     cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
     # cfg.device = "cpu"
@@ -223,6 +224,45 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
         )
         logging.info(checkpoint[conf_name])
         wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
+    # elif cfg.predictive_model == "bnn" or cfg.predictive_model == "glm":
+    #     conf_name = f"gp_subset_nn_sparse{cfg.gp_subset.subset_size}"
+    #     la = laplace.Laplace(
+    #         network,
+    #         "classification",
+    #         subset_of_weights=cfg.subset_of_weights,
+    #         hessian_structure=cfg.hessian_structure,
+    #         prior_precision=prior.delta,
+    #         backend=laplace.curvature.BackPackGGN,
+    #     )
+    #     if "cuda" in cfg.device:
+    #         la.cuda()
+
+    #     train_loader = DataLoader(ds_train, batch_size=len(ds_train))
+    #     print("made train_loader {}".format(train_loader))
+
+    #     logger.info("Fitting laplace...")
+    #     la.fit(train_loader)
+    #     logger.info("Finished fitting laplace")
+
+    #     if cfg.predictive_model == "glm":
+    #         # GLM predictive
+    #         logging.info("GLM")
+    #         checkpoint[conf_name] = la.predictive_samples(
+    #             pred_type="glm",
+    #             n_samples=cfg.num_samples,
+    #             diagonal_output=False,
+    #             generator=cfg.random_seed,
+    #         )
+
+    #     if cfg.predictive_model == "bnn":
+    #         # BNN predictive
+    #         logging.info("BNN predictive")
+    #         checkpoint[conf_name] = la.predictive_samples(
+    #             pred_type="nn",
+    #             n_samples=cfg.num_samples,
+    #             diagonal_output=False,
+    #             generator=cfg.random_seed,
+    #         )
 
     res_dir = "./saved_inference_results"
     if not os.path.exists(res_dir):

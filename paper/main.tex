@@ -884,7 +884,9 @@ On S-FMNIST we are on par with DER, which is however exploiting a reservoir buff
 
 On P-MNIST we are lower than S-FSVI, however % I'm still running experiments, so we can hope that it is not the best overall in the end
 
+\cref{fig:rl} shows training curves for using \our as the dynamic model (cyan), along with a Laplace-GGN with GLM predictions (red), an ensemble of neural networks (green), and a basic MLP without uncertainty (magenta). To ensure an equitable comparison, we maintain the same MLP architecture/training scheme across all these methods and incorporate them into the same model-based RL algorithm, as detailed in \cref{app:rl}. We also compare our results with Deep Deterministic Policy Gradient (DDPG) \cite{lillicrapContinuousControlDeep2016}, a model-free RL algorithm (yellow).
 
+The training curves clearly show that \our's uncertainty estimates are instrumental in guiding exploration as it converges in fewer episodes, which demonstrates higher sample efficiency. As anticipated, the MLP strategy, devoid of uncertainty, was unable to successfully explore the environment."
 
 
 

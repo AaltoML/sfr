@@ -22,13 +22,27 @@ WANDB_RUNS = OmegaConf.create(
             "aalto-ml/nn2svgp/mspoc1tp",  # 666
             "aalto-ml/nn2svgp/m20zxspk",  # 54
         ],
-        "nn2svgp-sample-with-updates": [  # id for multiple seeds
-            # "id": "aalto-ml/nn2svgp/13w22sjr",  # 42
-            "aalto-ml/nn2svgp/2nfhcyfw",  # 666
-            "aalto-ml/nn2svgp/19g1fzaa",  # 50
-            "aalto-ml/nn2svgp/igchyb8j",  # 100
-            "aalto-ml/nn2svgp/1ep2s2ne",  # 69
-            "aalto-ml/nn2svgp/to5ptnuu",  # 54
+        # "nn2svgp-sample-with-updates": [  # id for multiple seeds
+        #     # "id": "aalto-ml/nn2svgp/13w22sjr",  # 42
+        #     "aalto-ml/nn2svgp/2nfhcyfw",  # 666
+        #     "aalto-ml/nn2svgp/19g1fzaa",  # 50
+        #     "aalto-ml/nn2svgp/igchyb8j",  # 100
+        #     "aalto-ml/nn2svgp/1ep2s2ne",  # 69
+        #     "aalto-ml/nn2svgp/to5ptnuu",  # 54
+        # ],
+        "laplace": [
+            "aalto-ml/nn2svgp/ovi8ooil",  # 100
+            "aalto-ml/nn2svgp/ttgleyig",  # 666
+            "aalto-ml/nn2svgp/r6j12038",  # 50
+            "aalto-ml/nn2svgp/zc55qobv",  # 69
+            "aalto-ml/nn2svgp/p92x5hkv",  # 54
+        ],
+        "ensemble": [
+            "aalto-ml/nn2svgp/zzcv9ew2",  # 100
+            "aalto-ml/nn2svgp/bg3cgoze",  # 666
+            "aalto-ml/nn2svgp/4jtgz6l5",  # 50
+            "aalto-ml/nn2svgp/afpm5hc2",  # 69
+            "aalto-ml/nn2svgp/jlumgtyu",  # 54
         ],
         "mlp": [
             "aalto-ml/nn2svgp/1ags2von",  # 666
@@ -53,18 +67,24 @@ LABELS = {
     "nn2svgp-sample-with-updates": "\our with updates",
     "mlp": "\sc mlp",
     "ddpg-06": "\sc ddpg",
+    "laplace": "\sc laplace-glm",
+    "ensemble": "\sc ensemble",
 }
 COLORS = {
     "nn2svgp-sample": "c",
     "nn2svgp-sample-with-updates": "b",
     "mlp": "m",
     "ddpg-06": "y",
+    "laplace": "r",
+    "ensemble": "g",
 }
 LINESTYLES = {
     "nn2svgp-sample": "-",
     "nn2svgp-sample-with-updates": "-",
     "mlp": "-",
     "ddpg-06": "-",
+    "laplace": "-",
+    "ensemble": "-",
 }
 # LINESTYLES = {
 #     "nn2svgp-sample": "-",
@@ -148,15 +168,15 @@ def plot_training_curves(
             ) / window_width
             values_same_length.append(ma_vec)
 
-        returns_all = np.stack(values_same_length, 0)
+        returns_same_length = np.stack(values_same_length, 0)
         # returns_all = np.stack(returns_all_copy, 0)
-        print("returns_all {}".format(returns_all.shape))
-        returns_mean = np.mean(returns_all, 0)
+        print("rreturns_same_length{}".format(returns_same_length.shape))
+        returns_mean = np.mean(returns_same_length, 0)
         print("returns_mean {}".format(returns_mean.shape))
         # returns_std = np.std(returns_all, 0)
-        returns_std = sem(returns_all, 0)
+        returns_std = sem(returns_same_length, 0)
         print("returns_std {}".format(returns_std.shape))
-        num_episodes = len(returns_all[0])
+        num_episodes = len(returns_same_length[0])
         episodes = np.arange(0, num_episodes)
         print("episodes {}".format(episodes.shape))
         ax.plot(
@@ -176,6 +196,18 @@ def plot_training_curves(
             color=COLORS[experiment_key],
             # linestyle="",
         )
+        if (
+            "ddpg-06" in experiment_key
+            or "mlp" in experiment_key
+            or "ensemble" in experiment_key
+        ):
+            ax.plot(
+                episodes,
+                np.ones_like(episodes) * np.max(np.mean(returns_same_length, 0)),
+                # label=LABELS[experiment_key],
+                color=COLORS[experiment_key],
+                linestyle="--",
+            )
 
     # TODO set min episodes automatically
     ax.set_xlim(0, 70)

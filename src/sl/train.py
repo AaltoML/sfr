@@ -234,11 +234,15 @@ def train(cfg: DictConfig):
     for epoch in tqdm(list(range(cfg.n_epochs))):
         for X, y in train_loader:
             X, y = X.to(cfg.device), y.to(cfg.device)
+            f = network(X)
+            # loss = torch.nn.CrossEntropyLoss(reduction="mean")(f, y)
             loss = sfr.loss(X, y)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             wandb.log({"loss": loss})
+            nll = -sfr.likelihood.log_prob(f=f, y=y)
+            wandb.log({"nll": nll})
         if epoch % cfg.logging_epoch_freq == 0:
             # tr_loss_sum, tr_loss_mean, tr_acc = evaluate(network, train_loader, cfg.device)
             # te_loss_sum, te_loss_mean, te_acc = evaluate(network, test_loader, cfg.device)

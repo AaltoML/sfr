@@ -1309,9 +1309,9 @@ As expected, the MLP strategy (without uncertainty) was not able to successfuly 
 \section{Discussion and conclusion}
 \label{sec:conclusion}
 %
+In this paper, we have introduced \our, a novel approach for representing neural networks in sparse function-space, exploiting the dual parameters for an efficient low-rank approximation that accommodates information from the entire data distribution. Our method offers a powerful mechanism for capturing predictive uncertainty, updating the model with new data without retraining, and providing a compact representation suitable for continual learning. These aspects were demonstrated in a wide range of problems, datasets, and learning contexts. We showcased our method's ability to capture uncertainty in UCI and image tasks under supervised learning (\cref{sec:uci}), demonstrated robustness on image data sets (\cref{,sec:image}), established its potential for continual learning (\cref{sec:cl-exp}), and finally, verified its applicability in reinforcement learning scenarios (\cref{sec:rl-exp}).
 
-
-
+% Discussion points
 It is worth noting that the NTK linearises the network around the MAP solution $\weights^{*}$,
 so the function space prior (and thus posterior) is only a locally linear approximation.
 In contrast to conventional GP kernels, the NTK does not have any hyperparameters which need to be learned.
@@ -1320,7 +1320,7 @@ It is also worth noting that the NTK may be highly non stationary and is depende
 
 
 
-
+The broader impact of this work lies in its potential to provide tooling for how neural networks are utilized, offering more efficient and principled ways of handling uncertainty and continual learning. This contribution, we believe, has significant implications for future applications of machine learning in dynamic, real-world settings where data is unevenly distributed, uncertain, and continuously evolves.
 
 A reference implementation of the methods presented in this paper is currently available as supplementary material and will be made available under the MIT License on GitHub upon acceptance.
 

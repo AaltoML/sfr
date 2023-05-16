@@ -20,7 +20,8 @@ import torch
 from tqdm import tqdm
 import wandb
 from omegaconf import DictConfig, OmegaConf
-from src.rl.utils import set_seed_everywhere
+
+# from src.rl.utils import set_seed_everywhere
 from src.sl.datasets import CIFAR10, FMNIST, MNIST
 from src.sl.networks import CIFAR10Net, CIFAR100Net, MLPS
 from torch.utils.data import DataLoader
@@ -32,6 +33,20 @@ torch.set_default_dtype(torch.float64)
 PACKAGE_DIR = os.path.dirname(os.path.realpath(__file__))
 ROOT = "/".join(PACKAGE_DIR.split("/")[:-2])
 DATA_DIR = os.path.join(ROOT, "bnn-predictive/data")
+
+
+def set_seed_everywhere(random_seed):
+    random.seed(random_seed)
+    np.random.seed(random_seed)
+    torch.manual_seed(random_seed)
+    torch.cuda.manual_seed(random_seed)
+    torch.manual_seed(random_seed)
+    # torch.cuda.manual_seed(cfg.random_seed)
+    # torch.backends.cudnn.deterministic = True
+    # torch.backends.cudnn.benchmark = False
+    np.random.seed(random_seed)
+    random.seed(random_seed)
+    # pl.seed_everything(random_seed)
 
 
 class QuickDS(VisionDataset):
@@ -214,12 +229,8 @@ def train(cfg: DictConfig):
     # ntksvgp = hydra.utils.instantiate(cfg.ntksvgp)
     # print("ntksvgp {}".format(ntksvgp))
 
-    train_loader = DataLoader(
-        ds_train, batch_size=cfg.batch_size, shuffle=True
-    )
-    test_loader = DataLoader(
-        ds_test, batch_size=cfg.batch_size, shuffle=False
-    )
+    train_loader = DataLoader(ds_train, batch_size=cfg.batch_size, shuffle=True)
+    test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=False)
 
     optimizer = torch.optim.Adam([{"params": sfr.parameters()}], lr=cfg.lr)
 
@@ -244,6 +255,7 @@ def train(cfg: DictConfig):
             wandb.log({"test/loss_mean": te_loss_mean})
             wandb.log({"training/acc": tr_acc})
             wandb.log({"test/acc": te_acc})
+        wandb.log({"epoch": epoch})
 
     logger.info("Finished training")
     # # evaluation

@@ -182,6 +182,7 @@ def train(cfg: DictConfig):
     cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     if cfg.double:
+        logger.info("Using float64")
         torch.set_default_dtype(torch.double)
 
     # Ensure that all operations are deterministic on GPU (if used) for reproducibility
@@ -202,8 +203,9 @@ def train(cfg: DictConfig):
     # print("ds_test {}".format(ds_test.D[0].shape))
     # print("ds_test {}".format(ds_test.D[1].shape))
 
-    n_classes = next(iter(ds_train))[0].shape[-1]
-    # print("n_classes {}".format(n_classes))
+    # n_classes = next(iter(ds_train))[1].shape[-1]
+    n_classes = 10
+    print("n_classes {}".format(n_classes))
     cfg.output_dim = n_classes
 
     network = get_model(model_name=cfg.model_name, ds_train=ds_train)

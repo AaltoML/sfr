@@ -64,7 +64,7 @@ class QuickDS(VisionDataset):
         return len(self.D)
 
 
-def get_dataset(dataset, double, dir, device=None):
+def get_dataset(dataset, double, dir, cfg, device=None):
     if dataset == "MNIST":
         # Download training data from open datasets.
         ds_train = MNIST(train=True, double=double, root=dir)
@@ -78,6 +78,11 @@ def get_dataset(dataset, double, dir, device=None):
     else:
         raise ValueError("Invalid dataset argument")
     if device is not None:
+        if cfg.debug:
+            ds_train.data = ds_train.data[:500]
+            ds_train.targets = ds_train.targets[:500]
+            ds_test.data = ds_test.data[:500]
+            ds_test.targets = ds_test.targets[:500]
         return QuickDS(ds_train, device), QuickDS(ds_test, device)
     else:
         return ds_train, ds_test
@@ -188,7 +193,7 @@ def train(cfg: DictConfig):
     # print("DATA_DIR {}".format(DATA_DIR))
     # logger.info("cfg {}".format(cfg))
     ds_train, ds_test = src.sl.train.get_dataset(
-        dataset=cfg.dataset, double=cfg.double, dir="./", device=cfg.device
+        dataset=cfg.dataset, double=cfg.double, dir="./", device=cfg.device, cfg=cfg
     )
     # print("ds_train {}".format(ds_train.D[0].shape))
     # print("ds_train {}".format(ds_train.D[1].shape))

@@ -14,10 +14,10 @@ defaults:
 # dataset: "CIFAR10"
 # model_name: "CNN"
 
-dataset: "MNIST"
-model_name: "SmallMLP"
+dataset: "FMNIST"
+model_name: "CNN"
+checkpoint: "./saved_models/FMNIST_CNN_117_1.0e-04.pt"
 
-debug: False
 
 device: ???
 output_dim: ???
@@ -26,7 +26,10 @@ lr: 1e-4
 n_epochs: 500
 # n_epochs: 1
 # double: True
-double: False
+double: True
+
+debug: False
+num_inducing: 1000
 
 # num_workers: 8
 # num_workers: 1
@@ -41,10 +44,23 @@ sfr:
   # prior: ???
   likelihood: ${likelihood}
   output_dim: ${output_dim}
-  num_inducing: 128
+  num_inducing: ${num_inducing}
   dual_batch_size: 1000
   jitter: 1e-4
   device: ${device} # TODO should this always be cpu??
+
+gp_subset:
+  _target_: src.nn2svgp.nn2gp.NN2GPSubset
+  _convert_: all
+  # network: ???
+  # prior: ???
+  likelihood: ${likelihood}
+  output_dim: ${output_dim}
+  subset_size: ${num_inducing}
+  dual_batch_size: 1000
+  jitter: 1e-4
+  device: ${device} # TODO should this always be cpu??
+
 
 prior:
   _target_: src.nn2svgp.priors.Gaussian
@@ -69,7 +85,7 @@ likelihood:
 wandb:
   group: ${dataset}
   entity: "aidanscannell"
-  project: "nn2svgp-sl"
+  project: "nn2svgp-sl-inference"
   use_wandb: True
   run_name: delta=${prior.delta}-lr=${lr}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   # run_name: ${alg_name}-${online_update_freq}-${agent.horizon}-${random_seed}-${now:%Y-%m-%d_%H-%M-%S}

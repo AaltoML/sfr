@@ -58,8 +58,8 @@ def preds_glm(X, model, likelihood, mu, Sigma_chol, samples):
     return gs.mean(dim=0)
 
 
-def preds_svgp(X, svgp, likelihood, samples=1000, batch_size=100, device='cpu'):
-    gs = svgp_sampling_predictive(X, svgp, likelihood, mc_samples=samples, batch_size=batch_size, device=device)
+def preds_svgp(X, svgp, likelihood, samples=1000, batch_size=100, nn_mean=False,device='cpu'):
+    gs = svgp_sampling_predictive(X, svgp, likelihood, mc_samples=samples, batch_size=batch_size, nn_mean=nn_mean, device=device)
     return gs.mean(dim=0)
 
 
@@ -224,6 +224,14 @@ def inference(
     res.update(evaluate(fs_train, y_train, lh, "gp_subset", "train"))
     res.update(evaluate(fs_test, y_test, lh, "gp_subset", "test"))
     res.update(evaluate(fs_valid, y_valid, lh, "gp_subset", "valid"))
+
+    # GP Subset with NN mean
+    fs_train = preds_svgp(X_train, svgp_subset, likelihood_svgp, samples=n_samples, batch_size=batch_size, nn_mean=True,device=device)
+    fs_test = preds_svgp(X_test, svgp_subset, likelihood_svgp, samples=n_samples, batch_size=batch_size, nn_mean=True, device=device)
+    fs_valid = preds_svgp(X_valid, svgp_subset, likelihood_svgp, samples=n_samples, batch_size=batch_size,  nn_mean=True, device=device)
+    res.update(evaluate(fs_train, y_train, lh, "gp_subset_nn", "train"))
+    res.update(evaluate(fs_test, y_test, lh, "gp_subset_nn", "test"))
+    res.update(evaluate(fs_valid, y_valid, lh, "gp_subset_nn", "valid"))
 
     # BBB
     # baseline  (needs higher lr)

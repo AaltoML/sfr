@@ -61,11 +61,13 @@ def linear_sampling_predictive(
     return torch.stack(predictions)
 
 
-def svgp_sampling_predictive(X, svgp, likelihood, mc_samples=100, no_link=False, batch_size=None, device='cpu'):
+def svgp_sampling_predictive(X, svgp, likelihood, mc_samples=100, no_link=False, batch_size=None,nn_mean=False, device='cpu'):
     """Returns the sparse data used for convenience."""
     link = (lambda x: x) if no_link else likelihood.inv_link
     if batch_size is None:
         f_mu, f_var = svgp.predict_f(X)
+        if nn_mean:
+            f_mu = svgp.network(X)
         fs = Normal(f_mu, torch.sqrt(f_var.clamp(1e-5)))
         return link(fs.sample((mc_samples,)))
     else:
@@ -76,15 +78,17 @@ def svgp_sampling_predictive(X, svgp, likelihood, mc_samples=100, no_link=False,
             X = X[0]  
             X = X.to(device)
             ps.append(
-                sample_svgp(X, likelihood, svgp,  n_samples=mc_samples))
+                sample_svgp(X, likelihood, svgp, n_samples=mc_samples, nn_mean=nn_mean))
         ps = torch.cat(ps, axis=1)
         return ps
 
 
-def sample_svgp(X, likelihood, svgp,  n_samples: int):
+def sample_svgp(X, likelihood, svgp,  n_samples: int, nn_mean=False,):
     """Sample the SVGP, assumes a batched input."""
     n_data = X.shape[0]
     gp_means, gp_vars = svgp.predict_f(X)
+    if nn_mean:
+        gp_means = svgp.network(X)
     dist = Normal(gp_means, torch.sqrt(gp_vars.clamp(10 ** (-8))))
     logit_samples = dist.sample((n_samples,))
     out_dim = logit_samples.shape[-1]

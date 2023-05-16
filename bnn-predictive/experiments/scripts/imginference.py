@@ -274,7 +274,7 @@ def main(
         for f, delta in tqdm(list(zip(eligible_files, deltas))):
             logging.info(f"inference for delta={delta}")
             state = torch.load(f)
-            state = run_inference(state,model, lh, test_loader, val_loader, ds_train, X_train, y_train,
+            state = run_inference(state,lh, test_loader, val_loader, ds_train, X_train, y_train,
                     n_inducing, delta, batch_size=batch_size, model_name=model_name, name=name, only_map=only_map, device=device)
             torch.save(state, f)
     else:
@@ -290,12 +290,18 @@ def main(
         output_dir = os.path.join(res_dir, 'svgp_runs')
         if not os.path.exists(output_dir):
             os.makedirs(output_dir)
+        
         for delta_factor_i in tqdm(delta_factors):
             delta = delta_factor_i *  delta_nn
+
+            file = f'{seed}' + '_{delta:.1e}.pt'.format(delta=delta)
+            if not os.path.isdir(os.path.join(output_dir, file)):
+                state = torch.load(best_file)
+            else:
+                state = torch.load(os.path.join(output_dir, file))
             logging.info(f'Test with delta {delta}')
             state = run_inference(state, lh, test_loader, val_loader, ds_train, X_train, y_train,
                     n_inducing, delta, batch_size=batch_size, model_name=model_name, name=name, device=device)
-            file = f'{seed}' + '_{delta:.1e}.pt'.format(delta=delta)
             torch.save(state, os.path.join(output_dir, file))
 
 def run_inference(state, likelihood, test_loader, val_loader, ds_train, X_train, y_train,
@@ -353,10 +359,10 @@ def run_inference(state, likelihood, test_loader, val_loader, ds_train, X_train,
 
         # GP subset
     logging.info("GP subset")
-    prior_subset = ntksvgp.priors.Gaussian(params=model.parameters, delta=delta*len(ds_train)/num_inducing)
+    prior_subset = ntksvgp.priors.Gaussian(params=model.parameters, delta=delta)
     svgp_subset = NN2GPSubset(
             network=model,
-            prior=prior,
+            prior=prior_subset,
             output_dim=output_dim,
             likelihood=likelihood,
             dual_batch_size=batch_size,
@@ -366,10 +372,10 @@ def run_inference(state, likelihood, test_loader, val_loader, ds_train, X_train,
         )
     svgp_subset.set_data(data)
     gstar_te, yte = get_svgp_predictive(
-            test_loader, svgp_subset, use_nn_out=False, likelihood=likelihood
+            test_loader, svgp_subset, use_nn_out=True, likelihood=likelihood
         )
     gstar_va, yva = get_svgp_predictive(
-            val_loader, svgp_subset, use_nn_out=False, likelihood=likelihood
+            val_loader, svgp_subset, use_nn_out=True, likelihood=likelihood
         )
     state[f"gp_subset_{name}"] = evaluate(likelihood, yte, gstar_te, yva, gstar_va)
     logging.info(state[f"gp_subset_{name}"])

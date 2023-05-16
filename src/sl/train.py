@@ -241,7 +241,7 @@ def train(cfg: DictConfig):
             loss.backward()
             optimizer.step()
             wandb.log({"loss": loss})
-            nll = -sfr.likelihood.log_prob(f=f, y=y)
+            nll = -sfr.likelihood.log_prob(f=f, y=y).mean()
             wandb.log({"nll": nll})
         if epoch % cfg.logging_epoch_freq == 0:
             # tr_loss_sum, tr_loss_mean, tr_acc = evaluate(network, train_loader, cfg.device)

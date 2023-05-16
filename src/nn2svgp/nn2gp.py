@@ -45,7 +45,7 @@ class NN2GPSubset(NTKSVGP):
         likelihood: Likelihood,
         output_dim: int,
         subset_size: int,
-        dual_batch_size: int,
+        dual_batch_size: Optional[int]=None,
         jitter: float = 1e-6,
         device: str = "cpu",
     ):

@@ -20,18 +20,31 @@ import torch
 from tqdm import tqdm
 import wandb
 from omegaconf import DictConfig, OmegaConf
-from src.rl.utils import set_seed_everywhere
+
+# from src.rl.utils import set_seed_everywhere
 from src.sl.datasets import CIFAR10, FMNIST, MNIST
 from src.sl.networks import CIFAR10Net, CIFAR100Net, MLPS
 from torch.utils.data import DataLoader
 from torchvision.datasets import VisionDataset
 
 
-torch.set_default_dtype(torch.float64)
-
 PACKAGE_DIR = os.path.dirname(os.path.realpath(__file__))
 ROOT = "/".join(PACKAGE_DIR.split("/")[:-2])
 DATA_DIR = os.path.join(ROOT, "bnn-predictive/data")
+
+
+def set_seed_everywhere(random_seed):
+    random.seed(random_seed)
+    np.random.seed(random_seed)
+    torch.manual_seed(random_seed)
+    torch.cuda.manual_seed(random_seed)
+    torch.manual_seed(random_seed)
+    # torch.cuda.manual_seed(cfg.random_seed)
+    # torch.backends.cudnn.deterministic = True
+    # torch.backends.cudnn.benchmark = False
+    np.random.seed(random_seed)
+    random.seed(random_seed)
+    # pl.seed_everything(random_seed)
 
 
 class QuickDS(VisionDataset):
@@ -76,6 +89,11 @@ def get_model(model_name, ds_train):
         hidden_sizes = [1024, 512, 256, 128]
         output_size = ds_train.K
         return MLPS(input_size, hidden_sizes, output_size, "tanh", flatten=True)
+    elif model_name == "SmallMLP":
+        input_size = ds_train.pixels**2 * ds_train.channels
+        hidden_sizes = [128, 128]
+        output_size = ds_train.K
+        return MLPS(input_size, hidden_sizes, output_size, "tanh", flatten=True)
     elif model_name == "CNN":
         return CIFAR10Net(ds_train.channels, ds_train.K, use_tanh=True)
     elif model_name == "AllCNN":
@@ -84,23 +102,26 @@ def get_model(model_name, ds_train):
         raise ValueError("Invalid model name")
 
 
-def evaluate(model, data_loader, device):
-    criterion = torch.nn.CrossEntropyLoss(reduction="sum")
-    criterion_mean = torch.nn.CrossEntropyLoss(reduction="mean")
+def evaluate(model, data_loader, criterion, device):
+    likelihood = src.nn2svgp.likelihoods.CategoricalLh()
     model.eval()
-    loss, loss_mean, acc = 0, 0, 0
+    loss, acc, nll = 0, 0, 0
     with torch.no_grad():
         for X, y in data_loader:
             X, y = X.to(device), y.to(device)
             fs = model(X)
             acc += (torch.argmax(fs, dim=-1) == y).sum().cpu().float().item()
             loss += criterion(fs, y).item()
-            loss_mean += criterion_mean(fs, y).item()
-
+            # p = likelihood.prob(fs)
+            # p_dist = torch.distributions.Categorical(probs=p)
+            nll += -likelihood.log_prob(f=fs, y=y).sum().item()
+            # nll = -p_dist.log_prob(y).mean().item()
+            # f = model(X)
+            # nll += -likelihood.log_prob(f=f, y=y).mean()
     return (
         loss / len(data_loader.dataset),
-        loss_mean / len(data_loader.dataset),
         acc / len(data_loader.dataset),
+        nll / len(data_loader.dataset),
     )
 
 
@@ -164,6 +185,7 @@ def train(cfg: DictConfig):
     cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     if cfg.double:
+        logger.info("Using float64")
         torch.set_default_dtype(torch.double)
 
     # Ensure that all operations are deterministic on GPU (if used) for reproducibility
@@ -177,18 +199,21 @@ def train(cfg: DictConfig):
     # print("DATA_DIR {}".format(DATA_DIR))
     # logger.info("cfg {}".format(cfg))
     ds_train, ds_test = src.sl.train.get_dataset(
-        dataset=cfg.dataset, double=True, dir="./", device=cfg.device
+        dataset=cfg.dataset, double=cfg.double, dir="./", device=cfg.device
     )
     # print("ds_train {}".format(ds_train.D[0].shape))
     # print("ds_train {}".format(ds_train.D[1].shape))
     # print("ds_test {}".format(ds_test.D[0].shape))
     # print("ds_test {}".format(ds_test.D[1].shape))
 
-    n_classes = next(iter(ds_train))[0].shape[-1]
-    # print("n_classes {}".format(n_classes))
+    # n_classes = next(iter(ds_train))[1].shape[-1]
+    n_classes = 10
+    # TODO this is bad
+    print("n_classes {}".format(n_classes))
     cfg.output_dim = n_classes
 
     network = get_model(model_name=cfg.model_name, ds_train=ds_train)
+    network = network.to(cfg.device)
     # print("network {}".format(network))
     prior = hydra.utils.instantiate(cfg.prior, params=network.parameters)
     # print("prior {}".format(prior))
@@ -213,36 +238,39 @@ def train(cfg: DictConfig):
     # ntksvgp = hydra.utils.instantiate(cfg.ntksvgp)
     # print("ntksvgp {}".format(ntksvgp))
 
-    train_loader = DataLoader(
-        ds_train, batch_size=cfg.batch_size, shuffle=True, num_workers=cfg.num_workers
-    )
-    test_loader = DataLoader(
-        ds_test, batch_size=cfg.batch_size, shuffle=False, num_workers=cfg.num_workers
-    )
+    train_loader = DataLoader(ds_train, batch_size=cfg.batch_size, shuffle=True)
+    test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=False)
 
     optimizer = torch.optim.Adam([{"params": sfr.parameters()}], lr=cfg.lr)
 
     for epoch in tqdm(list(range(cfg.n_epochs))):
         for X, y in train_loader:
-            # X, y = X.to(device), y.to(device)
+            X, y = X.to(cfg.device), y.to(cfg.device)
+            # loss = torch.nn.CrossEntropyLoss(reduction="mean")(f, y)
             loss = sfr.loss(X, y)
             optimizer.zero_grad()
             loss.backward()
             optimizer.step()
             wandb.log({"loss": loss})
         if epoch % cfg.logging_epoch_freq == 0:
-            tr_loss_sum, tr_loss_mean, tr_acc = evaluate(
-                network, train_loader, cfg.device
+            # tr_loss_sum, tr_loss_mean, tr_acc = evaluate(network, train_loader, cfg.device)
+            # te_loss_sum, te_loss_mean, te_acc = evaluate(network, test_loader, cfg.device)
+            criterion = torch.nn.CrossEntropyLoss(reduction="sum")
+            tr_loss, tr_acc, tr_nll = evaluate(
+                network, train_loader, criterion, cfg.device
             )
-            te_loss_sum, te_loss_mean, te_acc = evaluate(
-                network, test_loader, cfg.device
+            te_loss, te_acc, te_nll = evaluate(
+                network, test_loader, criterion, cfg.device
             )
-            wandb.log({"training/loss_sum": tr_loss_sum})
-            wandb.log({"test/loss_sum": te_loss_sum})
-            wandb.log({"training/loss_mean": tr_loss_mean})
-            wandb.log({"test/loss_mean": te_loss_mean})
+            wandb.log({"training/loss": tr_loss})
+            wandb.log({"test/loss": te_loss})
+            wandb.log({"training/nll": tr_nll})
+            wandb.log({"test/nll": te_nll})
+            # wandb.log({"training/loss_mean": tr_loss_mean})
+            # wandb.log({"test/loss_mean": te_loss_mean})
             wandb.log({"training/acc": tr_acc})
             wandb.log({"test/acc": te_acc})
+            wandb.log({"epoch": epoch})
 
     logger.info("Finished training")
     # # evaluation
@@ -267,13 +295,15 @@ def train(cfg: DictConfig):
         "delta": cfg.prior.delta,
     }
     res_dir = "./saved_models"
+    if not os.path.exists(res_dir):
+        os.makedirs(res_dir)
     fname = (
-        "saved_models/"
+        "./"
         + "_".join([cfg.dataset, cfg.model_name, str(cfg.random_seed)])
-        + "_{cfg.prior.delta:.1e}.pt"
+        + f"_{cfg.prior.delta:.1e}.pt"
     )
     logger.info("Saving model and optimiser etc...")
-    torch.save(state, os.path.join(res_dir, fname.format(delta=cfg.prior.delta)))
+    torch.save(state, os.path.join(res_dir, fname))
     logger.info("Finished saving model and optimiser etc")
 
 

@@ -603,12 +603,12 @@ where the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{N \times N
 %
 \begin{equation}
   \label{eq:dual_param}
-  \alpha_i \coloneqq \myexpect_{p(\vw \mid \vy)}[\nabla_{f_i}\log p(y_i \mid f_i)]
+  \alpha_i \coloneqq \myexpect_{p(\vw \mid \vy)}[\nabla_{f}\log p(y_i \mid f) |_{f=f_i}]
   \quad \text{and} \quad
-  \beta_i \coloneqq - \myexpect_{p(\vw \mid \vy)}[\nabla^2_{f_i f_i}\log p(y_i \mid f_i)] .
+  \beta_i \coloneqq - \myexpect_{p(\vw \mid \vy)}[\nabla^2_{f f}\log p(y_i \mid f_i) |_{f=f_i}],
 \end{equation}
 %
-The relationships specified above are valid for generic likelihoods, and involve no approximations since the expectation is under the exact posterior. This higlights the fact that our approximate inference technique that will follow, while usually viewed as a posterior approximation, can be alternatively interpreted as an approximation of the expectation of gradients of loss/likelihoods.
+where $f_\vw(\vx_i) = f_i$ above. The relationships specified above are valid for generic likelihoods, and involve no approximations since the expectation is under the exact posterior. This higlights the fact that our approximate inference technique that will follow, while usually viewed as a posterior approximation, can be alternatively interpreted as an approximation of the expectation of gradients of loss/likelihoods.
 
 Originally \citet{csato2002sparse} iteratively find dual variables using an expectation propogation (EP, \cite{minka2001expectation}) method. More recently \cite{khan2017conjugate,adam2021dual}, has shown this relationship for variational Gaussian processes where the above expectation is with respect to the approximate variational posterior. Meanwhile in \citet{wilkinson2023bayes}, they show links between linearization methods and how they solve the \cref{eq:dual_param}.
 

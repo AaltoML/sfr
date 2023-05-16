@@ -11,11 +11,11 @@ import torch
 import wandb
 from omegaconf import DictConfig, OmegaConf
 from preds.utils import ece, macc, nll_cls
+from src.sl.train import get_dataset, get_model, set_seed_everywhere
 from torch.distributions import Categorical, Normal
 from torch.utils.data import ConcatDataset, DataLoader
 from torch.utils.data.dataset import Subset
 from tqdm import tqdm
-from train import get_dataset, get_model, set_seed_everywhere
 
 
 # logging.basicConfig(level=logging.INFO)
@@ -180,17 +180,17 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
     y_train = y_train.to(cfg.device)
     data = (X_train, y_train)
 
-    if cfg.predictive_model == "map":
-        # MAP
-        conf_name = "map"
-        logging.info("MAP performance")
-        gstar_te, yte = get_map_predictive(test_loader, sfr.network)
-        gstar_va, yva = get_map_predictive(val_loader, sfr.network)
-        checkpoint["map"] = evaluate(sfr.likelihood, yte, gstar_te, yva, gstar_va)
+    # if cfg.predictive_model == "map":
+    # MAP
+    conf_name = "map"
+    logging.info("MAP performance")
+    gstar_te, yte = get_map_predictive(test_loader, sfr.network)
+    gstar_va, yva = get_map_predictive(val_loader, sfr.network)
+    checkpoint["map"] = evaluate(sfr.likelihood, yte, gstar_te, yva, gstar_va)
 
-        logging.info(checkpoint["map"])
-        wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
-    elif cfg.predictive_model == "sfr":
+    logging.info(checkpoint["map"])
+    wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
+    if cfg.predictive_model == "sfr":
         logging.info("SFR performance")
 
         sfr.set_data(data)

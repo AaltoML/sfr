@@ -243,7 +243,7 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
         )
         logging.info(checkpoint[conf_name])
         wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
-    elif cfg.predictive_model == "bnn" or cfg.predictive_model == "glm":
+    elif cfg.predictive_model == "glm":
         la = laplace.Laplace(
             sfr.network,
             "classification",
@@ -254,7 +254,8 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
         )
         # la.to(cfg.device)
 
-        train_loader = DataLoader(ds_train, batch_size=len(ds_train))
+        print("Making train_loader fo LA...")
+        train_loader = DataLoader(ds_train, batch_size=cfg.batch_size)
         print("made train_loader {}".format(train_loader))
 
         logger.info("Fitting laplace...")
@@ -278,6 +279,25 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
         )
         logging.info(checkpoint[conf_name])
         wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
+
+    elif cfg.predictive_model == "bnn":
+        la = laplace.Laplace(
+            sfr.network,
+            "classification",
+            subset_of_weights=cfg.subset_of_weights,
+            hessian_structure=cfg.hessian_structure,
+            prior_precision=sfr.prior.delta,
+            backend=laplace.curvature.asdl.AsdlGGN,
+        )
+        # la.to(cfg.device)
+
+        print("Making train_loader fo LA...")
+        train_loader = DataLoader(ds_train, batch_size=cfg.batch_size)
+        print("made train_loader {}".format(train_loader))
+
+        logger.info("Fitting laplace...")
+        la.fit(train_loader)
+        logger.info("Finished fitting laplace")
 
         # BNN predictive
         conf_name = "bnn"

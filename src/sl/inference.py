@@ -268,13 +268,16 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
 
         def la_pred(x):
             ys = []
-            for _ in range(100):
+            for i in range(100):
+                print("sample {}".format(i))
                 ys.append(
-                    la.predictive_samples,
-                    pred_type="glm",
-                    n_samples=1,
-                    diagonal_output=False,
-                    # generator=cfg.random_seed,
+                    la.predictive_samples(
+                        x=x,
+                        pred_type="glm",
+                        n_samples=1,
+                        diagonal_output=False,
+                        # generator=cfg.random_seed,
+                    )
                 )
                 torch.cuda.empty_cache()
             return torch.stack(ys, 0)
@@ -319,13 +322,16 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
 
         def la_pred(x):
             ys = []
-            for _ in range(100):
+            for i in range(100):
+                print("sample {}".format(i))
                 ys.append(
-                    la.predictive_samples,
-                    pred_type="nn",
-                    n_samples=1,
-                    diagonal_output=False,
-                    # generator=cfg.random_seed,
+                    la.predictive_samples(
+                        x=x,
+                        pred_type="nn",
+                        n_samples=1,
+                        diagonal_output=False,
+                        # generator=cfg.random_seed,
+                    )
                 )
                 torch.cuda.empty_cache()
             return torch.stack(ys, 0)

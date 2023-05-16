@@ -294,7 +294,8 @@ def train(cfg: DictConfig):
         # "metrics": metrics,
         "delta": cfg.prior.delta,
     }
-    res_dir = "./saved_models"
+
+    res_dir = os.path.join(run.dir, "./saved_models")
     if not os.path.exists(res_dir):
         os.makedirs(res_dir)
     fname = (

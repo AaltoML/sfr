@@ -682,7 +682,7 @@ We keep a memory buffer $\mathcal{M} = \{(\MZ_t, \vu_t, \bar{\MB}^{-1}_t)\}_{t=1
 
 After each task, we update $\mathcal{M}$, and we can construct a regularizer term, which aims to reduce the drift of the current model from diverging on the inducing points $\MZ_s$ for all previous tasks $ s = 1, \ldots, t-1$. This means that for training  the successive task, the new objective to minimize becomes $\weights_t^* = \arg\min_{\weights} \mathcal{L}(\mathcal{D}_t, \weights) + \tau \, \mathcal{R}_\textrm{\our}(\weights, \mathcal{M})$, with the regularizer
 %
-\begin{equation}\label{eq-cl-regularizer}
+\begin{equation}\label{eq-cl-regularizer}\textstyle
   \mathcal{R}_\mathrm{\our}(\weights, \mathcal{M}) = \frac{1}{2} \sum_{s=1}^{t-1} \frac{1}{M} 
 	\left\lVert 
 	f_{\weights}(\MZ_{s}) - \vu_t % f_{\weights_{s}}(\MZ_s)

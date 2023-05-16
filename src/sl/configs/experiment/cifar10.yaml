@@ -6,4 +6,4 @@ n_epochs: 250
 prior:
   _target_: src.nn2svgp.priors.Gaussian
   # params: ???
-  delta: 0.0013
+  delta: 0.0018

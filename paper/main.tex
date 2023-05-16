@@ -817,7 +817,7 @@ In addition to uncertainty estimates, our method can update the posterior when g
 
 
 
-\subsection{Updating the  network representation in continual learning}
+\subsection{Updating the network representation in continual learning}
 \label{sec:cl-exp}
 %
 %%% Very rough draft
@@ -844,7 +844,8 @@ In addition to uncertainty estimates, our method can update the posterior when g
 \setlength{\intextsep}{0pt}
 \begin{wraptable}{R}{.65\textwidth}
   \centering\scriptsize
-  \caption{Continual learning experiments (acc.). $^*$ Methods relying only on weight regularization. \color{blue}{Results from \cite{rudner2022continual}.}}
+  \caption{Continual learning experiments. We report accuracy${\pm}$std and bold based on a $t$-test. $^*$Methods rely on weight regularization.}
+  %\textcolor{blue}{Results from \cite{rudner2022continual}
   %\color{red}{Preliminary results need more runs or hyperparam tuning}
 	\label{tbl:cl_table_1}
 	
@@ -865,16 +866,17 @@ In addition to uncertainty estimates, our method can update the posterior when g
 \end{wraptable}
 %
 % Overview
-We aim to highlight our sparse representation's ability to retain prior knowledge within a continual learning (CL) setting (as in \cref{sec:sequential}). Notably, CL methods require tuning hyperparameters, making direct comparisons difficult. We consider the setup with single-head (SH) setting that is typically hard and more competitive.
+We aim to highlight our sparse representation's ability to retain prior knowledge within a continual learning (CL) setting (as in \cref{sec:sequential}). Notably, CL methods require tuning making direct comparisons difficult. We consider the setup with single-head (SH) setting that is typically hard and more competitive.
 %
 % Benchmarks/architectures
 We consider the CL benchmarks: Sequential-MNIST (S-MNIST), Sequential-FashionMNIST (S-FMNIST), and Permuted-MNIST (P-MNIST). We follow the setups described in \cite{rudner2022continual, pan2020continual}, using a two-layer MLP with 256 hidden units and ReLU activation for S-MNIST and S-FMNIST, and a two-layer MLP with 100 hidden units for P-MNIST (full details in \cref{app:cl-exp}).
 
 % Methods
-We compare our method against two categories of methods: {\em (i)}~weight-regularization methods: EWC, SI, and VCL (which additionally incorporates coresets), and {\em(ii)}~function-based regularization methods: DER, FROMP, S-FSVI, SFR. We also introduce an ablation study where we replace $\bar{\MB}^{-1}$ with an identity matrix $\MI_M$, equivalent to assuming a GP with i.i.d.\ prior.
+We compare our method against two categories of methods: {\em (i)}~weight-regularization methods: EWC, SI, and VCL (which additionally incorporates coresets), and {\em(ii)}~function-based regularization methods: DER, FROMP, S-FSVI, SFR. We also introduce an ablation study where we replace $\bar{\MB}^{-1}$ with an identity matrix $\MI_M$, equivalent to assuming a GP with i.i.d.\ prior (giving an L2 regularizer).
 Following \cite{rudner2022continual}, we use 200 inducing points per tasks. Additionally,  we consider only 40 inducing points for S-MNIST, to investigate if our method was still capable of capture more information due to its sparse formulation.
 
 %% Comments on the results:
+\cref{tbl:cl_table_1} shows results
 We get the best results on S-MNIST both 40 and 200 pts. per task
 
 On S-FMNIST we are on par with DER, which is however exploiting a reservoir buffer technique, that iteratively samples new "inducing points"

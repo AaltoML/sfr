@@ -766,7 +766,7 @@ We trained a two-layer MLP for each of the $8$ classification tasks in UCI, see 
 
 
 \subsection{Supervised learning on image data sets}
-
+\label{sec:image}
 
 \begin{table}[t!] 
   \centering\scriptsize
@@ -914,25 +914,34 @@ On P-MNIST we are lower than S-FSVI, however % I'm still running experiments, so
 % \cite{osbandMoreEfficientReinforcement2013},
 % and methods based on upper confidence bounds (UCB) \cite{curiEfficient2020}.
 
+% Make custom TikZ command (argument: colour)
+\newcommand{\lab}[1]{\tikz[baseline=-.8ex]{\node[minimum width=2em,minimum height=.8em,fill=#1,opacity=.1](a){};\draw[#1,thick](a.west)--(a.east);}}
 
-In this section, we show that \our's uncertainty estimates can be used to guide exploration in model-based RL;
-demonstrating the quality of our uncertainty estimates.
-% Uncertainty-guided decision making strategies
-We test \our by using it to learn a dynamics model within a model-based RL strategy which uses posterior sampling to guide exploration
-\cite{osbandMoreEfficientReinforcement2013,osbandWhyPosteriorSampling2017}.
-We use the cart pole swing up task in MuJoCo \cite{todorov2012mujoco}, a classic benchmark for nonlinear control, see \cref{fig:rl}.
+% The methods
+\definecolor{darkgray176}{RGB}{176,176,176} % darkgray176
+\definecolor{color-our}{RGB}{0,191,191} %darkturquoise0191191
+\definecolor{color-mlp}{RGB}{191,0,191} % darkviolet1910191
+\definecolor{color-ddpg}{RGB}{191,191,0} % goldenrod1911910
+\definecolor{green01270}{RGB}{0,127,0} % green01270
+\definecolor{lightgray204}{RGB}{204,204,204} % lightgray204
+
+
+
+As a final experiment, we demonstrate the capability of \our to use its uncertainty estimates as guidance for exploration in model-based reinforcement learning (RL); this serves as a practical test to the quality of our uncertainty estimates. We use \our to help learn a dynamics model within a model-based RL strategy that employs posterior sampling to guide exploration \cite{osbandMoreEfficientReinforcement2013,osbandWhyPosteriorSampling2017}.
+%
+We use the cartpole swingup task in MuJoCo \cite{todorov2012mujoco}, a classic benchmark for nonlinear control (see \cref{fig:rl}).
 The goal is to swing the pole up and balance it around the upward position.
 We increase the difficulty of exploration by using a sparse reward function.
-We refer the reader to \cref{app:rl} for an overview of the reinforcement learning problem, details of the algorithim we implement and our experiment's configuration.
+See \cref{app:rl} for an overview of the reinforcement learning problem, details of the algorithm, and the experiment setup.
+
 
 \cref{fig:rl} shows training curves using \our as the dynamic model (cyan) as well as a Laplace-GGN with GLM predictions (red), an ensemble of neural
 networks (green) and a basic MLP wih no uncertainty (magenta).
 To ensure a fair comparison, we use the same MLP architecture/training scheme and use them in the same model-based RL algorithm, detailed in \cref{app:rl}.
-% that \our's uncertainty estimates are useful for guiding exploration as it converges in fewer episodes.
 We also compare to deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016}, a model-free RL algorithim (yellow).
 The training curves show that \our's uncertainty estimates are useful for guiding exploration as it converges in fewer episodes, i.e.
 it is more sample efficient.
-As expected, the MLP strategy (without uncertainty) was not able to successfuly explore the environment.
+As expected, the MLP strategy (without uncertainty) was not able to successfuly explore the environment.(\lab{color-our}), (\lab{color-mlp}),
 
 % We compare \our (cyan) to a Laplace-GGN with GLM predictions (red), an ensemble of neural networks (green) and a basic MLP wih no uncertainty (magenta).
 % To ensure a fair comparison, we use the same MLP architecture/training scheme and use them in the same model-based RL algorithm, detailed in \cref{app:rl}.
@@ -983,15 +992,11 @@ As expected, the MLP strategy (without uncertainty) was not able to successfuly 
 
 
 
-
-
-
-
-
- \todo{I'm thinking we should take out the SFR with updates result}
 \begin{figure}[!t]
- \centering
+ \centering\scriptsize
  \begin{subfigure}[c]{.24\textwidth}
+ \centering
+ \textbf{Cartpole swingup setup}\\[1em]
  \resizebox{\textwidth}{!}{%
  \begin{tikzpicture}[inner sep=0,outer sep=0]
 
@@ -1030,7 +1035,7 @@ As expected, the MLP strategy (without uncertainty) was not able to successfuly 
  \end{subfigure}
  \hfill
  \begin{subfigure}[c]{.74\textwidth}
-   \centering\scriptsize
+   \raggedleft\scriptsize
    \setlength{\figurewidth}{\textwidth}
    \setlength{\figureheight}{.5\figurewidth}
    \pgfplotsset{axis on top,ymajorgrids,axis line style={draw=none},legend style={at={(1,1)},anchor=north west}}

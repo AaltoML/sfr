@@ -233,10 +233,9 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
             subset_of_weights=cfg.subset_of_weights,
             hessian_structure=cfg.hessian_structure,
             prior_precision=sfr.prior.delta,
-            backend=laplace.curvature.BackPackGGN,
+            backend=laplace.curvature.asdl.AsdlGGN,
         )
-        if "cuda" in cfg.device:
-            la.cuda()
+        # la.to(cfg.device)
 
         train_loader = DataLoader(ds_train, batch_size=len(ds_train))
         print("made train_loader {}".format(train_loader))

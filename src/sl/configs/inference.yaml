@@ -18,6 +18,8 @@ dataset: "FMNIST"
 model_name: "CNN"
 checkpoint: "./saved_models/FMNIST_CNN_117_1.0e-04.pt"
 
+subset_of_weights: "all"
+hessian_structure: "diag"
 
 device: ???
 output_dim: ???

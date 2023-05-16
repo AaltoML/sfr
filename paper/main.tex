@@ -676,7 +676,7 @@ At the end of the training for each task $t$, we compute the Laplace-GGN approxi
  	% \quad \forall t \in [1, T]
 \end{equation}
 %
-where $\MKzz$ and $\vkzi$ are the gram matrix and vector computed on the inducing points $\MZ_t = \{\vz_i\}_{i=1}^M$ for task $t$ .
+where $\MKzz$ and $\vkzi$ are the gram matrix and vector computed on the inducing points $\MZ_t = \{\vz_i\}_{i=1}^M$ for task $t$ .\
 %
 We keep a memory buffer $\mathcal{M} = \{(\MZ_t, \vu_t, \bar{\MB}^{-1}_t)\}_{t=1}^T$, where $\MZ_t$ are the inducing points selected from $\dataset_t$ and  $\vu_t = f_{\vw_t^*}(\MZ_t)\in \R^{M}$ are the neural network outputs associated to them, computed with the MAP estimate $\weights_t^*$ after task $t$. Note that, for notational convenience, we are extending our neural network notation to be compatible with multiple inputs points, \ie, each $i$\textsuperscript{th} entry is $f_{\weights_t^*}(\vz_i)\in \R$. Moreover, we restrict ourselves to single-output neural networks and refer the reader to further details on the multi-output setting to \cref{sec:cl_multioutput}. 
 

@@ -11,9 +11,10 @@ from torch.utils.data.dataset import Subset
 from torch.distributions import Categorical, Normal
 import logging
 from preds.utils import nll_cls, macc, ece
-from train import  get_dataset, get_model, set_seed_everywhere
+from train import get_dataset, get_model, set_seed_everywhere
 
 from tqdm import tqdm
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -37,7 +38,7 @@ def get_svgp_predictive(
     loader, svgp, likelihood, use_nn_out: bool = True, seeding: bool = False
 ):
     ys, ps = list(), list()
-    for X, y in loader: #tqdm(loader):
+    for X, y in loader:  # tqdm(loader):
         X, y = X.cuda(), y.cuda()
         if seeding:
             torch.manual_seed(711)
@@ -62,7 +63,7 @@ def sample_svgp(X, likelihood, svgp, use_nn_out: bool, n_samples: int):
     logit_samples = dist.sample((n_samples,))
     out_dim = logit_samples.shape[-1]
     samples = likelihood.inv_link(logit_samples)
-   # samples = samples.reshape(n_samples, n_data, out_dim)
+    # samples = samples.reshape(n_samples, n_data, out_dim)
     return samples
 
 
@@ -75,6 +76,7 @@ def evaluate(lh, yte, gstar_te, yva, gstar_va):
     res["ece_te"] = ece(gstar_te, yte)
     res["ece_va"] = ece(gstar_va, yva)
     return res
+
 
 @hydra.main(version_base="1.3", config_path="./configs", config_name="inference")
 def main(cfg: DictConfig):
@@ -89,7 +91,8 @@ def main(cfg: DictConfig):
 
     # Ensure that all operations are deterministic on GPU (if used) for reproducibility
     torch.backends.cudnn.determinstic = True
-    torch.backends.cudnn.benchmark = False
+    # torch.backends.cudnn.benchmark = False
+    eval('setattr(torch.backends.cudnn, "benchmark", True)')
 
     cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
     # cfg.device = "cpu"
@@ -105,9 +108,9 @@ def main(cfg: DictConfig):
     # Load the model and load on GPU
     network = get_model(model_name=cfg.model_name, ds_train=ds_train)
     checkpoint = torch.load(cfg.checkpoint)
-    network.load_state_dict(checkpoint['model'])
+    network.load_state_dict(checkpoint["model"])
     network = network.to(cfg.device)
-    cfg.prior.delta = checkpoint['delta']
+    cfg.prior.delta = checkpoint["delta"]
 
     prior = hydra.utils.instantiate(cfg.prior, params=network.parameters)
     sfr = hydra.utils.instantiate(cfg.sfr, prior=prior, network=network)
@@ -119,13 +122,12 @@ def main(cfg: DictConfig):
             name=cfg.wandb.run_name,
             group=cfg.wandb.group,
             tags=cfg.wandb.tags,
-            config=OmegaConf.to_container(
-                cfg, resolve=True, throw_on_missing=True
-            ),
+            config=OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True),
         )
     logger.info("cfg {}".format(cfg))
 
     compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint)
+
 
 def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
     M = len(ds_test)
@@ -133,7 +135,7 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
     logging.info(f"Train set size: {len(ds_train)}")
     logging.info(f"Num inducing points: {n_inducing}")
     perm_ixs = torch.randperm(M)
-    val_ixs, test_ixs = perm_ixs[: int(M / 2)], perm_ixs[int(M / 2):]
+    val_ixs, test_ixs = perm_ixs[: int(M / 2)], perm_ixs[int(M / 2) :]
     ds_val = Subset(ds_test, val_ixs)
     ds_test = Subset(ds_test, test_ixs)
     val_loader = get_quick_loader(
@@ -156,11 +158,10 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
         gstar_va, yva = get_map_predictive(val_loader, sfr.network)
         checkpoint["map"] = evaluate(sfr.likelihood, yte, gstar_te, yva, gstar_va)
 
-        logging.info(checkpoint['map'])
+        logging.info(checkpoint["map"])
         wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
     elif cfg.predictive_model == "sfr":
         logging.info("SFR performance")
-
 
         sfr.set_data(data)
 
@@ -168,11 +169,11 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
 
         logging.info(f"Computing {conf_name}")
         gstar_te, yte = get_svgp_predictive(
-                test_loader, sfr, use_nn_out=False, likelihood=sfr.likelihood
-            )
+            test_loader, sfr, use_nn_out=False, likelihood=sfr.likelihood
+        )
         gstar_va, yva = get_svgp_predictive(
-                val_loader, sfr, use_nn_out=False, likelihood=sfr.likelihood
-            )
+            val_loader, sfr, use_nn_out=False, likelihood=sfr.likelihood
+        )
         checkpoint[conf_name] = evaluate(sfr.likelihood, yte, gstar_te, yva, gstar_va)
         logging.info(checkpoint[conf_name])
         wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
@@ -180,16 +181,15 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
         conf_name = f"sfr_nn_sparse{cfg.sfr.num_inducing}"
         logging.info(f"Computing {conf_name}")
         gstar_te, yte = get_svgp_predictive(
-                test_loader, sfr, use_nn_out=True, likelihood=sfr.likelihood
-            )
+            test_loader, sfr, use_nn_out=True, likelihood=sfr.likelihood
+        )
 
         gstar_va, yva = get_svgp_predictive(
-                val_loader, sfr, use_nn_out=True, likelihood=sfr.likelihood
-            )
+            val_loader, sfr, use_nn_out=True, likelihood=sfr.likelihood
+        )
         checkpoint[conf_name] = evaluate(sfr.likelihood, yte, gstar_te, yva, gstar_va)
         logging.info(checkpoint[conf_name])
         wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
-
 
     elif cfg.predictive_model == "gp_subset":
         # GP subset
@@ -198,26 +198,29 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
         conf_name = f"gp_subset_nn_sparse{cfg.gp_subset.subset_size}"
         gp_subset.set_data(data)
         gstar_te, yte = get_svgp_predictive(
-                test_loader, gp_subset, use_nn_out=True, likelihood=gp_subset.likelihood
-            )
+            test_loader, gp_subset, use_nn_out=True, likelihood=gp_subset.likelihood
+        )
         gstar_va, yva = get_svgp_predictive(
-                val_loader, gp_subset, use_nn_out=True, likelihood=gp_subset.likelihood
-            )
+            val_loader, gp_subset, use_nn_out=True, likelihood=gp_subset.likelihood
+        )
 
-        checkpoint[conf_name] = evaluate(gp_subset.likelihood, yte, gstar_te, yva, gstar_va)
+        checkpoint[conf_name] = evaluate(
+            gp_subset.likelihood, yte, gstar_te, yva, gstar_va
+        )
         logging.info(checkpoint[conf_name])
         wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
 
-
         conf_name = f"gp_subset_sparse{cfg.gp_subset.subset_size}"
         gstar_te, yte = get_svgp_predictive(
-                test_loader, gp_subset, use_nn_out=False, likelihood=gp_subset.likelihood
-            )
+            test_loader, gp_subset, use_nn_out=False, likelihood=gp_subset.likelihood
+        )
         gstar_va, yva = get_svgp_predictive(
-                val_loader, gp_subset, use_nn_out=False, likelihood=gp_subset.likelihood
-            )
+            val_loader, gp_subset, use_nn_out=False, likelihood=gp_subset.likelihood
+        )
 
-        checkpoint[conf_name] = evaluate(gp_subset.likelihood, yte, gstar_te, yva, gstar_va)
+        checkpoint[conf_name] = evaluate(
+            gp_subset.likelihood, yte, gstar_te, yva, gstar_va
+        )
         logging.info(checkpoint[conf_name])
         wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
 
@@ -225,9 +228,9 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
     if not os.path.exists(res_dir):
         os.makedirs(res_dir)
     fname = (
-            "./"
-            + "_".join([cfg.dataset, cfg.model_name, str(cfg.random_seed)])
-            + f"_{cfg.prior.delta:.1e}.pt"
+        "./"
+        + "_".join([cfg.dataset, cfg.model_name, str(cfg.random_seed)])
+        + f"_{cfg.prior.delta:.1e}.pt"
     )
     torch.save(checkpoint, os.path.join(res_dir, fname))
 

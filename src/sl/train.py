@@ -171,7 +171,7 @@ def train(cfg: DictConfig):
     torch.backends.cudnn.benchmark = False
 
     cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
-    cfg.device = "cpu"
+    # cfg.device = "cpu"
     print("Using device: {}".format(cfg.device))
 
     # print("DATA_DIR {}".format(DATA_DIR))

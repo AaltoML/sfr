@@ -18,7 +18,8 @@ from tqdm import tqdm
 from train import get_dataset, get_model, set_seed_everywhere
 
 
-logging.basicConfig(level=logging.INFO)
+# logging.basicConfig(level=logging.INFO)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
@@ -72,14 +73,19 @@ def get_la_predictive(loader, la_pred, seeding: bool = False):
 
 def sample_svgp(X, likelihood, svgp, use_nn_out: bool, n_samples: int):
     """Sample the SVGP, assumes a batched input."""
+    print("inside sample svgp")
     n_data = X.shape[0]
     gp_means, gp_vars = svgp.predict_f(X)
+    print("predeicted mean")
     logits = svgp.network(X)
+    print("predeicted logits")
     if use_nn_out:
         dist = Normal(logits, torch.sqrt(gp_vars.clamp(10 ** (-32))))
     else:
         dist = Normal(gp_means, torch.sqrt(gp_vars.clamp(10 ** (-32))))
+    print("made dist")
     logit_samples = dist.sample((n_samples,))
+    print("logit samples")
     out_dim = logit_samples.shape[-1]
     samples = likelihood.inv_link(logit_samples)
     # samples = samples.reshape(n_samples, n_data, out_dim)
@@ -87,6 +93,7 @@ def sample_svgp(X, likelihood, svgp, use_nn_out: bool, n_samples: int):
 
 
 def evaluate(lh, yte, gstar_te, yva, gstar_va):
+    print("inside evaluate")
     res = dict()
     res["nll_te"] = nll_cls(gstar_te, yte, lh)
     # res["nll_va"] = nll_cls(gstar_va, yva, lh)

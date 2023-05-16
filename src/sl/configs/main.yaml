@@ -10,7 +10,7 @@ defaults:
   - override hydra/hydra_logging: none
   - _self_
 
-dataset: "FMIST"
+dataset: "FMNIST"
 # dataset: "CIFAR10"
 model_name: "CNN"
 
@@ -23,6 +23,7 @@ n_epochs: 500
 double: True
 
 num_workers: 8
+# num_workers: 1
 
 logging_epoch_freq: 10
 random_seed: 117

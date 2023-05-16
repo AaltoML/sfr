@@ -28,8 +28,6 @@ from torch.utils.data import DataLoader
 from torchvision.datasets import VisionDataset
 
 
-torch.set_default_dtype(torch.float64)
-
 PACKAGE_DIR = os.path.dirname(os.path.realpath(__file__))
 ROOT = "/".join(PACKAGE_DIR.split("/")[:-2])
 DATA_DIR = os.path.join(ROOT, "bnn-predictive/data")
@@ -197,7 +195,7 @@ def train(cfg: DictConfig):
     # print("DATA_DIR {}".format(DATA_DIR))
     # logger.info("cfg {}".format(cfg))
     ds_train, ds_test = src.sl.train.get_dataset(
-        dataset=cfg.dataset, double=True, dir="./", device=cfg.device
+        dataset=cfg.dataset, double=cfg.double, dir="./", device=cfg.device
     )
     # print("ds_train {}".format(ds_train.D[0].shape))
     # print("ds_train {}".format(ds_train.D[1].shape))

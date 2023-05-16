@@ -26,5 +26,5 @@ additional_parameters: {}
 array_parallelism: 256
 setup: null
 # constraint: "volta"
-output: output.out # Name of stdout output file
-error: error.err # Name of stderr error file
+# output: output.out # Name of stdout output file
+# error: error.err # Name of stderr error file

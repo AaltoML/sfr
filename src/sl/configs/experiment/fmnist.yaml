@@ -1,0 +1,13 @@
+# @package _global_
+# defaults:
+#   - override /agent: ddpg
+
+dataset: "FMNIST"
+model_name: "CNN"
+lr: 1e-4
+n_epochs: 200
+
+prior:
+  _target_: src.nn2svgp.priors.Gaussian
+  # params: ???
+  delta: 0.003

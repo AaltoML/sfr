@@ -1,29 +1,16 @@
 #!/usr/bin/env python3
 
-import logging
 import random
-import time
-from collections import deque, namedtuple
-from pathlib import Path
 import wandb
 from omegaconf import DictConfig, OmegaConf
 import os
 import hydra
-import numpy as np
-import pickle
 import torch
 from torch.utils.data import DataLoader, ConcatDataset
 from torch.utils.data.dataset import Subset
 from torch.distributions import Categorical, Normal
-from tqdm import tqdm
 import logging
-from itertools import chain
-# from preds.laplace import Laplace, FunctionaLaplace
-from preds.laplace import FunctionaLaplace
-from src import CategoricalLh, NTKSVGP, NN2GPSubset
-import src as ntksvgp
 from preds.utils import nll_cls, macc, ece
-from preds.datasets import MNIST, FMNIST, SVHN
 from train import  get_dataset, get_model, set_seed_everywhere
 
 from tqdm import tqdm
@@ -50,8 +37,7 @@ def get_svgp_predictive(
     loader, svgp, likelihood, use_nn_out: bool = True, seeding: bool = False
 ):
     ys, ps = list(), list()
-    output_dim = svgp.output_dim
-    for X, y in tqdm(loader):
+    for X, y in loader: #tqdm(loader):
         X, y = X.cuda(), y.cuda()
         if seeding:
             torch.manual_seed(711)
@@ -90,8 +76,6 @@ def evaluate(lh, yte, gstar_te, yva, gstar_va):
     res["ece_va"] = ece(gstar_va, yva)
     return res
 
-
-
 @hydra.main(version_base="1.3", config_path="./configs", config_name="inference")
 def main(cfg: DictConfig):
     try:  # Make experiment reproducible
@@ -123,6 +107,7 @@ def main(cfg: DictConfig):
     checkpoint = torch.load(cfg.checkpoint)
     network.load_state_dict(checkpoint['model'])
     network = network.to(cfg.device)
+    cfg.prior.delta = checkpoint['delta']
 
     prior = hydra.utils.instantiate(cfg.prior, params=network.parameters)
     sfr = hydra.utils.instantiate(cfg.sfr, prior=prior, network=network)
@@ -157,81 +142,84 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
     test_loader = get_quick_loader(
         DataLoader(ds_test, batch_size=cfg.batch_size), device=cfg.device
     )
-    train_loader = DataLoader(ds_train, batch_size=256)
     all_train = DataLoader(ds_train, batch_size=len(ds_train))
     (X_train, y_train) = next(iter(all_train))
     X_train = X_train.to(cfg.device)
     y_train = y_train.to(cfg.device)
-    delta_nn = checkpoint['delta']
-    logging.info(f'Test with delta {delta_nn}')
-
-    # MAP
-    logging.info("MAP performance")
-    gstar_te, yte = get_map_predictive(test_loader, sfr.network)
-    gstar_va, yva = get_map_predictive(val_loader, sfr.network)
-    checkpoint["map"] = evaluate(sfr.likelihood, yte, gstar_te, yva, gstar_va)
-
-    logging.info(checkpoint['map'])
-
-    logging.info("SVGP performance")
-
     data = (X_train, y_train)
-    output_dim = ds_train.K
-    sfr.set_data(data)
 
-    conf_name = f"svgp_ntk_sparse{cfg.sfr.num_inducing}"
+    if cfg.predictive_model == "map":
+        # MAP
+        conf_name = "map"
+        logging.info("MAP performance")
+        gstar_te, yte = get_map_predictive(test_loader, sfr.network)
+        gstar_va, yva = get_map_predictive(val_loader, sfr.network)
+        checkpoint["map"] = evaluate(sfr.likelihood, yte, gstar_te, yva, gstar_va)
 
-    logging.info(f"Computing {conf_name}")
-    gstar_te, yte = get_svgp_predictive(
-            test_loader, sfr, use_nn_out=False, likelihood=sfr.likelihood
-        )
-    gstar_va, yva = get_svgp_predictive(
-            val_loader, sfr, use_nn_out=False, likelihood=sfr.likelihood
-        )
-    checkpoint[conf_name] = evaluate(sfr.likelihood, yte, gstar_te, yva, gstar_va)
-    logging.info(checkpoint[conf_name])
-    wandb.log(checkpoint[conf_name])
-
-    conf_name = f"svgp_ntk_nn_sparse{cfg.sfr.num_inducing}"
-    logging.info(f"Computing {conf_name}")
-    gstar_te, yte = get_svgp_predictive(
-            test_loader, sfr, use_nn_out=True, likelihood=sfr.likelihood
-        )
-
-    gstar_va, yva = get_svgp_predictive(
-            val_loader, sfr, use_nn_out=True, likelihood=sfr.likelihood
-        )
-    checkpoint[conf_name] = evaluate(sfr.likelihood, yte, gstar_te, yva, gstar_va)
-    logging.info(checkpoint[conf_name])
-    wandb.log(checkpoint[conf_name])
-
-    # GP subset
-    logging.info("GP subset")
-    # prior_subset = ntksvgp.priors.Gaussian(params=sfr.network.parameters, delta=sfr.)
-    # svgp_subset = NN2GPSubset(
-    #         network=model,
-    #         prior=prior_subset,
-    #         output_dim=output_dim,
-    #         likelihood=likelihood,
-    #         dual_batch_size=batch_size,
-    #         subset_size=num_inducing,
-    #         jitter=0,
-    #         device=device,
-    #     )
+        logging.info(checkpoint['map'])
+        wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
+    elif cfg.predictive_model == "sfr":
+        logging.info("SFR performance")
 
 
-    conf_name = f"gp_subset_sparse{cfg.gp_subset.subset_size}"
-    gp_subset.set_data(data)
-    gstar_te, yte = get_svgp_predictive(
-            test_loader, gp_subset, use_nn_out=True, likelihood=gp_subset.likelihood
-        )
-    gstar_va, yva = get_svgp_predictive(
-            val_loader, gp_subset, use_nn_out=True, likelihood=gp_subset.likelihood
-        )
+        sfr.set_data(data)
 
-    checkpoint[conf_name] = evaluate(gp_subset.likelihood, yte, gstar_te, yva, gstar_va)
-    logging.info(checkpoint[conf_name])
-    wandb.log(checkpoint[conf_name])
+        conf_name = f"sfr_sparse{cfg.sfr.num_inducing}"
+
+        logging.info(f"Computing {conf_name}")
+        gstar_te, yte = get_svgp_predictive(
+                test_loader, sfr, use_nn_out=False, likelihood=sfr.likelihood
+            )
+        gstar_va, yva = get_svgp_predictive(
+                val_loader, sfr, use_nn_out=False, likelihood=sfr.likelihood
+            )
+        checkpoint[conf_name] = evaluate(sfr.likelihood, yte, gstar_te, yva, gstar_va)
+        logging.info(checkpoint[conf_name])
+        wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
+
+        conf_name = f"sfr_nn_sparse{cfg.sfr.num_inducing}"
+        logging.info(f"Computing {conf_name}")
+        gstar_te, yte = get_svgp_predictive(
+                test_loader, sfr, use_nn_out=True, likelihood=sfr.likelihood
+            )
+
+        gstar_va, yva = get_svgp_predictive(
+                val_loader, sfr, use_nn_out=True, likelihood=sfr.likelihood
+            )
+        checkpoint[conf_name] = evaluate(sfr.likelihood, yte, gstar_te, yva, gstar_va)
+        logging.info(checkpoint[conf_name])
+        wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
+
+
+    elif cfg.predictive_model == "gp_subset":
+        # GP subset
+        logging.info("GP subset")
+
+        conf_name = f"gp_subset_nn_sparse{cfg.gp_subset.subset_size}"
+        gp_subset.set_data(data)
+        gstar_te, yte = get_svgp_predictive(
+                test_loader, gp_subset, use_nn_out=True, likelihood=gp_subset.likelihood
+            )
+        gstar_va, yva = get_svgp_predictive(
+                val_loader, gp_subset, use_nn_out=True, likelihood=gp_subset.likelihood
+            )
+
+        checkpoint[conf_name] = evaluate(gp_subset.likelihood, yte, gstar_te, yva, gstar_va)
+        logging.info(checkpoint[conf_name])
+        wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
+
+
+        conf_name = f"gp_subset_sparse{cfg.gp_subset.subset_size}"
+        gstar_te, yte = get_svgp_predictive(
+                test_loader, gp_subset, use_nn_out=False, likelihood=gp_subset.likelihood
+            )
+        gstar_va, yva = get_svgp_predictive(
+                val_loader, gp_subset, use_nn_out=False, likelihood=gp_subset.likelihood
+            )
+
+        checkpoint[conf_name] = evaluate(gp_subset.likelihood, yte, gstar_te, yva, gstar_va)
+        logging.info(checkpoint[conf_name])
+        wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
 
     res_dir = "./saved_inference_results"
     if not os.path.exists(res_dir):

@@ -10,7 +10,8 @@ defaults:
   - override hydra/hydra_logging: none
   - _self_
 
-dataset: "FMIST"
+dataset: "FMNIST"
+# dataset: "CIFAR10"
 model_name: "CNN"
 
 device: ???
@@ -22,6 +23,7 @@ n_epochs: 500
 double: True
 
 num_workers: 8
+# num_workers: 1
 
 logging_epoch_freq: 10
 random_seed: 117
@@ -63,7 +65,7 @@ wandb:
   entity: "aidanscannell"
   project: "nn2svgp-sl"
   use_wandb: True
-  run_name: delta=${prior.delta}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
+  run_name: delta=${prior.delta}-lr=${lr}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   # run_name: ${alg_name}-${online_update_freq}-${agent.horizon}-${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   tags:
     - "delta=${prior.delta}"

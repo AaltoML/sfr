@@ -282,7 +282,7 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
                         x=x,
                         pred_type="glm",
                         n_samples=1,
-                        diagonal_output=False,
+                        # diagonal_output=False,
                         # generator=cfg.random_seed,
                     )
                 )
@@ -336,7 +336,7 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
                         x=x,
                         pred_type="nn",
                         n_samples=1,
-                        diagonal_output=False,
+                        # diagonal_output=False,
                         # generator=cfg.random_seed,
                     )
                 except Exception as e:

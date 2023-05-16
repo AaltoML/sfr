@@ -240,19 +240,18 @@ def train(cfg: DictConfig):
             optimizer.step()
             wandb.log({"loss": loss})
         if epoch % cfg.logging_epoch_freq == 0:
-            tr_loss_sum, tr_loss_mean, tr_acc = evaluate(
-                network, train_loader, cfg.device
-            )
-            te_loss_sum, te_loss_mean, te_acc = evaluate(
-                network, test_loader, cfg.device
-            )
-            wandb.log({"training/loss_sum": tr_loss_sum})
-            wandb.log({"test/loss_sum": te_loss_sum})
-            wandb.log({"training/loss_mean": tr_loss_mean})
-            wandb.log({"test/loss_mean": te_loss_mean})
+            # tr_loss_sum, tr_loss_mean, tr_acc = evaluate(network, train_loader, cfg.device)
+            # te_loss_sum, te_loss_mean, te_acc = evaluate(network, test_loader, cfg.device)
+            criterion = torch.nn.CrossEntropyLoss(reduction="sum")
+            tr_loss, tr_acc = evaluate(network, train_loader, criterion, cfg.device)
+            te_loss, te_acc = evaluate(network, test_loader, criterion, cfg.device)
+            wandb.log({"training/loss": tr_loss})
+            wandb.log({"test/loss": te_loss})
+            # wandb.log({"training/loss_mean": tr_loss_mean})
+            # wandb.log({"test/loss_mean": te_loss_mean})
             wandb.log({"training/acc": tr_acc})
             wandb.log({"test/acc": te_acc})
-        wandb.log({"epoch": epoch})
+            wandb.log({"epoch": epoch})
 
     logger.info("Finished training")
     # # evaluation

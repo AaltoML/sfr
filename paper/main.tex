@@ -80,6 +80,7 @@
 \usepackage{algpseudocode}
 \usepackage{algorithm}
 \usepackage{derivative}
+\usepackage{wrapfig}
 
 \usepackage{tikz,pgfplots}
 \usepackage{subcaption}
@@ -839,7 +840,30 @@ In addition to uncertainty estimates, our method can update the posterior when g
 
 
 
-
+\setlength{\columnsep}{8pt}
+\setlength{\intextsep}{0pt}
+\begin{wraptable}{R}{.65\textwidth}
+  \centering\scriptsize
+  \caption{Continual learning experiments (acc.). $^*$ Methods relying only on weight regularization. \color{blue}{Results from \cite{rudner2022continual}.}}
+  %\color{red}{Preliminary results need more runs or hyperparam tuning}
+	\label{tbl:cl_table_1}
+	
+	% Control table spacing
+	\renewcommand{\arraystretch}{1.}
+	\setlength{\tabcolsep}{1pt}
+	\setlength{\tblw}{0.14\textwidth}  
+	
+	% Custom error formatting
+	\newcommand{\val}[2]{%
+		$#1$\textcolor{gray}{\tiny ${\pm}#2$}
+	} 
+	
+	\vspace*{-4pt}
+	
+	% Import table content
+	\input{tables/cl_table_1}
+\end{wraptable}
+%
 % Overview
 We aim to highlight our sparse representation's ability to retain prior knowledge within a continual learning (CL) setting (as in \cref{sec:sequential}). Notably, CL methods require tuning hyperparameters, making direct comparisons difficult. We consider the setup with single-head (SH) setting that is typically hard and more competitive.
 %
@@ -859,27 +883,6 @@ On P-MNIST we are lower than S-FSVI, however % I'm still running experiments, so
 
 
 
-
-\begin{table}[t!] 
-  \centering\scriptsize
-  \caption{
-  TODO: CL Experiments. $^*$ Methods relying only on weight regularization. 
-  \color{blue}{Results from \cite{rudner2022continual}.} 
-  %\color{red}{Preliminary results need more runs or hyperparam tuning}
-  }
-	\label{tbl:cl_table_1}
-	% Control table spacing
-	\renewcommand{\arraystretch}{1.}
-	\setlength{\tabcolsep}{2pt}
-	\setlength{\tblw}{0.14\textwidth}  
-	
-	% Custom error formatting
-	\newcommand{\val}[2]{%
-		$#1$\textcolor{gray}{\tiny ${\pm}#2$}
-	} 
-	
-	\input{tables/cl_table_1}
-\end{table}
 
 
 \subsection{Reinforcement learning under sparse rewards}

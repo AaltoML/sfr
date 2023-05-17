@@ -1229,12 +1229,12 @@ The training curves clearly show that \our's uncertainty estimates help explorat
    \raggedleft\scriptsize
    \setlength{\figurewidth}{\textwidth}
    \setlength{\figureheight}{.55\figurewidth}
-   \pgfplotsset{axis on top,ymajorgrids,axis line style={draw=none},legend style={at={(-.1,-.1)},anchor=north east}}
+   \pgfplotsset{axis on top,ymajorgrids,axis line style={draw=none},legend style={at={(-.1,-.1)},anchor=south east}}
    \pgfplotsset{grid style={line width=.1pt, draw=gray!10,densely dotted}}
    \hspace*{-1.7cm}%
    \def\our{{\sc sfr} (ours)}
    \input{./fig/rl.tex}
- \end{subfigure}\\[-1em]
+ \end{subfigure}\\[-1.5em]
  \caption{\textbf{Cartpole swingup with sparse reward.} Training curves showing that \our's uncertainty estimates improve sample efficiency in RL.
    Our method (\lab{color-our}) converges in fewer environment steps than the baseline model-based RL method and DDPG, the model-free baseline. The dashed lines mark the asymptotic return for the methods not coverged in the plot.}
  \label{fig:rl}

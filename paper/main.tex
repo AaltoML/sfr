@@ -1155,9 +1155,9 @@ See \cref{app:rl} for an overview of the reinforcement learning problem, details
 
 %\cref{fig:rl} shows training curves using \our as the dynamic model (cyan) as well as a Laplace-GGN with GLM predictions (red), an ensemble of neuralnetworks (green) and a basic MLP wih no uncertainty (magenta). To ensure a fair comparison, we use the same MLP architecture/training scheme and use them in the same model-based RL algorithm, detailed in \cref{app:rl}. We also compare to deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016}, a model-free RL algorithim (yellow). The training curves show that \our's uncertainty estimates are useful for guiding exploration as it converges in fewer episodes, i.e. it is more sample efficient. As expected, the MLP strategy (without uncertainty) was not able to successfuly explore the environment.(), (\lab{color-mlp}),
 
-\cref{fig:rl} shows training curves for using \our as the dynamic model (\lab{color-our}), along with a Laplace-GGN~\cite{todo} with GLM predictions (\lab{red}), an ensemble of neural networks (\lab{color-ensemble}), and a basic MLP without uncertainty (\lab{color-mlp}). To ensure a fair comparison, we maintain the same MLP architecture/training scheme across all these methods and incorporate them into the same model-based RL algorithm (see \cref{app:rl}). We also compare our results with Deep Deterministic Policy Gradient (DDPG, \cite{lillicrapContinuousControlDeep2016}), a model-free RL algorithm (\lab{color-ddpg}).
-%
-The training curves clearly show that \our's uncertainty estimates help exploration as it converges in fewer episodes, demonstrating higher sample efficiency. As expected, the MLP strategy (without uncertainty) was not able to successfuly explore the environment.
+\cref{fig:rl} shows training curves for using \our as the dynamic model (\lab{color-our}), along with a Laplace-GGN~\cite{immer2021scalable} with GLM predictions (\lab{red}), an ensemble of neural networks (\lab{color-ensemble}), and a basic MLP without uncertainty (\lab{color-mlp}). To ensure a fair comparison, we maintain the same MLP architecture/training scheme across all these methods and incorporate them into the same model-based RL algorithm (see \cref{app:rl}). We also compare our results with Deep Deterministic Policy Gradient (DDPG, \cite{lillicrapContinuousControlDeep2016}), a model-free RL algorithm (\lab{color-ddpg}).
+The training curves show that \our's uncertainty estimates help exploration as it converges in fewer episodes, demonstrating higher sample efficiency.
+As expected, the MLP strategy (without uncertainty) was not able to successfuly explore the environment.\looseness-2
 
 
 % We compare \our (cyan) to a Laplace-GGN with GLM predictions (red), an ensemble of neural networks (green) and a basic MLP wih no uncertainty (magenta).
@@ -1264,6 +1264,7 @@ The training curves clearly show that \our's uncertainty estimates help explorat
  \caption{\textbf{Cartpole swingup with sparse reward.} Training curves showing that \our's uncertainty estimates improve sample efficiency in RL.
    Our method (\lab{color-our}) converges in fewer environment steps than the baseline model-based RL method and DDPG, the model-free baseline. The dashed lines mark the asymptotic return for the methods not coverged in the plot.}
  \label{fig:rl}
+ \vspace*{-1em}
 \end{figure}
 
 %

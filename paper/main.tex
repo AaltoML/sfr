@@ -721,16 +721,13 @@ After each task, we update $\mathcal{M}$, and can construct a regularizer term, 
 \section{Experiments}
 \label{sec:experiments}
 %
-We present a series of experiments designed to demonstrate the versatility and efficacy of \our. We seek to find answers to the following questions: 
+We present a series of experiments specifically designed to showcase the robustness and effectiveness of \our. The experiments are aimed at answering the following key questions:
 \textbf{Predictions:}~Does our method's ability to consider the full data set offer benefits over subset function-space methods? (\cref{sec:uci}) How do predictions with our sparse function-space approximation compare to weight-space approximations? 
 \textbf{Function-space updates:} How fast are our function-space updates relative to retraining from scratch? Do they improve predictive performance? 
 \textbf{Representation:} Can a sparse function-space representation help retain knowledge from previous tasks in CL? (\cref{sec:cl-exp})
-\textbf{Uncertainty:} Can our uncertainty estimates help exploration in RL? (\cref{sec:rl-exp})
+\textbf{Uncertainty:} Can our uncertainty estimates help exploration in RL? (\cref{sec:rl-exp}) We implement all methods in PyTorch~\cite{paszke2019pytorch} and run the benchmarks using a GPU cluster. We provide full experiment details in \cref{app:experiments}. 
 
-
-\paragraph{Implementation} We implement all methods in PyTorch~\cite{paszke2019pytorch} and leverange the XXXX libraries.. \todo{add brief details}. Experiments were run on clusters  
-
-\paragraph{Toy examples} For illustrative purposes, we smoke-test our approach on a 1D regression problem (\cref{fig:teaser}) and on the 2D Banana classification task (\cref{fig:banana}). In \cref{fig:teaser}, we train an MLP neural network with two hidden layers (64 hidden units each, tanh activation). The middle panel shows the \our result on a sparse set of data examples, while the rightmost panel demonstrates fast dual conditioning on new data (from \cref{sec:sequential}). In \cref{fig:banana}, we use an MLP with two hidden layers (64 units, sigmoid) and compare to the HMC result obtained by hamiltorch \cite{cobb2020scaling} that shows capture similar behaviour as HMC.
+\paragraph{Toy examples} For illustrative purposes, we show our approach on a 1D regression problem (\cref{fig:teaser}) and on the 2D {\sc Banana} classification task (\cref{fig:banana}). In \cref{fig:teaser}, we train an MLP neural network with two hidden layers (64 hidden units each, tanh activation) and pass it through \our. The middle panel shows the \our result on a sparse set of data examples, while the rightmost panel demonstrates fast dual conditioning on new data (from \cref{sec:sequential}). In \cref{fig:banana}, we use an MLP with two hidden layers (64 units, sigmoid) and compare to a HMC sampling result obtained by hamiltorch~\cite{cobb2020scaling}. The HMC result is more expressive, but the results are still similar in terms of quantifying the uncertainty in low-data regions.
 
 
 %Initially, we explore the capability of our method to capture predictive uncertainty through supervised learning tasks using UCI datasets. Subsequently, we extend our supervised learning experiment to image datasets, demonstrating our method's robustness and adaptability to more complex, high-dimensional data. Next, we investigate the potential of our method in a continual learning context, where we update the neural network representation in response to incoming data without necessitating retraining. Lastly, we delve into the realm of reinforcement learning to ascertain the applicability of our approach in an environment that requires sequential decision-making. Each experiment is designed to illuminate a different facet of our method, thereby exemplifying its broad range of applicability and potential for future utilization.

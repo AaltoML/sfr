@@ -345,11 +345,14 @@ def train(cfg: DictConfig):
     # sfr_new = hydra.utils.instantiate(cfg.sfr, prior=prior, network=network)
     network = network.double()
     prior = hydra.utils.instantiate(cfg.prior, params=network.parameters)
+    gp_subset_not_used = hydra.utils.instantiate(
+        cfg.gp_subset, subset_size=m, prior=prior, network=network
+    )
 
     cfg.predictive_model = "glm"
     compute_metrics(
-        sfr=None,
-        gp_subset=None,
+        sfr=sfr,
+        gp_subset=gp_subset_not_used,
         ds_train=ds_train,
         ds_test=ds_test,
         cfg=cfg,
@@ -358,8 +361,8 @@ def train(cfg: DictConfig):
 
     cfg.predictive_model = "bnn"
     compute_metrics(
-        sfr=None,
-        gp_subset=None,
+        sfr=sfr,
+        gp_subset=gp_subset_not_used,
         ds_train=ds_train,
         ds_test=ds_test,
         cfg=cfg,

@@ -862,7 +862,7 @@ In \cref{tbl:uci} (right), we also include an ablation and comparison study (to 
 
 \begin{table}[t!] 
   \centering\scriptsize
-  \caption{Metrics for supervised learning on image data with a CNN. We report accuracy, NLPD, and expected calibration error (mean$\pm$std) over 10 seeds. Our \our method is able to match the full methods using only a sparse set. For the GP predictive sparse subset method and \our we report results both using the NN MAP as mean (NN) and GP  mean.} 
+  \caption{Metrics for supervised learning on image data with a CNN. We report accuracy, NLPD, and expected calibration error (mean$\pm$std) over 10 seeds. Our \our method is able to match the full methods using only a sparse set. For the GP predictive sparse subset method and \our we report results both using the NN MAP as mean (NN) and using the GP mean.} 
 	\label{tbl:imagesuper}
 	% Control table spacing
 	\renewcommand{\arraystretch}{1.}
@@ -916,16 +916,15 @@ In \cref{tbl:uci} (right), we also include an ablation and comparison study (to 
     GP predictive \cite{immer2021improving} & $3200$ & \val{98.22}{0.13} & \val{0.058}{0.001} & \val{0.003}{0.000}
                                                      & \val{91.36}{0.11} & \val{0.25}{0.004} & \val{0.007}{0.001} \\
 
-    GP predictive NN & $1024$ & \val{97.70}{0.07} & \val{0.080}{0.002} & \val{0.011}{0.001}
+    GP predictive (NN) & $1024$ & \val{97.70}{0.07} & \val{0.080}{0.002} & \val{0.011}{0.001}
                               & \val{91.47}{0.41} & \val{0.289}{0.009} & \val{0.033}{0.003} \\
 
     GP predictive & $1024$  & \val{76.28}{1.85} & \val{0.702}{0.029} & \val{0.070}{0.022}
                             & \val{83.98}{0.35} & \val{0.503}{0.012} & \val{0.052}{0.006} \\
-    \our NN & $1024$ &  \val{98.02}{0.12} & \val{0.066}{0.003} & \val{0.007}{0.001}
+    \our (NN) & $1024$ &  \val{98.02}{0.12} & \val{0.066}{0.003} & \val{0.007}{0.001}
                      & \val{91.93}{0.45} & \val{0.267}{0.011} & \val{0.028}{0.003} \\
     \our & $1024$ & \val{98.07}{0.06} & \val{0.063}{0.003} & \val{0.005}{0.001}
                   & \val{91.56}{0.35} & \val{0.253}{0.006} & \val{0.012}{0.001} \\
-    \midrule
 %    \multirow{2}{*}{FMNIST}
 %    & MAP & \val{91.39}{0.11} & \val{0.258}{0.004} & \val{0.017}{0.001} \\
     %& BNN predictive \cite{immer2021improving} & \val{84.42}{0.12} & \val{0.942}{0.016} & \val{0.411}{0.008} \\

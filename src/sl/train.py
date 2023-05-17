@@ -346,7 +346,7 @@ def train(cfg: DictConfig):
     network = network.double()
     prior = hydra.utils.instantiate(cfg.prior, params=network.parameters)
     gp_subset_not_used = hydra.utils.instantiate(
-        cfg.gp_subset, subset_size=m, prior=prior, network=network
+        cfg.gp_subset, prior=prior, network=network
     )
 
     cfg.predictive_model = "glm"

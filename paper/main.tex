@@ -749,7 +749,7 @@ We present a series of experiments designed to demonstrate the versatility and e
 
 \begin{table}[t!] 
   \centering\scriptsize
-  \caption{Comparisons and ablations on UCI data with negative log predictive density (NLPD, lower better). Our sparse \our ($M=256$) is on par with or better than full models (left) and outperforms the GP subset approach of \cite{todo}. See \cref{app:uci} for additional tables with comparisons.} 
+  \caption{Comparisons and ablations on UCI data with negative log predictive density (NLPD\textcolor{gray}{\footnotesize$\pm$std}, lower better). Our sparse \our ($M=256$) is on par with or better than full models (left) and outperforms the GP subset approach of \cite{todo}. See \cref{app:uci} for additional tables with comparisons.} 
 	\label{tbl:uci}
 	% Control table spacing
 	\renewcommand{\arraystretch}{1.}
@@ -769,8 +769,8 @@ We present a series of experiments designed to demonstrate the versatility and e
 \subsection{Capturing uncertainty in UCI tasks under supervised learning}
 \label{sec:uci}
 %
-We consider the same 8 UCI~\cite{UCI} classification benchamrks tasks and setup as were considered in \cite{todo}. We use a two-layer MLP for all tasks and follow the setup in \cref{sec:methods} for \our. After training, we construct the \our dual and use the resulting model for uncertainty quantification. We performed hyperparameter search over the prior precision $\delta$, and ran the experiment over $10$ seeds. %Depending on task dimension and complexity, our model can match the neural network MAP in negative log-predictive density (NLPD) even with a low number of inducing points (see \cref{tbl:uci} left).
-In \cref{tbl:uci} (left), we compare our model to the NN MAP estimate, mean-field VI, a Baysian NN, and a GLM model (see \cite{add} for the baselines) in negative log-predictive density (NLPD). We match the predictive performance despite being sparse (here, $M=$). Results for $M=16,32,64,128,256$ included in \cref{app:uci} with full experiment details. 
+We consider the same 8 UCI~\cite{UCI} classification benchamrks tasks and setup as were considered in \cite{todo}. We use a two-layer MLP for all tasks and follow the setup in \cref{sec:methods} for \our. After training, we construct the \our dual and use the resulting model for uncertainty quantification. We performed hyperparameter search over the prior precision $\delta$, and ran the experiment over 10 random splits. %Depending on task dimension and complexity, our model can match the neural network MAP in negative log-predictive density (NLPD) even with a low number of inducing points (see \cref{tbl:uci} left).
+In \cref{tbl:uci} (left), we compare our model to the NN MAP estimate, mean-field VI, a Bayesian NN, and a GLM model (see \cite{add} for the baselines) in negative log-predictive density (NLPD). We match the predictive performance despite being sparse (here, $M=$). Results for $M=16,32,64,128,256$ included in \cref{app:uci} with full experiment details. 
 
 In \cref{tbl:uci} (right), we also include an ablation and comparison (to \cite{todo}) study with a fixed low number of inducing points ($M=$). The comparison shows that our sparse method is able to summarize the information of the full data set more efficiently than sparse subset methods.
 

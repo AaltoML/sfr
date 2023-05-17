@@ -1,0 +1,109 @@
+% This file was created with tikzplotlib v0.10.1.
+\begin{tikzpicture}
+
+\definecolor{crimson2143940}{RGB}{214,39,40}
+\definecolor{darkgray176}{RGB}{176,176,176}
+\definecolor{darkorange25512714}{RGB}{255,127,14}
+\definecolor{forestgreen4416044}{RGB}{44,160,44}
+\definecolor{lightgray204}{RGB}{204,204,204}
+\definecolor{mediumpurple148103189}{RGB}{148,103,189}
+\definecolor{orchid227119194}{RGB}{227,119,194}
+\definecolor{sienna1408675}{RGB}{140,86,75}
+\definecolor{steelblue31119180}{RGB}{31,119,180}
+
+\begin{axis}[
+height=\figureheight,
+legend cell align={left},
+legend style={fill opacity=0.8, draw opacity=1, text opacity=1, draw=lightgray204},
+tick align=outside,
+tick pos=left,
+width=\figurewidth,
+x grid style={darkgray176},
+xmin=-0.2, xmax=4.2,
+xtick style={color=black},
+xtick={0,1,2,3,4},
+xtick={0,1,2,3,4},
+xtick={0,1,2,3,4},
+xtick={0,1,2,3,4},
+xtick={0,1,2,3,4},
+xtick={0,1,2,3,4},
+xtick={0,1,2,3,4},
+xtick={0,1,2,3,4},
+xticklabels={256,512,1024,2048,3200},
+xticklabels={256,512,1024,2048,3200},
+xticklabels={256,512,1024,2048,3200},
+xticklabels={256,512,1024,2048,3200},
+xticklabels={256,512,1024,2048,3200},
+xticklabels={256,512,1024,2048,3200},
+xticklabels={256,512,1024,2048,3200},
+xticklabels={256,512,1024,2048,3200},
+y grid style={darkgray176},
+ymin=-0.554528313753678, ymax=13.0264147181653,
+ytick style={color=black}
+]
+\addplot [semithick, steelblue31119180]
+table {%
+0 2.450651686371
+1 2.33688367659858
+2 0.758006683252107
+3 0.418063571567222
+4 0.293906180967752
+};
+\addlegendentry{\sc GP subset}
+\addplot [semithick, darkorange25512714]
+table {%
+0 1.12153317466841
+1 0.85325292908048
+2 12.4090991258054
+3 0.0672844892936739
+4 0.0627872786062761
+};
+\addlegendentry{\sc \our}
+\addplot [semithick, forestgreen4416044]
+table {%
+0 1.30682946689449
+1 1.27447684300892
+2 0.0822643172822197
+3 0.0732855173563596
+4 0.0692346420741961
+};
+\addlegendentry{\sc GP subset (NN)}
+\addplot [semithick, crimson2143940]
+table {%
+0 0.732772882751394
+1 0.638123397907866
+2 12.3951401856728
+3 0.0738436001185355
+4 0.0710273410515106
+};
+\addlegendentry{\sc \our (NN)}
+\addplot [semithick, mediumpurple148103189, dashed]
+table {%
+0 1.6746972458165
+1 1.6746972458165
+2 1.6746972458165
+3 1.6746972458165
+4 1.6746972458165
+};
+\addlegendentry{\sc bnn}
+\addplot [semithick, sienna1408675, dashed]
+table {%
+0 0.921512236735063
+1 0.921512236735063
+2 0.921512236735063
+3 0.921512236735063
+4 0.921512236735063
+};
+\addlegendentry{\sc glm}
+\addplot [semithick, orchid227119194, dashed]
+table {%
+0 0.0677361758804467
+1 0.0677361758804467
+2 0.0677361758804467
+3 0.0677361758804467
+4 0.0677361758804467
+};
+\addlegendentry{\sc map}
+\end{axis}
+
+\end{tikzpicture}

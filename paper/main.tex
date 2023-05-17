@@ -685,8 +685,8 @@ After each task, we update $\mathcal{M}$, and can construct a regularizer term, 
 \begin{equation}\label{eq-cl-regularizer}\textstyle
   \mathcal{R}_\mathrm{\our}(\weights, \mathcal{M}) = \frac{1}{2} \sum_{s=1}^{t-1} \frac{1}{M} 
 	\left\lVert 
-	\vu_t - \vu_s % f_{\weights_{s}}(\MZ_s)
-	\right\rVert_{\bar{\MB}^{-1}_{s}}, \quad \vu_t \in \R^M \text{~with~} u_{s,i} = f_{\weights}(\vz_{i}),~\forall {\vz_i} \in \mathcal{Z}_s .
+	\vu - \vu_s % f_{\weights_{s}}(\MZ_s)
+	\right\rVert_{\bar{\MB}^{-1}_{s}}, \quad \vu \in \R^M \text{~with~} u_{i} = f_{\weights}(\vz_{i}),~\forall {\vz_i} \in \mathcal{Z}_s .
 \end{equation}
 
 \paragraph{\our for dual conditioning} Adding new data to a trained neural network without retraining from scratch is a non-trivial problem. Some approaches exist \citep{kirsch2022marginal, spiegelhalter1990sequential} but are in the weight space formulation, which makes conditioning harder to formulate. As pointed out in \cite{chang2022fantasizing}, dual parameter conditioning updates are straightforward and were the original motivation of \cite{csato2002sparse}. This involves integrating data into the sum in \cref{eq:dual_sparse}. Thus, we need to find the data dual variables $\hat{\alpha}$ and $\hat{\beta}$ for the new data subset $\mathcal{D}_\textrm{new} = \{(\vx_i,\vy_i)\}_{i=1}^{N_{\textrm{new}}}$ and compute the corresponding kernel terms. As pointed out in \cite{chang2022fantasizing}, for GPs, these updates are exact under a Gaussian likelihood and the kernel remains constant. For non-Gaussian likelihoods, the results are almost the same as retraining with all the data. In practice, given our NN-derived kernel's dependency on the Jacobian of the trained neural network $\Jac{\weights_*}{\vx}$, the Jacobians become outdated as we add more data. However, we can still improve predictions by conditioning data without retraining. 

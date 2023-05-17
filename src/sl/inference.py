@@ -223,7 +223,7 @@ def main(cfg: DictConfig):
 
 def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
     M = len(ds_test)
-    n_inducing = cfg.sfr.num_inducing  # int(len(ds_train)*n_sparse)
+    n_inducing = sfr.num_inducing  # int(len(ds_train)*n_sparse)
     logging.info(f"Train set size: {len(ds_train)}")
     logging.info(f"Num inducing points: {n_inducing}")
     perm_ixs = torch.randperm(M)
@@ -257,7 +257,7 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
 
         sfr.set_data(data)
 
-        conf_name = f"sfr_sparse{cfg.sfr.num_inducing}"
+        conf_name = f"sfr_sparse{sfr.num_inducing}"
 
         logging.info(f"Computing {conf_name}")
         gstar_te, yte = get_svgp_predictive(
@@ -270,7 +270,7 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
         logging.info(checkpoint[conf_name])
         wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
 
-        conf_name = f"sfr_nn_sparse{cfg.sfr.num_inducing}"
+        conf_name = f"sfr_nn_sparse{sfr.num_inducing}"
         logging.info(f"Computing {conf_name}")
         gstar_te, yte = get_svgp_predictive(
             test_loader, sfr, use_nn_out=True, likelihood=sfr.likelihood
@@ -287,7 +287,7 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
         # GP subset
         logging.info("GP subset")
 
-        conf_name = f"gp_subset_nn_sparse{cfg.gp_subset.subset_size}"
+        conf_name = f"gp_subset_nn_sparse{gp_subset.subset_size}"
         gp_subset.set_data(data)
         gstar_te, yte = get_svgp_predictive(
             test_loader, gp_subset, use_nn_out=True, likelihood=gp_subset.likelihood
@@ -302,7 +302,7 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
         logging.info(checkpoint[conf_name])
         wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
 
-        conf_name = f"gp_subset_sparse{cfg.gp_subset.subset_size}"
+        conf_name = f"gp_subset_sparse{gp_subset.subset_size}"
         gstar_te, yte = get_svgp_predictive(
             test_loader, gp_subset, use_nn_out=False, likelihood=gp_subset.likelihood
         )
@@ -328,7 +328,9 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
 
         print("Making train_loader fo LA...")
         # train_loader = DataLoader(ds_train, batch_size=cfg.inference_batch_size)
-        train_loader_double = DataLoader(TensorDataset(*data), batch_size=cfg.inference_batch_size)
+        train_loader_double = DataLoader(
+            TensorDataset(*data), batch_size=cfg.inference_batch_size
+        )
         print("made train_loader {}".format(train_loader_double))
 
         logger.info("Fitting laplace...")
@@ -384,7 +386,9 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
 
         print("Making train_loader fo LA...")
         # train_loader = DataLoader(ds_train, batch_size=cfg.inference_batch_size)
-        train_loader_double = DataLoader(TensorDataset(*data), batch_size=cfg.inference_batch_size)
+        train_loader_double = DataLoader(
+            TensorDataset(*data), batch_size=cfg.inference_batch_size
+        )
 
         print("made train_loader {}".format(train_loader_double))
 

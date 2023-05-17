@@ -534,7 +534,7 @@ and variational inference \cite{galImproving2016,houthooftVIME2017}. \todo{Could
 % by linearising a neural network around the Maximum a Posteriori (MAP) weights.
 % a GP posterior -- can be obtained
 %
-In supervised learning, given a data set $\dataset = \{(\vx_{i} , \vy_{i})\}_{i=1}^{N}$, with input $\vx_i \in \inputDomain$ and output $\vy_i \in \outputDomain$ pairs, the weights $\weights \in \R^{P}$ of a neural network, $f_\mathbf{w} : \inputDomain \to \outputDomain$, are usually trained to minimize the (regularized) empirical risk,
+In supervised learning, given a data set $\dataset = \{(\vx_{i} , \vy_{i})\}_{i=1}^{N}$, with input $\vx_i \in \inputDomain$ and output $\vy_i \in \outputDomain$ pairs, the weights $\weights \in \R^{P}$ of a neural network, $f_\mathbf{w}: \inputDomain \to \outputDomain$ (yet, to simplify the notation we restrict presentation to scalar output), are usually trained to minimize the (regularized) empirical risk,\looseness-1
 %
 \begin{equation} \label{eq-empirical-risk}
   \weights^{*} = 
@@ -575,7 +575,7 @@ The Laplace-GGN takes the MAP solution and approximates the Hessian of the loss 
 with the GGN.
 Following the work of \citet{khan2019approximate}, we can view this approximation as building an approximate linear model of the neural network as $f_{\weights^*}(\vx) \approx 
 %g_{\weights}(\vx) = 
-\Jac{\weights_*}{\vx} \, \weights$, where $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{C \times P}$ is the Jacobian at the MAP.
+\Jac{\weights_*}{\vx} \, \weights$, where $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{1 \times P}$ is the Jacobian at the MAP.
 Using the Hessian of the approximate model, we arrive at the Laplace-GGN approximate posterior for $q(\vw)$ \todo{This is the first time q(w) is used, should define it}. 
 Therefore, the Laplace-GGN linear model can be used to convert our weight space model to the function space by \todo{To be super clear even when reading this part out of context: could specify that using a GP with this mean and covariance},
 \begin{equation} 

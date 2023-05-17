@@ -439,17 +439,14 @@ A key challenge in RL is balancing the trade-off between exploration and exploit
 %select new ones in hope to discover actions leading to higher reward (exploration).
 One promising direction to balancing this trade-off is to model the uncertainty associated with a learned transition dynamics model and use it to guide exploration.
 Prior work has taken an expectation over the dynamic model's posterior \cite{deisenroth2011pilco,kamtheDataEfficient2018,chuaDeepReinforcementLearning2018},
-sampled from it (akin to Thompson sampling but referred to as posterior sampling in RL)
-\todo{cite thopmson sampling paper dearden et al 1999}
-\cite{osbandMoreEfficientReinforcement2013},
-and used it to implement optimism in the face of uncertainty using upper confidence bounds \cite{curiEfficient2020}.
-\todo{cite UCRL paper}
+sampled from it (akin to Thompson sampling but referred to as posterior sampling in RL) \cite{dearden1999model,osbandMoreEfficientReinforcement2013},
+and used it to implement optimism in the face of uncertainty using upper confidence bounds \cite{curiEfficient2020,jaksch2010near}.
 No single strategy has emerged as a go-to method and we highlight that these strategies are only as good as their uncertainty estimates.
 Previous approaches have used GPs \cite{deisenroth2011pilco,kamtheDataEfficient2018},
 ensembles of neural networks \cite{curiEfficient2020,chuaDeepReinforcementLearning2018}
-and variational inference \cite{galImproving2016,houthooftVIME2017}. \todo{Could specify here how the previous methods have used these models}
+and variational inference \cite{galImproving2016,houthooftVIME2017}.
 However, each method has its pros and cons.
-In this paper we present a method which combines some of the pros from NNs with the benefits of GPs.
+In this paper, we present a method which combines some of the pros from NNs with the benefits of GPs.
 
 %However, there has been little leveraging
 
@@ -595,9 +592,9 @@ Following the work of \citet{khan2019approximate}, we can view this approximatio
 \Jac{\weights_*}{\vx} \, \weights$, where $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{1 \times P}$ is the Jacobian at the MAP.
 
 Using the Hessian of the approximate model, we arrive at the Laplace-GGN approximate posterior over $\vw$.
-Therefore, the Laplace-GGN linear model can be used to convert our weight space model to the function space by
+Therefore, the Laplace-GGN linear model can be used to convert our weight space model to the function space,
 \begin{equation}
-\label{eq-laplace-approx-function-space} 
+\label{eq-laplace-approx-function-space}
 % g(\vx) \sim \GP \left( \mu(\vx), \kappa(\vx, \vx') \right) \quad \text{with} \quad
   \mu(\vx) =  0 \quad \text{and} \quad
   \kappa(\vx, \vx')

@@ -64,6 +64,11 @@ def get_model(model_name, ds_train):
         hidden_sizes = [1024, 512, 256, 128]
         output_size = ds_train.K
         return MLPS(input_size, hidden_sizes, output_size, "tanh", flatten=True)
+    elif model_name == "SmallMLP":
+        input_size = ds_train.pixels**2 * ds_train.channels
+        hidden_sizes = [128, 128]
+        output_size = ds_train.K
+        return MLPS(input_size, hidden_sizes, output_size, "tanh", flatten=True)
     elif model_name == "CNN":
         return CIFAR10Net(ds_train.channels, ds_train.K, use_tanh=True)
     elif model_name == "AllCNN":
@@ -266,6 +271,8 @@ if __name__ == "__main__":
     res_folder = args.res_folder
 
     data_dir = os.path.join(root_dir, "data")
+    print("root_dir {}".format(root_dir))
+    # print("dataset {}".format(root_dir))
     res_dir = os.path.join(root_dir, "experiments", "results", dataset, res_folder)
 
     print(f"Writing results to {res_dir}")
@@ -291,6 +298,7 @@ if __name__ == "__main__":
     # naming convention: dataset_model_seed_delta
     fname = "models/" + "_".join([dataset, model_name, str(seed)]) + "_{delta:.1e}.pt"
     deltas = np.logspace(logd_min, logd_max, n_deltas)
+    print("deltas {}".format(deltas))
     #   deltas = np.insert(deltas, 0, 0)  # add unregularized network
     print(f"Train set size: {len(ds_train)}")
     deltas = deltas / len(ds_train)

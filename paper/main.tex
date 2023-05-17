@@ -833,9 +833,48 @@ We present a series of experiments specifically designed to showcase the robustn
 \subsection{Capturing uncertainty in UCI tasks under supervised learning}
 \label{sec:uci}
 %
-We consider eight UCI benchmarks~\cite{UCI}, covering of a variety of binary and multi-class classification tasks with different data set sizes. We initially train a two-layer MLP for each of the classification tasks and follow the setup in \cref{sec:methods} for \our. That is, after training we construct the \our dual and use the resulting model for uncertainty quantification. For comparison, we used the same hyperparameters for the neural network training as in the UCI experiments of \cite{immer2021improving}, and similarly perform hyperparameter search over the prior precision $\delta$, and run the experiment over $10$ random splits. In \cref{tbl:uci} (left), we compare our model to the NN MAP estimate, mean-field VI, a Bayesian NN, and a GLM model (see \cite{immer2021improving} for the baselines) in negative log-predictive density (NLPD). We match the predictive performance despite being sparse (here, $M=256$). Results for $M=16,32,64,128,256$ are included in \cref{app:uci} with full experiment details. 
+We first evaluate \our on eight UCI benchmarks~\cite{UCI}, a variety of binary and multi-class classification tasks with different data set sizes.
+We train a two-layer MLP for each of the classification tasks and follow the experiment set up in \cite{immer2021improving}.
+%by using the same hyperparameters, performing a hyperparameter search over the prior precision $\delta$,
+% We follow \cite{immer2021improving} by using the same hyperparameters, performing a hyperparameter search over the prior precision $\delta$,
+% and run the experiment over $10$ random splits.
+% That is, after training we construct the \our dual and use the resulting model for uncertainty quantification.
+% for the neural network training as in the UCI experiments of
+\cref{tbl:uci} (left) shows that \our with $M=256$ either matches or outperforms the predictive performance of the NN MAP, mean-field VI, Bayesian NN, and GLM
+predictions %in terms of negative log-predictive density (NLPD).
+(baselines from \cite{immer2021improving}).
+That is, we match predictive performance despite being sparse.
 
-In \cref{tbl:uci} (right), we also include an ablation and comparison study (to \cite{immer2021improving}) with a fixed low number of inducing points ($M=32$). The comparison shows that our sparse method is able to summarize the information of the full data set more efficiently than sparse subset methods, and can match the performance of the full GP even with a low number of inducing points. This is even more apparent from \cref{fig:uci} which shows the benefits of \our in summarizing the full data distribution onto a small set of inducing points over just picking a random subset.
+In \cref{tbl:uci} (right) we compare to the subset GP method from \cite{immer2021improving} whilst using only $M=32$ inducing points.
+It shows that \our is able to summarize the full data set more effectively than the GP subset method as it maintains predictive performance
+whilst using fewer inducing points.
+\cref{fig:uci} further shows that as the number of inducing points is lowered $M=512\rigtharrow 16$, \our is able to maintain a much better NLPD than the GP subset.
+These results demonstrate \our's sparse representation captures information from the entire data set and as a result provides good uncertainty estimates.
+We provide full details of our experiments and further results using $M=16,32,64,128,256$ in \cref{app:uci}.
+% benefits of \our in summarizing the full data distribution onto a small set of inducing
+% points over just picking a random subset.
+
+
+
+% We match the predictive performance despite being sparse (here, $M=256$).
+
+
+% This is
+% However, our method used
+
+% despite being sparse (here, $M=256$).
+
+% (left), we compare our model to the NN MAP estimate, mean-field VI, a Bayesian NN, and a GLM model (see \cite{immer2021improving} for the baselines) in negative log-predictive density (NLPD).
+% In \cref{tbl:uci} (left), we compare our model to the NN MAP estimate, mean-field VI, a Bayesian NN, and a GLM model (see \cite{immer2021improving} for the baselines) in negative log-predictive density (NLPD).
+% We match the predictive performance despite being sparse (here, $M=256$).
+% Results for $M=16,32,64,128,256$ are included in \cref{app:uci} with full experiment details.
+
+% \cref{tbl:uci} (right) shows that \our is able to summarize the information of the full data set more efficiently than the sparse GP subset method.
+% As a result, it maintains predictive performance whilst using fewer inducing points.
+% This is even more apparent from \cref{fig:uci} which shows the benefits of \our in summarizing the full data distribution onto a small set of inducing points over just picking a random subset.
+
+% In \cref{tbl:uci} (right), we also include an ablation and comparison study (to \cite{immer2021improving}) with a fixed low number of inducing points ($M=32$).
+% The comparison shows that our sparse method is able to summarize the information of the full data set more efficiently than sparse subset methods, and can match the performance of the full GP even with a low number of inducing points. This is even more apparent from \cref{fig:uci} which shows the benefits of \our in summarizing the full data distribution onto a small set of inducing points over just picking a random subset.
 
 
 

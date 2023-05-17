@@ -11,7 +11,10 @@ import torch
 import wandb
 from omegaconf import DictConfig, OmegaConf
 from preds.utils import ece, macc, nll_cls
-from src.sl.train import get_dataset, get_model, set_seed_everywhere
+from src.sl.datasets import CIFAR10, FMNIST, MNIST
+from src.sl.networks import CIFAR10Net, CIFAR100Net, MLPS
+
+# from train import get_dataset, get_model, set_seed_everywhere
 from torch.distributions import Categorical, Normal
 from torch.utils.data import ConcatDataset, DataLoader
 from torch.utils.data.dataset import Subset
@@ -23,8 +26,65 @@ logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
 
 
+def set_seed_everywhere(random_seed):
+    random.seed(random_seed)
+    np.random.seed(random_seed)
+    torch.manual_seed(random_seed)
+    torch.cuda.manual_seed(random_seed)
+    torch.manual_seed(random_seed)
+    # torch.cuda.manual_seed(cfg.random_seed)
+    # torch.backends.cudnn.deterministic = True
+    # torch.backends.cudnn.benchmark = False
+    np.random.seed(random_seed)
+    random.seed(random_seed)
+    # pl.seed_everything(random_seed)
+
+
+def get_dataset(dataset, double, dir, cfg, device=None):
+    if dataset == "MNIST":
+        # Download training data from open datasets.
+        ds_train = MNIST(train=True, double=double, root=dir)
+        ds_test = MNIST(train=False, double=double, root=dir)
+    elif dataset == "FMNIST":
+        ds_train = FMNIST(train=True, double=double, root=dir)
+        ds_test = FMNIST(train=False, double=double, root=dir)
+    elif dataset == "CIFAR10":
+        ds_train = CIFAR10(train=True, double=double, root=dir)
+        ds_test = CIFAR10(train=False, double=double, root=dir)
+    else:
+        raise ValueError("Invalid dataset argument")
+    if device is not None:
+        if cfg.debug:
+            ds_train.data = ds_train.data[:500]
+            ds_train.targets = ds_train.targets[:500]
+            ds_test.data = ds_test.data[:500]
+            ds_test.targets = ds_test.targets[:500]
+        return QuickDS(ds_train, device), QuickDS(ds_test, device)
+    else:
+        return ds_train, ds_test
+
+
+def get_model(model_name, ds_train):
+    if model_name == "MLP":
+        input_size = ds_train.pixels**2 * ds_train.channels
+        hidden_sizes = [1024, 512, 256, 128]
+        output_size = ds_train.K
+        return MLPS(input_size, hidden_sizes, output_size, "tanh", flatten=True)
+    elif model_name == "SmallMLP":
+        input_size = ds_train.pixels**2 * ds_train.channels
+        hidden_sizes = [128, 128]
+        output_size = ds_train.K
+        return MLPS(input_size, hidden_sizes, output_size, "tanh", flatten=True)
+    elif model_name == "CNN":
+        return CIFAR10Net(ds_train.channels, ds_train.K, use_tanh=True)
+    elif model_name == "AllCNN":
+        return CIFAR100Net(ds_train.channels, ds_train.K)
+    else:
+        raise ValueError("Invalid model name")
+
+
 def get_quick_loader(loader, device="cuda"):
-    return [(X.to(device), y.to(device)) for X, y in loader]
+    return [(X.to(device).to(torch.float64), y.to(device)) for X, y in loader]
 
 
 def get_map_predictive(loader, model):
@@ -43,7 +103,8 @@ def get_svgp_predictive(
 ):
     ys, ps = list(), list()
     for X, y in loader:  # tqdm(loader):
-        X, y = X.cuda(), y.cuda()
+        # X, y = X.cuda(), y.cuda() TODO put this back
+        X, y = X, y
         if seeding:
             torch.manual_seed(711)
         ps.append(
@@ -58,7 +119,8 @@ def get_svgp_predictive(
 def get_la_predictive(loader, la_pred, seeding: bool = False):
     ys, ps = list(), list()
     for X, y in loader:  # tqdm(loader):
-        X, y = X.cuda(), y.cuda()
+        # X, y = X.cuda(), y.cuda()
+        # X, y = X.cuda(), y.cuda() TODO put this back
         if seeding:
             torch.manual_seed(711)
         ps.append(
@@ -178,7 +240,7 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
     (X_train, y_train) = next(iter(all_train))
     X_train = X_train.to(cfg.device)
     y_train = y_train.to(cfg.device)
-    data = (X_train, y_train)
+    data = (X_train.to(torch.float64), y_train)
 
     # if cfg.predictive_model == "map":
     # MAP
@@ -277,20 +339,21 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
         logging.info("GLM")
 
         def la_pred(x):
-            ys = []
-            for i in range(100):
-                print("sample {}".format(i))
-                ys.append(
-                    la.predictive_samples(
-                        x=x,
-                        pred_type="glm",
-                        n_samples=1,
-                        # diagonal_output=False,
-                        # generator=cfg.random_seed,
-                    )
-                )
-                torch.cuda.empty_cache()
-            return torch.stack(ys, 0)
+            # ys = []
+            # for i in range(100):
+            #     print("sample {}".format(i))
+            #     ys.append(
+            #         la.predictive_samples(
+            #             x=x,
+            #             pred_type="glm",
+            #             n_samples=1,
+            #             # diagonal_output=False,
+            #             # generator=cfg.random_seed,
+            #         )
+            #     )
+            #     torch.cuda.empty_cache()
+            # return torch.stack(ys, 0)
+            return la.predictive_samples(x=x, pred_type="glm", n_samples=100)
 
         # la_pred = partial(
         #     la.predictive_samples,

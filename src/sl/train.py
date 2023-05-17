@@ -349,29 +349,35 @@ def train(cfg: DictConfig):
         cfg.gp_subset, prior=prior, network=network
     )
 
-    cfg.predictive_model = "glm"
-    compute_metrics(
-        sfr=sfr,
-        gp_subset=gp_subset_not_used,
-        ds_train=ds_train,
-        ds_test=ds_test,
-        cfg=cfg,
-        checkpoint={},
-    )
+    try:
+        cfg.predictive_model = "glm"
+        compute_metrics(
+            sfr=sfr,
+            gp_subset=gp_subset_not_used,
+            ds_train=ds_train,
+            ds_test=ds_test,
+            cfg=cfg,
+            checkpoint={},
+        )
+    except:
+        logger.info("GLM failed predict")
 
-    cfg.predictive_model = "bnn"
-    compute_metrics(
-        sfr=sfr,
-        gp_subset=gp_subset_not_used,
-        ds_train=ds_train,
-        ds_test=ds_test,
-        cfg=cfg,
-        checkpoint={},
-    )
+    try:
+        cfg.predictive_model = "bnn"
+        compute_metrics(
+            sfr=sfr,
+            gp_subset=gp_subset_not_used,
+            ds_train=ds_train,
+            ds_test=ds_test,
+            cfg=cfg,
+            checkpoint={},
+        )
+    except:
+        logger.info("BNN failed predict")
 
     num_data = len(ds_train)
     # for m in [16, 32, 64, 128, 256, 512, 1024, 2048, 3200]:
-    for m in [256, 512, 1024, 2048, 3200]:
+    for m in [128, 256, 512, 1024, 2048, 3200]:
         if m >= num_data:
             break
         sfr.num_inducing = m
@@ -390,26 +396,32 @@ def train(cfg: DictConfig):
             cfg.gp_subset, subset_size=m, prior=prior, network=network
         )
 
-        cfg.predictive_model = "sfr"
-        compute_metrics(
-            sfr=sfr_double,
-            gp_subset=gp_subset,
-            ds_train=ds_train,
-            ds_test=ds_test,
-            cfg=cfg,
-            checkpoint={},
-        )
+        try:
+            cfg.predictive_model = "sfr"
+            compute_metrics(
+                sfr=sfr_double,
+                gp_subset=gp_subset,
+                ds_train=ds_train,
+                ds_test=ds_test,
+                cfg=cfg,
+                checkpoint={},
+            )
+        except:
+            logger.info("SFR failed predict")
 
-        cfg.predictive_model = "gp_subset"
-        # cfg.predictive_model = "sfr"
-        compute_metrics(
-            sfr=sfr_double,
-            gp_subset=gp_subset,
-            ds_train=ds_train,
-            ds_test=ds_test,
-            cfg=cfg,
-            checkpoint={},
-        )
+        try:
+            cfg.predictive_model = "gp_subset"
+            # cfg.predictive_model = "sfr"
+            compute_metrics(
+                sfr=sfr_double,
+                gp_subset=gp_subset,
+                ds_train=ds_train,
+                ds_test=ds_test,
+                cfg=cfg,
+                checkpoint={},
+            )
+        except:
+            logger.info("GP subset failed predict")
 
     # gp_subset = hydra.utils.instantiate(cfg.sfr, prior=prior, network=network)
     # gp_subset = src.nn2svgp.nn2gp.NN2GPSubset(

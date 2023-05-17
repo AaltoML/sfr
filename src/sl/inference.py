@@ -16,7 +16,7 @@ from src.sl.networks import CIFAR10Net, CIFAR100Net, MLPS
 
 # from train import get_dataset, get_model, set_seed_everywhere
 from torch.distributions import Categorical, Normal
-from torch.utils.data import ConcatDataset, DataLoader
+from torch.utils.data import ConcatDataset, DataLoader, TensorDataset
 from torch.utils.data.dataset import Subset
 from tqdm import tqdm
 
@@ -382,11 +382,13 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
         # la.to(cfg.device)
 
         print("Making train_loader fo LA...")
-        train_loader = DataLoader(ds_train, batch_size=cfg.batch_size)
-        print("made train_loader {}".format(train_loader))
+        # train_loader = DataLoader(ds_train, batch_size=cfg.batch_size)
+        train_loader_double = DataLoader(TensorDataset(*data), batch_size=len(ds_train))
+
+        print("made train_loader {}".format(train_loader_double))
 
         logger.info("Fitting laplace...")
-        la.fit(train_loader)
+        la.fit(train_loader_double)
         logger.info("Finished fitting laplace")
 
         # BNN predictive

@@ -284,7 +284,7 @@ Recent techniques (\eg, \cite{ritter2018kfac,khan2019approximate,daxberger2021la
 %Yet many problems lie in high dimensional input space; for example, images are where GPs cannot learn representations. In such scenarios such as in many reinforcement learning environments neural networks are used as the surrogate model. However, uncertainty is still essential to ensure effective exploration for sequential algorithms. Successful approaches have attempted to blend neural networks with uncertainty estimates around predictions, allowing for sophisticated exploration strategies. However, there has been limited use of hybrid models that possess the feature representation ability of neural networks but also attractive the properties of GPs, such a hybrid method we propose in this paper.
 
 %Need for adaptive learning methods + failures with current methods
-Given an approximate inference technique, we demonstrate that the neural network emits \todo{is 'emits' a clear enough expression here?}`dual' parameters which are the building blocks of a GP~\cite{csato2002sparse, adam2021dual, chang2020fast} . In contrast to previous work that utilizes subsets of training data \cite{immer2021scalable},
+Given an approximate inference technique, we demonstrate that the neural network emits `dual' parameters which are the building blocks of a GP~\cite{csato2002sparse, adam2021dual, chang2020fast} . In contrast to previous work that utilizes subsets of training data \cite{immer2021scalable},
 this parameterization allows capturing the contributions from {\em all} data points into a sparse representation, essential for predictive uncertainty. Crucially, the resulting GP directly predicts in the same space as the original trained neural network, with the benefit of avoiding the complexity introduced by working in weight-space and the notorious cubic complexity of vanilla GPs.
 %\todo{Could make it clearer that the GP predicts in the output space while avoiding the NN parameter space}
 %, a feature not present in previous approaches, while avoiding the notorious cubic complexity of vanilla GPs. 
@@ -409,13 +409,14 @@ Calculating the posterior distribution of a Bayesian neural network is usually i
 
 % Introduce the laplace GGN + shortcomings
 \textbf{Function-space methods}
-Function-space perspectives on uncertainty in neural networks often use a Laplace-GGN approximation \citep{daxberger2021laplace}, that linearize a trained neural network around MAP weights and approximates the neural network's Hessian using the generalized Gauss--Newton approximation (GGN, \cite{botev2017practical}). 
+Function-space perspectives on uncertainty in neural networks often use a Laplace-GGN approximation \citep{daxberger2021laplace}, which linearizes a trained neural network around MAP weights and approximates the neural network's Hessian using the generalized Gauss--Newton approximation (GGN, \cite{botev2017practical}).
 %\todo{Could modify the sentence a bit, maybe "The Laplace-GGN approximates the Hessian by using..."}
 %The Hessian can be efficiently approximated using the generalized Gauss--Newton approximation . 
-While efficient, it suffers from cubic scaling in parameter count, necessitating approximations like Kronecker factorisation \cite{martens2015optimizing, ritter2018kfac}. \todo{Reads a bit repetitive to start two sentences in a row by This, could maybe be combined in one.} This linear model (linear in the weights) refines predictions and provides uncertainty estimates \citep{immer2021scalable}. This model has a convenient interpretation as a GP \cite{immer2021scalable, khan2019approximate, maddox2021fast}.
+While efficient, it suffers from cubic scaling in parameter count, necessitating approximations like Kronecker factorisation \cite{martens2015optimizing, ritter2018kfac}. This linear model (linear in the weights) refines predictions and provides uncertainty estimates \citep{immer2021scalable}. It has a convenient interpretation as a GP \cite{immer2021scalable, khan2019approximate, maddox2021fast}.
 %
-However, the GP's cubic $\mathcal{O}(n^3)$ scaling with data points $n$ requires costly approximations, often resorting to using data subsets \cite{immer2021scalable}. In the GP community, sparse approximations have mitigated this scaling issue (\eg, \cite{titsias2009variational,hensman2013gaussian}), but combining neural network linearization with sparse methods remains \todo{Maybe unexplored instead of unclear?} unclear without resorting to subset methods or separately retraining a GP model \cite{ortega2023variational} \todo{Could add something on subset methods here, for example 'which do not retain information from the full dataset' or something like that}. Our work addresses this by utilizing the GP's dual parameters \cite{csato2002sparse}, previously applied to non-conjugate likelihood models \cite{adam2021dual}.
+However, the GP's cubic $\mathcal{O}(N^3)$ scaling with data points $N$ requires costly approximations, often resorting to using data subsets \cite{immer2021scalable}. In the GP community, sparse approximations have mitigated this scaling issue (\eg, \cite{titsias2009variational,hensman2013gaussian}), but combining neural network linearization with sparse methods remains unclear without resorting to subset methods or separately retraining a GP model \cite{ortega2023variational}. Our work addresses this by utilizing the GP's dual parameters \cite{csato2002sparse}, previously applied to non-conjugate likelihood models \cite{adam2021dual}.
 
+% \todo{Could add something on subset methods here, for example 'which do not retain information from the full dataset' or something like that}.
 %wang2019exact
 %
 %However, the GP introduces a cubic $\mathcal{O}(N^3)$ scaling in the number of data points $N$. Previous approaches apply crude approximations to alleviate the computational costs, \eg, by considering only a subset of the training data \cite{immer2021scalable}. In the GP community, the scaling problem is not seen as an issue any more due to efficient and stochastic methods for sparse approximations (\eg, \cite{hensman2013gaussian,wang2019exact}). However, it is not entirely clear how to combine the linearization of the neural network with sparse methods \cite{titsias2009variational} without falling back to crude subset methods. We tackle this problem by framing the problem in the dual parameters \cite{csato2002sparse} of the GP that has previously been used for non-conjugate likelihood models in GPs \cite{adam2021dual}. 
@@ -447,6 +448,9 @@ No single strategy has emerged as a go-to method and we highlight that these str
 Previous approaches have used GPs \cite{deisenroth2011pilco,kamtheDataEfficient2018},
 ensembles of neural networks \cite{curiEfficient2020,chuaDeepReinforcementLearning2018}
 and variational inference \cite{galImproving2016,houthooftVIME2017}. \todo{Could specify here how the previous methods have used these models}
+However, each method has its pros and cons.
+In this paper we present a method which combines some of the pros from NNs with the benefits of GPs.
+
 %However, there has been little leveraging
 
 % Another classical and provable exploration theory in RL is based on optimism
@@ -590,7 +594,7 @@ Following the work of \citet{khan2019approximate}, we can view this approximatio
 %g_{\weights}(\vx) = 
 \Jac{\weights_*}{\vx} \, \weights$, where $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{1 \times P}$ is the Jacobian at the MAP.
 
-Using the Hessian of the approximate model, we arrive at the Laplace-GGN approximate posterior for $q(\vw)$ \todo{This is the first time q(w) is used, should define it}. 
+Using the Hessian of the approximate model, we arrive at the Laplace-GGN approximate posterior for the weight space, $q(\vw)$. \todo{This is the first time q(w) is used, should define it}. 
 Therefore, the Laplace-GGN linear model can be used to convert our weight space model to the function space by \todo{To be super clear even when reading this part out of context: could specify that using a GP with this mean and covariance},
 \begin{equation} 
 \label{eq-laplace-approx-function-space} 
@@ -955,13 +959,13 @@ We provide full details of our experiments and further results using $M=16,32,64
      Method & $M$ & ACC~$\uparrow$ & NLPD~$\downarrow$ & ECE~$\downarrow$ & ACC~$\uparrow$ & NLPD~$\downarrow$ & ECE~$\downarrow$ \\
     \midrule
     %\multirow{2}{*}{MNIST}
-    MAP & & \val{98.22}{0.13} & \val{0.061}{0.004} & \val{0.006}{0.001}
+    MAP & -- & \val{98.22}{0.13} & \val{0.061}{0.004} & \val{0.006}{0.001}
           & \val{91.39}{0.11} & \val{0.258}{0.004} & \val{0.017}{0.001} \\
-    BNN predictive \cite{immer2021improving} & & \val{93.14}{0.05} & \val{0.304}{0.002} & \val{0.111}{0.003}
+    BNN predictive \cite{immer2021improving} & -- & \val{93.14}{0.05} & \val{0.304}{0.002} & \val{0.111}{0.003}
                                                & \val{84.42}{0.12} & \val{0.942}{0.016} & \val{0.411}{0.008} \\
-    BNN predictive \cite{ritter2018kfac} & & \val{93.03}{0.13} & \val{0.369}{0.003} & \val{0.168}{0.001}
+    BNN predictive \cite{ritter2018kfac} & -- & \val{93.03}{0.13} & \val{0.369}{0.003} & \val{0.168}{0.001}
                                            & \val{91.20}{0.07} & \val{0.265}{0.004} & \val{0.024}{0.002} \\
-    GLM predictive \cite{immer2021improving} & & \val{98.40}{0.05} & \val{0.054}{0.002} & \val{0.007}{0.001}
+    GLM predictive \cite{immer2021improving} & -- & \val{98.40}{0.05} & \val{0.054}{0.002} & \val{0.007}{0.001}
                                                & \val{92.25}{0.10} & \val{0.244}{0.003} & \val{0.012}{0.003} \\
     GP predictive \cite{immer2021improving} & $3200$ & \val{\textbf{98.22}}{0.13} & \val{\textbf{0.058}}{0.001} & \val{\textbf{0.003}}{0.000}
                                                      & \val{91.36}{0.11} & \val{\textbf{0.25}}{0.004} & \val{\textbf{0.007}}{0.001} \\
@@ -1004,7 +1008,26 @@ We provide full details of our experiments and further results using $M=16,32,64
 	%\input{tables/img_super.tex}
 \end{table}
 
-Similarly to the UCI experiments, we seek to demonstrate \our on image data that features more complicated data manifolds and model structures. We consider the MNIST and Fashion-MNIST (FMNIST) classification tasks, and use an MLP and a CNN architecture respectively (matching the setup in \cite{immer2021improving}). After training, we computed the duals for \our and use the model for prediction (full experiment details in \cref{app:image}). In \cref{tbl:imagesuper}, we compare to baselines also used in \cite{immer2021improving}. For \our and the GP predictive subset method by \cite{immer2021improving} we fix the number of points $M=1024$. For completeness, we include the GP predictive result from \cite{immer2021improving} which used more inducing points $M=3200$. We report accuracy (ACC), NLPD, and expected calibration error (ECE). The results in \cref{tbl:imagesuper} agree with the conclusions drawn from the UCI experiments showing that \our is able to more efficiently capture the posterior using a sparse set of points. These results on image data sets motivate experiments beyond the supervised learning setting, which we now detail.
+Similarly to the UCI experiments, we seek to demonstrate \our on image data that features more complicated data manifolds and model structures.
+We consider the MNIST and Fashion-MNIST (FMNIST) classification tasks, and use an MLP and a CNN architecture respectively (matching the setup in \cite{immer2021improving}).
+After training, we computed the duals for \our and use the model for prediction (full experiment details in \cref{app:image}).
+In \cref{tbl:imagesuper}, we compare to baselines also used in \cite{immer2021improving}.
+We report accuracy (ACC), NLPD, and expected calibration error (ECE).
+For \our and the GP predictive subset method by \cite{immer2021improving}, we provide results when predicting with GP mean and when using the neural network (NN) and
+fix the number of inducing points $M=1024$.
+For completeness, we also include the GP predictive result from \cite{immer2021improving} which used more inducing points $M=3200$.
+The results in \cref{tbl:imagesuper} agree with the conclusions drawn from the UCI experiments showing that \our is able to more efficiently capture the posterior using a sparse set of points.
+They further demonstrate that \our's predictive mean (GP) significantly outperforms the GP predictive subset.
+This is an interesting result as we cannot rely on the NN's prediction if we wish to condition on new data, using the dual conditioning from \label{sec:sequential}.
+In this setting, we must rely on our GP's predictive mean.
+% Other approaches, \cite{immer2021improving} never inten
+% The resutls demonstrate that \our's predictive GP mean significantly outperforms the
+These results on image data sets motivate experiments beyond the supervised learning setting, which we now detail.
+
+% For \our and the GP predictive subset method by \cite{immer2021improving} we fix the number of points $M=1024$.
+
+
+
 %We performed hyperparameter optimization over the prior precision, and found the optimal value to be [insert]. We ran the experiment over $5$ seeds. During the NN training, we used a batch size of $512$ and an Adam optimizer with learning rate $1e-3$.
 
 %In addition to uncertainty estimates, our method can update the posterior when given new data. We gave the SVGP model 10 \% of the test dataset used for evaluation, and compare the performance of the SVGP model and the retrained NN in [INSERT TABLE]. 
@@ -1071,10 +1094,10 @@ In \cref{tbl:cl_table_1}, we use 200 points for each task, and we further demons
 
 %% Comments on the results:
 From \cref{tbl:cl_table_1}, it is clear that the weight-space regularization methods completely fail compared to the function-space methods on S-MNIST and S-FMNIST, but are comparable on P-MNIST. %, commonly referred as Domain Incremental Learning. (opposed to the Class-Incremental Learning for S-MNIST and S-FMNIST)
-Considering only function-space methods, we can see that \our achieves the best results on most datasets, and is particularly effective, when using fewer points per task.
+Considering only function-space methods, we can see that \our achieves the best results on most data sets, and is particularly effective, when using fewer points per task.
 On S-FMNIST, our method obtains close results to DER, which regularizes the model by taking the mean squared error between current and old function outputs without accounting the covariance structure of the loss similar to our L2 ablation. Moreover, their method exploits reservoir sampling \citep{vitter1985random} to obtain a continuously updated set inducing points.
 S-FSVI obtains the best on P-MNIST, but with the downside of requiring high computational costs based on performing variational inference, compared to \our. \todo{on PMNIST our method is not really super-fast, so that could be not the best thing to say here} % we could also say that P-MNIST is known to be a bad/ill-posed dataset for CL 
-Finally, it is worth noticing as our ablation already provides a very solid baseline consistently over all datasets.
+Finally, it is worth noticing as our ablation already provides a very solid baseline consistently over all data sets.
 
 
 
@@ -1262,7 +1285,7 @@ The training curves clearly show that \our's uncertainty estimates help explorat
 \section{Discussion and conclusion}
 \label{sec:conclusion}
 %
-In this paper, we have introduced \our, a novel approach for representing neural networks in sparse function space, exploiting the dual parameters for an efficient low-rank approximation that accommodates information from the entire data distribution. Our method offers a powerful mechanism for capturing predictive uncertainty, updating the model with new data without retraining, and providing a compact representation suitable for continual learning. These aspects were demonstrated in a wide range of problems, datasets, and learning contexts. We showcased our method's ability to capture uncertainty in UCI classification tasks (\cref{sec:uci}), demonstrated robustness on image data sets (\cref{,sec:image}), established its potential for continual learning (\cref{sec:cl-exp}), and finally, verified its applicability in reinforcement learning scenarios (\cref{sec:rl-exp}).
+In this paper, we have introduced \our, a novel approach for representing neural networks in sparse function space, exploiting the dual parameters for an efficient low-rank approximation that accommodates information from the entire data distribution. Our method offers a powerful mechanism for capturing predictive uncertainty, updating the model with new data without retraining, and providing a compact representation suitable for continual learning. These aspects were demonstrated in a wide range of problems, data sets, and learning contexts. We showcased our method's ability to capture uncertainty in UCI classification tasks (\cref{sec:uci}), demonstrated robustness on image data sets (\cref{,sec:image}), established its potential for continual learning (\cref{sec:cl-exp}), and finally, verified its applicability in reinforcement learning scenarios (\cref{sec:rl-exp}).
 
 % Discussion points
 In practical terms, our model serves a role similar to a sparse GP. However, unlike a conventional GP, it does not provide a straightforward method for specifying or tuning the prior covariance function. This limitation can be addressed indirectly: the architecture of the neural network and the choice of activation functions can be used to implicitly specify and tune the prior assumptions, thereby incorporating a broad range of inductive biases into the model. It is important to note that the Laplace-GGN approach linearizes the network around the MAP solution $\weights^{*}$, resulting in the function-space prior (and consequently the posterior) being only a locally linear approximation of the neural network model.\looseness-1

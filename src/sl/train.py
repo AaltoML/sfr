@@ -346,6 +346,26 @@ def train(cfg: DictConfig):
     network = network.double()
     prior = hydra.utils.instantiate(cfg.prior, params=network.parameters)
 
+    cfg.predictive_model = "glm"
+    compute_metrics(
+        sfr=sfr_double,
+        gp_subset=gp_subset,
+        ds_train=ds_train,
+        ds_test=ds_test,
+        cfg=cfg,
+        checkpoint={},
+    )
+
+    cfg.predictive_model = "bnn"
+    compute_metrics(
+        sfr=sfr_double,
+        gp_subset=gp_subset,
+        ds_train=ds_train,
+        ds_test=ds_test,
+        cfg=cfg,
+        checkpoint={},
+    )
+
     num_data = len(ds_train)
     # for m in [16, 32, 64, 128, 256, 512, 1024, 2048, 3200]:
     for m in [256, 512, 1024, 2048, 3200]:
@@ -400,26 +420,6 @@ def train(cfg: DictConfig):
     #     device=cfg.device,
     # )
     # gp_subset.set_data(data)
-
-    cfg.predictive_model = "glm"
-    compute_metrics(
-        sfr=sfr_double,
-        gp_subset=gp_subset,
-        ds_train=ds_train,
-        ds_test=ds_test,
-        cfg=cfg,
-        checkpoint={},
-    )
-
-    cfg.predictive_model = "bnn"
-    compute_metrics(
-        sfr=sfr_double,
-        gp_subset=gp_subset,
-        ds_train=ds_train,
-        ds_test=ds_test,
-        cfg=cfg,
-        checkpoint={},
-    )
 
 
 if __name__ == "__main__":

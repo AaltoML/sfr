@@ -858,7 +858,7 @@ That is, we match predictive performance despite being sparse.
 In \cref{tbl:uci} (right) we compare to the subset GP method from \cite{immer2021improving} whilst using only $M=32$ inducing points.
 It shows that \our is able to summarize the full data set more effectively than the GP subset method as it maintains predictive performance
 whilst using fewer inducing points.
-\cref{fig:uci} further shows that as the number of inducing points is lowered $M=512 \rightarrow 16$, \our is able to maintain a much better NLPD than the GP subset.
+\cref{fig:uci} further shows that as the number of inducing points is lowered $M=512,\ldots, 16$, \our is able to maintain a much better NLPD than the GP subset.
 These results demonstrate \our's sparse representation captures information from the entire data set and as a result provides good uncertainty estimates.
 We provide full details of our experiments and further results using $M=16,32,64,128,256$ in \cref{app:uci}.
 % benefits of \our in summarizing the full data distribution onto a small set of inducing

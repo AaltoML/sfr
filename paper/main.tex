@@ -423,7 +423,7 @@ However, the GP's cubic $\mathcal{O}(n^3)$ scaling with data points $n$ requires
 %However, encoding functional knowledge in the weights does not guarantee a good quality of the predictions, thus a better to introduce a function-space regularization \citep{li2018lwf, benjamin2018measuring, titsias2019functional, buzzega2020dark, pan2020continual, rudner2022continual}. These methods bridge the gap between objective and rehearsal-based methods since they rely on a subset of the training data for each task to compute the regularization term. Recently proposed methods, such as DER~\citep{buzzega2020dark}, FROMP~\citep{pan2020continual}, and S-FSVI~\citep{rudner2022continual} achieve state-of-the-art performances among the objective-based techniques in several CL benchmarks. 
 
 \textbf{Function-space methods for sequential learning} 
-Continual learning (CL) hinges on how to deal with a non-stationary training distribution, wherein the training process may overwrite previously learned parameters, causing catastrophic forgetting \citep{mccloskey1989catastrophic}. CL approaches fall into inference-based, rehearsal-based, and model-based methods (see \cite{parisi2019continual, de2021continual} for an overview). The methods in the first category usually tackle this problem with weight-space regularization, such as EWC~\citep{kirkpatrick2017overcoming}, SI~\citep{zenke17a}), or VCL~\citep{nguyen-tuongModel2009} that induce retention of previously learned information in the weights alone. However, encoding functional knowledge in the weights does not guarantee good quality of the predictions. Function-space regularization techniques~\cite{li2018lwf, benjamin2018measuring, titsias2019functional, buzzega2020dark, pan2020continual, rudner2022continual} address this by relying on training data subsets for each task to compute a regularization term. These methods bridge the gap between objective and rehearsal-based methods \todo{I'm not familiar with the differences between objective vs rehearsal based methods, and it isn't explained here} since they use a subset of the training data for each task to compute the regularization term. Recently proposed methods, \eg, DER~\citep{buzzega2020dark}, FROMP~\citep{pan2020continual}, and S-FSVI~\citep{rudner2022continual} achieve state-of-the-art performance among the objective-based techniques in several CL benchmarks. \todo{Are DER, FROMP and FSVI function-space regularization methods? I assume so but the text makes it a bit vague.}\looseness-2
+Continual learning (CL) hinges on how to deal with a non-stationary training distribution, wherein the training process may overwrite previously learned parameters, causing catastrophic forgetting \citep{mccloskey1989catastrophic}. CL approaches fall into inference-based, rehearsal-based, and model-based methods (see \cite{parisi2019continual, de2021continual} for an overview). The methods in the first category usually tackle this problem with weight-space regularization, such as EWC~\citep{kirkpatrick2017overcoming}, SI~\citep{zenke17a}), or VCL~\citep{nguyen-tuongModel2009} that induce retention of previously learned information in the weights alone. However, regularizing the weights does not guarantee good quality predictions. Function-space regularization techniques~\cite{li2018lwf, benjamin2018measuring, titsias2019functional, buzzega2020dark, pan2020continual, rudner2022continual} address this by relying on training data subsets for each task to compute a regularization term. These methods bridge the gap between objective and rehearsal-based methods \todo{I'm not familiar with the differences between objective vs rehearsal based methods, and it isn't explained here} since they use a subset of the training data for each task to compute the regularization term. Recently proposed methods, \eg, DER~\citep{buzzega2020dark}, FROMP~\citep{pan2020continual}, and S-FSVI~\citep{rudner2022continual} achieve state-of-the-art performance among the objective-based techniques in several CL benchmarks. \todo{Are DER, FROMP and FSVI function-space regularization methods? I assume so but the text makes it a bit vague.}\looseness-2
 
 \textbf{Uncertainty quantification in RL}
 A key challenge in RL is balancing the trade-off between exploration and exploitation \cite{sutton2018reinforcement}.
@@ -431,7 +431,7 @@ A key challenge in RL is balancing the trade-off between exploration and exploit
 %select new ones in hope to discover actions leading to higher reward (exploration).
 One promising direction to balancing this trade-off is to model the uncertainty associated with a learned transition dynamics model and use it to guide exploration.
 Prior work has taken an expectation over the dynamic model's posterior \cite{deisenroth2011pilco,kamtheDataEfficient2018,chuaDeepReinforcementLearning2018},
-sampled from it (akin to Thompson sampling but referred to as posterior sampling RL)
+sampled from it (akin to Thompson sampling but referred to as posterior sampling in RL)
 \todo{cite thopmson sampling paper dearden et al 1999}
 \cite{osbandMoreEfficientReinforcement2013},
 and used it to implement optimism in the face of uncertainty using upper confidence bounds \cite{curiEfficient2020}.
@@ -537,7 +537,7 @@ and variational inference \cite{galImproving2016,houthooftVIME2017}. \todo{Could
 % by linearising a neural network around the Maximum a Posteriori (MAP) weights.
 % a GP posterior -- can be obtained
 %
-In supervised learning, given a data set $\dataset = \{(\vx_{i} , y_{i})\}_{i=1}^{N}$, with input $\vx_i \in \inputDomain$ and output $y_i \in \R$ pairs, the weights $\weights \in \R^{P}$ of a neural network, $f_\mathbf{w} : \inputDomain \to \R$, are usually trained to minimize the (regularized) empirical risk,
+In supervised learning, given a data set $\dataset = \{(\vx_{i} , \vy_{i})\}_{i=1}^{N}$, with input $\vx_i \in \inputDomain$ and output $\vy_i \in \outputDomain$ pairs, the weights $\weights \in \R^{P}$ of a neural network, $f_\mathbf{w}: \inputDomain \to \outputDomain$ (yet, to simplify the notation we restrict presentation to scalar output), are usually trained to minimize the (regularized) empirical risk,\looseness-1
 %
 \begin{equation} \label{eq-empirical-risk}
   \weights^{*} = 
@@ -578,7 +578,8 @@ The Laplace-GGN takes the MAP solution and approximates the Hessian of the loss 
 with the GGN.
 Following the work of \citet{khan2019approximate}, we can view this approximation as building an approximate linear model of the neural network as $f_{\weights^*}(\vx) \approx 
 %g_{\weights}(\vx) = 
-\Jac{\weights_*}{\vx} \, \weights$, where $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{P}$ is the Jacobian at the MAP.
+\Jac{\weights_*}{\vx} \, \weights$, where $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{1 \times P}$ is the Jacobian at the MAP.
+
 Using the Hessian of the approximate model, we arrive at the Laplace-GGN approximate posterior for $q(\vw)$ \todo{This is the first time q(w) is used, should define it}. 
 Therefore, the Laplace-GGN linear model can be used to convert our weight space model to the function space by \todo{To be super clear even when reading this part out of context: could specify that using a GP with this mean and covariance},
 \begin{equation} 
@@ -916,15 +917,16 @@ In \cref{tbl:uci} (right), we also include an ablation and comparison study (to 
     GP predictive \cite{immer2021improving} & $3200$ & \val{98.22}{0.13} & \val{0.058}{0.001} & \val{0.003}{0.000}
                                                      & \val{91.36}{0.11} & \val{0.25}{0.004} & \val{0.007}{0.001} \\
 
-    GP predictive NN & $1024$ &  \val{97.70}{0.07} & \val{0.080}{0.002} & \val{0.011}{0.001}
-                              &  \val{0}{0.07} & \val{0}{0.002} & \val{0}{0.001} \\
+    GP predictive NN & $1024$ & \val{97.70}{0.07} & \val{0.080}{0.002} & \val{0.011}{0.001}
+                              & \val{91.47}{0.41} & \val{0.289}{0.009} & \val{0.033}{0.003} \\
 
     GP predictive & $1024$  & \val{76.28}{1.85} & \val{0.702}{0.029} & \val{0.070}{0.022}
-                            & \val{0}{1.85} & \val{0}{0.029} & \val{0}{0.022} \\
+                            & \val{83.98}{0.35} & \val{0.503}{0.012} & \val{0.052}{0.006} \\
     \our NN & $1024$ &  \val{98.02}{0.12} & \val{0.066}{0.003} & \val{0.007}{0.001}
-                     &  \val{0}{0.0} & \val{0}{0.003} & \val{0}{0.001} \\
+                     & \val{91.93}{0.45} & \val{0.267}{0.011} & \val{0.028}{0.003} \\
     \our & $1024$ & \val{98.07}{0.06} & \val{0.063}{0.003} & \val{0.005}{0.001}
-                  & \val{0}{0.06} & \val{0}{0.003} & \val{0}{0.001} \\
+                  & \val{91.56}{0.35} & \val{0.253}{0.006} & \val{0.012}{0.001} \\
+    \midrule
 %    \multirow{2}{*}{FMNIST}
 %    & MAP & \val{91.39}{0.11} & \val{0.258}{0.004} & \val{0.017}{0.001} \\
     %& BNN predictive \cite{immer2021improving} & \val{84.42}{0.12} & \val{0.942}{0.016} & \val{0.411}{0.008} \\
@@ -1213,13 +1215,13 @@ The training curves clearly show that \our's uncertainty estimates help explorat
 \section{Discussion and conclusion}
 \label{sec:conclusion}
 %
-In this paper, we have introduced \our, a novel approach for representing neural networks in sparse function-space, exploiting the dual parameters for an efficient low-rank approximation that accommodates information from the entire data distribution. Our method offers a powerful mechanism for capturing predictive uncertainty, updating the model with new data without retraining, and providing a compact representation suitable for continual learning. These aspects were demonstrated in a wide range of problems, datasets, and learning contexts. We showcased our method's ability to capture uncertainty in UCI and image tasks under supervised learning (\cref{sec:uci}), demonstrated robustness on image data sets (\cref{,sec:image}), established its potential for continual learning (\cref{sec:cl-exp}), and finally, verified its applicability in reinforcement learning scenarios (\cref{sec:rl-exp}).
+In this paper, we have introduced \our, a novel approach for representing neural networks in sparse function space, exploiting the dual parameters for an efficient low-rank approximation that accommodates information from the entire data distribution. Our method offers a powerful mechanism for capturing predictive uncertainty, updating the model with new data without retraining, and providing a compact representation suitable for continual learning. These aspects were demonstrated in a wide range of problems, datasets, and learning contexts. We showcased our method's ability to capture uncertainty in UCI classification tasks (\cref{sec:uci}), demonstrated robustness on image data sets (\cref{,sec:image}), established its potential for continual learning (\cref{sec:cl-exp}), and finally, verified its applicability in reinforcement learning scenarios (\cref{sec:rl-exp}).
 
 % Discussion points
 It is worth noting that the NTK linearises the network around the MAP solution $\weights^{*}$,
 so the function-space prior (and thus posterior) is only a locally linear approximation.
 In contrast to conventional GP kernels, the NTK does not have any hyperparameters which need to be learned.
-It is also worth noting that the NTK may be highly non stationary and is dependent on the NN architecture, for example, the activation functions.
+On the other hand, the NTK may be highly non-stationary and is dependent on the NN architecture, for example, the activation functions.
 
 
 

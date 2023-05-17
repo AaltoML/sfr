@@ -1099,7 +1099,8 @@ In \cref{tbl:cl_table_1}, we use 200 points for each task, and we further demons
 From \cref{tbl:cl_table_1}, it is clear that the weight-space regularization methods fail entirely compared to the function-space methods on S-MNIST and S-FMNIST but are still comparable on P-MNIST.
 Considering only function-space methods, we can see that \our achieves the best results on most data sets and is particularly effective when using fewer points per task.
 On S-FMNIST, our method obtains close results to DER, which regularizes the model by taking the mean squared error between current and old function outputs without accounting for the covariance structure of the loss similar to our L2 ablation. However, DER resorts to a reservoir sampling \citep{vitter1985random} that continuously update the set of points instead of selecting them at the task boundary.
-The \our-based regularizer obtains comparable results to the best-performing method on P-MNIST, S-FSVI, which requires heavy computations compared to \our to perform 
+The \our-based regularizer obtains comparable results to the best-performing method on P-MNIST, S-FSVI, which requires heavy computations compared to \our to perform variational inference. Finally, it is worth noticing as our ablation already provides a very solid baseline consistently over all data sets.
+
 
 
 

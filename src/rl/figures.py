@@ -151,32 +151,38 @@ def plot_training_curves(
                 returns = np.stack(returns, 0)
                 print("returns {}".format(returns.shape))
                 np.savez(npz_save_name, returns=returns)
-            if returns.shape[0] < min_length:
-                min_length = returns.shape[0]
             returns_all.append(returns)
 
-        # make all seeds use same number of episodes
-        returns_all_copy = []
-        for r in returns_all:
-            returns_all_copy.append(r[0:min_length])
-
         values_same_length = []
-        for val in returns_all_copy:
+        for val in returns_all:
+            print("val {}".format(val.shape))
             cumsum_vec = np.cumsum(np.insert(val, 0, 0))
             ma_vec = (
                 cumsum_vec[window_width:] - cumsum_vec[:-window_width]
             ) / window_width
             values_same_length.append(ma_vec)
+            if ma_vec.shape[0] < min_length:
+                min_length = ma_vec.shape[0]
 
-        returns_same_length = np.stack(values_same_length, 0)
-        # returns_all = np.stack(returns_all_copy, 0)
-        print("rreturns_same_length{}".format(returns_same_length.shape))
-        returns_mean = np.mean(returns_same_length, 0)
+        # make all seeds use same number of episodes
+        returns_all_copy = []
+        for r in values_same_length:
+            print("r {}".format(r.shape))
+            returns_all_copy.append(r[0:min_length])
+            print("r[0:min_length] {}".format(r[0:min_length].shape))
+
+        # returns_same_length = np.stack(values_same_length, 0)
+        returns_all = np.stack(returns_all_copy, 0)
+        # print("rreturns_same_length{}".format(returns_same_length.shape))
+        # returns_mean = np.mean(returns_same_length, 0)
+        returns_mean = np.mean(returns_all_copy, 0)
         print("returns_mean {}".format(returns_mean.shape))
         # returns_std = np.std(returns_all, 0)
-        returns_std = sem(returns_same_length, 0)
+        # returns_std = sem(returns_same_length, 0)
+        returns_std = sem(returns_all_copy, 0)
         print("returns_std {}".format(returns_std.shape))
-        num_episodes = len(returns_same_length[0])
+        num_episodes = len(returns_all_copy[0])
+        # num_episodes = len(returns_same_length[0])
         episodes = np.arange(0, num_episodes)
         print("episodes {}".format(episodes.shape))
         ax.plot(
@@ -203,14 +209,15 @@ def plot_training_curves(
         ):
             ax.plot(
                 episodes,
-                np.ones_like(episodes) * np.max(np.mean(returns_same_length, 0)),
+                np.ones_like(episodes) * np.max(np.mean(returns_all_copy, 0)),
+                # np.ones_like(episodes) * np.max(np.mean(returns_same_length, 0)),
                 # label=LABELS[experiment_key],
                 color=COLORS[experiment_key],
                 linestyle="--",
             )
 
     # TODO set min episodes automatically
-    ax.set_xlim(0, 70)
+    ax.set_xlim(0, 50)
     ax.set_xlabel("Episode")
     ax.set_ylabel("Return")
     # ax.spines["top"].set_visible(False)

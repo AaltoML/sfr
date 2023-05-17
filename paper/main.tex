@@ -721,16 +721,13 @@ After each task, we update $\mathcal{M}$, and can construct a regularizer term, 
 \section{Experiments}
 \label{sec:experiments}
 %
-We present a series of experiments designed to demonstrate the versatility and efficacy of \our. We seek to find answers to the following questions: 
+We present a series of experiments specifically designed to showcase the robustness and effectiveness of \our. The experiments are aimed at answering the following key questions:
 \textbf{Predictions:}~Does our method's ability to consider the full data set offer benefits over subset function-space methods? (\cref{sec:uci}) How do predictions with our sparse function-space approximation compare to weight-space approximations? 
 \textbf{Function-space updates:} How fast are our function-space updates relative to retraining from scratch? Do they improve predictive performance? 
 \textbf{Representation:} Can a sparse function-space representation help retain knowledge from previous tasks in CL? (\cref{sec:cl-exp})
-\textbf{Uncertainty:} Can our uncertainty estimates help exploration in RL? (\cref{sec:rl-exp})
+\textbf{Uncertainty:} Can our uncertainty estimates help exploration in RL? (\cref{sec:rl-exp}) We implement all methods in PyTorch~\cite{paszke2019pytorch} and run the benchmarks using a GPU cluster. We provide full experiment details in \cref{app:experiments}. 
 
-
-\paragraph{Implementation} We implement all methods in PyTorch~\cite{paszke2019pytorch} and leverange the XXXX libraries.. \todo{add brief details}. Experiments were run on clusters  
-
-\paragraph{Toy examples} For illustrative purposes, we smoke-test our approach on a 1D regression problem (\cref{fig:teaser}) and on the 2D Banana classification task (\cref{fig:banana}). In \cref{fig:teaser}, we train an MLP neural network with two hidden layers (64 hidden units each, tanh activation). The middle panel shows the \our result on a sparse set of data examples, while the rightmost panel demonstrates fast dual conditioning on new data (from \cref{sec:sequential}). In \cref{fig:banana}, we use an MLP with two hidden layers (64 units, sigmoid) and compare to the HMC result obtained by hamiltorch \cite{cobb2020scaling} that shows capture similar behaviour as HMC.
+\paragraph{Toy examples} For illustrative purposes, we show our approach on a 1D regression problem (\cref{fig:teaser}) and on the 2D {\sc Banana} classification task (\cref{fig:banana}). In \cref{fig:teaser}, we train an MLP neural network with two hidden layers (64 hidden units each, tanh activation) and pass it through \our. The middle panel shows the \our result on a sparse set of data examples, while the rightmost panel demonstrates fast dual conditioning on new data (from \cref{sec:sequential}). In \cref{fig:banana}, we use an MLP with two hidden layers (64 units, sigmoid) and compare to a HMC sampling result obtained by hamiltorch~\cite{cobb2020scaling}. The HMC result is more expressive, but the results are still similar in terms of quantifying the uncertainty in low-data regions.
 
 
 %Initially, we explore the capability of our method to capture predictive uncertainty through supervised learning tasks using UCI datasets. Subsequently, we extend our supervised learning experiment to image datasets, demonstrating our method's robustness and adaptability to more complex, high-dimensional data. Next, we investigate the potential of our method in a continual learning context, where we update the neural network representation in response to incoming data without necessitating retraining. Lastly, we delve into the realm of reinforcement learning to ascertain the applicability of our approach in an environment that requires sequential decision-making. Each experiment is designed to illuminate a different facet of our method, thereby exemplifying its broad range of applicability and potential for future utilization.
@@ -829,11 +826,11 @@ We present a series of experiments designed to demonstrate the versatility and e
 \subsection{Capturing uncertainty in UCI tasks under supervised learning}
 \label{sec:uci}
 %
-We consider 8 UCI~\cite{UCI} benchmarks, consisting of a range of binary and multi-class classification tasks with varying data set sizes. We first train two-layer MLPs for each of the classification tasks and follow the setup in \cref{sec:methods} for \our. That is, after training we construct the \our dual and use the resulting model for uncertainty quantification. For comparison, we used the same hyperparameters for the neural network training as in the UCI experiments of \cite{immer2021improving}, and similarly perform hyperparameter search over the prior precision $\delta$, and run the experiment over $10$ random splits.
- %Depending on task dimension and complexity, our model can match the neural network MAP in negative log-predictive density (NLPD) even with a low number of inducing points (see \cref{tbl:uci} left).
-In \cref{tbl:uci} (left), we compare our model to the NN MAP estimate, mean-field VI, a Bayesian NN, and a GLM model (see \cite{immer2021improving} for the baselines) in negative log-predictive density (NLPD). We match the predictive performance despite being sparse (here, $M=256$). Results for $M=16,32,64,128,256$ are included in \cref{app:uci} with full experiment details. 
+We consider eight UCI benchmarks~\cite{UCI}, covering of a variety of binary and multi-class classification tasks with different data set sizes. We initially train a two-layer MLP for each of the classification tasks and follow the setup in \cref{sec:methods} for \our. That is, after training we construct the \our dual and use the resulting model for uncertainty quantification. For comparison, we used the same hyperparameters for the neural network training as in the UCI experiments of \cite{immer2021improving}, and similarly perform hyperparameter search over the prior precision $\delta$, and run the experiment over $10$ random splits. In \cref{tbl:uci} (left), we compare our model to the NN MAP estimate, mean-field VI, a Bayesian NN, and a GLM model (see \cite{immer2021improving} for the baselines) in negative log-predictive density (NLPD). We match the predictive performance despite being sparse (here, $M=256$). Results for $M=16,32,64,128,256$ are included in \cref{app:uci} with full experiment details. 
 
-In \cref{tbl:uci} (right), we also include an ablation and comparison (to \cite{immer2021improving}) study with a fixed low number of inducing points ($M=32$). The comparison shows that our sparse method is able to summarize the information of the full data set more efficiently than sparse subset methods, and can match the performance of the full GP even with a low number of inducing points. This is even more apparent from \cref{fig:uci} which shows the benefits of \our in summarizing the full data distribution onto a small set of inducing points over just picking a random subset.
+In \cref{tbl:uci} (right), we also include an ablation and comparison study (to \cite{immer2021improving}) with a fixed low number of inducing points ($M=32$). The comparison shows that our sparse method is able to summarize the information of the full data set more efficiently than sparse subset methods, and can match the performance of the full GP even with a low number of inducing points. This is even more apparent from \cref{fig:uci} which shows the benefits of \our in summarizing the full data distribution onto a small set of inducing points over just picking a random subset.
+
+
 
 % see \cref{tbl:uci} for a list of the datasets. The neural network training was done using MAP, with a prior $\mathcal{N}(0,\delta^{-1} \MI)$ with prior precision $\delta$. After training, we constructed the SVGP dual and used the resulting SVGP model for uncertainty quantification. Depending on task dimension and complexity, our model can match the NN MAP in NLPD performance even with a low number of inducing points, see \cref{tbl:uci}. We performed hyperparameter search over the prior precision, and ran the experiment over $10$ seeds. During the initial NN training, we used a learning rate of $1e-3$.
 
@@ -872,29 +869,68 @@ In \cref{tbl:uci} (right), we also include an ablation and comparison (to \cite{
 	} 
 
     % THE TABLE CAN BE FORMATTED MORE LIKE THIS
-    \begin{tabular}{l l C{\tblw} C{\tblw} C{\tblw} C{\tblw}}
+    % \begin{tabular}{l l C{\tblw} C{\tblw} C{\tblw} C{\tblw}}
+    % \toprule
+    % & Method & ACC~$\uparrow$ & NLPD~$\downarrow$ & ECE~$\downarrow$ & OOD-AUC~$\uparrow$  \\
+    % \midrule
+    % \multirow{2}{*}{FMNIST}
+    % & MAP & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & BNN predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & BNN predictive \cite{todo} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & GLM predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & GP predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & \our (NN) & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & \our & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % \midrule
+    % \multirow{2}{*}{CIFAR-10}
+    % & MAP & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & BNN predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & BNN predictive \cite{todo} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & GLM predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & GP predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & \our (NN) & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & \our & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % \bottomrule
+    % \end{tabular}
+  \begin{tabular}{l l C{\tblw} C{\tblw} C{\tblw} C{\tblw}}
     \toprule
-    & Method & ACC~$\uparrow$ & NLPD~$\downarrow$ & ECE~$\downarrow$ & OOD-AUC~$\uparrow$  \\
+    & Method & ACC~$\uparrow$ & NLPD~$\downarrow$ & ECE~$\downarrow$   \\
     \midrule
-    \multirow{2}{*}{FMNIST} 
-    & MAP & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & BNN predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & BNN predictive \cite{todo} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & GLM predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & GP predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & \our (NN) & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & \our & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\    
+    \multirow{2}{*}{MNIST}
+    & MAP & \val{98.22}{0.13} & \val{0.061}{0.004} & \val{0.006}{0.001} \\
+    & BNN predictive \cite{immer2021improving} & \val{93.14}{0.05} & \val{0.304}{0.002} & \val{0.111}{0.003} \\
+    & BNN predictive \cite{ritter2018kfac} & \val{93.03}{0.13} & \val{0.369}{0.003} & \val{0.168}{0.001} \\
+    & GLM predictive \cite{immer2021improving} & \val{98.40}{0.05} & \val{0.054}{0.002} & \val{0.007}{0.001} \\
+    & GP predictive \cite{immer2021improving} $m=3200$ & \val{98.22}{0.13} & \val{0.058}{0.001} & \val{0.003}{0.000} \\
+    & GP predictive NN $m=1024$ &  \val{97.70}{0.07} & \val{0.080}{0.002} & \val{0.011}{0.001} \\
+    & GP predictive $m=1024$  &  \val{76.28}{1.85} & \val{0.702}{0.029} & \val{0.070}{0.022} \\
+    & \our NN $m=1024$ &  \val{98.02}{0.12} & \val{0.066}{0.003} & \val{0.007}{0.001} \\
+    & \our $m=1024$ &  \val{98.07}{0.06} & \val{0.063}{0.003} & \val{0.005}{0.001} \\
     \midrule
-    \multirow{2}{*}{CIFAR-10} 
-    & MAP & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & BNN predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & BNN predictive \cite{todo} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & GLM predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & GP predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & \our (NN) & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & \our & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\    
+    \multirow{2}{*}{FMNIST}
+    & MAP & \val{91.39}{0.11} & \val{0.258}{0.004} & \val{0.017}{0.001} \\
+    & BNN predictive \cite{immer2021improving} & \val{84.42}{0.12} & \val{0.942}{0.016} & \val{0.411}{0.008} \\
+    & BNN predictive \cite{ritter2018kfac} & \val{91.20}{0.07} & \val{0.265}{0.004} & \val{0.024}{0.002} \\
+    & GLM predictive \cite{immer2021improving} & \val{92.25}{0.10} & \val{0.244}{0.003} & \val{0.012}{0.003} \\
+    & GP predictive \cite{immer2021improving} $m=3200$ & \val{91.36}{0.11} & \val{0.25}{0.004} & \val{0.007}{0.001} \\
+    & GP predictive NN $m=1024$ &  \val{0}{0.07} & \val{0}{0.002} & \val{0}{0.001} \\
+    & GP predictive $m=1024$  &  \val{0}{1.85} & \val{0}{0.029} & \val{0}{0.022} \\
+    & \our NN $m=1024$ &  \val{0}{0.0} & \val{0}{0.003} & \val{0}{0.001} \\
+    & \our $m=1024$ &  \val{0}{0.06} & \val{0}{0.003} & \val{0}{0.001} \\
     \bottomrule
-    \end{tabular}
+  \end{tabular}
+
+% & \sc \sc gp predictive  &  \val{76.28333}{1.849} & \val{0.70168}{0.02883} & \val{0.07049}{0.02154} \\
+% & \sc \sc gp predictive NN \cite{immer2021improving} &  \val{97.70333}{0.074} & \val{0.08027}{0.00248} & \val{0.01052}{0.00097} \\
+% & \sc \our &  \val{98.06667}{0.060} & \val{0.06312}{0.00284} & \val{0.00493}{0.00086} \\
+% & \sc \our NN &  \val{98.02000}{0.122} & \val{0.06583}{0.00294} & \val{0.00714}{0.00096} \\
+% M=512
+% & \sc \our &  \val{96.05}{0.00} & \val{0.85}{0.01} & \val{0.50}{0.00} \\
+% & \sc \sc gp predictive  &  \val{14.79}{0.01} & \val{2.30}{0.02} & \val{0.02}{0.01} \\
+% & \sc \sc gp predictive NN \cite{immer2021improving} &  \val{91.49}{0.01} & \val{1.25}{0.01} & \val{0.61}{0.00} \\
+% & \sc \our NN &  \val{96.96}{0.00} & \val{0.63}{0.00} & \val{0.40}{0.00} \\
+
+% M=1024
 
     % THE TABLE NUMBER ARE GENERATED BY A SCRIPT	
 	%\input{tables/img_super.tex}

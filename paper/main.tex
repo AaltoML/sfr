@@ -573,8 +573,8 @@ with the GGN.
 Following the work of \citet{khan2019approximate}, we can view this approximation as building an approximate linear model of the neural network as $f_{\weights^*}(\vx) \approx 
 %g_{\weights}(\vx) = 
 \Jac{\weights_*}{\vx} \, \weights$, where $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{C \times P}$ is the Jacobian at the MAP.
-Using the Hessian of the approximate model, we arrive at the Laplace-GGN approximate posterior for $q(\vw)$. 
-Therefore, the Laplace-GGN linear model can be used to convert our weight space model to the function space by,
+Using the Hessian of the approximate model, we arrive at the Laplace-GGN approximate posterior for $q(\vw)$ \todo{This is the first time q(w) is used, should define it}. 
+Therefore, the Laplace-GGN linear model can be used to convert our weight space model to the function space by \todo{To be super clear even when reading this part out of context: could specify that using a GP with this mean and covariance},
 \begin{equation} 
 \label{eq-laplace-approx-function-space} 
 % g(\vx) \sim \GP \left( \mu(\vx), \kappa(\vx, \vx') \right) \quad \text{with} \quad
@@ -582,7 +582,7 @@ Therefore, the Laplace-GGN linear model can be used to convert our weight space 
   \kappa(\vx, \vx')
   = \frac{1}{\delta} \Jac{\weights^*}{\vx} \, \JacT{\weights^*}{\vx'}, 
 \end{equation}
-where the kernel is the so-called Neural Tangent Kernel (NTK, \cite{jacot2018neural}). In \cref{eq-laplace-approx-function-space}, we restrict the function output to a single dimension for notational simplicity, yet this formulation can be readily extended to the multi-output scenario. With this kernel function, we can combine it with the data set $\dataset$ to construct the posterior. 
+where the kernel is the so-called Neural Tangent Kernel (NTK, \cite{jacot2018neural}). In \cref{eq-laplace-approx-function-space}, we restrict the function output to a single dimension for notational simplicity, yet this formulation can be readily extended to the multi-output scenario. With this kernel function, we can combine it with the data set $\dataset$ to construct the posterior. \todo{what is "it" here?}
 %
 \citet{khan2019approximate} took a similar approach, but instead of fitting the GP posterior to the actual $\vy$, they rely on a transformation of $\vy$. Similarly, \citet{immer2021improving} obtain the same covariance function but use a different mean because they rely on a first-order approximation of the neural network to form a Bayesian GLM model. Both approaches attempted to adjust the GP posterior mean function to ensure the predictions are from the neural network $f_{\vw^*}(\vx)$. 
 Contrarily, our methodology intends to make predictions directly from the derived GP, thus evading such adjustments. Next, we will present the general formulation of the sparse functional representation of our trained neural network based on the non-sparse approximation. 
@@ -591,7 +591,7 @@ Contrarily, our methodology intends to make predictions directly from the derive
 
 \section{\our: Sparse function-space representation of neural networks}
 %\paragraph{GP in the dual parameters}
-The seminal work by \citet{csato2002sparse} (parameterization Lemma~1) gives a parameterization for the posterior process $f_{\textrm{post}}$ that can be found through the Bayesian update using the GP prior and the likelihood function. This gives a `dual' parameterization, $\valpha$ and $\vbeta$,
+The seminal work by \citet{csato2002sparse} (parameterization Lemma~1) gives a parameterization for the posterior process $f_{\textrm{post}}$ \todo{The f post doesn't match the notation in Background?} that can be found through the Bayesian update using the GP prior and the likelihood function. This gives a `dual' parameterization, $\valpha$ and $\vbeta$,
 %
 \begin{equation}  \label{eq:gp_pred}
   \myexpect_{p(f_i \mid\vy)}[f_i]= \vk_{\vx i}^\top \valpha \quad \text{and} \quad
@@ -609,7 +609,7 @@ where the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{N \times N
 %
 where $f_\vw(\vx_i) = f_i$ is the function output at input $\vx_i$. The relationships specified are valid for generic likelihoods, and involve no approximations since the expectation is under the exact posterior, but given that the model can be expressed in a kernel formulation. \cref{eq:gp_pred} and \cref{eq:dual_param} highlight that the approximate inference technique, usually viewed as a posterior approximation, can be alternatively interpreted as an approximation of the expectation of gradients of loss/likelihoods.
 
-Originally \citet{csato2002sparse} iteratively find dual variables using an expectation propagation (EP, \cite{minka2001expectation}) method. More recently \cite{khan2017conjugate,adam2021dual}, has shown this relationship for variational Gaussian processes where the above expectation is with respect to the approximate variational posterior. Meanwhile in \citet{wilkinson2023bayes}, they show links between linearization methods and how they solve the \cref{eq:dual_param}.
+Originally \citet{csato2002sparse} iteratively find dual variables using an expectation propagation (EP, \cite{minka2001expectation}) method. More recently \cite{khan2017conjugate,adam2021dual}, has \todo{Should it be have or has?}shown this relationship for variational Gaussian processes where the above expectation is with respect to the approximate variational posterior. Meanwhile in \citet{wilkinson2023bayes}, they show links between linearization methods and how they solve the \todo{Could make passive / active voice more consistent in this paragraph} \cref{eq:dual_param}.
 
 \paragraph{Dual parameters from NN}
 Given that we use a Laplace approximation of the neural network, we remove the expectation over the posterior (see Ch.~3.4.1 in \cite{rasmussen2006gaussian} for derivation) and we get the the following formulation of the dual variables,
@@ -621,14 +621,14 @@ Given that we use a Laplace approximation of the neural network, we remove the e
   \hat{\beta}_i \coloneqq - \nabla^2_{ff}\log p(y_i \mid f) |_{f=f_i}.
 \end{equation}
 %
-Substiuting \cref{eq:dual_param_laplace} into \cref{eq:gp_pred}, we obtain our GP model based on the converged neural network. Again, this is similar to what was derived in \citet{immer2021improving} for the posterior variance function. However, they use the $f_{\vw^*}$ for the posterior mean and do not emphasize the significance of the dual variables. The problem with \cref{eq:gp_pred} is that to make predictions and compute variances we must incur a cost of $O(N^3)$ which limits the use of the GP on large data sets.
+Substituting \cref{eq:dual_param_laplace} into \cref{eq:gp_pred}, we obtain our GP model based on the converged neural network. Again, this is similar to what was derived in \citet{immer2021improving} for the posterior variance function. However, they use the $f_{\vw^*}$ for the posterior mean and do not emphasize the significance of the dual variables. The problem with \cref{eq:gp_pred} is that to make predictions and compute variances we must incur a cost of $O(N^3)$ which limits the use of the GP on large data sets.
 
 \paragraph{Sparsifying the NN GP}
 \label{sec:sparse-dual-gp}
 %
-Sparse Gaussian processes reduce the computational complexity by representing the GP as a low-rank approximation induced by a sparse set of inputs points (see \cite{quinonero2005unifying} for an early overview). Given that we have computed the dual variables derived from our neural network predictions and a kernel function, we could essentially employ any of these sparsification methods. In this work, we opt for the approach suggested by \citet{titsias2009variational} (also used in the DTC approximation, see \cite{quinonero2005unifying}), which defines the marginal predictive distribution as $q_{\vu}(f_i)  = \int p(f_i  \mid \vu) \, q(\vu) \, \mathrm{d}\vu$. Given that we have $p(f_i \mid \vu)$ determined by our GP prior, the goal is to find a $q(\vu)$. 
+Sparse Gaussian processes reduce the computational complexity by representing the GP as a low-rank approximation induced by a sparse set of input points (see \cite{quinonero2005unifying} for an early overview). Given that we have computed the dual variables derived from our neural network predictions and a kernel function, we could essentially employ any of these sparsification methods. In this work, we opt for the approach suggested by \citet{titsias2009variational} (also used in the DTC approximation, see \cite{quinonero2005unifying}), which defines the marginal predictive distribution as $q_{\vu}(f_i)  = \int p(f_i  \mid \vu) \, q(\vu) \, \mathrm{d}\vu$. Given that we have $p(f_i \mid \vu)$ determined by our GP prior, the goal is to find a $q(\vu)$. 
 
-As demonstrated in \cite{adam2021dual}, the posterior under this model bears a structure akin to \cref{eq:gp_pred}. The authors of that paper see the significance of the dual variables for approximate inference, but write them using the natural parameterization, primarily because this form is more suitable for optimization through natural gradients. In order to link the dual variables defined in \cref{eq:dual_param}, we write them in the sparse GP using the dual variables
+As demonstrated in \cite{adam2021dual}, the posterior under this model bears a structure akin to \cref{eq:gp_pred}. The authors of that paper \todo{Even though it's us, should we speculate about how authors see things? Maybe nicer to write about how the paper uses the dual} see the significance of the dual variables for approximate inference, but write them using the natural parameterization, primarily because this form is more suitable for optimization through natural gradients. In order to link the dual variables defined in \cref{eq:dual_param}, we write them in the sparse GP using the dual variables
 %
 \begin{equation} \textstyle
   \valpha_{\vu}  =  \sum_{i=1}^N  \vkzi \, \hat{\alpha}_{i}

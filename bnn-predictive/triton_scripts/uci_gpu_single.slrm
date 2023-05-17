@@ -15,10 +15,10 @@ source activate /scratch/work/tamire1/full-bnn-svgp/conda/bnn-svgp
 
 SEEDS=(711 1 75 359 17 420 129 666 69 36)
 SEED=${SEEDS[($SLURM_ARRAY_TASK_ID)]}
-name='sparse_256'
+name='sparse_1024'
 res_folder='16'
-n_inducing=256
-dataset='breast_cancer'
+n_inducing=1024
+dataset='digits'
 batch_size=100
 logmin=-1.0
 

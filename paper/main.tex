@@ -862,7 +862,7 @@ In \cref{tbl:uci} (right), we also include an ablation and comparison study (to 
 
 \begin{table}[t!] 
   \centering\scriptsize
-  \caption{Metrics for supervised learning with image data. SVGP is our method, and the number inside parentheses is the number of inducing points. SVGP NN is a modification of our method, where the mean is from the NN directly and the variance is from the GP model.} 
+  \caption{Metrics for supervised learning on image data with a CNN. We report accuracy, NLPD, and expected calibration error (mean$\pm$std) over 10 seeds. Our \our method is able to match the full methods using only a sparse set. For the GP predictive sparse subset method and \our we report results both using the NN MAP as mean (NN) and GP  mean.} 
 	\label{tbl:imagesuper}
 	% Control table spacing
 	\renewcommand{\arraystretch}{1.}
@@ -898,7 +898,7 @@ In \cref{tbl:uci} (right), we also include an ablation and comparison study (to 
     % & \our & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
     % \bottomrule
     % \end{tabular}
-  \newcommand{\myline}{\protect\tikz[baseline=-.5ex,line width=1pt]\protect\draw[draw=black!50](0,0)--(7em,0);}
+  \newcommand{\myline}{\protect\tikz[baseline=-.5ex,line width=.7pt]\protect\draw[draw=gray](0,0)--(7em,0);}
   \begin{tabular}{l c C{\tblw} C{\tblw} C{\tblw} C{\tblw} C{\tblw} C{\tblw}}
     \toprule
             &     &  \multicolumn{3}{c}{\myline~MNIST~\myline} & \multicolumn{3}{c}{\myline~FMNIST~\myline} \\
@@ -954,9 +954,10 @@ In \cref{tbl:uci} (right), we also include an ablation and comparison study (to 
 	%\input{tables/img_super.tex}
 \end{table}
 
-Similarly to the UCI experiments, we seek to demonstrate \our on image data. We consider MNIST and Fashion-MNIST (FMNIST), and neural networks (CNN, architecture matches \cite{immer2021improving}) for the FMNIST and CIFAR10 classification tasks. After training, we computed the duals for NN2SVGP and used the resulting SVGP for uncertainty estimates, see \cref{tbl:imagesuper}. We performed hyperparameter optimization over the prior precision, and found the optimal value to be [insert]. We ran the experiment over $5$ seeds. During the NN training, we used a batch size of $512$ and an Adam optimizer with learning rate $1e-3$.
+Similarly to the UCI experiments, we seek to demonstrate \our on image data that features more complicated data manifolds and model structures. We consider the MNIST and Fashion-MNIST (FMNIST) classification tasks, and use a CNN architecture (matching the setup in \cite{immer2021improving}). After training, we computed the duals for \our and use the model for prediction (full experiment details in \cref{app:image}). In \cref{tbl:imagesuper}, we compare to baselines also used in \cite{immer2021improving}. For \our and the GP predictive subset method by \cite{immer2021improving} we fix the number of points $M=1024$. For the baseline we additionally include a higher $M$ for comparison. We report accuracy (ACC), NLPD, and expected calibration error (ECE). The results in \cref{tbl:imagesuper} agree with the conclusions drawn from the UCI experiments showing that \our is able to more efficiently capture the posterior using a sparse set of points. These results on image data motivates, the experiments that follow that consider learning beyond the supervised learning setting. 
+%We performed hyperparameter optimization over the prior precision, and found the optimal value to be [insert]. We ran the experiment over $5$ seeds. During the NN training, we used a batch size of $512$ and an Adam optimizer with learning rate $1e-3$.
 
-In addition to uncertainty estimates, our method can update the posterior when given new data. We gave the SVGP model 10 \% of the test dataset used for evaluation, and compare the performance of the SVGP model and the retrained NN in [INSERT TABLE]. 
+%In addition to uncertainty estimates, our method can update the posterior when given new data. We gave the SVGP model 10 \% of the test dataset used for evaluation, and compare the performance of the SVGP model and the retrained NN in [INSERT TABLE]. 
 
 
 

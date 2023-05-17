@@ -148,38 +148,23 @@ if __name__ == "__main__":
 
     batch_size = X_train.shape[0]
 
-    num_inducing = 50
+    num_inducing = 20
     # likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=1)
     likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=2)
     # likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=0.1)
     # likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=2)
     # likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=0.8)
     prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
-    ntksvgp = NTKSVGP(
+    ntksvgp = src.nn2svgp.NN2GPSubset(
         network=network,
-        # train_data=(X_train, Y_train),
         prior=prior,
         likelihood=likelihood,
         output_dim=3,
-        # num_inducing=500,
-        num_inducing=num_inducing,
-        dual_batch_size=None,
-        # dual_batch_size=32,
-        # num_inducing=20,
-        # jitter=1e-6,
+        subset_size=num_inducing,
+        # dual_batch_size=100,
         jitter=1e-4,
     )
-    # ntksvgp = src.nn2svgp.NN2GPSubset(
-    #     network=network,
-    #     prior=prior,
-    #     likelihood=likelihood,
-    #     output_dim=3,
-    #     subset_size=num_inducing,
-    #     # dual_batch_size=100,
-    #     jitter=1e-4,
-    # )
 
-    ntksvgp.set_data((X_train, Y_train))
     metrics = train(
         ntksvgp=ntksvgp,
         data=data,
@@ -193,7 +178,7 @@ if __name__ == "__main__":
     # X_subset = X_train[indices.to(X_train.device)]
     # Y_subset = Y_train[indices.to(Y_train.device)]
     # ntksvgp.set_data((X_subset, Y_subset))
-    # ntksvgp.set_data((X_train, Y_train))
+    # # ntksvgp.set_data((X_train, Y_train))
 
     f_mean, f_var = ntksvgp.predict_f(X_test_short)
     print("MEAN {}".format(f_mean.shape))

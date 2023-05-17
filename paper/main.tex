@@ -727,8 +727,7 @@ We present a series of experiments designed to demonstrate the versatility and e
 \textbf{Representation:} Can a sparse function-space representation help retain knowlegde from previous tasks in CL? (\cref{sec:cl-exp})
 \textbf{Uncertainty:} Can our uncertainty estimates help exploration in RL under sparse rewards? (\cref{sec:rl-exp})
 
-\paragraph{Implementation} We implement all methods in PyTorch~\ref{todo} 
-
+\paragraph{Implementation} We implement all methods in PyTorch~\cite{paszke2019pytorch} and leverange the XXXX libraries.. \todo{add brief details}. Experiments were run on clusters  
 
 \paragraph{Toy examples} For illustrative purposes, we smoke-test our approach on a 1D regression problem (\cref{fig:teaser}) and on the 2D Banana classification task (\cref{fig:banana}). In \cref{fig:teaser}, we train an MLP neural network with two hidden layers (64 hidden units each, tanh activation). The middle panel shows the \our result on a sparse set of data examples, while the rightmost panel demonstrates fast dual conditioning on new data (from \cref{sec:sequential}). In \cref{fig:banana}, we use an MLP with two hidden layers (64 units, sigmoid) and compare to the HMC result obtained by hamiltorch \cite{cobb2020scaling} that shows capture similar behaviour as HMC.
 

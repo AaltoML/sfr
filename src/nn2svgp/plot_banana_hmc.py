@@ -141,32 +141,55 @@ delta = 0.0002 * N_train
 tau = delta 
 tau_list = [tau*torch.ones(2*width),
             tau*torch.ones(width),
-            tau*torch.ones(width*width)]
+            tau*torch.ones(width*width),
+            tau*torch.ones(width),
+            tau*torch.ones(width),
+            tau*torch.ones(1)]
 
 num_samples = 10000
 burn = 2000
 step_size=0.01 # 0.01 orig
 
-params_init = hamiltorch.util.flatten(model).clone()
+#params_init = hamiltorch.util.flatten(model).clone()
+#
+#print('Run HMC')
+#
+#params_hmc = hamiltorch.sample_model(model, x_train, y_train, params_init=params_init, 
+#                                     num_samples=num_samples, step_size=step_size, num_steps_per_sample=10, 
+#                                     burn=burn, model_loss = 'binary_class_linear_output',
+#                                     tau_list=tau_list)
+#
+#print('Predict')
+#
+#pred_list,log_prob_list = hamiltorch.predict_model(model, params_hmc, test_loader=testloader, 
+#                                                   model_loss = 'binary_class_linear_output',
+#                                                   tau_list=tau_list)
 
 
-print('Run HMC')
-
-params_hmc = hamiltorch.sample_model(model, x_train, y_train, params_init=params_init, 
+def run_hmc():
+    params_init = torch.randn(4417)
+    params_hmc = hamiltorch.sample_model(model, x_train, y_train, params_init=params_init, 
                                      num_samples=num_samples, step_size=step_size, num_steps_per_sample=10, 
                                      burn=burn, model_loss = 'binary_class_linear_output',
                                      tau_list=tau_list)
-
-print('Predict')
-
-pred_list,log_prob_list = hamiltorch.predict_model(model, params_hmc, test_loader=testloader, 
+    pred_list,log_prob_list = hamiltorch.predict_model(model, params_hmc, test_loader=testloader, 
                                                    model_loss = 'binary_class_linear_output',
                                                    tau_list=tau_list)
-
-print('Pass')
-
+    return torch.mean(pred_list,axis=0),torch.var(pred_list,axis=0)
 
 
+# Run first chain
+Fmu,Fvar = run_hmc()
+
+# The rest of the chains
+for i in range(9):
+    F0,V0 = run_hmc()
+    Fmu = .5*(Fmu+F0)
+    Fvar = .5*(Fvar+V0)
+
+
+
+## Plotting
 
 import os
 import src
@@ -189,7 +212,7 @@ cmap = matplotlib.colors.LinearSegmentedColormap.from_list('mycmap', colors)
 cmap_nn = matplotlib.colors.LinearSegmentedColormap.from_list("", [C1,"white",C0])
 
 # Set up plotting
-def plot(hmc_pred,ax=None, vmax=None, network=None, plotSVGP=True, save=None, data=None):
+def plot(Fmu,Fvar,ax=None, vmax=None, network=None, plotSVGP=True, save=None, data=None):
     limits = [-2.8,2.8,-2.8,2.8]
     if ax is None:
         fig, ax = plt.subplots(1, 1, figsize=(6, 6))
@@ -204,8 +227,8 @@ def plot(hmc_pred,ax=None, vmax=None, network=None, plotSVGP=True, save=None, da
             ax.scatter(X[ind, 0], X[ind, 1], s=50, alpha=.5, edgecolor='k', marker=mark, color=c)
      
     # Predict f
-    Fmu = torch.mean(hmc_pred,axis=0)#.detach() #.numpy()
-    Fvar = torch.var(hmc_pred,axis=0)#.detach() #.numpy()
+    #Fmu = torch.mean(hmc_pred,axis=0)#.detach() #.numpy()
+    #Fvar = torch.var(hmc_pred,axis=0)#.detach() #.numpy()
     
     # Predict y
     p = src.nn2svgp.likelihoods.inv_probit(Fmu / torch.sqrt(1 + Fvar))
@@ -241,5 +264,5 @@ def plot(hmc_pred,ax=None, vmax=None, network=None, plotSVGP=True, save=None, da
         plt.savefig(path, dpi=200, bbox_inches='tight')
     
 
-plot(pred_list, data=(X,Y),save='./figs/banana-hmc.png')
+plot(Fmu,Fvar, data=(X,Y),save='./figs/banana-hmc.png')
 

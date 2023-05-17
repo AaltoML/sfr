@@ -1089,15 +1089,14 @@ The experiments are run only in the single-head (SH) setting that is harder and 
  Our regularizer is evaluated on three CL benchmarks, specifically Split-MNIST (S-MNIST), Split-FashionMNIST (S-FMNIST), and the 10-tasks Permuted-MNIST (P-MNIST). We adhere to the same setups outlined in \cite{rudner2022continual, pan2020continual}, which use a two-layer MLP with 256 hidden units and ReLU activation for S-MNIST and S-FMNIST and a two-layer MLP with 100 hidden units for P-MNIST, to ensure consistency (see \cref{app:cl-exp} for full details).
 
 % Methods
-We compare our method against two categories of methods: {\em (i)}~weight-regularization methods: EWC, SI, and VCL (with coresets), and {\em(ii)}~function-based regularization methods: DER, FROMP, and S-FSVI. We also introduce an ablation study where we replace $\bar{\MB}_t^{-1}$ with an identity matrix $\MI_M$, equivalent to using an L2 regularizer on the function outputs.
-In \cref{tbl:cl_table_1}, we use 200 points for each task, and we further demonstrate our method's ability to compress the task data set information on a lower number of points in S-MNIST.
+We compare our method against two categories of methods: {\em (i)}~weight-regularization methods: EWC, SI, and VCL (with coresets), and {\em(ii)}~function-based regularization methods: DER, FROMP, and S-FSVI. We also introduce an ablation study where we replace our $\bar{\MB}_t^{-1}$ with an identity matrix $\MI_M$, equivalent to having an L2 regularization between current and old function outputs.
+In \cref{tbl:cl_table_1}, we use 200 points for each task, and we further demonstrate our method's ability to compress the task data set information on a lower number of points for S-MNIST.
 
 %% Comments on the results:
-From \cref{tbl:cl_table_1}, it is clear that the weight-space regularization methods fail entirely compared to the function-space methods on S-MNIST and S-FMNIST but are still able to achieve reasonable results on P-MNIST. %, commonly referred to as Domain Incremental Learning. (opposed to the Class-Incremental Learning for S-MNIST and S-FMNIST)
+From \cref{tbl:cl_table_1}, it is clear that the weight-space regularization methods fail entirely compared to the function-space methods on S-MNIST and S-FMNIST but are still comparable on P-MNIST.
 Considering only function-space methods, we can see that \our achieves the best results on most data sets and is particularly effective when using fewer points per task.
-On S-FMNIST, our method obtains close results to DER, which regularizes the model by taking the mean squared error between current and old function outputs without accounting for the covariance structure of the loss similar to our L2 ablation. However, DER differs from our ablation since it resorts to a reservoir sampling \citep{vitter1985random} to continuously update the set of points instead of picking them at the task boundary.
-Finally, \our-based regularizer obtains comparable results to the best-performing method on P-MNIST, S-FSVI, which has the downside of requiring computational intensive based on performing variational inference, compared to \our. \todo{on PMNIST our method is not really super-fast, so that could be not the best thing to say here} % we could also say that P-MNIST is known to be a bad/ill-posed data set for CL 
-Finally, it is worth noticing as our ablation already provides a very solid baseline consistently over all data sets.
+On S-FMNIST, our method obtains close results to DER, which regularizes the model by taking the mean squared error between current and old function outputs without accounting for the covariance structure of the loss similar to our L2 ablation. However, DER resorts to a reservoir sampling \citep{vitter1985random} that continuously update the set of points instead of selecting them at the task boundary.
+The \our-based regularizer obtains comparable results to the best-performing method on P-MNIST, S-FSVI, which requires heavy computations compared to \our to perform variational inference. Finally, it is worth noticing as our ablation already provides a very solid baseline consistently over all data sets.
 
 
 

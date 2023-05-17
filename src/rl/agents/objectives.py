@@ -58,6 +58,23 @@ def greedy(
             return state_trajectory
 
     elif unc_prop_strategy == "sample":
+        # @torch.no_grad()
+        # def rollout(start_state: State, actions: ActionTrajectory) -> StateTrajectory:
+        #     state = start_state
+        #     state_trajectory = state[None, ...]
+        #     for t in range(horizon):
+        #         next_state_prediction = transition_model.predict(state, actions[t])
+        #         var = next_state_prediction.state_var
+        #         if use_noise_var:
+        #             var += next_state_prediction.noise_var
+        #         state_dist = td.Normal(next_state_prediction.state_mean, var)
+        #         state = state_dist.sample()
+        #         # TODO draw more than one sample?
+        #         print("sample state {}".format(state.shape))
+        #         state_trajectory = torch.concatenate(
+        #             [state_trajectory, state[None, ...]], 0
+        #         )
+        #     return state_trajectory
 
         @torch.no_grad()
         def rollout(start_state: State, actions: ActionTrajectory) -> StateTrajectory:

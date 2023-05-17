@@ -5,6 +5,7 @@ from src.nn2svgp import *
 
 # from src.sl import train
 import src.sl.train
+import src.sl.inference
 import src.sl.datasets
 import src.sl.networks
 

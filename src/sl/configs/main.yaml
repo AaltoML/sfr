@@ -23,7 +23,7 @@ hessian_structure: "diag"
 # hessian_strucute: "full"
 debug: False
 
-inference_batch_size: 100
+inference_batch_size: 128
 
 device: ???
 output_dim: ???

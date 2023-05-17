@@ -345,39 +345,48 @@ def train(cfg: DictConfig):
     # sfr_new = hydra.utils.instantiate(cfg.sfr, prior=prior, network=network)
     network = network.double()
     prior = hydra.utils.instantiate(cfg.prior, params=network.parameters)
-    sfr_double = src.ntksvgp.NTKSVGP(
-        network=network,
-        prior=prior,
-        likelihood=sfr.likelihood,
-        output_dim=sfr.output_dim,
-        num_inducing=sfr.num_inducing,
-        dual_batch_size=sfr.dual_batch_size,
-        jitter=sfr.jitter,
-        device=sfr.device,
-    )
 
-    gp_subset = hydra.utils.instantiate(cfg.gp_subset, prior=prior, network=network)
+    num_data = len(ds_train)
+    # for m in [16, 32, 64, 128, 256, 512, 1024, 2048, 3200]:
+    for m in [256, 512, 1024, 2048, 3200]:
+        if m >= num_data:
+            break
+        sfr.num_inducing = m
+        sfr_double = src.ntksvgp.NTKSVGP(
+            network=network,
+            prior=prior,
+            likelihood=sfr.likelihood,
+            output_dim=sfr.output_dim,
+            num_inducing=sfr.num_inducing,
+            dual_batch_size=sfr.dual_batch_size,
+            jitter=sfr.jitter,
+            device=sfr.device,
+        )
 
-    cfg.predictive_model = "sfr"
-    compute_metrics(
-        sfr=sfr_double,
-        gp_subset=gp_subset,
-        ds_train=ds_train,
-        ds_test=ds_test,
-        cfg=cfg,
-        checkpoint={},
-    )
+        gp_subset = hydra.utils.instantiate(
+            cfg.gp_subset, subset_size=m, prior=prior, network=network
+        )
 
-    cfg.predictive_model = "gp_subset"
-    # cfg.predictive_model = "sfr"
-    compute_metrics(
-        sfr=sfr_double,
-        gp_subset=gp_subset,
-        ds_train=ds_train,
-        ds_test=ds_test,
-        cfg=cfg,
-        checkpoint={},
-    )
+        cfg.predictive_model = "sfr"
+        compute_metrics(
+            sfr=sfr_double,
+            gp_subset=gp_subset,
+            ds_train=ds_train,
+            ds_test=ds_test,
+            cfg=cfg,
+            checkpoint={},
+        )
+
+        cfg.predictive_model = "gp_subset"
+        # cfg.predictive_model = "sfr"
+        compute_metrics(
+            sfr=sfr_double,
+            gp_subset=gp_subset,
+            ds_train=ds_train,
+            ds_test=ds_test,
+            cfg=cfg,
+            checkpoint={},
+        )
 
     # gp_subset = hydra.utils.instantiate(cfg.sfr, prior=prior, network=network)
     # gp_subset = src.nn2svgp.nn2gp.NN2GPSubset(

@@ -1218,15 +1218,14 @@ The training curves clearly show that \our's uncertainty estimates help explorat
 In this paper, we have introduced \our, a novel approach for representing neural networks in sparse function space, exploiting the dual parameters for an efficient low-rank approximation that accommodates information from the entire data distribution. Our method offers a powerful mechanism for capturing predictive uncertainty, updating the model with new data without retraining, and providing a compact representation suitable for continual learning. These aspects were demonstrated in a wide range of problems, datasets, and learning contexts. We showcased our method's ability to capture uncertainty in UCI classification tasks (\cref{sec:uci}), demonstrated robustness on image data sets (\cref{,sec:image}), established its potential for continual learning (\cref{sec:cl-exp}), and finally, verified its applicability in reinforcement learning scenarios (\cref{sec:rl-exp}).
 
 % Discussion points
-It is worth noting that the NTK linearises the network around the MAP solution $\weights^{*}$,
-so the function-space prior (and thus posterior) is only a locally linear approximation.
-In contrast to conventional GP kernels, the NTK does not have any hyperparameters which need to be learned.
-On the other hand, the NTK may be highly non-stationary and is dependent on the NN architecture, for example, the activation functions.
+In practical terms, our model serves a role similar to a sparse GP. However, unlike a conventional GP, it does not provide a straightforward method for specifying or tuning the prior covariance function. This limitation can be addressed indirectly: the architecture of the neural network and the choice of activation functions can be used to implicitly specify and tune the prior assumptions, thereby incorporating a broad range of inductive biases into the model. It is important to note that the NTK linearizes the network around the MAP solution $\weights^{*}$, resulting in the function-space prior (and consequently the posterior) being only a locally linear approximation of the neural network model.
 
 
 
+%In contrast to conventional GP kernels, the NTK does not have any hyperparameters which need to be learned.
+%On the other hand, the NTK may be highly non-stationary and is dependent on the NN architecture, for example, the activation functions.
 
-The broader impact of this work lies in its potential to provide tooling for how neural networks are utilized, offering more efficient and principled ways of handling uncertainty and continual learning. This contribution, we believe, has significant implications for future applications of machine learning in dynamic, real-world settings where data is unevenly distributed, uncertain, and continuously evolves.
+The broader impact of this work lies in its potential to provide tooling for how neural networks are utilized, offering more efficient and principled ways of handling uncertainty and continual learning. This contribution, we believe, has significant implications for future applications of machine learning in dynamic, real-world settings where data is unevenly distributed, uncertain, and continuously evolves.\looseness-1
 
 A reference implementation of the methods presented in this paper is currently available as supplementary material and will be made available under the MIT License on GitHub upon acceptance.
 

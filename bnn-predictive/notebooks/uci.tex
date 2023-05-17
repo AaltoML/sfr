@@ -1,18 +1,18 @@
 \begin{tabular}{l C{\tblw} C{\tblw} C{\tblw} C{\tblw}  C{\tblw} || C{\tblw} C{\tblw} C{\tblw} C{\tblw}  C{\tblw}  C{\tblw}} \\
 \toprule
-& \multicolumn{5}{c}{Baselines}
-& \multicolumn{5}{c}{Ablations (M=32)}
+& \multicolumn{5}{c}{}
+& \multicolumn{5}{c}{Ablations ($M=32$)}
 \\ 
-Method & NN MAP & MFVI & BNN & GLM & \our & Full GP & GP subset & GP subset & \our & \our  \\
-Mean from & & & & & GP& GP& GP& NN& GP& NN \\
+Method & \sc nn map & \sc mfvi & \sc bnn & \sc glm & \our & {\sc gp} full & {\sc gp} subset & {\sc gp} subset & \our & \our  \\
+Mean from & & & & & \sc gp& \sc gp& \sc gp& \sc nn& \sc gp& \sc nn \\
 \midrule
-\sc australian & \val{0.31}{.01} & \val{0.34}{.01} & \val{0.42}{.00} & \val{0.32}{.02} & \val{0.32}{.03} & \val{0.32}{.03} & \val{0.51}{.01} & \val{0.33}{.02} & \val{0.33}{.03} & \val{0.32}{.03} \\
-\sc cancer & \val{0.11}{.02} & \val{0.11}{.01} & \val{0.19}{.00} & \val{0.10}{.01} & \val{0.11}{.03} & \val{0.11}{.03} & \val{0.41}{.02} & \val{0.11}{.03} & \val{0.11}{.03} & \val{0.10}{.04} \\
-\sc ionosphere & \val{0.35}{.02} & \val{0.41}{.01} & \val{0.50}{.00} & \val{0.29}{.01} & \val{0.34}{.04} & \val{0.34}{.04} & \val{0.54}{.02} & \val{0.34}{.05} & \val{0.34}{.04} & \val{0.30}{.06} \\
-\sc glass & \val{0.95}{.03} & \val{1.06}{.01} & \val{1.41}{.00} & \val{0.86}{.01} & \val{0.93}{.08} & \val{0.93}{.08} & \val{1.15}{.05} & \val{0.99}{.07} & \val{0.95}{.08} & \val{0.87}{.07} \\
-\sc vehicle & \val{0.42}{.01} & \val{0.50}{.01} & \val{0.89}{.00} & \val{0.43}{.01} & \val{0.48}{.03} & \val{0.48}{.03} & \val{1.02}{.03} & \val{0.58}{.02} & \val{0.54}{.02} & \val{0.49}{.02} \\
-\sc waveform & \val{0.34}{.00} & \val{0.39}{.00} & \val{0.52}{.00} & \val{0.34}{.00} & \val{0.35}{.02} & \val{0.35}{.02} & \val{0.57}{.02} & \val{0.36}{.02} & \val{0.35}{.02} & \val{0.34}{.03} \\
-\sc digits & \val{0.09}{.00} & \val{0.22}{.00} & \val{0.88}{.00} & \val{0.25}{.00} & \val{0.37}{.02} & \val{0.08}{.03} & \val{1.65}{.04} & \val{0.43}{.01} & \val{0.43}{.01} & \val{0.32}{.02} \\
-\sc satellite & \val{0.23}{.00} & \val{0.31}{.00} & \val{0.48}{.00} & \val{0.24}{.00} & \val{0.29}{.01} & \val{0.27}{.01} & \val{1.12}{.04} & \val{0.36}{.01} & \val{0.33}{.01} & \val{0.28}{.01} \\
+\sc australian & \val{\textbf {0.31}}{.01} & \val{0.34}{.01} & \val{0.42}{.00} & \val{\textbf {0.32}}{.02} & \val{\textbf {0.32}}{.03} & \val{\textbf {0.32}}{.03} & \val{0.51}{.01} & \val{\textbf {0.33}}{.02} & \val{\textbf {0.33}}{.03} & \val{\textbf {0.32}}{.03} \\
+\sc cancer & \val{\textbf {0.11}}{.02} & \val{0.11}{.01} & \val{0.19}{.00} & \val{\textbf {0.10}}{.01} & \val{\textbf {0.11}}{.03} & \val{\textbf {0.11}}{.03} & \val{0.41}{.02} & \val{\textbf {0.11}}{.03} & \val{\textbf {0.11}}{.03} & \val{\textbf {0.10}}{.04} \\
+\sc ionosphere & \val{0.35}{.02} & \val{0.41}{.01} & \val{0.50}{.00} & \val{\textbf {0.29}}{.01} & \val{0.34}{.04} & \val{\textbf {0.34}}{.04} & \val{0.54}{.02} & \val{\textbf {0.34}}{.05} & \val{0.34}{.04} & \val{\textbf {0.30}}{.06} \\
+\sc glass & \val{0.95}{.03} & \val{1.06}{.01} & \val{1.41}{.00} & \val{\textbf {0.86}}{.01} & \val{0.93}{.08} & \val{\textbf {0.93}}{.08} & \val{1.15}{.05} & \val{0.99}{.07} & \val{0.95}{.08} & \val{\textbf {0.87}}{.07} \\
+\sc vehicle & \val{\textbf {0.42}}{.01} & \val{0.50}{.01} & \val{0.89}{.00} & \val{0.43}{.01} & \val{0.48}{.03} & \val{\textbf {0.48}}{.03} & \val{1.02}{.03} & \val{0.58}{.02} & \val{0.54}{.02} & \val{\textbf {0.49}}{.02} \\
+\sc waveform & \val{\textbf {0.34}}{.00} & \val{0.39}{.00} & \val{0.52}{.00} & \val{0.34}{.00} & \val{\textbf {0.35}}{.02} & \val{\textbf {0.35}}{.02} & \val{0.57}{.02} & \val{\textbf {0.36}}{.02} & \val{\textbf {0.35}}{.02} & \val{\textbf {0.34}}{.03} \\
+\sc digits & \val{\textbf {0.09}}{.00} & \val{0.22}{.00} & \val{0.88}{.00} & \val{0.25}{.00} & \val{0.37}{.02} & \val{\textbf {0.08}}{.03} & \val{1.65}{.04} & \val{0.43}{.01} & \val{0.43}{.01} & \val{0.32}{.02} \\
+\sc satellite & \val{\textbf {0.23}}{.00} & \val{0.31}{.00} & \val{0.48}{.00} & \val{0.24}{.00} & \val{0.29}{.01} & \val{\textbf {0.27}}{.01} & \val{1.12}{.04} & \val{0.36}{.01} & \val{0.33}{.01} & \val{\textbf {0.28}}{.01} \\
 \bottomrule
 \end{tabular}

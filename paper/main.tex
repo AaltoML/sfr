@@ -439,17 +439,14 @@ A key challenge in RL is balancing the trade-off between exploration and exploit
 %select new ones in hope to discover actions leading to higher reward (exploration).
 One promising direction to balancing this trade-off is to model the uncertainty associated with a learned transition dynamics model and use it to guide exploration.
 Prior work has taken an expectation over the dynamic model's posterior \cite{deisenroth2011pilco,kamtheDataEfficient2018,chuaDeepReinforcementLearning2018},
-sampled from it (akin to Thompson sampling but referred to as posterior sampling in RL)
-\todo{cite thopmson sampling paper dearden et al 1999}
-\cite{osbandMoreEfficientReinforcement2013},
-and used it to implement optimism in the face of uncertainty using upper confidence bounds \cite{curiEfficient2020}.
-\todo{cite UCRL paper}
+sampled from it (akin to Thompson sampling but referred to as posterior sampling in RL) \cite{dearden1999model,osbandMoreEfficientReinforcement2013},
+and used it to implement optimism in the face of uncertainty using upper confidence bounds \cite{curiEfficient2020,jaksch2010near}.
 No single strategy has emerged as a go-to method and we highlight that these strategies are only as good as their uncertainty estimates.
 Previous approaches have used GPs \cite{deisenroth2011pilco,kamtheDataEfficient2018},
 ensembles of neural networks \cite{curiEfficient2020,chuaDeepReinforcementLearning2018}
-and variational inference \cite{galImproving2016,houthooftVIME2017}. \todo{Could specify here how the previous methods have used these models}
+and variational inference \cite{galImproving2016,houthooftVIME2017}.
 However, each method has its pros and cons.
-In this paper we present a method which combines some of the pros from NNs with the benefits of GPs.
+In this paper, we present a method which combines some of the pros from NNs with the benefits of GPs.
 
 %However, there has been little leveraging
 
@@ -594,16 +591,19 @@ Following the work of \citet{khan2019approximate}, we can view this approximatio
 %g_{\weights}(\vx) = 
 \Jac{\weights_*}{\vx} \, \weights$, where $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{1 \times P}$ is the Jacobian at the MAP.
 
-Using the Hessian of the approximate model, we arrive at the Laplace-GGN approximate posterior for the weight space, $q(\vw)$. \todo{This is the first time q(w) is used, should define it}. 
-Therefore, the Laplace-GGN linear model can be used to convert our weight space model to the function space by \todo{To be super clear even when reading this part out of context: could specify that using a GP with this mean and covariance},
-\begin{equation} 
-\label{eq-laplace-approx-function-space} 
+Using the Hessian of the approximate model, we arrive at the Laplace-GGN approximate posterior over $\vw$.
+Therefore, the Laplace-GGN linear model can be used to convert our weight space model to the function space,
+\begin{equation}
+\label{eq-laplace-approx-function-space}
 % g(\vx) \sim \GP \left( \mu(\vx), \kappa(\vx, \vx') \right) \quad \text{with} \quad
   \mu(\vx) =  0 \quad \text{and} \quad
   \kappa(\vx, \vx')
   = \frac{1}{\delta} \Jac{\weights^*}{\vx} \, \JacT{\weights^*}{\vx'}, 
 \end{equation}
-where the kernel is the so-called Neural Tangent Kernel (NTK, \cite{jacot2018neural}). In \cref{eq-laplace-approx-function-space}, we restrict the function output to a single dimension for notational simplicity, yet this formulation can be readily extended to the multi-output scenario. With this kernel function, we can combine it with the data set $\dataset$ to construct the posterior. \todo{what is "it" here?}
+where the kernel is the so-called Neural Tangent Kernel (NTK, \cite{jacot2018neural}).
+For notational conciseness, we % \cref{eq-laplace-approx-function-space},
+restrict our notatin to a single function output dimension. The extension to multiple outputs is straightforward.
+We can combine this kernel function with the data set $\dataset$ to construct the posterior.
 %
 \citet{khan2019approximate} took a similar approach, but instead of fitting the GP posterior to the actual $\vy$, they rely on a transformation of $\vy$. Similarly, \citet{immer2021improving} obtain the same covariance function but use a different mean because they rely on a first-order approximation of the neural network to form a Bayesian GLM model. Both approaches attempted to adjust the GP posterior mean function to ensure the predictions are from the neural network $f_{\vw^*}(\vx)$. 
 Contrarily, our methodology intends to make predictions directly from the derived GP, thus evading such adjustments. Next, we will present the general formulation of the sparse functional representation of our trained neural network based on the non-sparse approximation. 
@@ -967,18 +967,18 @@ We provide full details of our experiments and further results using $M=16,32,64
                                            & \val{91.20}{0.07} & \val{0.265}{0.004} & \val{0.024}{0.002} \\
     GLM predictive \cite{immer2021improving} & -- & \val{98.40}{0.05} & \val{0.054}{0.002} & \val{0.007}{0.001}
                                                & \val{92.25}{0.10} & \val{0.244}{0.003} & \val{0.012}{0.003} \\
-    GP predictive \cite{immer2021improving} & $3200$ & \val{98.22}{0.13} & \val{0.058}{0.001} & \val{0.003}{0.000}
-                                                     & \val{91.36}{0.11} & \val{0.25}{0.004} & \val{0.007}{0.001} \\
+    GP predictive \cite{immer2021improving} & $3200$ & \val{\textbf{98.22}}{0.13} & \val{\textbf{0.058}}{0.001} & \val{\textbf{0.003}}{0.000}
+                                                     & \val{91.36}{0.11} & \val{\textbf{0.25}}{0.004} & \val{\textbf{0.007}}{0.001} \\
 
     GP predictive (NN) & $1024$ & \val{97.70}{0.07} & \val{0.080}{0.002} & \val{0.011}{0.001}
-                              & \val{91.47}{0.41} & \val{0.289}{0.009} & \val{0.033}{0.003} \\
+                              & \val{\textbf{91.47}}{0.41} & \val{0.289}{0.009} & \val{0.033}{0.003} \\
 
     GP predictive & $1024$  & \val{76.28}{1.85} & \val{0.702}{0.029} & \val{0.070}{0.022}
                             & \val{83.98}{0.35} & \val{0.503}{0.012} & \val{0.052}{0.006} \\
     \our (NN) & $1024$ &  \val{98.02}{0.12} & \val{0.066}{0.003} & \val{0.007}{0.001}
-                     & \val{91.93}{0.45} & \val{0.267}{0.011} & \val{0.028}{0.003} \\
-    \our & $1024$ & \val{98.07}{0.06} & \val{0.063}{0.003} & \val{0.005}{0.001}
-                  & \val{91.56}{0.35} & \val{0.253}{0.006} & \val{0.012}{0.001} \\
+                     & \val{\textbf{91.93}}{0.45} & \val{0.267}{0.011} & \val{0.028}{0.003} \\
+    \our & $1024$ & \val{\textbf{98.07}}{0.06} & \val{0.063}{0.003} & \val{0.005}{0.001}
+                  & \val{\textbf{91.56}}{0.35} & \val{\textbf{0.253}}{0.006} & \val{0.012}{0.001} \\
 %    \multirow{2}{*}{FMNIST}
 %    & MAP & \val{91.39}{0.11} & \val{0.258}{0.004} & \val{0.017}{0.001} \\
     %& BNN predictive \cite{immer2021improving} & \val{84.42}{0.12} & \val{0.942}{0.016} & \val{0.411}{0.008} \\

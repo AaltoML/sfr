@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import logging
+import os
 import random
 import time
 from collections import deque, namedtuple
@@ -9,7 +10,7 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-import os
+from src.sl.inference import compute_metrics
 
 import hydra
 import matplotlib.pyplot as plt
@@ -26,6 +27,7 @@ from src.sl.datasets import CIFAR10, FMNIST, MNIST
 from src.sl.networks import CIFAR10Net, CIFAR100Net, MLPS
 from torch.utils.data import DataLoader
 from torchvision.datasets import VisionDataset
+from src.nn2svgp.likelihoods import BernoulliLh, CategoricalLh
 
 
 PACKAGE_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -249,6 +251,7 @@ def train(cfg: DictConfig):
     test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=False)
 
     optimizer = torch.optim.Adam([{"params": sfr.parameters()}], lr=cfg.lr)
+    criterion = torch.nn.CrossEntropyLoss(reduction="sum")
 
     for epoch in tqdm(list(range(cfg.n_epochs))):
         for X, y in train_loader:
@@ -262,7 +265,6 @@ def train(cfg: DictConfig):
         if epoch % cfg.logging_epoch_freq == 0:
             # tr_loss_sum, tr_loss_mean, tr_acc = evaluate(network, train_loader, cfg.device)
             # te_loss_sum, te_loss_mean, te_acc = evaluate(network, test_loader, cfg.device)
-            criterion = torch.nn.CrossEntropyLoss(reduction="sum")
             tr_loss, tr_acc, tr_nll = evaluate(
                 network, train_loader, criterion, cfg.device
             )
@@ -278,6 +280,11 @@ def train(cfg: DictConfig):
             wandb.log({"training/acc": tr_acc})
             wandb.log({"test/acc": te_acc})
             wandb.log({"epoch": epoch})
+
+    te_loss, te_acc, te_nll = evaluate(network, test_loader, criterion, cfg.device)
+    wandb.log({"test/loss": te_loss})
+    wandb.log({"test/nll": te_nll})
+    wandb.log({"test/acc": te_acc})
 
     logger.info("Finished training")
     # # evaluation
@@ -313,6 +320,97 @@ def train(cfg: DictConfig):
     logger.info("Saving model and optimiser etc...")
     torch.save(state, os.path.join(res_dir, fname))
     logger.info("Finished saving model and optimiser etc")
+
+    # all_train = DataLoader(ds_train, batch_size=len(ds_train))
+    # (X_train, y_train) = next(iter(all_train))
+    # X_train = X_train.to(cfg.device)
+    # y_train = y_train.to(cfg.device)
+    # ds_train = (X_train.to(torch.float64), y_train)
+    # ds_train=
+
+    # print("X_train {}".format(X_train.shape))
+    # print("y_train {}".format(y_train.shape))
+    # gp_subset = src.nn2svgp.nn2gp.NN2GPSubset(
+    #     network=sfr.network,
+    #     prior=sfr.prior,
+    #     likelihood=sfr.likelihood,
+    #     output_dim=sfr.output_dim,
+    #     subset_size=32,
+    #     dual_batch_size=sfr.dual_batch_size,
+    #     jitter=sfr.jitter,
+    #     device=cfg.device,
+    # )
+
+    torch.set_default_dtype(torch.double)
+    # sfr_new = hydra.utils.instantiate(cfg.sfr, prior=prior, network=network)
+    network = network.double()
+    prior = hydra.utils.instantiate(cfg.prior, params=network.parameters)
+    sfr_double = src.ntksvgp.NTKSVGP(
+        network=network,
+        prior=prior,
+        likelihood=sfr.likelihood,
+        output_dim=sfr.output_dim,
+        num_inducing=sfr.num_inducing,
+        dual_batch_size=sfr.dual_batch_size,
+        jitter=sfr.jitter,
+        device=sfr.device,
+    )
+
+    gp_subset = hydra.utils.instantiate(cfg.gp_subset, prior=prior, network=network)
+
+    cfg.predictive_model = "sfr"
+    compute_metrics(
+        sfr=sfr_double,
+        gp_subset=gp_subset,
+        ds_train=ds_train,
+        ds_test=ds_test,
+        cfg=cfg,
+        checkpoint={},
+    )
+
+    cfg.predictive_model = "gp_subset"
+    # cfg.predictive_model = "sfr"
+    compute_metrics(
+        sfr=sfr_double,
+        gp_subset=gp_subset,
+        ds_train=ds_train,
+        ds_test=ds_test,
+        cfg=cfg,
+        checkpoint={},
+    )
+
+    # gp_subset = hydra.utils.instantiate(cfg.sfr, prior=prior, network=network)
+    # gp_subset = src.nn2svgp.nn2gp.NN2GPSubset(
+    #     network=sfr.network,
+    #     prior=sfr.prior,
+    #     likelihood=sfr.likelihood,
+    #     output_dim=sfr.output_dim,
+    #     subset_size=3200,
+    #     dual_batch_size=sfr.dual_batch_size,
+    #     jitter=sfr.jitter,
+    #     device=cfg.device,
+    # )
+    # gp_subset.set_data(data)
+
+    cfg.predictive_model = "glm"
+    compute_metrics(
+        sfr=sfr_double,
+        gp_subset=gp_subset,
+        ds_train=ds_train,
+        ds_test=ds_test,
+        cfg=cfg,
+        checkpoint={},
+    )
+
+    cfg.predictive_model = "bnn"
+    compute_metrics(
+        sfr=sfr_double,
+        gp_subset=gp_subset,
+        ds_train=ds_train,
+        ds_test=ds_test,
+        cfg=cfg,
+        checkpoint={},
+    )
 
 
 if __name__ == "__main__":

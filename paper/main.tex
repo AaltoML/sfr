@@ -1214,13 +1214,13 @@ The training curves clearly show that \our's uncertainty estimates help explorat
 \section{Discussion and conclusion}
 \label{sec:conclusion}
 %
-In this paper, we have introduced \our, a novel approach for representing neural networks in sparse function-space, exploiting the dual parameters for an efficient low-rank approximation that accommodates information from the entire data distribution. Our method offers a powerful mechanism for capturing predictive uncertainty, updating the model with new data without retraining, and providing a compact representation suitable for continual learning. These aspects were demonstrated in a wide range of problems, datasets, and learning contexts. We showcased our method's ability to capture uncertainty in UCI and image tasks under supervised learning (\cref{sec:uci}), demonstrated robustness on image data sets (\cref{,sec:image}), established its potential for continual learning (\cref{sec:cl-exp}), and finally, verified its applicability in reinforcement learning scenarios (\cref{sec:rl-exp}).
+In this paper, we have introduced \our, a novel approach for representing neural networks in sparse function space, exploiting the dual parameters for an efficient low-rank approximation that accommodates information from the entire data distribution. Our method offers a powerful mechanism for capturing predictive uncertainty, updating the model with new data without retraining, and providing a compact representation suitable for continual learning. These aspects were demonstrated in a wide range of problems, datasets, and learning contexts. We showcased our method's ability to capture uncertainty in UCI classification tasks (\cref{sec:uci}), demonstrated robustness on image data sets (\cref{,sec:image}), established its potential for continual learning (\cref{sec:cl-exp}), and finally, verified its applicability in reinforcement learning scenarios (\cref{sec:rl-exp}).
 
 % Discussion points
 It is worth noting that the NTK linearises the network around the MAP solution $\weights^{*}$,
 so the function-space prior (and thus posterior) is only a locally linear approximation.
 In contrast to conventional GP kernels, the NTK does not have any hyperparameters which need to be learned.
-It is also worth noting that the NTK may be highly non stationary and is dependent on the NN architecture, for example, the activation functions.
+On the other hand, the NTK may be highly non-stationary and is dependent on the NN architecture, for example, the activation functions.
 
 
 

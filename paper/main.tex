@@ -594,16 +594,19 @@ Following the work of \citet{khan2019approximate}, we can view this approximatio
 %g_{\weights}(\vx) = 
 \Jac{\weights_*}{\vx} \, \weights$, where $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{1 \times P}$ is the Jacobian at the MAP.
 
-Using the Hessian of the approximate model, we arrive at the Laplace-GGN approximate posterior for $q(\vw)$ \todo{This is the first time q(w) is used, should define it}. 
-Therefore, the Laplace-GGN linear model can be used to convert our weight space model to the function space by \todo{To be super clear even when reading this part out of context: could specify that using a GP with this mean and covariance},
-\begin{equation} 
+Using the Hessian of the approximate model, we arrive at the Laplace-GGN approximate posterior over $\vw$.
+Therefore, the Laplace-GGN linear model can be used to convert our weight space model to the function space by
+\begin{equation}
 \label{eq-laplace-approx-function-space} 
 % g(\vx) \sim \GP \left( \mu(\vx), \kappa(\vx, \vx') \right) \quad \text{with} \quad
   \mu(\vx) =  0 \quad \text{and} \quad
   \kappa(\vx, \vx')
   = \frac{1}{\delta} \Jac{\weights^*}{\vx} \, \JacT{\weights^*}{\vx'}, 
 \end{equation}
-where the kernel is the so-called Neural Tangent Kernel (NTK, \cite{jacot2018neural}). In \cref{eq-laplace-approx-function-space}, we restrict the function output to a single dimension for notational simplicity, yet this formulation can be readily extended to the multi-output scenario. With this kernel function, we can combine it with the data set $\dataset$ to construct the posterior. \todo{what is "it" here?}
+where the kernel is the so-called Neural Tangent Kernel (NTK, \cite{jacot2018neural}).
+For notational conciseness, we % \cref{eq-laplace-approx-function-space},
+restrict our notatin to a single function output dimension. The extension to multiple outputs is straightforward.
+We can combine this kernel function with the data set $\dataset$ to construct the posterior.
 %
 \citet{khan2019approximate} took a similar approach, but instead of fitting the GP posterior to the actual $\vy$, they rely on a transformation of $\vy$. Similarly, \citet{immer2021improving} obtain the same covariance function but use a different mean because they rely on a first-order approximation of the neural network to form a Bayesian GLM model. Both approaches attempted to adjust the GP posterior mean function to ensure the predictions are from the neural network $f_{\vw^*}(\vx)$. 
 Contrarily, our methodology intends to make predictions directly from the derived GP, thus evading such adjustments. Next, we will present the general formulation of the sparse functional representation of our trained neural network based on the non-sparse approximation. 

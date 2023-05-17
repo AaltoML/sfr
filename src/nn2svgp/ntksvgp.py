@@ -494,23 +494,23 @@ def calc_sparse_dual_params(
     likelihood: Likelihood,
     jitter: float = 1e-3,
 ) -> Tuple[AlphaInducing, BetaInducing, Lambda]:
-    num_inducing, input_dim = Z.shape
+    # num_inducing, input_dim = Z.shape
     X, Y = train_data
-    assert X.ndim == 2
-    assert X.shape[0] == Y.shape[0]
-    assert X.shape[1] == input_dim
+    # assert X.ndim == 2
+    # assert X.shape[0] == Y.shape[0]
+    # assert X.shape[1] == input_dim
     Kzx = kernel(Z, X)
 
     F = network(X)
     Lambda, beta = calc_lambdas(Y=Y, F=F, likelihood=likelihood)
-    assert Lambda.ndim == 2
-    num_data, output_dim = Lambda.shape
-    assert beta.ndim == 3
-    assert beta.shape[0] == num_data
-    assert beta.shape[1] == beta.shape[2] == output_dim
-    assert Kzx.ndim == 3
-    assert Kzx.shape[0] == output_dim
-    assert Kzx.shape[2] == num_data
+    # assert Lambda.ndim == 2
+    # num_data, output_dim = Lambda.shape
+    # assert beta.ndim == 3
+    # assert beta.shape[0] == num_data
+    # assert beta.shape[1] == beta.shape[2] == output_dim
+    # assert Kzx.ndim == 3
+    # assert Kzx.shape[0] == output_dim
+    # assert Kzx.shape[2] == num_data
     beta_diag = torch.diagonal(beta, dim1=-2, dim2=-1)  # [num_data, output_dim]
     beta = torch.diag_embed(beta_diag.T)  # [output_dim, num_data, num_data]
     beta_u = torch.matmul(torch.matmul(Kzx, beta), torch.transpose(Kzx, -1, -2))

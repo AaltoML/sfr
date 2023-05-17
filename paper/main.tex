@@ -591,15 +591,14 @@ Contrarily, our methodology intends to make predictions directly from the derive
 
 \section{\our: Sparse function-space representation of neural networks}
 %\paragraph{GP in the dual parameters}
-The seminal work by \citet{csato2002sparse} (parameterization Lemma~1) gives a parameterization for the posterior process $f_{\textrm{post}}$ that can be found through using Bayes formula the GP prior and the likelihood function. This gives a `dual' parameterization, $\valpha$ and $\vbeta$,
+The seminal work by \citet{csato2002sparse} (parameterization Lemma~1) gives a parameterization for the posterior process $f_{\textrm{post}}$ that can be found through the Bayesian update using the GP prior and the likelihood function. This gives a `dual' parameterization, $\valpha$ and $\vbeta$,
 %
 \begin{equation}  \label{eq:gp_pred}
   \myexpect_{p(f_i \mid\vy)}[f_i]= \vk_{\vx i}^\top \valpha \quad \text{and} \quad
   \mathrm{Var}_{p(f_i \mid \vy)}[f_i] = k_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i},
 \end{equation}
 %
-where the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{N \times N}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $k_{ii} = \kappa(\vx_i, \vx_i)$.  \cref{eq:gp_pred} gives the first two moments of the posterior processes. The actual posterior may or may not be a Gaussian process but we can still approximate it with its first two moments.
-The dual parameters are the vectors $\valpha, \vbeta \in \R^{N}$, defined as:\looseness-1
+where the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{N \times N}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $k_{ii} = \kappa(\vx_i, \vx_i)$.  The dual parameters are the vectors $\valpha, \vbeta \in \R^{N}$, defined as:\looseness-1
 %
 \begin{equation}
   \label{eq:dual_param}
@@ -624,12 +623,12 @@ Given that we use a Laplace approximation of the neural network, we remove the e
 %
 Substiuting \cref{eq:dual_param_laplace} into \cref{eq:gp_pred}, we obtain our GP model based on the converged neural network. Again, this is similar to what was derived in \citet{immer2021improving} for the posterior variance function. However, they use the $f_{\vw^*}$ for the posterior mean and do not emphasize the significance of the dual variables. The problem with \cref{eq:gp_pred} is that to make predictions and compute variances we must incur a cost of $O(N^3)$ which limits the use of the GP on large data sets.
 
-\paragraph{Sparsifying the Neural Network GP}
+\paragraph{Sparsifying the NN GP}
 \label{sec:sparse-dual-gp}
 %
 Sparse Gaussian processes reduce the computational complexity by representing the GP as a low-rank approximation induced by a sparse set of inputs points (see \cite{quinonero2005unifying} for an early overview). Given that we have computed the dual variables derived from our neural network predictions and a kernel function, we could essentially employ any of these sparsification methods. In this work, we opt for the approach suggested by \citet{titsias2009variational} (also used in the DTC approximation, see \cite{quinonero2005unifying}), which defines the marginal predictive distribution as $q_{\vu}(f_i)  = \int p(f_i  \mid \vu) \, q(\vu) \, \mathrm{d}\vu$. Given that we have $p(f_i \mid \vu)$ determined by our GP prior, the goal is to find a $q(\vu)$. 
 
-As demonstrated in \cite{adam2021dual}, the posterior under this model bears a structure akin to \cref{eq:gp_pred}. The authors of that paper see the significance of the dual variables for approximate inference, but write them using the natural parameterization, primarily because this form is more suitable for optimization through natural gradients. In order to link the dual variables defined in \cref{eq:dual_param}, we write them in the sparse GP formulation mean the dual variables become
+As demonstrated in \cite{adam2021dual}, the posterior under this model bears a structure akin to \cref{eq:gp_pred}. The authors of that paper see the significance of the dual variables for approximate inference, but write them using the natural parameterization, primarily because this form is more suitable for optimization through natural gradients. In order to link the dual variables defined in \cref{eq:dual_param}, we write them in the sparse GP using the dual variables
 %
 \begin{equation} \textstyle
   \valpha_{\vu}  =  \sum_{i=1}^N  \vkzi \, \hat{\alpha}_{i}
@@ -767,65 +766,6 @@ We present a series of experiments designed to demonstrate the versatility and e
 \end{table}
 
 
-\begin{figure}[t]
-  \centering\scriptsize
-  \setlength{\figurewidth}{.26\textwidth}
-  \setlength{\figureheight}{\figurewidth}
-  \pgfplotsset{axis on top,scale only axis,y tick label style={rotate=90}, x tick label style={font=\footnotesize},y tick label style={font=\footnotesize},title style={yshift=-4pt,font=\large}, y label style={font=\large},x label style={font=\large},grid=major, width=\figurewidth, height=\figureheight}
-  \pgfplotsset{grid style={line width=.1pt, draw=gray!10,dashed}}
-  \pgfplotsset{xlabel={$M$},ylabel style={yshift=-12pt}}  
-  %
-  \begin{minipage}[t]{.17\textwidth}
-    \raggedleft
-    \pgfplotsset{ylabel=NLPD}
-    \input{./fig/australian.tex}
-  \end{minipage}
-  \hfill
-%  \begin{minipage}[t]{.16\textwidth}
-%    \raggedleft
-%    \input{./fig/breast_cancer.tex}
-%  \end{minipage}
-%  \hfill
-%  \begin{minipage}[t]{.16\textwidth}
-%    \raggedleft
-%    \input{./fig/ionosphere.tex}
-%  \end{minipage}
-%  \hfill
-  \begin{minipage}[t]{.16\textwidth}
-    \raggedleft
-    \input{./fig/glass.tex}
-  \end{minipage}
-  \hfill
-  \begin{minipage}[t]{.16\textwidth}
-    \raggedleft
-    \input{./fig/vehicle.tex}
-  \end{minipage}
-  \hfill
-  \begin{minipage}[t]{.16\textwidth}
-    \raggedleft
-    \input{./fig/waveform.tex}
-  \end{minipage}
-  \hfill
-  \begin{minipage}[t]{.16\textwidth}
-    \raggedleft
-    \input{./fig/digits.tex}
-  \end{minipage}
-  \hfill
-  \begin{minipage}[t]{.16\textwidth}
-    \raggedleft
-    \input{./fig/satellite.tex}
-  \end{minipage}\\%[1em]
-  %
-  % Show the legend separately
-  %\pgfplotsset{hide axis,legend columns=-1,legend style={draw=none,column sep=1ex,font=\Large}}
-  %\input{./fig/uci-legend.tex}\\[-2.5em]
-  \caption{Comparison of convergence in terms of  negative log-predictive density (NLPD) as averages over 10-fold cross-validation runs, on UCI classification tasks.}
-  \label{fig:uci}
-  %\vspace*{-6pt}
-\end{figure}
-
-
-
 \subsection{Capturing uncertainty in UCI tasks under supervised learning}
 \label{sec:uci}
 %
@@ -835,21 +775,6 @@ In \cref{tbl:uci} (left), we compare our model to the NN MAP estimate, mean-fiel
 In \cref{tbl:uci} (right), we also include an ablation and comparison study with a fixed low number of inducing points ($M=32$). The comparison shows that our sparse method is able to summarize the information of the full data set more efficiently than sparse subset methods, and can match the performance of the full GP even with a low number of inducing points.
 
 % see \cref{tbl:uci} for a list of the datasets. The neural network training was done using MAP, with a prior $\mathcal{N}(0,\delta^{-1} \MI)$ with prior precision $\delta$. After training, we constructed the SVGP dual and used the resulting SVGP model for uncertainty quantification. Depending on task dimension and complexity, our model can match the NN MAP in NLPD performance even with a low number of inducing points, see \cref{tbl:uci}. We performed hyperparameter search over the prior precision, and ran the experiment over $10$ seeds. During the initial NN training, we used a learning rate of $1e-3$.
-
-\begin{figure}
-  \raggedleft\scriptsize
-  \setlength{\figurewidth}{\textwidth}
-  \setlength{\figureheight}{.55\figurewidth}
-  %\pgfplotsset{axis on top,ymajorgrids,axis line style={draw=none},legend style={at={(-.1,-.1)},anchor=north east}}
-  %\pgfplotsset{grid style={line width=.1pt, draw=gray!10,dashed}}
-  %\def\our{{\sc sfr} (ours)}
-  \input{./fig/MNIST_acc.tex}
-  \caption{Foo}
-  \label{fig:mnist}
-\end{figure}
-
-
-
 
 
 
@@ -932,7 +857,7 @@ In addition to uncertainty estimates, our method can update the posterior when g
 \setlength{\intextsep}{0pt}
 \begin{wraptable}{R}{.65\textwidth}
   \centering\scriptsize
-  \caption{Continual learning experiments. We report mean accuracy${\pm}$std over five runs, and bold based on a $t$-test.\\ $^*$Methods relying on weight regularization.}
+  \caption{Continual learning experiments. We report accuracy${\pm}$std and bold based on a $t$-test. $^*$Methods rely on weight regularization.}
   %\textcolor{blue}{Results from \cite{rudner2022continual}
   %\color{red}{Preliminary results need more runs or hyperparam tuning}
 	\label{tbl:cl_table_1}
@@ -954,21 +879,24 @@ In addition to uncertainty estimates, our method can update the posterior when g
 \end{wraptable}
 %
 % Overview
-We aim to highlight our sparse representation's ability to retain prior knowledge within a continual learning (CL) setting (as in \cref{sec:sequential}). Notably, CL methods require tuning making direct comparisons difficult. We consider the setup with single-head (SH) setting that is a harder and more realistic CL setting \citep{van2019three}.	 \todo{can't find the bibtex for their NIPS workshop paper} % typically hard and more competitive \cite{}
+We aim to highlight our sparse representation's ability to retain prior knowledge within a continual learning (CL) setting (as in \cref{sec:sequential}). Notably, CL methods require tuning making direct comparisons difficult. We consider the setup with single-head (SH) setting that is typically hard and more competitive.
 %
 % Benchmarks/architectures
-We consider the CL benchmarks: Split-MNIST (S-MNIST), Split-FashionMNIST (S-FMNIST), and the 10-tasks Permuted-MNIST (P-MNIST). We follow the setups described in \cite{rudner2022continual, pan2020continual}, using a two-layer MLP with 256 hidden units and ReLU activation for S-MNIST and S-FMNIST, and a two-layer MLP with 100 hidden units for P-MNIST (full details in \cref{app:cl-exp}).
+We consider the CL benchmarks: Sequential-MNIST (S-MNIST), Sequential-FashionMNIST (S-FMNIST), and Permuted-MNIST (P-MNIST). We follow the setups described in \cite{rudner2022continual, pan2020continual}, using a two-layer MLP with 256 hidden units and ReLU activation for S-MNIST and S-FMNIST, and a two-layer MLP with 100 hidden units for P-MNIST (full details in \cref{app:cl-exp}).
 
 % Methods
 We compare our method against two categories of methods: {\em (i)}~weight-regularization methods: EWC, SI, and VCL (which additionally incorporates coresets), and {\em(ii)}~function-based regularization methods: DER, FROMP, S-FSVI, SFR. We also introduce an ablation study where we replace $\bar{\MB}^{-1}$ with an identity matrix $\MI_M$, equivalent to assuming a GP with i.i.d.\ prior (giving an L2 regularizer).
 Following \cite{rudner2022continual}, we use 200 inducing points per tasks. Additionally,  we consider only 40 inducing points for S-MNIST, to investigate if our method was still capable of capture more information due to its sparse formulation.
 
 %% Comments on the results:
-From \cref{tbl:cl_table_1}, it is clear that the objective methods completely fail compared to the function-space methods on S-MNIST and S-FMNIST, where the tasks are composed of disjoint set of classes, but they are still able to retain previous performance on P-MNIST where the challenge is to contrast the domain shift over the tasks. %, commonly referred as Domain Incremental Learning. (opposed to the Class-Incremental Learning for S-MNIST and S-FMNIST)
-Considering the function-space methods, we can see that \our achieves the best results on both settings on S-MNIST, where the condensing the information coming from the entire task datasets $\dataset_t$ is particularly effective, when using fewer points per task.
-On S-FMNIST, our method obtains close results to DER, which regularizes the model by taking the mean squared error between current and old function outputs without accounting the covariance structure of the loss but assumes an i.i.d. prior similar to our L2 ablation. Moreover, their method exploits reservoir sampling \citep{vitter1985random} to obtain a continuously updated set inducing points.
-S-FSVI obtains the best on P-MNIST, but with the downside of requiring high computational costs, compared to \our. \todo{on PMNIST our method is not really super-fast, so that could be not the best thing to say here} % we could also say that P-MNIST is known to be a bad/ill-posed dataset for CL 
-Finally, it is worth noticing as our ablation already provides a very solid baseline consistently over all datasets.
+\cref{tbl:cl_table_1} shows results
+We get the best results on S-MNIST both 40 and 200 pts. per task
+
+On S-FMNIST we are on par with DER, which is however exploiting a reservoir buffer technique, that iteratively samples new "inducing points"
+
+On P-MNIST we are lower than S-FSVI, however % I'm still running experiments, so we can hope that it is not the best overall in the end
+
+
 
 
 

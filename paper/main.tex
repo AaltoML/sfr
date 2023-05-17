@@ -606,7 +606,7 @@ The seminal work by \citet{csato2002sparse} (parameterization Lemma~1) gives a p
   \mathrm{Var}_{p(f_i \mid \vy)}[f_i] = k_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i},
 \end{equation}
 %
-where the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{N \times N}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $k_{ii} = \kappa(\vx_i, \vx_i)$.  The dual parameters are the vectors $\valpha, \vbeta \in \R^{N}$, defined as:\looseness-1
+where the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{N \times N}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $k_{ii} = \kappa(\vx_i, \vx_i)$. \cref{eq:gp_pred} states that the resultant posterior process, which may not be a GP, first two moments can be parameterized via the dual parameters, which are the vectors $\valpha, \vbeta \in \R^{N}$, defined as:\looseness-1
 %
 \begin{equation}
   \label{eq:dual_param}

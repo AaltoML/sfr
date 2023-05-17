@@ -1,0 +1,59 @@
+% This file was created with tikzplotlib v0.10.1.
+\begin{tikzpicture}
+
+\definecolor{crimson2143940}{RGB}{214,39,40}
+\definecolor{darkgray176}{RGB}{176,176,176}
+\definecolor{darkorange25512714}{RGB}{255,127,14}
+\definecolor{forestgreen4416044}{RGB}{44,160,44}
+\definecolor{steelblue31119180}{RGB}{31,119,180}
+
+\begin{axis}[
+tick align=outside,
+tick pos=left,
+title={satellite},
+x grid style={darkgray176},
+xlabel={Inducing points},
+xmin=4, xmax=268,
+xtick style={color=black},
+xtick={0,50,100,150,200,250,300},
+xticklabels={0,16,32,64,128,256,},
+y grid style={darkgray176},
+ylabel={Test NLPD},
+ymin=0.2116, ymax=1.3644,
+ytick style={color=black}
+]
+\addplot [semithick, steelblue31119180]
+table {%
+16 0.379
+32 0.334
+64 0.305
+128 0.294
+256 0.29
+};
+\addplot [semithick, darkorange25512714]
+table {%
+16 0.291
+32 0.277
+64 0.271
+128 0.268
+256 0.264
+};
+\addplot [semithick, forestgreen4416044]
+table {%
+16 1.312
+32 1.12
+64 0.876
+128 0.693
+256 0.554
+};
+\addplot [semithick, crimson2143940]
+table {%
+16 0.367
+32 0.361
+64 0.342
+128 0.319
+256 0.302
+};
+\end{axis}
+
+\end{tikzpicture}

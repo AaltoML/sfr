@@ -697,7 +697,7 @@ After each task, we update $\mathcal{M}$, and can construct a regularizer term, 
 	\right\rVert_{\bar{\MB}^{-1}_{s}}, \quad \vu \in \R^M \text{~with~} u_{i} = f_{\weights}(\vz_{i}),~\forall {\vz_i} \in \mathcal{Z}_s .
 \end{equation}
 
-\paragraph{\our for dual conditioning} Adding new data to a trained neural network without retraining from scratch is a non-trivial problem. Some approaches exist \citep{kirsch2022marginal, spiegelhalter1990sequential} but are in the weight space formulation, which makes conditioning harder to formulate. As pointed out in \cite{chang2022fantasizing}, dual parameter conditioning updates are straightforward and were the original motivation of \cite{csato2002sparse}. This involves integrating data into the sum in \cref{eq:dual_sparse}. Thus, we need to find the data dual variables $\hat{\alpha}$ and $\hat{\beta}$ for the new data subset $\mathcal{D}_\textrm{new} = \{(\vx_i,\vy_i)\}_{i=1}^{N_{\textrm{new}}}$ and compute the corresponding kernel terms. As pointed out in \cite{chang2022fantasizing}, for GPs, these updates are exact under a Gaussian likelihood and the kernel remains constant. For non-Gaussian likelihoods, the results are almost the same as retraining with all the data. In practice, given our NN-derived kernel's dependency on the Jacobian of the trained neural network $\Jac{\weights_*}{\vx}$, the Jacobians become outdated as we add more data. However, we can still improve predictions by conditioning data without retraining. 
+\paragraph{\our for dual conditioning} Adding new data to a trained neural network without retraining from scratch is a non-trivial problem. Some approaches exist \citep{kirsch2022marginal, spiegelhalter1990sequential} but are in the weight space formulation, which makes conditioning harder to formulate. As pointed out in \cite{chang2022fantasizing}, dual parameter conditioning updates are straightforward and were the original motivation of \cite{csato2002sparse}. This involves integrating data into the sum in \cref{eq:dual_sparse}. Thus, we need to find the data dual variables $\hat{\alpha}$ and $\hat{\beta}$ for the new data subset $\mathcal{D}_\textrm{new} = \{(\vx_i,\vy_i)\}_{i=1}^{N_{\textrm{new}}}$ and compute the corresponding kernel terms. As pointed out in \cite{chang2022fantasizing}, for GPs, these updates are exact under a Gaussian likelihood and the kernel remains constant. For non-Gaussian likelihoods, the results are almost the same as retraining with all the data. However, it is worth noting that our kernel's dependency on the trained neural network $\Jac{\weights_*}{\vx}$ (via the Jacobian) becomes outdated as we add more data. Nevertheless, we can still improve predictions without retraining by conditioning on new data.
 %[SEE EXPERIMENT ???].
 %%The resulting regularizer can be computed as follows
 %%\begin{equation}
@@ -731,7 +731,7 @@ After each task, we update $\mathcal{M}$, and can construct a regularizer term, 
 %
 We present a series of experiments specifically designed to showcase the robustness and effectiveness of \our. The experiments are aimed at answering the following key questions:
 \textbf{Predictions:}~Does our method's ability to consider the full data set offer benefits over subset function-space methods? (\cref{sec:uci}) How do predictions with our sparse function-space approximation compare to weight-space approximations? 
-\textbf{Function-space updates:} How fast are our function-space updates relative to retraining from scratch? Do they improve predictive performance? 
+% \textbf{Function-space updates:} How fast are our function-space updates relative to retraining from scratch? Do they improve predictive performance?
 \textbf{Representation:} Can a sparse function-space representation help retain knowledge from previous tasks in CL? (\cref{sec:cl-exp})
 \textbf{Uncertainty:} Can our uncertainty estimates help exploration in RL? (\cref{sec:rl-exp}) We implement all methods in PyTorch~\cite{paszke2019pytorch} and run the benchmarks using a GPU cluster. We provide full experiment details in \cref{app:experiments}. 
 
@@ -753,7 +753,7 @@ We present a series of experiments specifically designed to showcase the robustn
 
 \begin{table}[t!] 
   \centering\scriptsize
-  \caption{Comparisons and ablations on UCI data with negative log predictive density (NLPD\textcolor{gray}{\footnotesize$\pm$std}, lower better). Our sparse \our ($M=256$) is on par with full models (left) and outperforms the GP subset approach of \cite{immer2021improving} (right). Results for methods marked with * as reported in teh original benchmark~\cite{immer2021improving}. See \cref{app:uci} for additional tables with comparisons.} 
+  \caption{Comparisons and ablations on UCI data with negative log predictive density (NLPD\textcolor{gray}{\footnotesize$\pm$std}, lower better). Our sparse \our ($M=256$) is on par with full models (left) and outperforms the GP subset approach of \cite{immer2021improving} (right). Results for methods marked with * as reported in the original benchmark~\cite{immer2021improving}. See \cref{app:uci} for additional tables with comparisons.}
 	\label{tbl:uci}
 	\vspace*{-4pt}
 	

@@ -231,10 +231,10 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
     ds_val = Subset(ds_test, val_ixs)
     ds_test = Subset(ds_test, test_ixs)
     val_loader = get_quick_loader(
-        DataLoader(ds_val, batch_size=cfg.batch_size), device=cfg.device
+        DataLoader(ds_val, batch_size=cfg.inference_batch_size), device=cfg.device
     )
     test_loader = get_quick_loader(
-        DataLoader(ds_test, batch_size=cfg.batch_size), device=cfg.device
+        DataLoader(ds_test, batch_size=cfg.inference_batch_size), device=cfg.device
     )
     all_train = DataLoader(ds_train, batch_size=len(ds_train))
     (X_train, y_train) = next(iter(all_train))
@@ -327,11 +327,12 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
         # la.to(cfg.device)
 
         print("Making train_loader fo LA...")
-        train_loader = DataLoader(ds_train, batch_size=cfg.batch_size)
-        print("made train_loader {}".format(train_loader))
+        # train_loader = DataLoader(ds_train, batch_size=cfg.inference_batch_size)
+        train_loader_double = DataLoader(TensorDataset(*data), batch_size=cfg.inference_batch_size)
+        print("made train_loader {}".format(train_loader_double))
 
         logger.info("Fitting laplace...")
-        la.fit(train_loader)
+        la.fit(train_loader_double)
         logger.info("Finished fitting laplace")
 
         # GLM predictive
@@ -382,8 +383,8 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
         # la.to(cfg.device)
 
         print("Making train_loader fo LA...")
-        # train_loader = DataLoader(ds_train, batch_size=cfg.batch_size)
-        train_loader_double = DataLoader(TensorDataset(*data), batch_size=len(ds_train))
+        # train_loader = DataLoader(ds_train, batch_size=cfg.inference_batch_size)
+        train_loader_double = DataLoader(TensorDataset(*data), batch_size=cfg.inference_batch_size)
 
         print("made train_loader {}".format(train_loader_double))
 

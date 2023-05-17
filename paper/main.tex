@@ -872,29 +872,67 @@ In \cref{tbl:uci} (right), we also include an ablation and comparison (to \cite{
 	} 
 
     % THE TABLE CAN BE FORMATTED MORE LIKE THIS
-    \begin{tabular}{l l C{\tblw} C{\tblw} C{\tblw} C{\tblw}}
+    % \begin{tabular}{l l C{\tblw} C{\tblw} C{\tblw} C{\tblw}}
+    % \toprule
+    % & Method & ACC~$\uparrow$ & NLPD~$\downarrow$ & ECE~$\downarrow$ & OOD-AUC~$\uparrow$  \\
+    % \midrule
+    % \multirow{2}{*}{FMNIST}
+    % & MAP & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & BNN predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & BNN predictive \cite{todo} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & GLM predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & GP predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & \our (NN) & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & \our & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % \midrule
+    % \multirow{2}{*}{CIFAR-10}
+    % & MAP & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & BNN predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & BNN predictive \cite{todo} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & GLM predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & GP predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & \our (NN) & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % & \our & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
+    % \bottomrule
+    % \end{tabular}
+  \begin{tabular}{l l C{\tblw} C{\tblw} C{\tblw} C{\tblw}}
     \toprule
-    & Method & ACC~$\uparrow$ & NLPD~$\downarrow$ & ECE~$\downarrow$ & OOD-AUC~$\uparrow$  \\
+    & Method & ACC~$\uparrow$ & NLPD~$\downarrow$ & ECE~$\downarrow$   \\
     \midrule
-    \multirow{2}{*}{FMNIST} 
-    & MAP & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & BNN predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & BNN predictive \cite{todo} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & GLM predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & GP predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & \our (NN) & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & \our & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\    
+    \multirow{2}{*}{MNIST}
+    & MAP & \val{98.22}{0.13} & \val{0.061}{0.004} & \val{0.006}{0.001} \\
+    & BNN predictive \cite{todo} & \val{93.03}{0.13} & \val{0.369}{0.003} & \val{0.168}{0.001} \\
+    & GLM predictive & \val{98.40}{0.05} & \val{0.054}{0.002} & \val{0.007}{0.001} \\
+    & GP predictive $m=3200$ & \val{98.22}{0.13} & \val{0.058}{0.001} & \val{0.003}{0.000} \\
+    & GP predictive NN $m=1024$ &  \val{97.70}{0.07} & \val{0.080}{0.002} & \val{0.011}{0.001} \\
+    & GP predictive $m=1024$  &  \val{76.28}{1.85} & \val{0.702}{0.029} & \val{0.070}{0.022} \\
+    & \our NN $m=1024$ &  \val{98.02}{0.12} & \val{0.066}{0.003} & \val{0.007}{0.001} \\
+    & \our $m=1024$ &  \val{98.07}{0.06} & \val{0.063}{0.003} & \val{0.005}{0.001} \\
     \midrule
-    \multirow{2}{*}{CIFAR-10} 
-    & MAP & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & BNN predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & BNN predictive \cite{todo} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & GLM predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & GP predictive & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & \our (NN) & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
-    & \our & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\    
+    \multirow{2}{*}{FMNIST}
+    & MAP & \val{91.39}{0.11} & \val{0.258}{0.004} & \val{0.017}{0.001} \\
+    & BNN predictive & \val{84.42}{0.12} & \val{0.942}{0.016} & \val{0.411}{0.008} \\
+    & BNN predictive (Ritter et al.) & \val{91.20}{0.07} & \val{0.265}{0.004} & \val{0.024}{0.002} \\
+    & GLM predictive & \val{92.25}{0.10} & \val{0.244}{0.003} & \val{0.012}{0.003} \\
+    & GP predictive $m=3200$ & \val{91.36}{0.11} & \val{0.25}{0.004} & \val{0.007}{0.001} \\
+    & GP predictive NN $m=1024$ &  \val{0}{0.07} & \val{0}{0.002} & \val{0}{0.001} \\
+    & GP predictive $m=1024$  &  \val{0}{1.85} & \val{0}{0.029} & \val{0}{0.022} \\
+    & \our NN $m=1024$ &  \val{0}{0.0} & \val{0}{0.003} & \val{0}{0.001} \\
+    & \our $m=1024$ &  \val{0}{0.06} & \val{0}{0.003} & \val{0}{0.001} \\
     \bottomrule
-    \end{tabular}
+  \end{tabular}
+
+% & \sc \sc gp predictive  &  \val{76.28333}{1.849} & \val{0.70168}{0.02883} & \val{0.07049}{0.02154} \\
+% & \sc \sc gp predictive NN \cite{immer2021improving} &  \val{97.70333}{0.074} & \val{0.08027}{0.00248} & \val{0.01052}{0.00097} \\
+% & \sc \our &  \val{98.06667}{0.060} & \val{0.06312}{0.00284} & \val{0.00493}{0.00086} \\
+% & \sc \our NN &  \val{98.02000}{0.122} & \val{0.06583}{0.00294} & \val{0.00714}{0.00096} \\
+% M=512
+% & \sc \our &  \val{96.05}{0.00} & \val{0.85}{0.01} & \val{0.50}{0.00} \\
+% & \sc \sc gp predictive  &  \val{14.79}{0.01} & \val{2.30}{0.02} & \val{0.02}{0.01} \\
+% & \sc \sc gp predictive NN \cite{immer2021improving} &  \val{91.49}{0.01} & \val{1.25}{0.01} & \val{0.61}{0.00} \\
+% & \sc \our NN &  \val{96.96}{0.00} & \val{0.63}{0.00} & \val{0.40}{0.00} \\
+
+% M=1024
 
     % THE TABLE NUMBER ARE GENERATED BY A SCRIPT	
 	%\input{tables/img_super.tex}

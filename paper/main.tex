@@ -280,7 +280,7 @@ Deep learning \cite{goodfellow2016deep} has become the cornerstone of contempora
 
 
 %Current state of affairs 
-Recent techniques (\eg, \cite{ritter2018kfac,khan2019approximate,daxberger2021laplace,fortuin2021bayesian,immer2021scalable}) show that converting trained neural networks to a Bayesian neural network through the Laplace-GGN can provide uncertainty without sacrificing additional training cost \cite{foong2019between}. Furthermore, the resultant weight space posterior can be converted to the function space as shown \cite{khan2019approximate, immer2021improving}. The function space allows for a principled mathematical approach for analyzing the behaviour \cite{cho2009kernel,meronen2020stationary}, performing probabilistic inference \cite{khan2019approximate}, and quantifying uncertainty in neural networks \cite{foong2019between}. These methods rely on the linearization of the neural network and the resultant NTK \cite{jacot2018neural}. The function space neural network is characterized by its first two moment functions, a mean function and covariance function (or kernel)---defining a Gaussian process (GP, \cite{rasmussen2006gaussian}). GPs provide a widely-used probabilistic toolkit with principled uncertainty estimates, and they serve as a standard surrogate model for Bayesian optimization \citep{garnett_bayesoptbook_2022} and are effective in model-based reinforcement learning \citep{deisenroth2011pilco} with theoretical guarantees on regret bounds \citep{srinivas2009gaussian}. 
+Recent techniques (\eg, \cite{ritter2018kfac,khan2019approximate,daxberger2021laplace,fortuin2021bayesian,immer2021scalable}) show that converting trained neural networks to a Bayesian neural network through the Laplace-GGN can provide uncertainty without sacrificing additional training cost \cite{foong2019between}. Furthermore, the resultant weight space posterior can be converted to the function space as shown \cite{khan2019approximate, immer2021improving}. The function space allows for a principled mathematical approach for analyzing the behaviour \cite{cho2009kernel,meronen2020stationary}, performing probabilistic inference \cite{khan2019approximate}, and quantifying uncertainty in neural networks \cite{foong2019between}. These methods rely on the linearization of the neural network and the resultant neural tangent kernel (NTK, \cite{jacot2018neural}). The function space neural network is characterized by its first two moment functions, a mean function and covariance function (or kernel)---defining a Gaussian process (GP, \cite{rasmussen2006gaussian}). GPs provide a widely-used probabilistic toolkit with principled uncertainty estimates, and they serve as a standard surrogate model for Bayesian optimization \citep{garnett_bayesoptbook_2022} and are effective in model-based reinforcement learning \citep{deisenroth2011pilco} with theoretical guarantees on regret bounds \citep{srinivas2009gaussian}. 
 %Yet many problems lie in high dimensional input space; for example, images are where GPs cannot learn representations. In such scenarios such as in many reinforcement learning environments neural networks are used as the surrogate model. However, uncertainty is still essential to ensure effective exploration for sequential algorithms. Successful approaches have attempted to blend neural networks with uncertainty estimates around predictions, allowing for sophisticated exploration strategies. However, there has been limited use of hybrid models that possess the feature representation ability of neural networks but also attractive the properties of GPs, such a hybrid method we propose in this paper.
 
 %Need for adaptive learning methods + failures with current methods
@@ -607,7 +607,7 @@ where the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{N \times N
   \beta_i \coloneqq - \myexpect_{p(\vw \mid \vy)}[\nabla^2_{f f}\log p(y_i \mid f_i) |_{f=f_i}],
 \end{equation}
 %
-where $f_\vw(\vx_i) = f_i$ is the function output at input $\vx_i$. The relationships specified are valid for generic likelihoods, and involve no approximations since the expectation is under the exact posterior, but given that your model can be expressed in kernel formulation. \cref{eq:gp_pred} and \cref{eq:dual_param} highlight that the approximate inference technique, usually viewed as a posterior approximation, can be alternatively interpreted as an approximation of the expectation of gradients of loss/likelihoods.
+where $f_\vw(\vx_i) = f_i$ is the function output at input $\vx_i$. The relationships specified are valid for generic likelihoods, and involve no approximations since the expectation is under the exact posterior, but given that the model can be expressed in a kernel formulation. \cref{eq:gp_pred} and \cref{eq:dual_param} highlight that the approximate inference technique, usually viewed as a posterior approximation, can be alternatively interpreted as an approximation of the expectation of gradients of loss/likelihoods.
 
 Originally \citet{csato2002sparse} iteratively find dual variables using an expectation propagation (EP, \cite{minka2001expectation}) method. More recently \cite{khan2017conjugate,adam2021dual}, has shown this relationship for variational Gaussian processes where the above expectation is with respect to the approximate variational posterior. Meanwhile in \citet{wilkinson2023bayes}, they show links between linearization methods and how they solve the \cref{eq:dual_param}.
 
@@ -618,7 +618,7 @@ Given that we use a Laplace approximation of the neural network, we remove the e
   \label{eq:dual_param_laplace}
   \hat{\alpha}_i \coloneqq \nabla_{f}\log p(y_i \mid f) |_{f=f_i}
   \quad \text{and} \quad
-  \hat{\beta}_i \coloneqq - \nabla^2_{f,f}\log p(y_i \mid f) |_{f=f_i}.
+  \hat{\beta}_i \coloneqq - \nabla^2_{ff}\log p(y_i \mid f) |_{f=f_i}.
 \end{equation}
 %
 Substiuting \cref{eq:dual_param_laplace} into \cref{eq:gp_pred}, we obtain our GP model based on the converged neural network. Again, this is similar to what was derived in \citet{immer2021improving} for the posterior variance function. However, they use the $f_{\vw^*}$ for the posterior mean and do not emphasize the significance of the dual variables. The problem with \cref{eq:gp_pred} is that to make predictions and compute variances we must incur a cost of $O(N^3)$ which limits the use of the GP on large data sets.
@@ -766,6 +766,65 @@ We present a series of experiments designed to demonstrate the versatility and e
 \end{table}
 
 
+\begin{figure}[t]
+  \centering\scriptsize
+  \setlength{\figurewidth}{.26\textwidth}
+  \setlength{\figureheight}{\figurewidth}
+  \pgfplotsset{axis on top,scale only axis,y tick label style={rotate=90}, x tick label style={font=\footnotesize},y tick label style={font=\footnotesize},title style={yshift=-4pt,font=\large}, y label style={font=\large},x label style={font=\large},grid=major, width=\figurewidth, height=\figureheight}
+  \pgfplotsset{grid style={line width=.1pt, draw=gray!10,dashed}}
+  \pgfplotsset{xlabel={$M$},ylabel style={yshift=-12pt}}  
+  %
+  \begin{minipage}[t]{.17\textwidth}
+    \raggedleft
+    \pgfplotsset{ylabel=NLPD}
+    \input{./fig/australian.tex}
+  \end{minipage}
+  \hfill
+%  \begin{minipage}[t]{.16\textwidth}
+%    \raggedleft
+%    \input{./fig/breast_cancer.tex}
+%  \end{minipage}
+%  \hfill
+%  \begin{minipage}[t]{.16\textwidth}
+%    \raggedleft
+%    \input{./fig/ionosphere.tex}
+%  \end{minipage}
+%  \hfill
+  \begin{minipage}[t]{.16\textwidth}
+    \raggedleft
+    \input{./fig/glass.tex}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{.16\textwidth}
+    \raggedleft
+    \input{./fig/vehicle.tex}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{.16\textwidth}
+    \raggedleft
+    \input{./fig/waveform.tex}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{.16\textwidth}
+    \raggedleft
+    \input{./fig/digits.tex}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{.16\textwidth}
+    \raggedleft
+    \input{./fig/satellite.tex}
+  \end{minipage}\\%[1em]
+  %
+  % Show the legend separately
+  %\pgfplotsset{hide axis,legend columns=-1,legend style={draw=none,column sep=1ex,font=\Large}}
+  %\input{./fig/uci-legend.tex}\\[-2.5em]
+  \caption{Comparison of convergence in terms of  negative log-predictive density (NLPD) as averages over 10-fold cross-validation runs, on UCI classification tasks.}
+  \label{fig:uci}
+  %\vspace*{-6pt}
+\end{figure}
+
+
+
 \subsection{Capturing uncertainty in UCI tasks under supervised learning}
 \label{sec:uci}
 %
@@ -775,6 +834,21 @@ In \cref{tbl:uci} (left), we compare our model to the NN MAP estimate, mean-fiel
 In \cref{tbl:uci} (right), we also include an ablation and comparison (to \cite{todo}) study with a fixed low number of inducing points ($M=$). The comparison shows that our sparse method is able to summarize the information of the full data set more efficiently than sparse subset methods.
 
 % see \cref{tbl:uci} for a list of the datasets. The neural network training was done using MAP, with a prior $\mathcal{N}(0,\delta^{-1} \MI)$ with prior precision $\delta$. After training, we constructed the SVGP dual and used the resulting SVGP model for uncertainty quantification. Depending on task dimension and complexity, our model can match the NN MAP in NLPD performance even with a low number of inducing points, see \cref{tbl:uci}. We performed hyperparameter search over the prior precision, and ran the experiment over $10$ seeds. During the initial NN training, we used a learning rate of $1e-3$.
+
+\begin{figure}
+  \raggedleft\scriptsize
+  \setlength{\figurewidth}{\textwidth}
+  \setlength{\figureheight}{.55\figurewidth}
+  %\pgfplotsset{axis on top,ymajorgrids,axis line style={draw=none},legend style={at={(-.1,-.1)},anchor=north east}}
+  %\pgfplotsset{grid style={line width=.1pt, draw=gray!10,dashed}}
+  %\def\our{{\sc sfr} (ours)}
+  \input{./fig/MNIST_acc.tex}
+  \caption{Foo}
+  \label{fig:mnist}
+\end{figure}
+
+
+
 
 
 

@@ -1,8 +1,13 @@
 #!/bin/bash
 
+srun --partition=standard-g --account=project_462000217 --time=0:20:00 --ntasks=1 --cpus-per-task=8 --gpus-per-task=1 --mem=10G cluster_train.py +experiment=nn2svgp-sample
+srun --account=project_462000217 --partition=standard-g --time=00:30:00 --nodes=1 --pty bash
+
+
+
 #SBATCH --ppartition=standard-g
 rem #SBATCH --partition=eap
-#SBATCH --account=project_462000183
+#SBATCH --account=project_462000217
 #SBATCH --time=0:20:00
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
@@ -30,7 +35,7 @@ module load LUMI/22.08
 module load lumi-container-wrapper
 
 
-MINLPS_CONTAINER_DIR=~/minlps
+NN2SVGP_CONTAINER_DIR=/scratch/project_462000217/nn2svgp/
 export PATH="$NN2SVGP_CONTAINER_DIR/bin:$PATH"
 
 python cluster_train.py +experiment=nn2svgp-sample

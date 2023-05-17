@@ -348,8 +348,8 @@ def train(cfg: DictConfig):
 
     cfg.predictive_model = "glm"
     compute_metrics(
-        sfr=sfr_double,
-        gp_subset=gp_subset,
+        sfr=None,
+        gp_subset=None,
         ds_train=ds_train,
         ds_test=ds_test,
         cfg=cfg,
@@ -358,8 +358,8 @@ def train(cfg: DictConfig):
 
     cfg.predictive_model = "bnn"
     compute_metrics(
-        sfr=sfr_double,
-        gp_subset=gp_subset,
+        sfr=None,
+        gp_subset=None,
         ds_train=ds_train,
         ds_test=ds_test,
         cfg=cfg,

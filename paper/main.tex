@@ -1071,10 +1071,10 @@ In \cref{tbl:cl_table_1}, we use 200 points for each task, and we further demons
 
 %% Comments on the results:
 From \cref{tbl:cl_table_1}, it is clear that the weight-space regularization methods completely fail compared to the function-space methods on S-MNIST and S-FMNIST, but are comparable on P-MNIST. %, commonly referred as Domain Incremental Learning. (opposed to the Class-Incremental Learning for S-MNIST and S-FMNIST)
-Considering only function-space methods, we can see that \our achieves the best results on most datasets, and is particularly effective, when using fewer points per task.
+Considering only function-space methods, we can see that \our achieves the best results on most data sets, and is particularly effective, when using fewer points per task.
 On S-FMNIST, our method obtains close results to DER, which regularizes the model by taking the mean squared error between current and old function outputs without accounting the covariance structure of the loss similar to our L2 ablation. Moreover, their method exploits reservoir sampling \citep{vitter1985random} to obtain a continuously updated set inducing points.
 S-FSVI obtains the best on P-MNIST, but with the downside of requiring high computational costs based on performing variational inference, compared to \our. \todo{on PMNIST our method is not really super-fast, so that could be not the best thing to say here} % we could also say that P-MNIST is known to be a bad/ill-posed dataset for CL 
-Finally, it is worth noticing as our ablation already provides a very solid baseline consistently over all datasets.
+Finally, it is worth noticing as our ablation already provides a very solid baseline consistently over all data sets.
 
 
 

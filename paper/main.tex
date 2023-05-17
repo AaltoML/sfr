@@ -864,7 +864,7 @@ In \cref{tbl:uci} (right), we also include an ablation and comparison study (to 
 	% Control table spacing
 	\renewcommand{\arraystretch}{1.}
 	\setlength{\tabcolsep}{6pt}
-	\setlength{\tblw}{0.15\textwidth}  
+	\setlength{\tblw}{0.095\textwidth}  
 	
 	% Custom error formatting
 	\newcommand{\val}[2]{%
@@ -895,31 +895,43 @@ In \cref{tbl:uci} (right), we also include an ablation and comparison study (to 
     % & \our & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} & \val{0.000}{0.000} \\
     % \bottomrule
     % \end{tabular}
-  \begin{tabular}{l l C{\tblw} C{\tblw} C{\tblw} C{\tblw}}
+  \newcommand{\myline}{\protect\tikz[baseline=-.5ex,line width=1pt]\protect\draw[draw=black!50](0,0)--(7em,0);}
+  \begin{tabular}{l c C{\tblw} C{\tblw} C{\tblw} C{\tblw} C{\tblw} C{\tblw}}
     \toprule
-    & Method & ACC~$\uparrow$ & NLPD~$\downarrow$ & ECE~$\downarrow$   \\
+            &     &  \multicolumn{3}{c}{\myline~MNIST~\myline} & \multicolumn{3}{c}{\myline~FMNIST~\myline} \\
+     Method & $M$ & ACC~$\uparrow$ & NLPD~$\downarrow$ & ECE~$\downarrow$ & ACC~$\uparrow$ & NLPD~$\downarrow$ & ECE~$\downarrow$ \\
     \midrule
-    \multirow{2}{*}{MNIST}
-    & MAP & \val{98.22}{0.13} & \val{0.061}{0.004} & \val{0.006}{0.001} \\
-    & BNN predictive \cite{immer2021improving} & \val{93.14}{0.05} & \val{0.304}{0.002} & \val{0.111}{0.003} \\
-    & BNN predictive \cite{ritter2018kfac} & \val{93.03}{0.13} & \val{0.369}{0.003} & \val{0.168}{0.001} \\
-    & GLM predictive \cite{immer2021improving} & \val{98.40}{0.05} & \val{0.054}{0.002} & \val{0.007}{0.001} \\
-    & GP predictive \cite{immer2021improving} $m=3200$ & \val{98.22}{0.13} & \val{0.058}{0.001} & \val{0.003}{0.000} \\
-    & GP predictive NN $m=1024$ &  \val{97.70}{0.07} & \val{0.080}{0.002} & \val{0.011}{0.001} \\
-    & GP predictive $m=1024$  &  \val{76.28}{1.85} & \val{0.702}{0.029} & \val{0.070}{0.022} \\
-    & \our NN $m=1024$ &  \val{98.02}{0.12} & \val{0.066}{0.003} & \val{0.007}{0.001} \\
-    & \our $m=1024$ &  \val{98.07}{0.06} & \val{0.063}{0.003} & \val{0.005}{0.001} \\
-    \midrule
-    \multirow{2}{*}{FMNIST}
-    & MAP & \val{91.39}{0.11} & \val{0.258}{0.004} & \val{0.017}{0.001} \\
-    & BNN predictive \cite{immer2021improving} & \val{84.42}{0.12} & \val{0.942}{0.016} & \val{0.411}{0.008} \\
-    & BNN predictive \cite{ritter2018kfac} & \val{91.20}{0.07} & \val{0.265}{0.004} & \val{0.024}{0.002} \\
-    & GLM predictive \cite{immer2021improving} & \val{92.25}{0.10} & \val{0.244}{0.003} & \val{0.012}{0.003} \\
-    & GP predictive \cite{immer2021improving} $m=3200$ & \val{91.36}{0.11} & \val{0.25}{0.004} & \val{0.007}{0.001} \\
-    & GP predictive NN $m=1024$ &  \val{0}{0.07} & \val{0}{0.002} & \val{0}{0.001} \\
-    & GP predictive $m=1024$  &  \val{0}{1.85} & \val{0}{0.029} & \val{0}{0.022} \\
-    & \our NN $m=1024$ &  \val{0}{0.0} & \val{0}{0.003} & \val{0}{0.001} \\
-    & \our $m=1024$ &  \val{0}{0.06} & \val{0}{0.003} & \val{0}{0.001} \\
+    %\multirow{2}{*}{MNIST}
+    MAP & & \val{98.22}{0.13} & \val{0.061}{0.004} & \val{0.006}{0.001}
+          & \val{91.39}{0.11} & \val{0.258}{0.004} & \val{0.017}{0.001} \\
+    BNN predictive \cite{immer2021improving} & & \val{93.14}{0.05} & \val{0.304}{0.002} & \val{0.111}{0.003}
+                                               & \val{84.42}{0.12} & \val{0.942}{0.016} & \val{0.411}{0.008} \\
+    BNN predictive \cite{ritter2018kfac} & & \val{93.03}{0.13} & \val{0.369}{0.003} & \val{0.168}{0.001}
+                                           & \val{91.20}{0.07} & \val{0.265}{0.004} & \val{0.024}{0.002} \\
+    GLM predictive \cite{immer2021improving} & & \val{98.40}{0.05} & \val{0.054}{0.002} & \val{0.007}{0.001}
+                                               & \val{92.25}{0.10} & \val{0.244}{0.003} & \val{0.012}{0.003} \\
+    GP predictive \cite{immer2021improving} & $3200$ & \val{98.22}{0.13} & \val{0.058}{0.001} & \val{0.003}{0.000}
+                                                     & \val{91.36}{0.11} & \val{0.25}{0.004} & \val{0.007}{0.001} \\
+
+    GP predictive NN & $1024$ &  \val{97.70}{0.07} & \val{0.080}{0.002} & \val{0.011}{0.001}
+                              &  \val{0}{0.07} & \val{0}{0.002} & \val{0}{0.001} \\
+
+    GP predictive & $1024$  & \val{76.28}{1.85} & \val{0.702}{0.029} & \val{0.070}{0.022}
+                            & \val{0}{1.85} & \val{0}{0.029} & \val{0}{0.022} \\
+    \our NN & $1024$ &  \val{98.02}{0.12} & \val{0.066}{0.003} & \val{0.007}{0.001}
+                     &  \val{0}{0.0} & \val{0}{0.003} & \val{0}{0.001} \\
+    \our & $1024$ & \val{98.07}{0.06} & \val{0.063}{0.003} & \val{0.005}{0.001}
+                  & \val{0}{0.06} & \val{0}{0.003} & \val{0}{0.001} \\
+%    \multirow{2}{*}{FMNIST}
+%    & MAP & \val{91.39}{0.11} & \val{0.258}{0.004} & \val{0.017}{0.001} \\
+    %& BNN predictive \cite{immer2021improving} & \val{84.42}{0.12} & \val{0.942}{0.016} & \val{0.411}{0.008} \\
+    % & BNN predictive \cite{ritter2018kfac} & \val{91.20}{0.07} & \val{0.265}{0.004} & \val{0.024}{0.002} \\
+    % & GLM predictive \cite{immer2021improving} & \val{92.25}{0.10} & \val{0.244}{0.003} & \val{0.012}{0.003} \\
+    %& GP predictive \cite{immer2021improving} $m=3200$ & \val{91.36}{0.11} & \val{0.25}{0.004} & \val{0.007}{0.001} \\
+    % & GP predictive NN $m=1024$ &  \val{0}{0.07} & \val{0}{0.002} & \val{0}{0.001} \\
+    % & GP predictive $m=1024$  &  \val{0}{1.85} & \val{0}{0.029} & \val{0}{0.022} \\
+    % & \our NN $m=1024$ &  \val{0}{0.0} & \val{0}{0.003} & \val{0}{0.001} \\
+    % & \our $m=1024$ &  \val{0}{0.06} & \val{0}{0.003} & \val{0}{0.001} \\
     \bottomrule
   \end{tabular}
 
@@ -939,7 +951,7 @@ In \cref{tbl:uci} (right), we also include an ablation and comparison study (to 
 	%\input{tables/img_super.tex}
 \end{table}
 
-Similarly to the UCI experiments, we trained neural networks (CNN, architecture matches \citet{immer2021improving}) for the FMNIST and CIFAR10 classification tasks. After training, we computed the duals for NN2SVGP and used the resulting SVGP for uncertainty estimates, see \cref{tbl:imagesuper}. We performed hyperparameter optimization over the prior precision, and found the optimal value to be [insert]. We ran the experiment over $5$ seeds. During the NN training, we used a batch size of $512$ and an Adam optimizer with learning rate $1e-3$.
+Similarly to the UCI experiments, we seek to demonstrate \our on image data. We consider MNIST and Fashion-MNIST (FMNIST), and neural networks (CNN, architecture matches \cite{immer2021improving}) for the FMNIST and CIFAR10 classification tasks. After training, we computed the duals for NN2SVGP and used the resulting SVGP for uncertainty estimates, see \cref{tbl:imagesuper}. We performed hyperparameter optimization over the prior precision, and found the optimal value to be [insert]. We ran the experiment over $5$ seeds. During the NN training, we used a batch size of $512$ and an Adam optimizer with learning rate $1e-3$.
 
 In addition to uncertainty estimates, our method can update the posterior when given new data. We gave the SVGP model 10 \% of the test dataset used for evaluation, and compare the performance of the SVGP model and the retrained NN in [INSERT TABLE]. 
 

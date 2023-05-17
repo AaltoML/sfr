@@ -1,5 +1,7 @@
 % This file was created with tikzplotlib v0.10.1.
-\begin{tikzpicture}
+\begin{tikzpicture}[
+scale=0.5
+]
 
 \definecolor{crimson2143940}{RGB}{214,39,40}
 \definecolor{darkgray176}{RGB}{176,176,176}
@@ -10,25 +12,24 @@
 \begin{axis}[
 tick align=outside,
 tick pos=left,
-title={glass},
+title={\sc glass},
 x grid style={darkgray176},
-xlabel={Inducing points},
-xmin=4, xmax=268,
+xmin=-8.8, xmax=536.8,
 xtick style={color=black},
-xtick={0,50,100,150,200,250,300},
-xticklabels={0,16,32,64,128,256,},
+xtick={-100,0,100,200,300,400,500,600},
+xticklabels={0,16,32,64,128,256,512,},
 y grid style={darkgray176},
-ylabel={Test NLPD},
 ymin=0.8518, ymax=1.2742,
 ytick style={color=black}
 ]
-\addplot [semithick, steelblue31119180]
+\addplot [thick, steelblue31119180]
 table {%
 16 1.004
 32 0.947
 64 0.929
 128 0.927
 256 0.926
+512 0.926
 };
 \addplot [semithick, darkorange25512714]
 table {%
@@ -37,6 +38,7 @@ table {%
 64 0.872
 128 0.874
 256 0.874
+512 0.874
 };
 \addplot [semithick, forestgreen4416044]
 table {%
@@ -45,6 +47,7 @@ table {%
 64 1.067
 128 0.952
 256 0.927
+512 0.928
 };
 \addplot [semithick, crimson2143940]
 table {%
@@ -53,6 +56,7 @@ table {%
 64 0.941
 128 0.884
 256 0.874
+512 0.873
 };
 \end{axis}
 

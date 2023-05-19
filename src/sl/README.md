@@ -16,3 +16,11 @@ python train.py --cfg=job
 ```
 
 # Reproducing tables
+Make the relevant rows with:
+``` shell
+python tables/MNIST_table.py
+```
+``` shell
+python tables/FMNIST_table.py
+```
+<!-- TODO make this produce all rows not just ours -->

@@ -1,16 +1,11 @@
 #!/usr/bin/env python3 import argparse
-import math
-import os
 import argparse
+import os
 from pprint import pprint
 
-import hydra
-import matplotlib.pyplot as plt
 import numpy as np
-import tikzplotlib
 import wandb
 from omegaconf import OmegaConf
-from scipy.stats import sem
 
 
 # wandb_runs = OmegaConf.create({"id": "aalto-ml/nn2svgp/ursttc7k"})

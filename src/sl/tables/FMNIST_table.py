@@ -1,6 +1,13 @@
 #!/usr/bin/env python3
 import numpy as np
 
+# FMNIST results
+# "aalto-ml/nn2svgp-sl/yw94vxss",  # 666
+# "aalto-ml/nn2svgp-sl/cd1lbynk",  # 10
+# "aalto-ml/nn2svgp-sl/a2fi80be",  # 117
+# "aalto-ml/nn2svgp-sl/36isce0q",  # 8
+# "aalto-ml/nn2svgp-sl/s83iwn6v",  # 50
+
 metrics = {
     "gp_subset": {
         "ece": np.array([0.05858, 0.05133, 0.04326, 0.04673, 0.05767]),

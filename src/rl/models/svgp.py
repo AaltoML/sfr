@@ -1,23 +1,23 @@
 #!/usr/bin/env python3
 import logging
-from typing import Optional, Union
 from copy import deepcopy
+from typing import Optional, Union
+
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-from gpytorch.lazy import DiagLazyTensor, CholLazyTensor, TriangularLazyTensor
-from torchtyping import TensorType
 import gpytorch
+import numpy as np
 import torch
 import torch.distributions as td
 import wandb
 from functorch import jacrev
-from gpytorch.module import _validate_module_outputs
+from gpytorch.lazy import CholLazyTensor
 from src.rl.custom_types import Prediction
 from src.rl.utils import EarlyStopper
 from torch.utils.data import DataLoader
-import numpy as np
+from torchtyping import TensorType
 
 
 class SVGP(gpytorch.models.ApproximateGP):

@@ -2,32 +2,25 @@
 import logging
 import os
 import random
-import time
-from collections import deque, namedtuple
-from pathlib import Path
 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-from src.sl.inference import compute_metrics
-
 import hydra
-import matplotlib.pyplot as plt
 import numpy as np
 import omegaconf
 import src
 import torch
-from tqdm import tqdm
 import wandb
-from omegaconf import DictConfig, OmegaConf
-
-# from src.rl.utils import set_seed_everywhere
-from src.sl.datasets import CIFAR10, FMNIST, MNIST
-from src.sl.networks import CIFAR10Net, CIFAR100Net, MLPS
+from omegaconf import DictConfig
+from preds.datasets import CIFAR10, FMNIST, MNIST
+from preds.models import CIFAR10Net, CIFAR100Net, MLPS
+from src.likelihoods import BernoulliLh, CategoricalLh
+from src.sl.inference import compute_metrics
 from torch.utils.data import DataLoader
 from torchvision.datasets import VisionDataset
-from src.nn2svgp.likelihoods import BernoulliLh, CategoricalLh
+from tqdm import tqdm
 
 
 PACKAGE_DIR = os.path.dirname(os.path.realpath(__file__))
@@ -110,7 +103,7 @@ def get_model(model_name, ds_train):
 
 
 def evaluate(model, data_loader, criterion, device):
-    likelihood = src.nn2svgp.likelihoods.CategoricalLh()
+    likelihood = src.likelihoods.CategoricalLh()
     model.eval()
     loss, acc, nll = 0, 0, 0
     with torch.no_grad():
@@ -244,8 +237,6 @@ def train(cfg: DictConfig):
     # dataset = hydra.utils.instantiate(cfg.dataset)
     # print("dataset {}".format(dataset))
     # ds_train, ds_test = dataset
-    # ntksvgp = hydra.utils.instantiate(cfg.ntksvgp)
-    # print("ntksvgp {}".format(ntksvgp))
 
     train_loader = DataLoader(ds_train, batch_size=cfg.batch_size, shuffle=True)
     test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=False)
@@ -330,16 +321,6 @@ def train(cfg: DictConfig):
 
     # print("X_train {}".format(X_train.shape))
     # print("y_train {}".format(y_train.shape))
-    # gp_subset = src.nn2svgp.nn2gp.NN2GPSubset(
-    #     network=sfr.network,
-    #     prior=sfr.prior,
-    #     likelihood=sfr.likelihood,
-    #     output_dim=sfr.output_dim,
-    #     subset_size=32,
-    #     dual_batch_size=sfr.dual_batch_size,
-    #     jitter=sfr.jitter,
-    #     device=cfg.device,
-    # )
 
     torch.set_default_dtype(torch.double)
     # sfr_new = hydra.utils.instantiate(cfg.sfr, prior=prior, network=network)
@@ -381,7 +362,7 @@ def train(cfg: DictConfig):
         if m >= num_data:
             break
         sfr.num_inducing = m
-        sfr_double = src.ntksvgp.NTKSVGP(
+        sfr_double = src.SFR(
             network=network,
             prior=prior,
             likelihood=sfr.likelihood,
@@ -422,19 +403,6 @@ def train(cfg: DictConfig):
             )
         except:
             logger.info("GP subset failed predict")
-
-    # gp_subset = hydra.utils.instantiate(cfg.sfr, prior=prior, network=network)
-    # gp_subset = src.nn2svgp.nn2gp.NN2GPSubset(
-    #     network=sfr.network,
-    #     prior=sfr.prior,
-    #     likelihood=sfr.likelihood,
-    #     output_dim=sfr.output_dim,
-    #     subset_size=3200,
-    #     dual_batch_size=sfr.dual_batch_size,
-    #     jitter=sfr.jitter,
-    #     device=cfg.device,
-    # )
-    # gp_subset.set_data(data)
 
 
 if __name__ == "__main__":

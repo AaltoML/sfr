@@ -21,7 +21,6 @@ source .venv/bin/activate
 See the [notebooks](./src/notebooks) for how to use our code.
 Here's a short example:
 ```python
-# TODO update this
 import src
 import torch
 
@@ -38,6 +37,7 @@ width = 64
 num_epochs = 1000
 batch_size = 16
 learning_rate = 1e-3
+delta = 0.00005  # prior precision
 data_loader = torch.utils.data.DataLoader(
     torch.utils.data.TensorDataset(*data), batch_size=batch_size
 )

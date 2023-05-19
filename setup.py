@@ -8,7 +8,9 @@ print(_here)
 name = "src"
 author = "Aidan Scannell"
 author_email = "scannell.aidan@gmail.com"
-description = "Neural sparse GPs for prediction and fast updates PyTorch."
+description = (
+    "Sparse function-space representation (SFR) of neural networks in PyTorch."
+)
 
 with open(_here / "README.md", "r") as f:
     readme = f.read()
@@ -32,11 +34,14 @@ classifiers = [
 keywords = [
     "deep-learning",
     "machine-learning",
-    "bayesian-deep-learning",
-    "gaussian-processes",
-    "variational-inference",
-    "model-based-reinforcement-learning",
+    "probabilistic-modelling",
     "bayesian-inference",
+    "approximate-inference",
+    "variational-inference",
+    "bayesian-deep-learning",
+    "bayesian-neural-networks",
+    "gaussian-processes",
+    "model-based-reinforcement-learning",
     "planning",
 ]
 
@@ -49,15 +54,9 @@ install_requires = [
     "torchvision==0.15.1",
     "onedrivedownloader",  # from mammoth cl framework
     "av",  #
-    # functorch  # needed for vmap
     "torchtyping==0.1.4",
-    # laplace-torch
     "gpytorch==1.9.1",
-    # git+https://github.com/pytorch/rl
-    # "torchrl==0.1.0",  # using this on triton
-    # "./src/third_party/rl-0.1.0", # using this locally
-    # f"torchrl @ file://{_here}/src/rl/third_party/rl-0.1.0",
-    "laplace-torch",
+    # "laplace-torch",
 ]
 extras_require = {
     "dev": [
@@ -78,7 +77,7 @@ extras_require = {
         "opencv-python==4.7.0.72",
         "moviepy==1.0.3",  # rendering
         "tikzplotlib==0.10.1",
-        "tabulate==0.9.0",
+        # "tabulate==0.9.0",
         "gym[classic_control]==0.26.2",
         "hamiltorch @ git+ssh://git@github.com/AdamCobb/hamiltorch",  # TODO check this works # for HMC banada fig
     ],

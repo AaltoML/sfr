@@ -1,11 +1,7 @@
 #!/usr/bin/env python3
 import logging
-import os
 import random
-import time
-from collections import deque, namedtuple
 from functools import partial
-from pathlib import Path
 
 
 logging.basicConfig(level=logging.INFO)
@@ -13,17 +9,12 @@ logger = logging.getLogger(__name__)
 
 import hydra
 import laplace
-import matplotlib.pyplot as plt
-import numpy as np
 import omegaconf
 import src
 import torch
 import wandb
-from omegaconf import DictConfig, OmegaConf
-from src.sl.datasets import CIFAR10, FMNIST, MNIST
-from src.sl.networks import CIFAR10Net, CIFAR100Net, MLPS
+from omegaconf import DictConfig
 from torch.utils.data import DataLoader
-from torchvision.datasets import VisionDataset
 from tqdm import tqdm
 
 

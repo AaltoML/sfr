@@ -19,10 +19,7 @@ def train(
     learning_rate: float = 1e-3,
 ):
     data_loader = torch.utils.data.DataLoader(
-        torch.utils.data.TensorDataset(*data),
-        batch_size=batch_size,
-        # collate_fn=collate_wrapper,
-        # pin_memory=True,
+        torch.utils.data.TensorDataset(*data), batch_size=batch_size
     )
 
     sfr.train()

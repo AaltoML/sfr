@@ -1562,55 +1562,59 @@ For the function-space methods, we considered DER~\citep{buzzega2020dark}, FROMP
 For our method, DER, EWC, and SI, we relied on the Mammoth framework proposed by \citep{buzzega2020dark}, while we used the available open-source codebases to conduct the experiments respectively for FROMP, S-FSVI, and VCL.
 
 For the methods relying on a stored subset of training data for each task, we make sure that the same amount of data points store are the same for each method. For DER, which does not select the rehearsal training samples at task boundaries, we cannot apply directly the definition of points per task ($M$), and then we set the dimension of the reservoir buffer to be $T \cdot M$, \ie, total number of tasks times the points per task.
+
+
+The results reported in \cref{tbl:cl_table_1}, are obtained using the following hyperparameters:
  
 %% Hyperparms used in the different experiments:
 \textbf{S-MNIST (40 pts./task):}
 \begin{itemize}
-	\item[-] Online-EWC: SGD, learning rate $0.03$, batch size  10, number of epochs 1, $\lambda=90$, $\gamma=1.0$.
-	\item[-] SI: SGD, learning rate 0.1, batch size 10, number of epochs 1, $c=1.0$, $\xi=0.9$.
+	\item[-] Online-EWC: SGD with learning rate $0.03$, batch size  10, number of epochs 1, $\lambda=90$, $\gamma=1.0$.
+	\item[-] SI: SGD with learning rate 0.1, batch size 10, number of epochs 1, $c=1.0$, $\xi=0.9$.
 	\item[-] VCL (with coresets): Adam, learning rate 0.001, batch size 256, number of epochs 100, selection method for coresets random choice.
-	\item[-] DER: SGD, learning rate 0.03, batch size 10, buffer batch size 10, number epochs 1, $\alpha=0.2$, reservoir buffer size 200.
-	\item[-] FROMP: Adam, learning rate $1 \cdot 10^{-4}$, batch size 32, number of epochs 10, $\tau = 10$
-	\item[-] S-FSVI: Adam, learning rate 
-	\item[-] SFR: Adam
+	\item[-] DER: SGD with learning rate 0.03, batch size 10, buffer batch size 10, number epochs 1, $\alpha=0.3$, reservoir buffer size 200.
+	\item[-] FROMP: Adam, learning rate $1 \cdot 10^{-4}$, batch size 32, number of epochs 10, $\tau = 10$, random selection for memorable points.
+	\item[-] S-FSVI: Adam, learning rate $5 \cdot 10^{-4}$, batch size 128, number of epochs 10.
+	\item[-] SFR: Adam with learning rate 0.0003, batch size=32, $\tau=1$, $\delta=0.0001$,  number of epochs 1.
 \end{itemize}
 
 
 \textbf{S-MNIST (200 pts./task):}
 \begin{itemize}
-	\item[-] Online-EWC: SGD, learning rate $0.03$, batch size  10, number of epochs 1, $\lambda=90$, $\gamma=1.0$.
-	\item[-] SI: SGD, learning rate 0.1, batch size 10, number of epochs 1, $c=1.0$, $\xi=0.9$.
+	\item[-] Online-EWC: SGD with learning rate $0.03$, batch size  10, number of epochs 1, $\lambda=90$, $\gamma=1.0$.
+	\item[-] SI: SGD with learning rate 0.1, batch size 10, number of epochs 1, $c=1.0$, $\xi=0.9$.
 	\item[-] VCL (with coresets): Adam, learning rate 0.001, batch size 256, number of epochs 100, selection method for coresets random choice.
-	\item[-] DER: SGD, learning rate 0.03, batch size 10, buffer batch size 10, number epochs 1, $\alpha$ 0.2, reservoir buffer size 1000.
-	\item[-] FROMP: Adam, learning rate $1 \cdot 10^{-4}$, batch size 32, number of epochs 10, $\tau = 10$
-	\item[-] S-FSVI: Adam
-	\item[-] SFR: Adam
+	\item[-] DER: SGD with learning rate 0.03, batch size 10, buffer batch size 10, number epochs 1, $\alpha$ 0.2, reservoir buffer size 1000.
+	\item[-] FROMP: Adam, learning rate $1 \cdot 10^{-4}$, batch size 32, number of epochs 10, $\tau = 10$, random selection for memorable points.
+	\item[-] S-FSVI: Adam, learning rate $5 \cdot 10^{-4}$, batch size 128, number of epochs 80.
+	\item[-] SFR: Adam learning rate 0.0001, batch size=32, $\tau=0.5$, $\delta=1 \cdot 10^{-5}$, number of epochs=5.
 \end{itemize}
  
 %% Placeholders for now
 \textbf{S-FMNIST (200 pts./task):}
 \begin{itemize}
-	\item[-] Online-EWC: SGD, learning rate $0.03$, batch size  10, number of epochs 5, $\lambda=90$, $\gamma=1.0$.
-	\item[-] SI: SGD, learning rate 0.1, batch size 10, number of epochs 5, $c=1.0$, $\xi=0.9$.
-	\item[-] VCL (with coresets):
-	\item[-] DER: SGD, learning rate 0.03, batch size 10, buffer batch size 10, number epochs 5, $\alpha$ 0.2, reservoir buffer size 200.
-	\item[-] FROMP: Adam, learning rate $1 \cdot 10^{-4}$, batch size 32, number of epochs 10, $\tau = 10$
-	\item[-] S-FSVI: Adam
-	\item[-] SFR: Adam
+	\item[-] Online-EWC: SGD with learning rate $0.03$, batch size  10, number of epochs 5, $\lambda=90$, $\gamma=1.0$.
+	\item[-] SI: SGD with learning rate 0.1, batch size 10, number of epochs 5, $c=1.0$, $\xi=0.9$.
+	\item[-] VCL (with coresets): Adam, learning rate 0.001, batch size 256, number of epochs 100, selection method for coresets random choice.
+	\item[-] DER: SGD with learning rate 0.03, batch size 10, buffer batch size 10, number epochs 5, $\alpha$ 0.2, reservoir buffer size 200.
+	\item[-] FROMP: Adam with learning rate $1 \cdot 10^{-4}$, batch size 32, number of epochs 10, $\tau = 10$, random selection for memorable points.
+	\item[-] S-FSVI: Adam, learning rate $5 \cdot 10^{-4}$, batch size 128, number of epochs 60.
+	\item[-] SFR: Adam, learning rate=0.0003, batch size=32, $\tau=1.0$, $\delta=0.0001$, number of epochs=5.
 \end{itemize}
 
 
 \textbf{P-MNIST (200 pts./task):}
 \begin{itemize}
-	\item[-] Online-EWC: SGD
-	\item[-] SI: SGD 
-	\item[-] VCL (with coresets): Adam
-	\item[-] DER: SGD
-	\item[-] FROMP: Adam
-	\item[-] S-FSVI: Adam
-	\item[-] SFR: Adam
+	\item[-] Online-EWC: SGD with learning rate $0.1$, batch size 128, number of epochs 10, $\lambda=0.7$, $\gamma=1.0$.
+	\item[-] SI: SGD with learning rate 0.1, batch size 138, number of epochs 10, $c=0.5$, $\xi=1.0$. 
+	\item[-] VCL (with coresets): Adam, learning rate 0.001, batch size 256, number of epochs 100, selection method for coresets random choice.
+	\item[-] DER:  SGD with learning rate 0.01, batch size 128, buffer batch size 128, number epochs 10, $\alpha=0.3$, reservoir buffer size 2000.
+	\item[-] FROMP: Adam with learning rate $1 \cdot 10^{-3}$, batch size 128, number of epochs 10, $\tau = 0.5$, lambda descend selection for memorable points.
+	\item[-] S-FSVI: Adam, learning rate $5 \cdot 10^{-4}$, batch size 128, number of epochs 10.
+	\item[-] SFR: Adam learning 0.0003, batch size=64, $\tau=1.0$, $\delta=0.0001$. 
 \end{itemize}
 
+In addition the ablation experiments for SFR, we used the same hyperparameters reported for the full approach.
 
 %\section{Extending the CL regularizer to multi-class settings}
 %%\label{sec:cl_multioutput}

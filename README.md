@@ -1,4 +1,5 @@
 # Sparse Function-space Representation of Neural Networks
+Code accompanying NeurIPS 2023 submission Sparse Function-space Representation of Neural Networks.
 
 ## Install
 Make a virtual environment and install the dependencies with:
@@ -10,21 +11,14 @@ Activate the environment with:
 source .venv/bin/activate
 ```
 
-
 ## Reproducing experiments
-- See [./src/sl/README.md](./src/sl/README.md) for details of how to reproduce the image based classification experiments.
-- See [./src/rl/README.md](./src/rl/README.md) for details of how to reproduce the RL experiments.
-
-
-## TODO before finishing project
-- [ ] Update the short example
-- [ ] Add a longer example (perhaps a jupyter notebook)
-- [ ] Update paper citation
-- [ ] Add details for running all experiments
-- [ ] At end of project run `pip freeze > requirements.txt` to pin the projects dependencies
+- See [src/sl/README.md](./src/sl/README.md) for details of how to reproduce the image based classification experiments.
+- See [src/rl/README.md](./src/rl/README.md) for details of how to reproduce the RL experiments.
+- TODO Riccardo add link for CL
+- TODO Ella add link for UCI
 
 ## Example
-See the [./src/notebooks](notebooks) for how to use our code.
+See the [notebooks](./src/notebooks) for how to use our code.
 Here's a short example:
 ```python
 # TODO update this
@@ -34,10 +28,10 @@ import torch
 def func(x, noise=True):
     return torch.sin(x * 5) / x + torch.cos(x * 10)
 
+# Toy data set
 X_train = torch.rand((100, 1)) * 2
 Y_train = func(X_train, noise=True)
 data = (X_train, Y_train)
-X_test = torch.linspace(-0.7, 3.5, 300, dtype=torch.float64).reshape(-1, 1)
 
 # Training config
 width = 64
@@ -54,7 +48,7 @@ network = torch.nn.Sequential(
     torch.nn.Tanh(),
     torch.nn.Linear(width, width),
     torch.nn.Tanh(),
-    torch.nn.Linear(width, 3),
+    torch.nn.Linear(width, 1),
 )
 
 # Instantiate SFR (handles NN training/prediction as they're coupled via the prior/likelihood)
@@ -81,6 +75,7 @@ for epoch_idx in range(num_epochs):
 sfr.set_data(data) # This builds the dual parameters
 
 # Make predictions in function space
+X_test = torch.linspace(-0.7, 3.5, 300, dtype=torch.float64).reshape(-1, 1)
 f_mean, f_var = sfr.predict_f(X_test)
 
 # Make predictions in output space

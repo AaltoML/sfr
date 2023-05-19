@@ -1,40 +1,17 @@
 #!/usr/bin/env python3
 import logging
-from typing import Callable, List, Optional, Tuple
+from typing import Optional
 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-import src
 import torch
-import torch.nn as nn
-from src.custom_types import (  # Lambda_1,; Lambda_2,
-    Alpha,
-    AlphaInducing,
-    Beta,
-    BetaInducing,
-    Data,
-    FuncData,
-    FuncMean,
-    FuncVar,
-    InducingPoints,
-    InputData,
-    Lambda,
-    NTK,
-    NTK_single,
-    OutputData,
-    OutputMean,
-    OutputVar,
-    TestInput,
-)
+from src.custom_types import Data
 from src.likelihoods import Likelihood
 from src.priors import Prior
-from torch.func import functional_call, hessian, jacrev, jvp, vjp, vmap
-from torch.utils.data import DataLoader, TensorDataset
-from torchtyping import TensorType
 
-from .sfr import build_ntk, calc_lambdas, SFR
+from .sfr import SFR
 
 
 class NN2GPSubset(SFR):
@@ -70,14 +47,13 @@ class NN2GPSubset(SFR):
         print("X_train {}".format(X_train.shape))
         print("Y_train {}".format(Y_train.shape))
         assert X_train.shape[0] == Y_train.shape[0]
-        # self.train_data = (X_train, Y_train)
         self._num_data = Y_train.shape[0]
         indices = torch.randperm(self._num_data)[: self.subset_size]
         X_subset = X_train[indices.to(X_train.device)].to(self.device)
         Y_subset = Y_train[indices.to(Y_train.device)].to(self.device)
         self.train_data = (X_subset, Y_subset)
         self.Z = X_subset
-        self.build_dual_svgp()
+        self.build_sfr()
 
     @property
     def num_data(self):

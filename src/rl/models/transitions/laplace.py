@@ -1,6 +1,5 @@
 #!/usr/bin/env python3
 import logging
-from typing import Optional
 
 
 logging.basicConfig(level=logging.INFO)
@@ -10,8 +9,7 @@ import laplace
 import src
 import torch
 import wandb
-from src.rl.custom_types import Action, InputData, OutputData, State, StatePrediction
-from src.rl.models.util import weights_init_normal
+from src.rl.custom_types import Action, State, StatePrediction
 from src.rl.utils import EarlyStopper
 from torch.utils.data import DataLoader, TensorDataset
 from src.rl.utils.buffer import ReplayBuffer
@@ -60,9 +58,9 @@ class LaplaceTransitionModel(TransitionModel):
         self.hessian_structure = hessian_structure
 
         # build ntksvgp to get loss fn
-        likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=sigma_noise)
-        prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
-        self.ntksvgp = src.nn2svgp.NTKSVGP(
+        likelihood = src.likelihoods.Gaussian(sigma_noise=sigma_noise)
+        prior = src.priors.Gaussian(params=network.parameters, delta=delta)
+        self.ntksvgp = src.SFR(
             network=network,
             prior=prior,
             likelihood=likelihood,

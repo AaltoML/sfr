@@ -52,9 +52,9 @@ class SFRTransitionModel(TransitionModel):
         self.prediction_type = prediction_type
         self.logging_freq = logging_freq
 
-        likelihood = src.sfr.likelihoods.Gaussian(sigma_noise=sigma_noise)
-        prior = src.sfr.priors.Gaussian(params=network.parameters, delta=delta)
-        self.sfr = src.sfr.SFR(
+        likelihood = src.likelihoods.Gaussian(sigma_noise=sigma_noise)
+        prior = src.priors.Gaussian(params=network.parameters, delta=delta)
+        self.sfr = src.SFR(
             network=network,
             prior=prior,
             likelihood=likelihood,

@@ -4,4 +4,5 @@ from .transitions.base import TransitionModel
 from .rewards import *
 from .transitions import *
 from .svgp import *
-from .nn2svgp import *
+
+# from .sfr import *

@@ -1,4 +1,4 @@
-_target_: src.rl.models.rewards.NTKSVGPRewardModel
+_target_: src.rl.models.rewards.SFRRewardModel
 _convert_: all
 network: ${reward_network}
 learning_rate: 1e-3

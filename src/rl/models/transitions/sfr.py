@@ -9,17 +9,14 @@ logger = logging.getLogger(__name__)
 import src
 import torch
 import wandb
-from src.rl.custom_types import Action, InputData, OutputData, State, StatePrediction
-from src.rl.models.util import weights_init_normal
+from src.rl.custom_types import Action, State, StatePrediction
 from src.rl.utils import EarlyStopper
-
-# from torchrl.data import ReplayBuffer
 from src.rl.utils.buffer import ReplayBuffer
 
 from .base import TransitionModel
 
 
-class NTKSVGPTransitionModel(TransitionModel):
+class SFRTransitionModel(TransitionModel):
     def __init__(
         self,
         network: torch.nn.Module,
@@ -55,9 +52,9 @@ class NTKSVGPTransitionModel(TransitionModel):
         self.prediction_type = prediction_type
         self.logging_freq = logging_freq
 
-        likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=sigma_noise)
-        prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
-        self.ntksvgp = src.nn2svgp.NTKSVGP(
+        likelihood = src.sfr.likelihoods.Gaussian(sigma_noise=sigma_noise)
+        prior = src.sfr.priors.Gaussian(params=network.parameters, delta=delta)
+        self.sfr = src.sfr.SFR(
             network=network,
             prior=prior,
             likelihood=likelihood,
@@ -73,8 +70,8 @@ class NTKSVGPTransitionModel(TransitionModel):
         # print("trans device {}".format(device))
         # print("after svgp cuda")
         if "cuda" in device:
-            self.ntksvgp.cuda()
-            print("put transition ntksvgp on cuda")
+            self.sfr.cuda()
+            print("put transition sfr on cuda")
 
     @torch.no_grad()
     def predict(self, state: State, action: Action) -> StatePrediction:
@@ -83,18 +80,14 @@ class NTKSVGPTransitionModel(TransitionModel):
             delta_state_mean = self.network.forward(state_action_input)
             delta_state_var = torch.zeros_like(delta_state_mean)
         elif "SVGP" in self.prediction_type:
-            delta_state_mean, delta_state_var = self.ntksvgp.predict_f(
-                state_action_input
-            )
+            delta_state_mean, delta_state_var = self.sfr.predict_f(state_action_input)
         elif "SVGPMeanOnly" in self.prediction_type:
-            delta_state_mean = self.ntksvgp.predict_mean(state_action_input)
+            delta_state_mean = self.sfr.predict_mean(state_action_input)
             delta_state_var = torch.zeros_like(delta_state_mean)
         else:
             raise NotImplementedError(
                 "prediction_type should be one of SVGP, SVGPMeanOnly or NN"
             )
-        # delta_state_mean = ntksvgp.predict_mean(state_action_input)
-        # delta_state_mean, delta_state_var, noise_var = svgp_predict_fn(
         return StatePrediction(
             state_mean=state + delta_state_mean,
             state_var=delta_state_var,
@@ -118,7 +111,7 @@ class NTKSVGPTransitionModel(TransitionModel):
 
             # pred = network(state_action_inputs)
             # loss = loss_fn(pred, state_diff)
-            loss = self.ntksvgp.loss(x=state_action_inputs, y=state_diff)
+            loss = self.sfr.loss(x=state_action_inputs, y=state_diff)
 
             optimizer.zero_grad()
             loss.backward()
@@ -139,7 +132,7 @@ class NTKSVGPTransitionModel(TransitionModel):
         data = replay_buffer.sample(batch_size=len(replay_buffer))
         state_action_inputs_all = torch.concat([data["state"], data["action"]], -1)
         state_diff_all = data["next_state"] - data["state"]
-        self.ntksvgp.set_data((state_action_inputs_all, state_diff_all))
+        self.sfr.set_data((state_action_inputs_all, state_diff_all))
 
     def update(self, data_new):
-        return self.ntksvgp.update(x=data_new[0], y=data_new[1])
+        return self.sfr.update(x=data_new[0], y=data_new[1])

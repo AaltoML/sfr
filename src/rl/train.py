@@ -2,7 +2,6 @@
 import logging
 import random
 import time
-from collections import deque, namedtuple
 from pathlib import Path
 
 
@@ -19,16 +18,10 @@ import torch
 torch.set_default_dtype(torch.float64)
 
 import src
-
-# import torchrl
 import wandb
-from dm_env import specs, StepType
-from omegaconf import DictConfig, OmegaConf
-from src.rl.custom_types import Action, State
-from src.rl.utils import EarlyStopper, set_seed_everywhere, ReplayBuffer
-from tensordict import TensorDict
-
-# Transition = namedtuple("Transition", ("state", "action", "next_state", "reward"))
+from dm_env import StepType
+from omegaconf import DictConfig
+from src.rl.utils import ReplayBuffer, set_seed_everywhere
 
 
 @hydra.main(version_base="1.3", config_path="./configs", config_name="main")
@@ -490,12 +483,12 @@ def train(cfg: DictConfig):
                     ) = agent.transition_model.svgp.predict(state_action_inputs)
                 elif isinstance(
                     agent.transition_model,
-                    src.rl.models.transitions.NTKSVGPTransitionModel,
+                    src.rl.models.transitions.SFRTransitionModel,
                 ):
                     (
                         state_diff_mean,
                         state_diff_var,
-                    ) = agent.transition_model.ntksvgp.predict(state_action_inputs)
+                    ) = agent.transition_model.sfr.predict(state_action_inputs)
                     state_diff_nn = agent.transition_model.network(state_action_inputs)
                     mse_transition_model_nn = torch.mean(
                         (state_diff_nn - state_diff_output) ** 2
@@ -594,7 +587,7 @@ def train(cfg: DictConfig):
                     #     )
                     #     wandb.log({"mse_reward_model_hard": mse_reward_model_hard})
                     else:
-                        reward_mean, reward_var = agent.reward_model.ntksvgp.predict(
+                        reward_mean, reward_var = agent.reward_model.sfr.predict(
                             state_action_inputs
                         )
                         mse_reward_model = torch.mean(

@@ -232,11 +232,6 @@ def train(cfg: DictConfig):
                 cfg, resolve=True, throw_on_missing=True
             ),
         )
-    logger.info("cfg {}".format(cfg))
-
-    # dataset = hydra.utils.instantiate(cfg.dataset)
-    # print("dataset {}".format(dataset))
-    # ds_train, ds_test = dataset
 
     train_loader = DataLoader(ds_train, batch_size=cfg.batch_size, shuffle=True)
     test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=False)

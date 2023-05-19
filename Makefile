@@ -26,6 +26,8 @@ $(VENV)/bin/activate: setup.py
 	python3 -m venv $(VENV)
 	python3 -m pip install --upgrade pip
 	$(PIP) install -e ".[experiments, dev]"
+	$(PIP) install laplace-torch==0.1a2
+	$(PIP) install torch==2.0.0 torchvision==0.15.1
 
 # $(VENV)/bin/activate: requirements.txt
 # 	python3 -m venv $(VENV)

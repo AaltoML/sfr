@@ -1556,13 +1556,60 @@ We conducted our experiments on three common CL data sets \cite{de2021continual,
 Following \cite{pan2020continual, rudner2022continual}, we used a two-layer MLP with 256 hidden units and ReLU activations for S-MNIST and S-FMNIST and a two-layer MLP with 100 hidden units and ReLU activations for P-MNIST, to ensure consistency with the other methods. In our experiments we only consider the single-head setting (SH). This means that for S-MNIST and S-FMNIST, we are dealing with a Class-Incremental Learning (CIL) scenario, where for each task a pair of dijoint classes are presented to the model. The P-MNIST experiments falls instead into the Domain-Incremental Learning (DIL) setting, where the model deals with a data-distribution shift, by progressively observing tasks with different permutations of the image pixels that need to be classified into ten different classes.
 
 In our experiments, we compared the performance of \our-based regularizer against two families of methods: weight-space regularization methods and function-space regularization ones.
-For the weight-space methods, we considered EWC~\citep{kirkpatrick2017overcoming}, SI~\citep{zenke2017continual}, and VCL~\citep{nguyen2018variational}.  % In \cref{tbl:cl_table_1}, we considered VCL with random coresets, which uses coreset points t 
+For the weight-space methods, we considered Online-EWC~\citep{schwarz2018progress}, SI~\citep{zenke2017continual}, and VCL~\citep{nguyen2018variational}.  % In \cref{tbl:cl_table_1}, we considered VCL with random coresets, which uses coreset points t 
 For the function-space methods, we considered DER~\citep{buzzega2020dark}, FROMP~\citep{pan2020continual}, and S-FSVI~\citep{rudner2022continual}.
 
 For our method, DER, EWC, and SI, we relied on the Mammoth framework proposed by \citep{buzzega2020dark}, while we used the available open-source codebases to conduct the experiments respectively for FROMP, S-FSVI, and VCL.
 
 For the methods relying on a stored subset of training data for each task, we make sure that the same amount of data points store are the same for each method. For DER, which does not select the rehearsal training samples at task boundaries, we cannot apply directly the definition of points per task ($M$), and then we set the dimension of the reservoir buffer to be $T \cdot M$, \ie, total number of tasks times the points per task.
  
+%% Hyperparms used in the different experiments:
+\textbf{S-MNIST (40 pts./task):}
+\begin{itemize}
+	\item[-] Online-EWC: SGD, learning rate $0.03$, batch size  10, number of epochs 1, $\lambda=90$, $\gamma=1.0$.
+	\item[-] SI: SGD, learning rate 0.1, batch size 10, number of epochs 1, $c=1.0$, $\xi=0.9$.
+	\item[-] VCL (with coresets): Adam, learning rate 0.001, batch size 256, number of epochs 100, selection method for coresets random choice.
+	\item[-] DER: SGD, learning rate 0.03, batch size 10, buffer batch size 10, number epochs 1, $\alpha=0.2$, reservoir buffer size 200.
+	\item[-] FROMP: Adam, learning rate $1 \cdot 10^{-4}$, batch size 32, number of epochs 10, $\tau = 10$
+	\item[-] S-FSVI: Adam, learning rate 
+	\item[-] SFR: Adam
+\end{itemize}
+
+
+\textbf{S-MNIST (200 pts./task):}
+\begin{itemize}
+	\item[-] Online-EWC: SGD, learning rate $0.03$, batch size  10, number of epochs 1, $\lambda=90$, $\gamma=1.0$.
+	\item[-] SI: SGD, learning rate 0.1, batch size 10, number of epochs 1, $c=1.0$, $\xi=0.9$.
+	\item[-] VCL (with coresets): Adam, learning rate 0.001, batch size 256, number of epochs 100, selection method for coresets random choice.
+	\item[-] DER: SGD, learning rate 0.03, batch size 10, buffer batch size 10, number epochs 1, $\alpha$ 0.2, reservoir buffer size 1000.
+	\item[-] FROMP: Adam, learning rate $1 \cdot 10^{-4}$, batch size 32, number of epochs 10, $\tau = 10$
+	\item[-] S-FSVI: Adam
+	\item[-] SFR: Adam
+\end{itemize}
+ 
+%% Placeholders for now
+\textbf{S-FMNIST (200 pts./task):}
+\begin{itemize}
+	\item[-] Online-EWC: SGD, learning rate $0.03$, batch size  10, number of epochs 5, $\lambda=90$, $\gamma=1.0$.
+	\item[-] SI: SGD, learning rate 0.1, batch size 10, number of epochs 5, $c=1.0$, $\xi=0.9$.
+	\item[-] VCL (with coresets):
+	\item[-] DER: SGD, learning rate 0.03, batch size 10, buffer batch size 10, number epochs 5, $\alpha$ 0.2, reservoir buffer size 200.
+	\item[-] FROMP: Adam, learning rate $1 \cdot 10^{-4}$, batch size 32, number of epochs 10, $\tau = 10$
+	\item[-] S-FSVI: Adam
+	\item[-] SFR: Adam
+\end{itemize}
+
+
+\textbf{P-MNIST (200 pts./task):}
+\begin{itemize}
+	\item[-] Online-EWC: SGD
+	\item[-] SI: SGD 
+	\item[-] VCL (with coresets): Adam
+	\item[-] DER: SGD
+	\item[-] FROMP: Adam
+	\item[-] S-FSVI: Adam
+	\item[-] SFR: Adam
+\end{itemize}
 
 
 %\section{Extending the CL regularizer to multi-class settings}

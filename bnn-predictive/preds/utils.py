@@ -1,6 +1,6 @@
 import numpy as np
 import torch
-from src import BernoulliLh, CategoricalLh
+from src.likelihoods import BernoulliLh, CategoricalLh
 from torch.distributions import Bernoulli, Categorical
 
 
@@ -21,18 +21,18 @@ def nll_cls(p, y, likelihood):
     """Avg. Negative log likelihood for classification"""
     if type(likelihood) is BernoulliLh:
         p_dist = Bernoulli(probs=p)
-        return - p_dist.log_prob(y).mean().item()
+        return -p_dist.log_prob(y).mean().item()
     elif type(likelihood) is CategoricalLh:
         p_dist = Categorical(probs=p)
-        return - p_dist.log_prob(y).mean().item()
+        return -p_dist.log_prob(y).mean().item()
     else:
-        raise ValueError('Only Bernoulli and Categorical likelihood.')
+        raise ValueError("Only Bernoulli and Categorical likelihood.")
 
 
 def ece(probs, labels, likelihood=None, bins=10):
     # source: https://github.com/gpleiss/temperature_scaling/blob/master/temperature_scaling.py
     if type(likelihood) is BernoulliLh:
-        probs = torch.stack([1-probs, probs]).t()
+        probs = torch.stack([1 - probs, probs]).t()
     bin_boundaries = torch.linspace(0, 1, bins + 1)
     bin_lowers = bin_boundaries[:-1]
     bin_uppers = bin_boundaries[1:]
@@ -83,15 +83,15 @@ def kronecker_product(t1, t2):
     tiled_t2 = t2.repeat(t1_height, t1_width)
     expanded_t1 = (
         t1.unsqueeze(2)
-          .unsqueeze(3)
-          .repeat(1, t2_height, t2_width, 1)
-          .view(out_height, out_width)
+        .unsqueeze(3)
+        .repeat(1, t2_height, t2_width, 1)
+        .view(out_height, out_width)
     )
 
     return expanded_t1 * tiled_t2
 
 
 def get_sym_psd(dim=3):
-    x = torch.randn(dim, dim*3)
+    x = torch.randn(dim, dim * 3)
     M = x @ x.T
     return M

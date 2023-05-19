@@ -1,16 +1,16 @@
 # @package _global_
 defaults:
-  # - override /reward_model: nn2svgp
+  # - override /reward_model: sfr
   - override /reward_model: cartpole
-  - override /transition_model: nn2svgp
+  - override /transition_model: sfr
 
 # hydra:
 #   sweeper:
 #     params:
 #       random_seed: 42,100,50,1,15
 
-alg_name: "nn2svgp-sample-no-updates"
-online_updates: false
+alg_name: "sfr-sample-with-updates"
+online_updates: true
 
 transition_model:
   prediction_type: "SVGP"

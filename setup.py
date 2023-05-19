@@ -79,7 +79,7 @@ extras_require = {
         "tikzplotlib==0.10.1",
         # "tabulate==0.9.0",
         "gym[classic_control]==0.26.2",
-        "hamiltorch @ git+ssh://git@github.com/AdamCobb/hamiltorch",  # TODO check this works # for HMC banada fig
+        "hamiltorch @ git+https://github.com/AdamCobb/hamiltorch",  # TODO check this works # for HMC banada fig
     ],
 }
 

@@ -6,9 +6,6 @@ from src.rl.custom_types import Action, EvalMode, State, T0
 from src.rl.utils.buffer import ReplayBuffer
 
 
-# from torchrl.data import ReplayBuffer
-
-
 Data = Any
 
 

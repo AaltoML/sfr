@@ -6,12 +6,8 @@ import numpy as np
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from src.rl.custom_types import Action, EvalMode, State, T0
 from torch import distributions as pyd
 from torch.distributions.utils import _standard_normal
-from torch.utils.data import DataLoader
-
-from .agent import Agent
 
 
 __REDUCE__ = lambda b: "mean" if b else "none"

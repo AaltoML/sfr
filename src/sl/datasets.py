@@ -1,22 +1,19 @@
 #!/usr/bin/env python3
 import os
 import pickle
+
 import numpy as np
-from sklearn.datasets import make_moons
 import sklearn.model_selection as modsel
-from sklearn.preprocessing import StandardScaler
 import torch
 import torch.utils.data as data
 import torchvision.datasets as dset
 import torchvision.transforms as transforms
+from sklearn.datasets import make_moons
+from sklearn.preprocessing import StandardScaler
 
-# from preds import DATA_DIR
-
-import os
 
 PACKAGE_DIR = os.path.dirname(os.path.realpath(__file__))
 ROOT = "/".join(PACKAGE_DIR.split("/")[:-1])
-print("ROOT {}".format(ROOT))
 DATA_DIR = ROOT + "/data"
 
 CIFAR10_transform = transforms.Compose(

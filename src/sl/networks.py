@@ -1,10 +1,11 @@
 #!/usr/bin/env python3
 import math
+from collections import OrderedDict
+
 import torch
+import torch.nn.functional as F
 from torch import nn
 from torch.nn import init
-import torch.nn.functional as F
-from collections import OrderedDict
 
 
 class BayesianLinear(nn.Module):

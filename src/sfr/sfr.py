@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import logging
-from typing import Callable, Tuple, Optional, List
+from typing import Callable, List, Optional, Tuple
 
 
 logging.basicConfig(level=logging.INFO)
@@ -9,10 +9,10 @@ logger = logging.getLogger(__name__)
 import src
 import torch
 import torch.nn as nn
-from src.nn2svgp.custom_types import (
+from src.sfr.custom_types import (  # Lambda_1,; Lambda_2,
     Alpha,
-    Beta,
     AlphaInducing,
+    Beta,
     BetaInducing,
     Data,
     FuncData,
@@ -20,9 +20,7 @@ from src.nn2svgp.custom_types import (
     FuncVar,
     InducingPoints,
     InputData,
-    # Lambda_1,
     Lambda,
-    # Lambda_2,
     NTK,
     NTK_single,
     OutputData,
@@ -30,14 +28,14 @@ from src.nn2svgp.custom_types import (
     OutputVar,
     TestInput,
 )
-from src.nn2svgp.likelihoods import Likelihood
-from src.nn2svgp.priors import Prior
+from src.sfr.likelihoods import Likelihood
+from src.sfr.priors import Prior
 from torch.func import functional_call, hessian, jacrev, jvp, vjp, vmap
-from torchtyping import TensorType
 from torch.utils.data import DataLoader, TensorDataset
+from torchtyping import TensorType
 
 
-class NTKSVGP(nn.Module):
+class SFR(nn.Module):
     def __init__(
         self,
         network: torch.nn.Module,
@@ -596,3 +594,6 @@ def loss_cl(
     neg_log_likelihood = likelihood.nn_loss(f=f, y=y)
     neg_log_prior = prior.nn_loss()
     return neg_log_likelihood + neg_log_prior
+
+
+NTKSVGP = SFR  # for backward compatibility

@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 import src
 import torch
 import torch.nn as nn
-from src.nn2svgp.custom_types import (  # Lambda_1,; Lambda_2,
+from src.sfr.custom_types import (  # Lambda_1,; Lambda_2,
     Alpha,
     AlphaInducing,
     Beta,
@@ -28,16 +28,16 @@ from src.nn2svgp.custom_types import (  # Lambda_1,; Lambda_2,
     OutputVar,
     TestInput,
 )
-from src.nn2svgp.likelihoods import Likelihood
-from src.nn2svgp.priors import Prior
+from src.sfr.likelihoods import Likelihood
+from src.sfr.priors import Prior
 from torch.func import functional_call, hessian, jacrev, jvp, vjp, vmap
 from torch.utils.data import DataLoader, TensorDataset
 from torchtyping import TensorType
 
-from .ntksvgp import build_ntk, calc_lambdas, NTKSVGP
+from .sfr import build_ntk, calc_lambdas, SFR
 
 
-class NN2GPSubset(NTKSVGP):
+class NN2GPSubset(SFR):
     def __init__(
         self,
         network: torch.nn.Module,
@@ -45,7 +45,7 @@ class NN2GPSubset(NTKSVGP):
         likelihood: Likelihood,
         output_dim: int,
         subset_size: int,
-        dual_batch_size: Optional[int]=None,
+        dual_batch_size: Optional[int] = None,
         jitter: float = 1e-6,
         device: str = "cpu",
     ):

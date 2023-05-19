@@ -1,5 +1,5 @@
 # #!/usr/bin/env python3
 from .priors import *
 from .likelihoods import *
-from .ntksvgp import NTKSVGP
+from .sfr import SFR, NTKSVGP
 from .nn2gp import NN2GPSubset

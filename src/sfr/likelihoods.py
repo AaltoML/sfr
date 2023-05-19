@@ -4,7 +4,7 @@ from typing import Optional, Union
 import numpy as np
 import torch
 import torch.nn as nn
-from src.nn2svgp.custom_types import FuncData, FuncMean, FuncVar, OutputData
+from src.sfr.custom_types import FuncData, FuncMean, FuncVar, OutputData
 from torch.distributions import Bernoulli, Categorical
 
 

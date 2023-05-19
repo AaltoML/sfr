@@ -1,9 +1,0 @@
-nn2svgp:
-  name: "nn2svgp"
-  id: # id for multiple seeds
-    - aalto-ml/nn2svgp/1rfvh504
-    - aalto-ml/nn2svgp/e4cpchbq
-mlp:
-  id: aalto-ml/nn2svgp/e4cpchbq
-ddpg:
-  id: aalto-ml/nn2svgp/1rfvh504

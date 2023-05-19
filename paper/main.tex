@@ -214,6 +214,8 @@
 \DeclareMathOperator*{\argmin}{arg\,min}
 \newcommand{\Norm}{\mathcal{N}}
 
+\newcommand{\digit}[1]{\tikz[baseline=-.5ex]\node[inner sep=1pt,rounded corners=1pt,draw=black,text width=5pt,minimum width=5pt,align=center,fill=black!20]{\tiny\bf\sf#1};}
+
 
 %\title{Investigatin Uncertainty Quantification in Model-based Reinforcement Learning}
 % \title{Model-based Reinforcement Learning with Fast Posterior Updates}
@@ -1376,10 +1378,16 @@ This section will often be part of the supplemental material.
 \section{\our for continual learning}
 \label{app:cl}
 \subsection{Derivation of the regularizer term}
-An alternative view of the dual variables is that they parameterize approximate likelihoods, as shown in \citep{adam2021dual, khan2017conjugate}. We can rewrite the GP posterior for $q(\vu)$ in terms of the following approximate normal distributions:
+An alternative view of the dual parameters is that they parameterize approximate likelihoods, as shown in \citep{khan2017conjugate, adam2021dual}. Then, we can rewrite the GP posterior for $q(\vu)$ in terms of the following approximate normal distributions:
+
 \begin{equation}
- q(\vu) \propto \Norm(0, \MKzz) \prod_{i=1}^n \exp \! \left(-\frac{\tilde{\beta}_i}{2}(\tilde{y}_i - \va_i^\top \vu)^2 \right) = \Norm(0, \MKzz) \, \exp\left((\bar{\vy} - \vu)^\top \bar{\MSigma}^{-1}(\bar{\vy} - \vu)\right)  
+\begin{aligned}
+ q(\vu) 
+ 	&\propto \Norm(0, \MKzz) \prod_{i=1}^n \exp \! \left(-\frac{\tilde{\beta}_i}{2}(\tilde{y}_i - \va_i^\top \vu)^2 \right) \\
+ 	&= \Norm(0, \MKzz) \, \exp\left((\bar{\vy} - \vu)^\top \bar{\MSigma}^{-1}(\bar{\vy} - \vu)\right)  
+\end{aligned}
 \end{equation}
+
 The first normals are the approximate likelihoods where $\va_i^\top = \vkzi^\top \MKzz^{-1}$ and $\tilde{y}_i = \hat{\alpha}_i + f_{\vw^*}(\vx_i)\hat{\beta}$,  replacing $\va_i^\top \vu$ with $\vx_i^{\top}\vw$ and we can see the similarity between the sparse GP and a linear model where the kernel matrix determines the prior. To arrive at the MVN Gaussian, we need to rearrange the quadratic terms to match the prior sufficient statistics we present a derivation in [appendix]. Performing conjugate summation of prior and likelihood, we would arrive at the sparse GP posterior at the inducing points. The correlated covariance structure $\MSigma$ and the corresponding $\tilde{\vy}$ are simply a different form of the sparse dual variables,
 \begin{equation}
 \quad \bar{\MSigma} =  \MKzz \vbeta_\vu^{-1} \MKzz \quad \bar{\vy} = \MKzz \vbeta_{\vu}\valpha_{\vu}.
@@ -1387,6 +1395,7 @@ The first normals are the approximate likelihoods where $\va_i^\top = \vkzi^\top
 Written as above, we can see that the spare dual variables can be interpreted as a sparse MVN representation. We now show how we use this for a regularizer in continual learning with more details in [appendix].
 
 \subsection{Extending the CL regularizer to multi-class settings}
+\label{sec:cl_multioutput} \todo{this sub-section was mistakenly duplicated}
 \begin{equation}
 	\bar{\MB}^{-1}_s = \MKzz^{-1} \vbeta_\vu \MKzz^{-1} \in \R^{C \times m \times m} \quad \MKzz \in \R^{C \times m \times m} 
 \end{equation}
@@ -1518,7 +1527,7 @@ We train the DDPG agent using Adam for $500$ iterations at each episode, using a
 	% Control table spacing
 	\renewcommand{\arraystretch}{1.}
 	\setlength{\tabcolsep}{2pt}
-	\setlength{\tblw}{0.14\textwidth}  
+	\setlength{\tblw}{0.2\textwidth}  
 	
 	% Custom error formatting
 	\newcommand{\val}[2]{%
@@ -1536,21 +1545,86 @@ We train the DDPG agent using Adam for $500$ iterations at each episode, using a
 
 \subsection{\our for continual learning}
 \label{app:cl-exp}
+\textbf{CL Data sets}
+We conducted our experiments on three common CL data sets \cite{de2021continual, pan2020continual, rudner2022continual}: 
+\begin{itemize}
+	\item[-] Split-MNIST (S-MNIST), that consists in five binary classification tasks each on pair on MNIST classes (\ie, \digit{0}~and~\digit{1}, \digit{2}~and~\digit{3}, \dots, \digit{8}~and~\digit{9});
+	\item[-] Split-FashionMNIST (S-FMNIST), composed of five binary tasks as S-MNIST, but using instead Fashion-MNIST;
+	\item[-] Permuted-MNIST (P-MNIST), that consists of ten tasks, where each one is a ten-way classification task on the entire MNIST data set, where the images' pixels are randomly permuted.
+\end{itemize}
+
+Following \cite{pan2020continual, rudner2022continual}, we used a two-layer MLP with 256 hidden units and ReLU activations for S-MNIST and S-FMNIST and a two-layer MLP with 100 hidden units and ReLU activations for P-MNIST, to ensure consistency with the other methods. In our experiments we only consider the single-head setting (SH). This means that for S-MNIST and S-FMNIST, we are dealing with a Class-Incremental Learning (CIL) scenario, where for each task a pair of dijoint classes are presented to the model. The P-MNIST experiments falls instead into the Domain-Incremental Learning (DIL) setting, where the model deals with a data-distribution shift, by progressively observing tasks with different permutations of the image pixels that need to be classified into ten different classes.
+
+In our experiments, we compared the performance of \our-based regularizer against two families of methods: weight-space regularization methods and function-space regularization ones.
+For the weight-space methods, we considered Online-EWC~\citep{schwarz2018progress}, SI~\citep{zenke2017continual}, and VCL~\citep{nguyen2018variational}.  % In \cref{tbl:cl_table_1}, we considered VCL with random coresets, which uses coreset points t 
+For the function-space methods, we considered DER~\citep{buzzega2020dark}, FROMP~\citep{pan2020continual}, and S-FSVI~\citep{rudner2022continual}.
+
+For our method, DER, EWC, and SI, we relied on the Mammoth framework proposed by \citep{buzzega2020dark}, while we used the available open-source codebases to conduct the experiments respectively for FROMP, S-FSVI, and VCL.
+
+For the methods relying on a stored subset of training data for each task, we make sure that the same amount of data points store are the same for each method. For DER, which does not select the rehearsal training samples at task boundaries, we cannot apply directly the definition of points per task ($M$), and then we set the dimension of the reservoir buffer to be $T \cdot M$, \ie, total number of tasks times the points per task.
+ 
+%% Hyperparms used in the different experiments:
+\textbf{S-MNIST (40 pts./task):}
+\begin{itemize}
+	\item[-] Online-EWC: SGD, learning rate $0.03$, batch size  10, number of epochs 1, $\lambda=90$, $\gamma=1.0$.
+	\item[-] SI: SGD, learning rate 0.1, batch size 10, number of epochs 1, $c=1.0$, $\xi=0.9$.
+	\item[-] VCL (with coresets): Adam, learning rate 0.001, batch size 256, number of epochs 100, selection method for coresets random choice.
+	\item[-] DER: SGD, learning rate 0.03, batch size 10, buffer batch size 10, number epochs 1, $\alpha=0.2$, reservoir buffer size 200.
+	\item[-] FROMP: Adam, learning rate $1 \cdot 10^{-4}$, batch size 32, number of epochs 10, $\tau = 10$
+	\item[-] S-FSVI: Adam, learning rate 
+	\item[-] SFR: Adam
+\end{itemize}
 
 
-\section{Extending the CL regularizer to multi-class settings}
-\label{sec:cl_multioutput}
-\begin{equation}
-	\bar{\MB}^{-1}_s = \MKzz^{-1} \vbeta_\vu \MKzz^{-1} \in \R^{C \times m \times m} \quad \MKzz \in \R^{C \times m \times m} 
-\end{equation}
+\textbf{S-MNIST (200 pts./task):}
+\begin{itemize}
+	\item[-] Online-EWC: SGD, learning rate $0.03$, batch size  10, number of epochs 1, $\lambda=90$, $\gamma=1.0$.
+	\item[-] SI: SGD, learning rate 0.1, batch size 10, number of epochs 1, $c=1.0$, $\xi=0.9$.
+	\item[-] VCL (with coresets): Adam, learning rate 0.001, batch size 256, number of epochs 100, selection method for coresets random choice.
+	\item[-] DER: SGD, learning rate 0.03, batch size 10, buffer batch size 10, number epochs 1, $\alpha$ 0.2, reservoir buffer size 1000.
+	\item[-] FROMP: Adam, learning rate $1 \cdot 10^{-4}$, batch size 32, number of epochs 10, $\tau = 10$
+	\item[-] S-FSVI: Adam
+	\item[-] SFR: Adam
+\end{itemize}
+ 
+%% Placeholders for now
+\textbf{S-FMNIST (200 pts./task):}
+\begin{itemize}
+	\item[-] Online-EWC: SGD, learning rate $0.03$, batch size  10, number of epochs 5, $\lambda=90$, $\gamma=1.0$.
+	\item[-] SI: SGD, learning rate 0.1, batch size 10, number of epochs 5, $c=1.0$, $\xi=0.9$.
+	\item[-] VCL (with coresets):
+	\item[-] DER: SGD, learning rate 0.03, batch size 10, buffer batch size 10, number epochs 5, $\alpha$ 0.2, reservoir buffer size 200.
+	\item[-] FROMP: Adam, learning rate $1 \cdot 10^{-4}$, batch size 32, number of epochs 10, $\tau = 10$
+	\item[-] S-FSVI: Adam
+	\item[-] SFR: Adam
+\end{itemize}
 
-\begin{equation}
-	\mathcal{R_\textit{SFR}}(\mathbf{w}) = \sum_{s=1}^{t-1}	\sum_{k \in 	C}\left[\left(f_{\vw, k}(\MZ_{s}) - f_{\vw_{s}, k}(\MZ_s) \right)^\T \bar{\MB}^{-1}_{s} \left(f_{\vw, k}(\MZ_{s}) - f_{\vw_{s, k}}(\MZ_s) \right) \right] 
-\end{equation}
+
+\textbf{P-MNIST (200 pts./task):}
+\begin{itemize}
+	\item[-] Online-EWC: SGD
+	\item[-] SI: SGD 
+	\item[-] VCL (with coresets): Adam
+	\item[-] DER: SGD
+	\item[-] FROMP: Adam
+	\item[-] S-FSVI: Adam
+	\item[-] SFR: Adam
+\end{itemize}
 
 
-\subsection{Reinforcement learning experiment}
-\label{app:rl-experiment}
+%\section{Extending the CL regularizer to multi-class settings}
+%%\label{sec:cl_multioutput}
+%\begin{equation}
+%	\bar{\MB}^{-1}_s = \MKzz^{-1} \vbeta_\vu \MKzz^{-1} \in \R^{C \times m \times m} \quad \MKzz \in \R^{C \times m \times m} 
+%\end{equation}
+%
+%\begin{equation}
+%	\mathcal{R_\textit{SFR}}(\mathbf{w}) = \sum_{s=1}^{t-1}	\sum_{k \in 	C}\left[\left(f_{\vw, k}(\MZ_{s}) - f_{\vw_{s}, k}(\MZ_s) \right)^\T \bar{\MB}^{-1}_{s} \left(f_{\vw, k}(\MZ_{s}) - f_{\vw_{s, k}}(\MZ_s) \right) \right] 
+%\end{equation}
+
+
+%\subsection{Reinforcement learning experiment}
+%\label{app:rl-experiment}
 
 
 
@@ -1561,8 +1635,8 @@ We train the DDPG agent using Adam for $500$ iterations at each episode, using a
 %    \input{./tables/example_table.tex}
 %\end{table}
 
-\subsection{Biblatex}
-Rember when using biblatex to use 'parencite' for \citep{kamtheDataEfficient2018} and when using natbib to use 'citep'.
+%\subsection{Biblatex}
+%Rember when using biblatex to use 'parencite' for \citep{kamtheDataEfficient2018} and %when using natbib to use 'citep'.
 
 %\bibliography{biblio.bib}
 \end{document}

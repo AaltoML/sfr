@@ -13,3 +13,15 @@ submission:
 
 appendix:
 	gs -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dSAFER -dPrinted=false -dFirstPage=14 -sOutputFile=supplement.pdf ${filename}.pdf
+
+supplementary:
+	gs -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dSAFER -dPrinted=false -dFirstPage=14 -sOutputFile=supplement.pdf ${filename}.pdf
+	rm -f supplement.zip
+	zip supplement.zip 'supplement.pdf'
+	zip -r supplement.zip code -r 'code/'
+
+arxiv:
+	rm -f arXiv.zip
+	latexpand --empty-comments --keep-includes --expand-bbl ${filename}.bbl ${filename}.tex > arxiv.tex
+	zip arXiv.zip 'arxiv.tex' 'neurips_2023.sty'
+	zip -r arXiv.zip fig -i 'fig/*.tex'

@@ -42,7 +42,7 @@ logging_epoch_freq: 10
 random_seed: 117
 
 sfr:
-  _target_: src.nn2svgp.ntksvgp.NTKSVGP
+  _target_: src.sfr.SFR
   _convert_: all
   # network: ???
   # prior: ???
@@ -54,7 +54,7 @@ sfr:
   device: ${device} # TODO should this always be cpu??
 
 gp_subset:
-  _target_: src.nn2svgp.nn2gp.NN2GPSubset
+  _target_: src.nn2gp.NN2GPSubset
   _convert_: all
   # network: ???
   # prior: ???
@@ -66,12 +66,12 @@ gp_subset:
   device: ${device} # TODO should this always be cpu??
 
 prior:
-  _target_: src.nn2svgp.priors.Gaussian
+  _target_: src.priors.Gaussian
   # params: ???
   delta: ???
 
 likelihood:
-  _target_: src.nn2svgp.likelihoods.CategoricalLh
+  _target_: src.likelihoods.CategoricalLh
   EPS: 0.0
 
 # network:
@@ -89,7 +89,7 @@ likelihood:
 wandb:
   group: ${dataset}
   entity: "aidanscannell"
-  project: "nn2svgp-sl-inference"
+  project: "sfr-sl-inference"
   use_wandb: True
   run_name: delta=${prior.delta}-lr=${lr}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   # run_name: ${alg_name}-${online_update_freq}-${agent.horizon}-${random_seed}-${now:%Y-%m-%d_%H-%M-%S}

@@ -56,7 +56,7 @@ install_requires = [
     # git+https://github.com/pytorch/rl
     # "torchrl==0.1.0",  # using this on triton
     # "./src/third_party/rl-0.1.0", # using this locally
-    f"torchrl @ file://{_here}/src/rl/third_party/rl-0.1.0",
+    # f"torchrl @ file://{_here}/src/rl/third_party/rl-0.1.0",
     "laplace-torch",
 ]
 extras_require = {

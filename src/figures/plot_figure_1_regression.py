@@ -9,7 +9,7 @@ import src
 import torch
 import torch.nn as nn
 from src.sfr import SFR
-from src.sfr.custom_types import Data
+from src.custom_types import Data
 
 
 def train(
@@ -103,8 +103,8 @@ if __name__ == "__main__":
 
     batch_size = X_train.shape[0]
 
-    likelihood = src.sfr.likelihoods.Gaussian(sigma_noise=0.5)
-    prior = src.sfr.priors.Gaussian(params=network.parameters, delta=delta)
+    likelihood = src.likelihoods.Gaussian(sigma_noise=0.5)
+    prior = src.priors.Gaussian(params=network.parameters, delta=delta)
     sfr = SFR(
         network=network,
         # train_data=(X_train, Y_train),
@@ -223,7 +223,6 @@ def plot(
     ax.set_ylim(-5.2, 7)
     ax.legend()
     plt.show()
-    exit()
 
     # Save
     if save is not None:

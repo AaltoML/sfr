@@ -7,13 +7,11 @@ logger = logging.getLogger(__name__)
 
 import src
 import torch
-import torch.nn as nn
-from src.nn2svgp import NTKSVGP
-from src.nn2svgp.custom_types import Data
+from src.custom_types import Data
 
 
 def train(
-    ntksvgp: NTKSVGP,
+    nn2gp: src.NN2GPSubset,
     data: Data,
     num_epochs: int = 1000,
     batch_size: int = 16,
@@ -26,13 +24,13 @@ def train(
         # pin_memory=True,
     )
 
-    ntksvgp.train()
-    optimizer = torch.optim.Adam([{"params": ntksvgp.parameters()}], lr=learning_rate)
+    nn2gp.train()
+    optimizer = torch.optim.Adam([{"params": nn2gp.parameters()}], lr=learning_rate)
     loss_history = []
     for epoch_idx in range(num_epochs):
         for batch_idx, batch in enumerate(data_loader):
             x, y = batch
-            loss = ntksvgp.loss(x, y)
+            loss = nn2gp.loss(x, y)
 
             optimizer.zero_grad()
             loss.backward()
@@ -43,8 +41,7 @@ def train(
                 "Epoch: {} | Batch: {} | Loss: {}".format(epoch_idx, batch_idx, loss)
             )
 
-    ntksvgp.set_data(data)
-    # ntksvgp.build_dual_svgp()
+    nn2gp.set_data(data)
     return {"loss": loss_history}
 
 
@@ -149,13 +146,13 @@ if __name__ == "__main__":
     batch_size = X_train.shape[0]
 
     num_inducing = 20
-    # likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=1)
-    likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=2)
-    # likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=0.1)
-    # likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=2)
-    # likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=0.8)
-    prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
-    ntksvgp = src.nn2svgp.NN2GPSubset(
+    # likelihood = src.likelihoods.Gaussian(sigma_noise=1)
+    likelihood = src.likelihoods.Gaussian(sigma_noise=2)
+    # likelihood = src.likelihoods.Gaussian(sigma_noise=0.1)
+    # likelihood = src.likelihoods.Gaussian(sigma_noise=2)
+    # likelihood = src.likelihoods.Gaussian(sigma_noise=0.8)
+    prior = src.priors.Gaussian(params=network.parameters, delta=delta)
+    nn2gp = src.NN2GPSubset(
         network=network,
         prior=prior,
         likelihood=likelihood,
@@ -166,7 +163,7 @@ if __name__ == "__main__":
     )
 
     metrics = train(
-        ntksvgp=ntksvgp,
+        nn2gp=nn2gp,
         data=data,
         num_epochs=2500,
         # num_epochs=1,
@@ -177,23 +174,21 @@ if __name__ == "__main__":
     # indices = torch.randperm(num_data)[:num_inducing]
     # X_subset = X_train[indices.to(X_train.device)]
     # Y_subset = Y_train[indices.to(Y_train.device)]
-    # ntksvgp.set_data((X_subset, Y_subset))
-    # # ntksvgp.set_data((X_train, Y_train))
 
-    f_mean, f_var = ntksvgp.predict_f(X_test_short)
+    f_mean, f_var = nn2gp.predict_f(X_test_short)
     print("MEAN {}".format(f_mean.shape))
     print("VAR {}".format(f_var.shape))
     print("X_test_short {}".format(X_test_short.shape))
     print(X_test_short.shape)
 
     if updates:
-        ntksvgp.update(x=X_new, y=Y_new)
-        f_mean_new, f_var_new = ntksvgp.predict_f(X_test)
+        nn2gp.update(x=X_new, y=Y_new)
+        f_mean_new, f_var_new = nn2gp.predict_f(X_test)
         print("MEAN NEW_2 {}".format(f_mean_new.shape))
         print("VAR NEW_2 {}".format(f_var_new.shape))
 
-        ntksvgp.update(x=X_new_2, y=Y_new_2)
-        f_mean_new_2, f_var_new_2 = ntksvgp.predict_f(X_test)
+        nn2gp.update(x=X_new_2, y=Y_new_2)
+        f_mean_new_2, f_var_new_2 = nn2gp.predict_f(X_test)
         print("MEAN NEW_2 {}".format(f_mean_new_2.shape))
         print("VAR NEW_2 {}".format(f_var_new_2.shape))
 
@@ -230,13 +225,10 @@ if __name__ == "__main__":
                 label=r"$\mu(\cdot) \pm 1.98\sigma(\cdot)$",
             )
         plt.scatter(
-            ntksvgp.Z, torch.ones_like(ntksvgp.Z) * -5, marker="|", color="b", label="Z"
+            nn2gp.Z, torch.ones_like(nn2gp.Z) * -5, marker="|", color="b", label="Z"
         )
         plt.legend()
-        # plt.savefig("nn2svgp.pdf", transparent=True)
-        plt.savefig(
-            os.path.join(save_dir, "nn2svgp" + str(i) + ".pdf"), transparent=True
-        )
+        plt.savefig(os.path.join(save_dir, "nn2gp" + str(i) + ".pdf"), transparent=True)
 
         if updates:
             plt.scatter(
@@ -306,7 +298,7 @@ if __name__ == "__main__":
 
             plt.legend()
             plt.savefig(
-                os.path.join(save_dir, "nn2svgp_new" + str(i) + ".pdf"),
+                os.path.join(save_dir, "nn2gp_new" + str(i) + ".pdf"),
                 transparent=True,
             )
 

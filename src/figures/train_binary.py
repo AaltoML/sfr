@@ -8,12 +8,12 @@ logger = logging.getLogger(__name__)
 import src
 import torch
 import torch.nn as nn
-from src.nn2svgp import NTKSVGP
-from src.nn2svgp.custom_types import Data
+from src.sfr import SFR
+from src.custom_types import Data
 
 
 def train(
-    ntksvgp: NTKSVGP,
+    sfr: SFR,
     data: Data,
     num_epochs: int = 1000,
     batch_size: int = 16,
@@ -26,13 +26,13 @@ def train(
         # pin_memory=True,
     )
 
-    ntksvgp.train()
-    optimizer = torch.optim.Adam([{"params": ntksvgp.parameters()}], lr=learning_rate)
+    sfr.train()
+    optimizer = torch.optim.Adam([{"params": sfr.parameters()}], lr=learning_rate)
     loss_history = []
     for epoch_idx in range(num_epochs):
         for batch_idx, batch in enumerate(data_loader):
             x, y = batch
-            loss = ntksvgp.loss(x, y)
+            loss = sfr.loss(x, y)
 
             optimizer.zero_grad()
             loss.backward()
@@ -43,7 +43,7 @@ def train(
                 "Epoch: {} | Batch: {} | Loss: {}".format(epoch_idx, batch_idx, loss)
             )
 
-    ntksvgp.set_data((data[0], data[1]))
+    sfr.set_data((data[0], data[1]))
     return {"loss": loss_history}
 
 
@@ -175,11 +175,11 @@ if __name__ == "__main__":
 
     batch_size = X_train.shape[0]
 
-    likelihood = src.nn2svgp.likelihoods.BernoulliLh(EPS=0.01)
-    # likelihood = src.nn2svgp.likelihoods.CategoricalLh()
-    # likelihood = src.nn2svgp.likelihoods.Gaussian()
-    prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
-    # ntksvgp = src.nn2svgp.NN2GPSubset(
+    likelihood = src.likelihoods.BernoulliLh(EPS=0.01)
+    # likelihood = src.likelihoods.CategoricalLh()
+    # likelihood = src.likelihoods.Gaussian()
+    prior = src.priors.Gaussian(params=network.parameters, delta=delta)
+    # sfr = src.NN2GPSubset(
     #     network=network,
     #     prior=prior,
     #     likelihood=likelihood,
@@ -187,7 +187,7 @@ if __name__ == "__main__":
     #     # dual_batch_size=100,
     #     jitter=1e-4,
     # )
-    ntksvgp = NTKSVGP(
+    sfr = SFR(
         network=network,
         # train_data=(X_train, Y_train),
         prior=prior,
@@ -201,27 +201,27 @@ if __name__ == "__main__":
     )
 
     metrics = train(
-        ntksvgp=ntksvgp,
+        sfr=sfr,
         data=data,
         num_epochs=5000,
         batch_size=batch_size,
         learning_rate=1e-2,
     )
 
-    # f_mean, f_var = ntksvgp.predict_f(X_test_short)
-    f_mean, f_var = ntksvgp.predict_f(X_test)
+    # f_mean, f_var = sfr.predict_f(X_test_short)
+    f_mean, f_var = sfr.predict_f(X_test)
     print("MEAN {}".format(f_mean.shape))
     print("VAR {}".format(f_var.shape))
     print("X_test_short {}".format(X_test_short.shape))
     print(X_test_short.shape)
 
-    # ntksvgp.update(x=X_new, y=Y_new)
-    # f_mean_new, f_var_new = ntksvgp.predict_f(X_test)
+    # sfr.update(x=X_new, y=Y_new)
+    # f_mean_new, f_var_new = sfr.predict_f(X_test)
     # print("MEAN NEW_2 {}".format(f_mean_new.shape))
     # print("VAR NEW_2 {}".format(f_var_new.shape))
 
-    # ntksvgp.update(x=X_new_2, y=Y_new_2)
-    # f_mean_new_2, f_var_new_2 = ntksvgp.predict_f(X_test)
+    # sfr.update(x=X_new_2, y=Y_new_2)
+    # f_mean_new_2, f_var_new_2 = sfr.predict_f(X_test)
     # print("MEAN NEW_2 {}".format(f_mean_new_2.shape))
     # print("VAR NEW_2 {}".format(f_var_new_2.shape))
 
@@ -288,16 +288,16 @@ if __name__ == "__main__":
         #     label="y_tilde",
         # )
         plt.scatter(
-            ntksvgp.Z,
-            torch.ones_like(ntksvgp.Z) * -1.0,
+            sfr.Z,
+            torch.ones_like(sfr.Z) * -1.0,
             marker="|",
             color="b",
             label="Z",
         )
         plt.legend()
-        # plt.savefig("nn2svgp.pdf", transparent=True)
+        # plt.savefig("sfr.pdf", transparent=True)
         plt.savefig(
-            os.path.join(save_dir, "nn2svgp-classification" + str(i) + ".pdf"),
+            os.path.join(save_dir, "sfr-classification" + str(i) + ".pdf"),
             transparent=True,
         )
 
@@ -368,7 +368,7 @@ if __name__ == "__main__":
 
             plt.legend()
             plt.savefig(
-                os.path.join(save_dir, "nn2svgp_new_classification" + str(i) + ".pdf"),
+                os.path.join(save_dir, "sfr_new_classification" + str(i) + ".pdf"),
                 transparent=True,
             )
 

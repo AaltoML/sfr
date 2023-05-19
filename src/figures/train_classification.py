@@ -8,17 +8,19 @@ logger = logging.getLogger(__name__)
 import src
 import torch
 import torch.nn as nn
-from src.nn2svgp import NTKSVGP
-from src.nn2svgp.custom_types import Data
+from src import SFR
+from src.custom_types import Data
 
 
 def train(
-    ntksvgp: NTKSVGP,
+    sfr: SFR,
     data: Data,
     num_epochs: int = 1000,
     batch_size: int = 16,
     learning_rate: float = 1e-3,
 ):
+    print("data {}".format(data[0].shape))
+    print("data {}".format(data[1].shape))
     data_loader = torch.utils.data.DataLoader(
         torch.utils.data.TensorDataset(*data),
         batch_size=batch_size,
@@ -26,13 +28,14 @@ def train(
         # pin_memory=True,
     )
 
-    ntksvgp.train()
-    optimizer = torch.optim.Adam([{"params": ntksvgp.parameters()}], lr=learning_rate)
+    sfr.train()
+    optimizer = torch.optim.Adam([{"params": sfr.parameters()}], lr=learning_rate)
     loss_history = []
     for epoch_idx in range(num_epochs):
         for batch_idx, batch in enumerate(data_loader):
             x, y = batch
-            loss = ntksvgp.loss(x, y)
+            # print("batch {} {}".format(x.shape, y.shape))
+            loss = sfr.loss(x, y)
 
             optimizer.zero_grad()
             loss.backward()
@@ -43,83 +46,89 @@ def train(
                 "Epoch: {} | Batch: {} | Loss: {}".format(epoch_idx, batch_idx, loss)
             )
 
-    ntksvgp.set_data(data)
-    # ntksvgp.build_dual_svgp()
+    print("setting data")
+    sfr.set_data((X_train, Y_train))
+    print("FINISHED setting data")
     return {"loss": loss_history}
 
 
 if __name__ == "__main__":
     import os
+    import numpy as np
+    import matplotlib.pyplot as plt
 
+    # import torch._dynamo as dynamo
+
+    # torch._dynamo.config.verbose = True
+    # torch.backends.cudnn.benchmark = True
+    # torch._dynamo.config.verbose = True
     torch.manual_seed(42)
     torch.set_default_dtype(torch.float64)
 
-    updates = False
     plot_var = False
     plot_var = True
-    save_dir = "figs"
+    save_dir = "./figs"
+    plot_updates = False
+
+    torch.set_default_dtype(torch.float64)
 
     def func(x, noise=True):
-        # x = x + 1e-6
-        f1 = torch.sin(x * 5) / x + torch.cos(
-            x * 10
-        )  # + x**2 +np.log(5*x + 0.00001)  + 0.5
-        f2 = torch.sin(x) / x + torch.cos(x)  # + x**2 +np.log(5*x + 0.00001)  + 0.5
-        f3 = torch.cos(x * 5) + torch.sin(x * 1)  # + x**2 +np.log(5*x + 0.00001)  + 0.5
-        if noise == True:
-            # y1 = f1 + torch.randn(size=(x.shape)) * 0.2
-            # y2 = f2 + torch.randn(size=(x.shape)) * 0.2
-            # y3 = f3 + torch.randn(size=(x.shape)) * 0.2
-            # y1 = f1 + torch.randn(size=(x.shape)) * 0.1
-            # y2 = f2 + torch.randn(size=(x.shape)) * 0.1
-            # y3 = f3 + torch.randn(size=(x.shape)) * 0.1
-            y1 = f1 + torch.randn(size=(x.shape)) * 0.0
-            y2 = f2 + torch.randn(size=(x.shape)) * 0.0
-            y3 = f3 + torch.randn(size=(x.shape)) * 0.0
-            return torch.stack([y1[:, 0], y2[:, 0], y3[:, 0]], -1)
-        else:
-            return torch.stack([f1[:, 0], f2[:, 0], f3[:, 0]], -1)
+        ys, y2s = [], []
+        for x_i in x:
+            if x_i > 0.2 and x_i < 1.2:
+                y = 1
+                y2 = 0
+            else:
+                y = 0
+                y2 = 1
+            if x_i > 1.75:
+                y = 1
+            ys.append(y)
+            y2s.append(y2)
+        ys = np.stack(ys, 0)
+        # ys = np.stack(ys, 0).reshape(-1, 1)
+        # y2s = np.stack(y2s, 0).reshape(-1, 1)
+        # y = np.concatenate([ys, y2s], -1)
+        return torch.Tensor(ys).long()
 
-    delta = 0.00005
-    # delta = 0.005
-    # delta = 0.00001
-    # delta = 0.000005
-    # delta = 0.001
-    # delta = 1.0
-    # delta = 0.01
+    delta = 0.0001
+    delta = 0.0002
+    # delta = 0.05
+    width = 64
+    network = torch.nn.Sequential(
+        torch.nn.Linear(1, width),
+        # torch.nn.ReLU(),
+        torch.nn.Tanh(),
+        torch.nn.Linear(width, width),
+        torch.nn.Tanh(),
+        # torch.nn.Sigmoid(),
+        torch.nn.Linear(width, 2),
+    )
     # network = torch.nn.Sequential(
     #     torch.nn.Linear(1, 64),
-    #     # torch.nn.Sigmoid(),
-    #     torch.nn.ReLU(),
-    #     torch.nn.Linear(64, 3),
+    #     # torch.nn.ReLU(),
+    #     torch.nn.Sigmoid(),
+    #     # torch.nn.Tanh(),
+    #     torch.nn.Linear(64, 64),
+    #     # torch.nn.Tanh(),
+    #     # torch.nn.ReLU(),
+    #     torch.nn.Sigmoid(),
+    #     torch.nn.Linear(64, 2),
     # )
-    network = torch.nn.Sequential(
-        torch.nn.Linear(1, 64),
-        # torch.nn.ReLU(),
-        # torch.nn.Sigmoid(),
-        torch.nn.Tanh(),
-        torch.nn.Linear(64, 64),
-        torch.nn.Tanh(),
-        # torch.nn.ReLU(),
-        # torch.nn.Sigmoid(),
-        torch.nn.Linear(64, 3),
-    )
     print("network: {}".format(network))
     # noise_var = torch.nn.parameter.Parameter(torch.Tensor([0]), requires_grad=True)
 
-    # X_train = torch.rand((50, 1)) * 2 - 1
-    # X_train = torch.rand((50, 1)) * 2
     X_train = torch.rand((100, 1)) * 2
-    X_train = torch.rand((200, 1)) * 2
     print("X_train {}".format(X_train.shape))
-    X_train_clipped_1 = X_train[X_train < 1.5].reshape(-1, 1)
-    X_train_clipped_2 = X_train[X_train > 1.9].reshape(-1, 1)
+    # X_train_clipped_1 = X_train[X_train < 1.5].reshape(-1, 1)
+    # X_train_clipped_2 = X_train[X_train > 1.9].reshape(-1, 1)
     # print("X_train {}".format(X_train.shape))
-    X_train = torch.concat([X_train_clipped_1, X_train_clipped_2], 0)
+    # X_train = torch.concat([X_train_clipped_1, X_train_clipped_2], 0)
     print("X_train {}".format(X_train.shape))
     # X_train = torch.linspace(-1, 1, 50, dtype=torch.float64).reshape(-1, 1)
     # Y_train = func(X_train, noise=True)
     Y_train = func(X_train, noise=True)
+    print("Y_train {}".format(Y_train.shape))
     data = (X_train, Y_train)
     print("X, Y: {}, {}".format(X_train.shape, Y_train.shape))
     # X_test = torch.linspace(-1.8, 1.8, 200, dtype=torch.float64).reshape(-1, 1)
@@ -129,14 +138,17 @@ if __name__ == "__main__":
     # X_test = torch.linspace(-6.0, 2.2, 200, dtype=torch.float64).reshape(-1, 1)
     X_test = torch.linspace(-2.0, 3.5, 300, dtype=torch.float64).reshape(-1, 1)
     X_test = torch.linspace(-0.7, 3.5, 300, dtype=torch.float64).reshape(-1, 1)
+    # X_test = torch.linspace(-0.05, 2.2, 300, dtype=torch.float64).reshape(-1, 1)
     # X_test = torch.linspace(-8, 8, 200, dtype=torch.float64).reshape(-1, 1)
     # X_test = torch.linspace(-2, 2, 100, dtype=torch.float64).reshape(-1, 1)
     print("X_test: {}".format(X_test.shape))
     print("f: {}".format(network(X_test).shape))
 
     X_new = torch.linspace(-0.5, -0.2, 20, dtype=torch.float64).reshape(-1, 1)
-    X_new = torch.linspace(-5.0, -2.0, 20, dtype=torch.float64).reshape(-1, 1)
     Y_new = func(X_new, noise=True)
+    # plt.scatter(X_train, Y_train[:, 0])
+    plt.scatter(X_train, Y_train)
+    plt.savefig(os.path.join(save_dir, "classification_data.pdf"))
 
     # X_new_2 = torch.linspace(3.0, 4.0, 20, dtype=torch.float64).reshape(-1, 1)
     # Y_new_2 = func(X_new_2, noise=True)
@@ -148,97 +160,126 @@ if __name__ == "__main__":
 
     batch_size = X_train.shape[0]
 
-    num_inducing = 20
-    # likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=1)
-    likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=2)
-    # likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=0.1)
-    # likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=2)
-    # likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=0.8)
-    prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
-    ntksvgp = NTKSVGP(
+    # likelihood = src.likelihoods.BernoulliLh()
+    likelihood = src.likelihoods.CategoricalLh()
+    # likelihood = src.likelihoods.Gaussian()
+    prior = src.priors.Gaussian(params=network.parameters, delta=delta)
+    sfr = SFR(
         network=network,
         # train_data=(X_train, Y_train),
         prior=prior,
         likelihood=likelihood,
-        output_dim=3,
-        # num_inducing=500,
-        num_inducing=num_inducing,
-        dual_batch_size=None,
-        # dual_batch_size=32,
-        # num_inducing=20,
+        output_dim=2,
+        # num_inducing=X_train.shape[0],
+        # num_inducing=X_train.shape[0] - 10,
+        # num_inducing=50,
+        num_inducing=30,
         # jitter=1e-6,
         jitter=1e-4,
     )
+
     metrics = train(
-        ntksvgp=ntksvgp,
+        sfr=sfr,
         data=data,
-        num_epochs=2500,
-        # num_epochs=1,
+        num_epochs=3500,
         batch_size=batch_size,
         learning_rate=1e-2,
     )
 
-    f_mean, f_var = ntksvgp.predict_f(X_test_short)
+    # f_mean, f_var = sfr.predict_f(X_test_short)
+    f_mean, f_var = sfr.predict_f(X_test)
     print("MEAN {}".format(f_mean.shape))
     print("VAR {}".format(f_var.shape))
     print("X_test_short {}".format(X_test_short.shape))
     print(X_test_short.shape)
 
-    if updates:
-        ntksvgp.update(x=X_new, y=Y_new)
-        f_mean_new, f_var_new = ntksvgp.predict_f(X_test)
+    if plot_updates:
+        sfr.update(x=X_new, y=Y_new)
+        f_mean_new, f_var_new = sfr.predict_f(X_test)
         print("MEAN NEW_2 {}".format(f_mean_new.shape))
         print("VAR NEW_2 {}".format(f_var_new.shape))
 
-        ntksvgp.update(x=X_new_2, y=Y_new_2)
-        f_mean_new_2, f_var_new_2 = ntksvgp.predict_f(X_test)
+        sfr.update(x=X_new_2, y=Y_new_2)
+        f_mean_new_2, f_var_new_2 = sfr.predict_f(X_test)
         print("MEAN NEW_2 {}".format(f_mean_new_2.shape))
         print("VAR NEW_2 {}".format(f_var_new_2.shape))
-
-    import matplotlib.pyplot as plt
 
     def plot_output(i):
         fig = plt.subplots(1, 1)
         plt.scatter(
-            X_train, Y_train[:, i], color="k", marker="x", alpha=0.6, label="Data"
+            X_train,
+            Y_train,
+            color="k",
+            marker="x",
+            alpha=0.6,
+            label="Data"
+            # X_train, Y_train[:, i], color="k", marker="x", alpha=0.6, label="Data"
         )
         plt.plot(
             X_test[:, 0],
-            func(X_test, noise=False)[:, i],
+            # func(X_test, noise=False)[:, i],
+            func(X_test, noise=False),
             color="b",
             label=r"$f_{true}(\cdot)$",
         )
         plt.plot(
             X_test[:, 0],
-            network(X_test).detach()[:, i],
+            network(X_test).detach()[:, 0],
             color="m",
             linestyle="--",
-            label=r"$f_{NN}(\cdot)$",
+            label=r"$f_{NN,1}(\cdot)$",
+        )
+        plt.plot(
+            X_test[:, 0],
+            network(X_test).detach()[:, 1],
+            color="c",
+            linestyle="--",
+            label=r"$f_{NN,2}(\cdot)$",
         )
 
-        plt.plot(X_test_short[:, 0], f_mean[:, i], color="c", label=r"$\mu(\cdot)$")
+        # probs = likelihood.prob(f_mean=f_mean, f_var=f_var)
+        # print("probs {}".format(probs.shape))
+        # plt.plot(X_test[:, 0], probs[:, i], color="c", label=r"$\Pr(y=1 \mid x)$")
+        # plt.plot(X_test_short[:, 0], probs[:, i], color="c", label=r"$\Pr(y=1 \mid x)$")
+        plt.plot(X_test[:, 0], f_mean[:, 0], color="m", label=r"$\mu_1(\cdot)$")
+        plt.plot(X_test[:, 0], f_mean[:, 1], color="c", label=r"$\mu_2(\cdot)$")
         if plot_var:
             plt.fill_between(
-                X_test_short[:, 0],
-                (f_mean - 1.98 * torch.sqrt(f_var))[:, i],
+                # X_test_short[:, 0],
+                X_test[:, 0],
+                (f_mean - 1.96 * torch.sqrt(f_var))[:, 0],
                 # pred.mean[:, 0],
-                (f_mean + 1.98 * torch.sqrt(f_var))[:, i],
+                (f_mean + 1.96 * torch.sqrt(f_var))[:, 0],
+                color="m",
+                alpha=0.2,
+                label=r"$\mu_1(\cdot) \pm 1.96\sigma_1(\cdot)$",
+            )
+            plt.fill_between(
+                # X_test_short[:, 0],
+                X_test[:, 0],
+                (f_mean - 1.96 * torch.sqrt(f_var))[:, 1],
+                # pred.mean[:, 0],
+                (f_mean + 1.96 * torch.sqrt(f_var))[:, 1],
                 color="c",
                 alpha=0.2,
-                label=r"$\mu(\cdot) \pm 1.98\sigma(\cdot)$",
+                label=r"$\mu_2(\cdot) \pm 1.96\sigma_2(\cdot)$",
             )
         plt.scatter(
-            ntksvgp.Z, torch.ones_like(ntksvgp.Z) * -5, marker="|", color="b", label="Z"
+            sfr.Z,
+            torch.ones_like(sfr.Z) * 0.5,
+            marker="|",
+            color="b",
+            label="Z",
         )
         plt.legend()
-        # plt.savefig("nn2svgp.pdf", transparent=True)
         plt.savefig(
-            os.path.join(save_dir, "nn2svgp" + str(i) + ".pdf"), transparent=True
+            os.path.join(save_dir, "sfr-classification" + str(i) + ".pdf"),
+            transparent=True,
         )
 
-        if updates:
+        if plot_updates:
             plt.scatter(
-                X_new, Y_new[:, i], color="m", marker="o", alpha=0.6, label="New data"
+                X_new, Y_new, color="m", marker="o", alpha=0.6, label="New data"
             )
             plt.plot(
                 X_test[:, 0], f_mean_new[:, i], color="m", label=r"$\mu_{new}(\cdot)$"
@@ -246,21 +287,22 @@ if __name__ == "__main__":
             if plot_var:
                 plt.fill_between(
                     X_test[:, 0],
-                    (f_mean_new - 1.98 * torch.sqrt(f_var_new))[:, i],
+                    (f_mean_new - 1.96 * torch.sqrt(f_var_new))[:, i],
                     # pred.mean[:, 0],
-                    (f_mean_new + 1.98 * torch.sqrt(f_var_new))[:, i],
+                    (f_mean_new + 1.96 * torch.sqrt(f_var_new))[:, i],
                     color="m",
                     alpha=0.2,
-                    label=r"$\mu_{new}(\cdot) \pm 1.98\sigma_{new}(\cdot)$",
+                    label=r"$\mu_{new}(\cdot) \pm 1.96\sigma_{new}(\cdot)$",
                 )
 
             plt.scatter(
                 X_new_2,
-                Y_new_2[:, i],
+                Y_new_2,
                 color="y",
                 marker="o",
                 alpha=0.6,
-                label="New data 2",
+                label="New data 2"
+                # X_new_2, Y_new_2[:, i], color="y", marker="o", alpha=0.6, label="New data 2"
             )
             plt.plot(
                 X_test[:, 0],
@@ -272,11 +314,11 @@ if __name__ == "__main__":
             if plot_var:
                 plt.fill_between(
                     X_test[:, 0],
-                    (f_mean_new_2 - 1.98 * torch.sqrt(f_var_new_2))[:, i],
-                    (f_mean_new_2 + 1.98 * torch.sqrt(f_var_new_2))[:, i],
+                    (f_mean_new_2 - 1.96 * torch.sqrt(f_var_new_2))[:, i],
+                    (f_mean_new_2 + 1.96 * torch.sqrt(f_var_new_2))[:, i],
                     color="y",
                     alpha=0.2,
-                    label=r"$\mu_{new,2}(\cdot) \pm 1.98\sigma_{new,2}(\cdot)$",
+                    label=r"$\mu_{new,2}(\cdot) \pm 1.96\sigma_{new,2}(\cdot)$",
                 )
 
             # svgp.update(x=X_new_3, y=Y_new_3)
@@ -304,9 +346,9 @@ if __name__ == "__main__":
 
             plt.legend()
             plt.savefig(
-                os.path.join(save_dir, "nn2svgp_new" + str(i) + ".pdf"),
+                os.path.join(save_dir, "sfr_new_classification" + str(i) + ".pdf"),
                 transparent=True,
             )
 
-    for i in range(3):
-        plot_output(i)
+    # for i in range(3):
+    plot_output(0)

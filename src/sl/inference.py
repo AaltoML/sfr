@@ -1,31 +1,22 @@
 #!/usr/bin/env python3
-
 import logging
 import os
 import random
-from functools import partial
 
 import hydra
 import laplace
 import torch
 import wandb
 from omegaconf import DictConfig, OmegaConf
-from preds.utils import ece, macc, nll_cls
-
-# from src.sl.datasets import CIFAR10, FMNIST, MNIST
-# from src.sl.networks import CIFAR10Net, CIFAR100Net, MLPS
 from preds.datasets import CIFAR10, FMNIST, MNIST
 from preds.models import CIFAR10Net, CIFAR100Net, MLPS
-
-# from train import get_dataset, get_model, set_seed_everywhere
-from torch.distributions import Categorical, Normal
-from torch.utils.data import ConcatDataset, DataLoader, TensorDataset
+from preds.utils import ece, macc, nll_cls
+from torch.distributions import Normal
+from torch.utils.data import DataLoader, TensorDataset
 from torch.utils.data.dataset import Subset
-from tqdm import tqdm
 
 
-# logging.basicConfig(level=logging.INFO)
-logging.basicConfig(level=logging.DEBUG)
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 

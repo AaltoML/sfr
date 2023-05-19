@@ -9,7 +9,7 @@ logger = logging.getLogger(__name__)
 import src
 import torch
 import torch.nn as nn
-from src.sfr.custom_types import (  # Lambda_1,; Lambda_2,
+from src.custom_types import (  # Lambda_1,; Lambda_2,
     Alpha,
     AlphaInducing,
     Beta,
@@ -28,8 +28,8 @@ from src.sfr.custom_types import (  # Lambda_1,; Lambda_2,
     OutputVar,
     TestInput,
 )
-from src.sfr.likelihoods import Likelihood
-from src.sfr.priors import Prior
+from src.likelihoods import Likelihood
+from src.priors import Prior
 from torch.func import functional_call, hessian, jacrev, jvp, vjp, vmap
 from torch.utils.data import DataLoader, TensorDataset
 from torchtyping import TensorType

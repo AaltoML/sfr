@@ -8,8 +8,8 @@ Commands to replicate the results with Split-MNIST using 40 points per task (i.e
 ```bash
 python ./utils/main.py --model=sfr --dataset=seq-mnist --lr=0.0003 --dual_batchsize=1000 \
 	--batch_size=32 --buffer_size=200 --tau=1. --delta=0.0001 --optimizer=adam --n_epochs=1 \
-	--seed=<SEED> --wandb_entity=<WANDB_ENTITY> --wandb_project=<WANDB_PROJECT
-	```
+	--seed=<SEED> --wandb_entity=<WANDB_ENTITY> --wandb_project=<WANDB_PROJECT>
+```
 
 #### DER
 ```bash

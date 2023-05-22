@@ -7,7 +7,6 @@ logger = logging.getLogger(__name__)
 
 import src
 import torch
-import torch.nn as nn
 from src.sfr import SFR
 from src.custom_types import Data
 

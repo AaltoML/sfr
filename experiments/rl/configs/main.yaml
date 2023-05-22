@@ -52,9 +52,9 @@ batch_size: 512
 wandb:
   group: ${env.env_name}-${env.task_name}
   # group: ${env.env_name}
-  entity: "aidanscannell"
+  entity: "XXXX"
   project: "sfr-rl"
-  use_wandb: True
+  use_wandb: False
   run_name: ${alg_name}-${reward_model.sparse_threshold}-td=${transition_model.delta}-ts=${transition_model.sigma_noise}-updates=${online_updates}-update_freq=${online_update_freq}
   # run_name: ${alg_name}-td=${transition_model.delta}-ts=${transition_model.sigma_noise}-updates=${online_updates}-update_freq=${online_update_freq}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   # run_name: ${alg_name}-td=${transition_model.delta}-rd=${reward_model.delta}-ts=${transition_model.sigma_noise}-rs=${reward_model.sigma_noise}-updates=${online_updates}-update_freq=${online_update_freq}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}

@@ -13,11 +13,11 @@ import omegaconf
 import src
 import torch
 import wandb
-from omegaconf import DictConfig
 from experiments.sl.bnn_predictive.preds.datasets import CIFAR10, FMNIST, MNIST
 from experiments.sl.bnn_predictive.preds.models import CIFAR10Net, CIFAR100Net, MLPS
-from src.likelihoods import BernoulliLh, CategoricalLh
 from experiments.sl.inference import compute_metrics
+from omegaconf import DictConfig
+from src.likelihoods import BernoulliLh, CategoricalLh
 from torch.utils.data import DataLoader
 from torchvision.datasets import VisionDataset
 from tqdm import tqdm
@@ -200,7 +200,7 @@ def train(cfg: DictConfig):
 
     # print("DATA_DIR {}".format(DATA_DIR))
     # logger.info("cfg {}".format(cfg))
-    ds_train, ds_test = experiments.sl.train.get_dataset(
+    ds_train, ds_test = get_dataset(
         dataset=cfg.dataset, double=cfg.double, dir="./", device=cfg.device, cfg=cfg
     )
     # print("ds_train {}".format(ds_train.D[0].shape))

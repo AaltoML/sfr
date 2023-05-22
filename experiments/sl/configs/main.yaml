@@ -87,9 +87,9 @@ likelihood:
 
 wandb:
   group: ${dataset}
-  entity: "aidanscannell"
+  entity: "XXXXX"
   project: "sfr-sl"
-  use_wandb: True
+  use_wandb: False
   run_name: delta=${prior.delta}-lr=${lr}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   # run_name: ${alg_name}-${online_update_freq}-${agent.horizon}-${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   tags:

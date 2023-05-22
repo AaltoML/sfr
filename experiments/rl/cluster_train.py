@@ -5,7 +5,7 @@ from omegaconf import DictConfig
 
 @hydra.main(version_base="1.3", config_path="./configs", config_name="main")
 def train(cfg: DictConfig):
-    from src.rl.train import train as train_fn
+    from experiments.rl.train import train as train_fn
 
     train_fn(cfg)
 

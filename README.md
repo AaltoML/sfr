@@ -24,6 +24,8 @@ Here's a short example:
 import src
 import torch
 
+torch.set_default_dtype(torch.float64)
+
 def func(x, noise=True):
     return torch.sin(x * 5) / x + torch.cos(x * 10)
 

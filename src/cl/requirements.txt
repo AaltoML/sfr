@@ -1,9 +1,0 @@
-torch==2.0.0
-numpy==1.23.3
-torchvision==0.15.*
-setproctitle==1.3.2
-six==1.16.0
-wandb
-onedrivedownloader
-av
-tqdm

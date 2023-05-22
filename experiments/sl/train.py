@@ -14,7 +14,7 @@ import src
 import torch
 import wandb
 from omegaconf import DictConfig
-from preds.datasets import CIFAR10, FMNIST, MNIST
+from experiments.sl.bnn_predictive.preds.datasets import CIFAR10, FMNIST, MNIST
 from preds.models import CIFAR10Net, CIFAR100Net, MLPS
 from src.likelihoods import BernoulliLh, CategoricalLh
 from src.sl.inference import compute_metrics

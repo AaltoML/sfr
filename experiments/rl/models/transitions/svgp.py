@@ -5,19 +5,14 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-import src
 import torch
-from src.rl.custom_types import Action, Data, State, StatePrediction
-from src.rl.models.svgp import SVGP
-from src.rl.utils import EarlyStopper
+from experiments.rl.custom_types import Action, Data, State, StatePrediction
+from experiments.rl.models.svgp import SVGP, train
+from experiments.rl.utils import EarlyStopper
+from experiments.rl.utils.buffer import ReplayBuffer
 from torch.utils.data import DataLoader, TensorDataset
 
-# from torchrl.data import ReplayBuffer
-from src.rl.utils.buffer import ReplayBuffer
-
 from .base import TransitionModel
-
-from src.rl.models.svgp import train
 
 
 class SVGPTransitionModel(TransitionModel):
@@ -38,12 +33,6 @@ class SVGPTransitionModel(TransitionModel):
         if "cuda" in device:
             svgp.cuda()
             svgp.likelihood.cuda()
-        # print("is svgp on gpu")
-        # # svgp.to(device)
-        # print(svgp.is_cuda)
-        # print("is likelihood on gpu")
-        # # likelihood.to(device)
-        # print(likelihood.is_cuda)
         self.svgp = svgp
         self.learning_rate = learning_rate
         self.num_epochs = num_epochs
@@ -91,13 +80,10 @@ class SVGPTransitionModel(TransitionModel):
         self.svgp.likelihood.train()
 
         num_data = len(replay_buffer)
-        # print("num_data: {}".format(num_data))
         train_loader = DataLoader(
             TensorDataset(state_action_inputs, state_diff),
             batch_size=self.batch_size,
-            # batch_size=num_data,
             shuffle=True,
-            # num_workers=num_workers
         )
 
         # TODO increase num_inducing as num_data grows??
@@ -176,7 +162,7 @@ class SVGPTransitionModel(TransitionModel):
                     )
                 )
         return train(
-            # return src.rl.models.svgp.train(
+            # return experiments.rl.models.svgp.train(
             svgp=self.svgp,
             # svgp=svgp_new,
             # likelihood=likelihood,

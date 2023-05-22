@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from typing import Any, Iterator, NamedTuple, Optional, Tuple, Union
+from typing import NamedTuple, Tuple
 
 from torchtyping import TensorType
 

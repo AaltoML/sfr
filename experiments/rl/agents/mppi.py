@@ -7,11 +7,11 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 import numpy as np
-import src
+import experiments
 import torch
-from src.rl.custom_types import ActionTrajectory, State
-from src.rl.models import RewardModel, TransitionModel
-from src.rl.utils.buffer import ReplayBuffer
+from experiments.rl.custom_types import ActionTrajectory, State
+from experiments.rl.models import RewardModel, TransitionModel
+from experiments.rl.utils.buffer import ReplayBuffer
 
 from .agent import Agent
 from .ddpg import DDPGAgent
@@ -94,7 +94,7 @@ class MPPIAgent(Agent):
             device=device,
         )
 
-        # self.ddpg_agent = src.agents.ddpg.init_from_actor_critic(
+        # self.ddpg_agent = experiments.agents.ddpg.init_from_actor_critic(
         #     actor=self.actor,
         #     critic=self.critic,
         #     critic_target=self.critic_target,
@@ -111,7 +111,7 @@ class MPPIAgent(Agent):
         # std = 0.5
         # std = 0.1
 
-        self._estimate_value_fn = src.agents.objectives.greedy(
+        self._estimate_value_fn = experiments.rl.agents.objectives.greedy(
             actor=self.ddpg_agent.actor,
             critic=self.ddpg_agent.critic,
             transition_model=transition_model,

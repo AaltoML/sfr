@@ -2,8 +2,7 @@
 from functools import partial
 
 import torch
-from dm_control.utils import rewards
-from src.rl.custom_types import Action, RewardPrediction, State
+from experiments.rl.custom_types import Action, RewardPrediction, State
 
 from .base import RewardModel
 

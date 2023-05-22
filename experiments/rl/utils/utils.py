@@ -2,23 +2,17 @@
 import logging
 import random
 import time
-from typing import Optional
 
 
 logging.basicConfig(level=logging.INFO)
-
 logger = logging.getLogger(__name__)
 
 import numpy as np
-
-# import pytorch_lightning as pl
 import torch
 import torch.nn as nn
 from dm_control import suite
-from setuptools.dist import Optional
 from torch.utils.data import DataLoader, TensorDataset
 
-# from torchrl.data import ReplayBuffer
 from .buffer import ReplayBuffer
 
 

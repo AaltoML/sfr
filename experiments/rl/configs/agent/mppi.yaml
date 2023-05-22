@@ -1,4 +1,4 @@
-_target_: src.rl.agents.MPPIAgent
+_target_: experiments.rl.agents.MPPIAgent
 _convert_: all
 transition_model: ${transition_model}
 reward_model: ${reward_model}
@@ -37,7 +37,7 @@ sample_actor: false
 bootstrap: true
 # bootstrap: false
 # objective:
-#   _target_: src.agents.objectives.greedy
+#   _target_: experiments.agents.objectives.greedy
 #     actor: ${agent.actor}
 #     critic: ${agent.critic}
 #     transition_model: ${agent.transition_model}

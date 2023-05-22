@@ -17,11 +17,11 @@ import torch
 
 torch.set_default_dtype(torch.float64)
 
-import src
+import experiments
 import wandb
 from dm_env import StepType
+from experiments.rl.utils import ReplayBuffer, set_seed_everywhere
 from omegaconf import DictConfig
-from src.rl.utils import ReplayBuffer, set_seed_everywhere
 
 
 @hydra.main(version_base="1.3", config_path="./configs", config_name="main")
@@ -81,7 +81,9 @@ def train(cfg: DictConfig):
         # log_dir = run.dir
 
     print("Making recorder")
-    video_recorder = src.rl.utils.VideoRecorder(work_dir) if cfg.save_video else None
+    video_recorder = (
+        experiments.rl.utils.VideoRecorder(work_dir) if cfg.save_video else None
+    )
     print("Made recorder")
 
     # Create replay buffer
@@ -381,7 +383,7 @@ def train(cfg: DictConfig):
             agent.train(replay_memory)
 
             if cfg.save_video:
-                # G = src.rl.utils.evaluate(
+                # G = experiments.rl.utils.evaluate(
                 #     eval_env,
                 #     agent,
                 #     episode_idx=episode_idx,
@@ -398,7 +400,7 @@ def train(cfg: DictConfig):
             # if episode_idx % cfg.eval_episode_freq == 0:
             #     # print("Evaluating {}".format(episode_idx))
             #     logger.info("Starting eval episodes")
-            #     G_no_online_updates = src.rl.utils.evaluate(
+            #     G_no_online_updates = experiments.rl.utils.evaluate(
             #         eval_env,
             #         agent,
             #         episode_idx=episode_idx,
@@ -437,7 +439,7 @@ def train(cfg: DictConfig):
             #     )
 
             #     if cfg.online_updates:
-            #         G_online_updates = src.rl.utils.evaluate(
+            #         G_online_updates = experiments.rl.utils.evaluate(
             #             eval_env,
             #             agent,
             #             episode_idx=episode_idx,
@@ -459,7 +461,7 @@ def train(cfg: DictConfig):
             #     if cfg.wandb.use_wandb:
             #         wandb.log({"eval/": eval_metrics})
 
-            if isinstance(agent, src.rl.agents.MPPIAgent):
+            if isinstance(agent, experiments.rl.agents.MPPIAgent):
                 dataset = replay_memory.sample(len(replay_memory))
                 # dataset = replay_buffer.sample(batch_size=len(replay_buffer))
                 # print("dataset {}".format(dataset))
@@ -474,7 +476,7 @@ def train(cfg: DictConfig):
                 )
                 if isinstance(
                     agent.transition_model,
-                    src.rl.models.transitions.SVGPTransitionModel,
+                    experiments.rl.models.transitions.SVGPTransitionModel,
                 ):
                     (
                         state_diff_mean,
@@ -483,7 +485,7 @@ def train(cfg: DictConfig):
                     ) = agent.transition_model.svgp.predict(state_action_inputs)
                 elif isinstance(
                     agent.transition_model,
-                    src.rl.models.transitions.SFRTransitionModel,
+                    experiments.rl.models.transitions.SFRTransitionModel,
                 ):
                     (
                         state_diff_mean,
@@ -496,7 +498,7 @@ def train(cfg: DictConfig):
                     wandb.log({"mse_transition_model_nn": mse_transition_model_nn})
                 elif isinstance(
                     agent.transition_model,
-                    src.rl.models.transitions.LaplaceTransitionModel,
+                    experiments.rl.models.transitions.LaplaceTransitionModel,
                 ):
                     state_diff_mean, state_diff_var = agent.transition_model.la(
                         state_action_inputs
@@ -533,7 +535,8 @@ def train(cfg: DictConfig):
                 reward_output = dataset["reward"][:, 0]
                 try:
                     if isinstance(
-                        agent.reward_model, src.rl.models.rewards.CartpoleRewardModel
+                        agent.reward_model,
+                        experiments.rl.models.rewards.CartpoleRewardModel,
                     ):
                         # dataset = replay_memory.sample(len(replay_memory))
                         # print("dataset['state'] {}".format(dataset["state"].shape))
@@ -564,7 +567,7 @@ def train(cfg: DictConfig):
                     # reward_output = dataset["reward"].to(cfg.device)
                     # # reward_output = dataset["reward"]
                     # if isinstance(
-                    #     agent.reward_model, src.rl.models.rewards.CartpoleRewardModel
+                    #     agent.reward_model, experiments.rl.models.rewards.CartpoleRewardModel
                     # ):
                     #     # pass
                     #     reward_hard = agent.reward_model.predict(

@@ -7,8 +7,8 @@ logger = logging.getLogger(__name__)
 
 import torch
 import torch.distributions as td
-from src.rl.custom_types import ActionTrajectory, State, StateTrajectory
-from src.rl.models import RewardModel, TransitionModel
+from experiments.rl.custom_types import ActionTrajectory, State, StateTrajectory
+from experiments.rl.models import RewardModel, TransitionModel
 from torchtyping import TensorType
 
 from .ddpg import Actor, Critic

@@ -8,7 +8,7 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 import torch
-from src.rl.custom_types import Action, State
+from experiments.rl.custom_types import Action, State
 
 
 Transition = namedtuple("Transition", ("state", "action", "next_state", "reward"))

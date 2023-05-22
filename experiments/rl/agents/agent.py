@@ -2,8 +2,8 @@
 import abc
 from typing import Any, Optional
 
-from src.rl.custom_types import Action, EvalMode, State, T0
-from src.rl.utils.buffer import ReplayBuffer
+from experiments.rl.custom_types import Action, EvalMode, State, T0
+from experiments.rl.utils.buffer import ReplayBuffer
 
 
 Data = Any

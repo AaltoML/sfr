@@ -8,14 +8,12 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 import gpytorch
-import numpy as np
 import torch
-import torch.distributions as td
 import wandb
 from functorch import jacrev
 from gpytorch.lazy import CholLazyTensor
-from src.rl.custom_types import Prediction
-from src.rl.utils import EarlyStopper
+from experiments.rl.custom_types import Prediction
+from experiments.rl.utils import EarlyStopper
 from torch.utils.data import DataLoader
 from torchtyping import TensorType
 

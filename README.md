@@ -10,6 +10,13 @@ Activate the environment with:
 ``` sh
 source .venv/bin/activate
 ```
+Alternatively, manually install the dependencies with:
+``` sh
+pip install laplace-torch==0.1a2
+pip install -r requirements.txt
+```
+We install `laplace-torch` separately due to version conflicts with `backpacpk-for-pytorch`.
+
 
 ## Reproducing experiments
 See [experiments/README.md](experiments/README.md) for details of how to reproduce the experiments in the paper.

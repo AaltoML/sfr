@@ -76,9 +76,11 @@ supplement:
 	cp -r experiments/sl/configs supplement/code/experiments/sl/configs/
 	rm -rf supplement/code/experiments/sl/configs/hydra/launcher/lumi.yaml
 	cp -r experiments/sl/configs supplement/code/experiments/sl/configs
+	mkdir supplement/code/experiments/sl/bnn_predictive
 	cp -r experiments/sl/bnn_predictive/preds supplement/code/experiments/sl/bnn_predictive/preds
 	cp -r experiments/sl/bnn_predictive/data supplement/code/experiments/sl/bnn_predictive/data
-	cp -r experiments/sl/uci supplements/code/experiments/sl/uci
+	mkdir supplement/code/experiments/sl/uci
+	cp -r experiments/sl/uci supplement/code/experiments/sl/uci
 	cp experiments/sl/README.md supplement/code/experiments/sl/
 
 
@@ -127,7 +129,7 @@ supplement:
 	mkdir supplement/code/experiments/cl/baselines/fromp
 	cp -r experiments/cl/baselines/fromp supplement/code/experiments/cl/baselines/fromp
 	mkdir supplement/code/experiments/cl/baselines/S-FSVI
-	cp -r experiments/cl/baseline/S-FSVI supplement/code/experiments/cl/baseline/S-FSVI
+	cp -r experiments/cl/baselines/S-FSVI supplement/code/experiments/cl/baselines/S-FSVI
 
 	# Notebooks
 	mkdir supplement/code/notebooks

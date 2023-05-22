@@ -7,10 +7,10 @@ import hydra
 import laplace
 import torch
 import wandb
+from experiments.sl.bnn_predictive.preds.datasets import CIFAR10, FMNIST, MNIST
+from experiments.sl.bnn_predictive.preds.models import CIFAR10Net, CIFAR100Net, MLPS
+from experiments.sl.bnn_predictive.preds.utils import ece, macc, nll_cls
 from omegaconf import DictConfig, OmegaConf
-from preds.datasets import CIFAR10, FMNIST, MNIST
-from preds.models import CIFAR10Net, CIFAR100Net, MLPS
-from preds.utils import ece, macc, nll_cls
 from torch.distributions import Normal
 from torch.utils.data import DataLoader, TensorDataset
 from torch.utils.data.dataset import Subset

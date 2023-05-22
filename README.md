@@ -2,6 +2,8 @@
 Code accompanying NeurIPS 2023 submission Sparse Function-space Representation of Neural Networks.
 
 ## Install
+
+### Option 1: using make
 Make a virtual environment and install the dependencies with:
 ```sh
 make .venv/bin/activate
@@ -10,6 +12,22 @@ Activate the environment with:
 ``` sh
 source .venv/bin/activate
 ```
+The [Makefile](Makefile) just runs:
+``` sh
+python -m venv $(VENV)
+python -m pip install --upgrade pip
+pip install laplace-torch==0.1a2
+pip install -e ".[experiments, dev]"
+```
+
+### Option 2: pip install
+Alternatively, manually install the dependencies with:
+``` sh
+pip install laplace-torch==0.1a2
+pip install -r requirements.txt
+```
+We install `laplace-torch` separately due to version conflicts with `backpacpk-for-pytorch`.
+
 
 ## Reproducing experiments
 See [experiments/README.md](experiments/README.md) for details of how to reproduce the experiments in the paper.

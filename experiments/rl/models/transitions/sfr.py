@@ -9,9 +9,9 @@ logger = logging.getLogger(__name__)
 import src
 import torch
 import wandb
-from src.rl.custom_types import Action, State, StatePrediction
-from src.rl.utils import EarlyStopper
-from src.rl.utils.buffer import ReplayBuffer
+from experiments.rl.custom_types import Action, State, StatePrediction
+from experiments.rl.utils import EarlyStopper
+from experiments.rl.utils.buffer import ReplayBuffer
 
 from .base import TransitionModel
 

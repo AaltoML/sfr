@@ -1,16 +1,16 @@
-import torch
-from torch.distributions import MultivariateNormal, LowRankMultivariateNormal, Normal
-from torch.nn.utils import parameters_to_vector, vector_to_parameters
-from torch.utils.data import DataLoader, TensorDataset
 import logging
 
+import src as ntksvgp
+import torch
 from preds.gradients import Jacobians_naive
-from preds.optimizers import GGN
-from preds.likelihoods import get_Lams_Vys, GaussianLh
 from preds.kron import Kron
+from preds.likelihoods import GaussianLh, get_Lams_Vys
+from preds.optimizers import GGN
 from preds.svgp import SVGPNTK
 from src import NTKSVGP
-import src as ntksvgp
+from torch.distributions import LowRankMultivariateNormal, MultivariateNormal, Normal
+from torch.nn.utils import parameters_to_vector, vector_to_parameters
+from torch.utils.data import DataLoader, TensorDataset
 
 
 def nn_sampling_predictive(
@@ -61,7 +61,16 @@ def linear_sampling_predictive(
     return torch.stack(predictions)
 
 
-def svgp_sampling_predictive(X, svgp, likelihood, mc_samples=100, no_link=False, batch_size=None,nn_mean=False, device='cpu'):
+def svgp_sampling_predictive(
+    X,
+    svgp,
+    likelihood,
+    mc_samples=100,
+    no_link=False,
+    batch_size=None,
+    nn_mean=False,
+    device="cpu",
+):
     """Returns the sparse data used for convenience."""
     link = (lambda x: x) if no_link else likelihood.inv_link
     if batch_size is None:
@@ -74,16 +83,23 @@ def svgp_sampling_predictive(X, svgp, likelihood, mc_samples=100, no_link=False,
         dataset = TensorDataset(X)
         data_loader = DataLoader(dataset, batch_size=batch_size)
         ps = []
-        for X in iter(data_loader):    
-            X = X[0]  
+        for X in iter(data_loader):
+            X = X[0]
             X = X.to(device)
             ps.append(
-                sample_svgp(X, likelihood, svgp, n_samples=mc_samples, nn_mean=nn_mean))
+                sample_svgp(X, likelihood, svgp, n_samples=mc_samples, nn_mean=nn_mean)
+            )
         ps = torch.cat(ps, axis=1)
         return ps
 
 
-def sample_svgp(X, likelihood, svgp,  n_samples: int, nn_mean=False,):
+def sample_svgp(
+    X,
+    likelihood,
+    svgp,
+    n_samples: int,
+    nn_mean=False,
+):
     """Sample the SVGP, assumes a batched input."""
     n_data = X.shape[0]
     gp_means, gp_vars = svgp.predict_f(X)
@@ -95,6 +111,7 @@ def sample_svgp(X, likelihood, svgp,  n_samples: int, nn_mean=False,):
     samples = likelihood.inv_link(logit_samples)
     samples = samples.reshape(n_samples, n_data, out_dim)
     return samples
+
 
 def functional_sampling_predictive(
     X, model, likelihood, mu, Sigma, mc_samples=1000, no_link=False

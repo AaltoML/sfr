@@ -27,8 +27,6 @@ $(VENV)/bin/activate: setup.py
 	python3 -m pip install --upgrade pip
 	$(PIP) install laplace-torch==0.1a2
 	$(PIP) install -e ".[experiments, dev]"
-	# $(PIP) install torch==2.0.0 torchvision==0.15.1
-	# $(PIP) install -e ./experiments/sl/bnn-predictive # install preds so we can use datasets and models
 
 figures: $(VENV)/bin/activate
 	$(PYTHON) src/figures.py --save_dir="./${PAPER_DIR}/figs"

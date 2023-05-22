@@ -1,20 +1,24 @@
 #!/usr/bin/env python3
 import logging
-from typing import List, Optional
+from typing import List
 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-import laplace
 import src
 import torch
 import wandb
-from src.rl.custom_types import Action, InputData, OutputData, State, StatePrediction
-from src.rl.models.util import weights_init_normal
-from src.rl.utils import EarlyStopper
-from src.rl.utils.buffer import ReplayBuffer
-from torch.utils.data import DataLoader, TensorDataset
+from experiments.rl.custom_types import (
+    Action,
+    InputData,
+    OutputData,
+    State,
+    StatePrediction,
+)
+from experiments.rl.models.util import weights_init_normal
+from experiments.rl.utils import EarlyStopper
+from experiments.rl.utils.buffer import ReplayBuffer
 
 from .base import TransitionModel
 
@@ -33,7 +37,6 @@ class EnsembleTransitionModel(TransitionModel):
         wandb_loss_name: str = "Transition model loss",
         early_stopper: EarlyStopper = None,
         device: str = "cuda",
-        # prediction_type: str = "NN",  # "NN" or TODO
         logging_freq: int = 500,
     ):
         for network in networks:
@@ -46,13 +49,11 @@ class EnsembleTransitionModel(TransitionModel):
         self.learning_rate = learning_rate
         self.num_iterations = num_iterations
         self.batch_size = batch_size
-        # self.num_inducing = num_inducing
         self.delta = delta
         self.sigma_noise = sigma_noise
         self.wandb_loss_name = wandb_loss_name
         self.early_stopper = early_stopper
         self.device = device
-        # self.prediction_type = prediction_type
         self.logging_freq = logging_freq
 
         class Ensemble(torch.nn.Module):
@@ -73,12 +74,12 @@ class EnsembleTransitionModel(TransitionModel):
 
         self.ensemble = Ensemble(networks=self.networks)
 
-        # build ntksvgp to get loss fn
-        self.ntksvgps = []
+        # build SFR to get loss fn
+        self.sfrs = []
         for network in self.networks:
-            likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=sigma_noise)
-            prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
-            ntksvgp = src.nn2svgp.NTKSVGP(
+            likelihood = src.likelihoods.Gaussian(sigma_noise=sigma_noise)
+            prior = src.priors.Gaussian(params=network.parameters, delta=delta)
+            sfr = src.SFR(
                 network=network,
                 prior=prior,
                 likelihood=likelihood,
@@ -89,20 +90,13 @@ class EnsembleTransitionModel(TransitionModel):
             )
 
             if "cuda" in device:
-                ntksvgp.cuda()
+                sfr.cuda()
                 print("put transition LA on cuda")
-            self.ntksvgps.append(ntksvgp)
+            self.sfrs.append(sfr)
 
     @torch.no_grad()
     def predict(self, state: State, action: Action) -> StatePrediction:
         state_action_input = torch.concat([state, action], -1)
-        # delta_states = []
-        # for network in self.networks:
-        #     delta_states = network.forward(state_action_input)
-        #     delta_states.append(delta_states)
-        # delta_states = torch.stack(delta_states, 0)
-        # delta_state_mean = torch.mean(delta_states, 0)
-        # delta_state_var = torch.var(delta_states, 0)
         delta_state_mean, delta_state_var = self.ensemble.predict(state_action_input)
         # TODO implement way to return members individual predictions
         return StatePrediction(
@@ -114,19 +108,11 @@ class EnsembleTransitionModel(TransitionModel):
     def train(self, replay_buffer: ReplayBuffer):
         if self.early_stopper is not None:
             self.early_stopper.reset()
-        # self.network.apply(weights_init_normal)
-        # params = []
-        for idx, ntksvgp in enumerate(self.ntksvgps):
-            ntksvgp.network.train()
-            # params = {"{}".format(idx): ntksvgp.parameters()}
-            # params.append(ntksvgp.parameters())
+        for idx, sfr in enumerate(self.sfrs):
+            sfr.network.train()
 
         optimizer = torch.optim.Adam(
-            # [self.ensemble.parameters()],
-            # # [params],
-            # lr=self.learning_rate
-            [{"params": self.ensemble.parameters()}],
-            lr=self.learning_rate,
+            [{"params": self.ensemble.parameters()}], lr=self.learning_rate
         )
         for i in range(self.num_iterations):
             samples = replay_buffer.sample(batch_size=self.batch_size)
@@ -158,8 +144,8 @@ class EnsembleTransitionModel(TransitionModel):
 
     def _loss_fn(self, x, y):
         loss = 0
-        for ntksvgp in self.ntksvgps:
-            loss += ntksvgp.loss(x=x, y=y)
+        for sfr in self.sfrs:
+            loss += sfr.loss(x=x, y=y)
         return loss / self.ensemble_size
 
     @property

@@ -1,7 +1,7 @@
-_target_: src.rl.models.transitions.SVGPTransitionModel
+_target_: experiments.rl.models.transitions.SVGPTransitionModel
 _convert_: all
 svgp:
-  _target_: src.rl.models.svgp.SVGP
+  _target_: experiments.rl.models.svgp.SVGP
   inducing_points:
     _target_: torch.rand
     size:
@@ -35,7 +35,7 @@ num_epochs: 2000
 # num_workers: 1 # TODO what should I set this to?
 wandb_loss_name: "model/transition_loss"
 early_stopper:
-  _target_: src.rl.utils.EarlyStopper
+  _target_: experiments.rl.utils.EarlyStopper
   # patience: 50
   patience: 100
   min_delta: 0

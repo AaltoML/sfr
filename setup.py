@@ -66,7 +66,6 @@ extras_require = {
     ],
     "experiments": [
         "wandb",
-        # "wandb==0.14.1",
         "hydra-core==1.3.2",
         "hydra-submitit-launcher==1.2.0",
         "mujoco==2.3.3",
@@ -75,8 +74,9 @@ extras_require = {
         "moviepy==1.0.3",  # rendering
         "tikzplotlib==0.10.1",
         "gpytorch==1.9.1",  # for RL SVGP experiments
-        # "tabulate==0.9.0",
         "gym[classic_control]==0.26.2",
+    ],
+    "figures": [  # needed to get the HMC result for figure 1
         "hamiltorch @ git+https://github.com/AdamCobb/hamiltorch",  # TODO check this works # for HMC banada fig
     ],
 }

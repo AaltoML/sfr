@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 import warnings
-from collections import defaultdict, deque, OrderedDict
+from collections import defaultdict, deque
 from typing import Any, NamedTuple
 
 import dm_env
 import gym
 import numpy as np
 from dm_control import suite
-from dm_control.suite.wrappers import action_scale
 from dm_env import specs, StepType
 
 

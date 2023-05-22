@@ -1,4 +1,4 @@
-_target_: src.rl.models.transitions.EnsembleTransitionModel
+_target_: experiments.rl.models.transitions.EnsembleTransitionModel
 _convert_: all
 networks:
   # - ${transition_network}
@@ -62,7 +62,7 @@ delta: 0.0001
 sigma_noise: 1.0
 wandb_loss_name: "models/transition_loss"
 # early_stopper:
-#   _target_: src.rl.utils.EarlyStopper
+#   _target_: experiments.rl.utils.EarlyStopper
 #   patience: 50
 #   min_delta: 0
 device: ${device} # TODO should this always be cpu??

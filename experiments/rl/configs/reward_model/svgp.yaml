@@ -1,7 +1,7 @@
-_target_: src.rl.models.rewards.svgp.init
+_target_: experiments.rl.models.rewards.svgp.init
 _convert_: all
 svgp:
-  _target_: src.rl.models.svgp.SVGP
+  _target_: experiments.rl.models.svgp.SVGP
   _convert_: all
   inducing_points:
     _target_: torch.rand

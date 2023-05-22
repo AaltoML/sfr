@@ -6,16 +6,22 @@ from typing import Optional
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-import src
+import experiments
 import torch
 import wandb
-from src.rl.custom_types import Action, InputData, OutputData, RewardPrediction, State
-from src.rl.models.util import weights_init_normal
-from src.rl.utils import EarlyStopper
+from experiments.rl.custom_types import (
+    Action,
+    InputData,
+    OutputData,
+    RewardPrediction,
+    State,
+)
+from experiments.rl.models.util import weights_init_normal
+from experiments.rl.utils import EarlyStopper
 
 # from torchrl.data import ReplayBuffer
 
-from src.rl.utils.buffer import ReplayBuffer
+from experiments.rl.utils.buffer import ReplayBuffer
 from .base import RewardModel
 
 
@@ -51,9 +57,9 @@ class NTKSVGPRewardModel(RewardModel):
         self.prediction_type = prediction_type
         self.logging_freq = logging_freq
 
-        likelihood = src.nn2svgp.likelihoods.Gaussian(sigma_noise=sigma_noise)
-        prior = src.nn2svgp.priors.Gaussian(params=network.parameters, delta=delta)
-        self.ntksvgp = src.nn2svgp.NTKSVGP(
+        likelihood = src.likelihoods.Gaussian(sigma_noise=sigma_noise)
+        prior = src.priors.Gaussian(params=network.parameters, delta=delta)
+        self.ntksvgp = src.SFR(
             network=network,
             prior=prior,
             likelihood=likelihood,

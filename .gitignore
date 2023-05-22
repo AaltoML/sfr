@@ -92,3 +92,7 @@ dmypy.json
 .pytype/
 cython_debug/
 wandb
+
+*.job
+*.out
+*.err

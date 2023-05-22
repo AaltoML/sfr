@@ -150,11 +150,6 @@ def train(model: ContinualModel, dataset: ContinualDataset,
 
             if scheduler is not None:
                 scheduler.step()
-            
-            # TODO: remove this
-            accs = evaluate(model, dataset)
-            mean_acc = np.mean(accs, axis=1)
-            print_mean_accuracy(mean_acc, t + 1, dataset.SETTING)
 
         if t == 0 and args.dataset=="seq-cifar10" and args.model=="sfr":
             torch.save(model.net.state_dict(), f"./checkpoints/{args.backbone}_{args.optimizer}_lr{args.lr}_ep{args.n_epochs}_tau{args.tau}_delta{args.delta}.pkl")

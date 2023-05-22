@@ -102,6 +102,32 @@ supplement:
 
 	# CL stuff
 	mkdir supplement/code/experiments/cl
+	mkdir supplement/code/experiments/cl/backbone
+	mkdir supplement/code/experiments/cl/backbone/utils
+	mkdir supplement/code/experiments/cl/datasets/
+	mkdir supplement/code/experiments/cl/datasets/transforms
+	mkdir supplement/code/experiments/cl/datasets/utils
+	mkdir supplement/code/experiments/cl/models/
+	mkdir supplement/code/experiments/cl/models/utils
+	mkdir supplement/code/experiments/cl/utils
+	
+	cp experiments/cl/gem_license supplement/code/experiments/cl/gem_license
+	cp experiments/cl/LICENSE supplement/code/experiments/cl/LICENSE
+	cp experiments/cl/README.md supplement/code/experiments/cl/README.md
+	cp experiments/cl/backbone/*.py supplement/code/experiments/cl/backbone
+	cp experiments/cl/backbone/utils/*.py supplement/code/experiments/cl/backbone/utils
+	cp experiments/cl/datasets/*.py supplement/code/experiments/cl/datasets/
+	cp experiments/cl/datasets/transforms/*.py supplement/code/experiments/cl/datasets/transforms
+	cp experiments/cl/datasets/utils/*.py supplement/code/experiments/cl/datasets/utils
+	cp experiments/cl/models/*.py supplement/code/experiments/cl/models/	
+	cp experiments/cl/models/utils/*.py supplement/code/experiments/cl/models/utils
+	cp experiments/cl/utils/*.py supplement/code/experiments/cl/utils
+
+	mkdir supplement/code/experiments/cl/baselines/
+	mkdir supplement/code/experiments/cl/baselines/fromp
+	cp -r experiments/cl/baselines/fromp supplement/code/experiments/cl/baselines/fromp
+	mkdir supplement/code/experiments/cl/baselines/S-FSVI
+	cp -r experiments/cl/baseline/S-FSVI supplement/code/experiments/cl/baseline/S-FSVI
 
 	# Notebooks
 	mkdir supplement/code/notebooks

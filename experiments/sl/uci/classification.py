@@ -5,21 +5,20 @@ import torch
 import tqdm
 from torch.nn.utils import parameters_to_vector
 
-from preds.optimizers import LaplaceGGN, get_diagonal_ggn
-from preds.models import SiMLP
+from experiments.sl.bnn_predictive.preds.optimizers import LaplaceGGN, get_diagonal_ggn
+from experiments.sl.bnn_predictive.preds.models import SiMLP
 from src import BernoulliLh, CategoricalLh, NTKSVGP, NN2GPSubset
 import src as ntksvgp
 
-# from preds.likelihoods import BernoulliLh, CategoricalLh
-from preds.predictives import (
+from experiments.sl.bnn_predictive.preds.predictives import (
     nn_sampling_predictive,
     linear_sampling_predictive,
     svgp_sampling_predictive,
 )
-from preds.utils import acc, nll_cls, ece
-from preds.mfvi import run_bbb
-from preds.refine import laplace_refine, vi_refine, vi_diag_refine
-from preds.datasets import UCIClassificationDatasets
+from experiments.sl.bnn_predictive.preds.utils import acc, nll_cls, ece
+from experiments.sl.bnn_predictive.preds.mfvi import run_bbb
+from experiments.sl.bnn_predictive.preds.refine import laplace_refine, vi_refine, vi_diag_refine
+from experiments.al.bnn_predictive.preds.datasets import UCIClassificationDatasets
 
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False

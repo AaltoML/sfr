@@ -76,7 +76,11 @@ supplement:
 	cp -r experiments/sl/configs supplement/code/experiments/sl/configs/
 	rm -rf supplement/code/experiments/sl/configs/hydra/launcher/lumi.yaml
 	cp -r experiments/sl/configs supplement/code/experiments/sl/configs
-	cp -r experiments/sl/bnn_predictive supplement/code/experiments/sl/bnn_predictive
+	mkdir supplement/code/experiments/sl/bnn_predictive
+	cp -r experiments/sl/bnn_predictive/preds supplement/code/experiments/sl/bnn_predictive/preds
+	cp -r experiments/sl/bnn_predictive/data supplement/code/experiments/sl/bnn_predictive/data
+	mkdir supplement/code/experiments/sl/uci
+	cp -r experiments/sl/uci supplement/code/experiments/sl/uci
 	cp experiments/sl/README.md supplement/code/experiments/sl/
 
 
@@ -100,6 +104,32 @@ supplement:
 
 	# CL stuff
 	mkdir supplement/code/experiments/cl
+	mkdir supplement/code/experiments/cl/backbone
+	mkdir supplement/code/experiments/cl/backbone/utils
+	mkdir supplement/code/experiments/cl/datasets/
+	mkdir supplement/code/experiments/cl/datasets/transforms
+	mkdir supplement/code/experiments/cl/datasets/utils
+	mkdir supplement/code/experiments/cl/models/
+	mkdir supplement/code/experiments/cl/models/utils
+	mkdir supplement/code/experiments/cl/utils
+	
+	cp experiments/cl/gem_license supplement/code/experiments/cl/gem_license
+	cp experiments/cl/LICENSE supplement/code/experiments/cl/LICENSE
+	cp experiments/cl/README.md supplement/code/experiments/cl/README.md
+	cp experiments/cl/backbone/*.py supplement/code/experiments/cl/backbone
+	cp experiments/cl/backbone/utils/*.py supplement/code/experiments/cl/backbone/utils
+	cp experiments/cl/datasets/*.py supplement/code/experiments/cl/datasets/
+	cp experiments/cl/datasets/transforms/*.py supplement/code/experiments/cl/datasets/transforms
+	cp experiments/cl/datasets/utils/*.py supplement/code/experiments/cl/datasets/utils
+	cp experiments/cl/models/*.py supplement/code/experiments/cl/models/	
+	cp experiments/cl/models/utils/*.py supplement/code/experiments/cl/models/utils
+	cp experiments/cl/utils/*.py supplement/code/experiments/cl/utils
+
+	mkdir supplement/code/experiments/cl/baselines/
+	mkdir supplement/code/experiments/cl/baselines/fromp
+	cp -r experiments/cl/baselines/fromp supplement/code/experiments/cl/baselines/fromp
+	mkdir supplement/code/experiments/cl/baselines/S-FSVI
+	cp -r experiments/cl/baselines/S-FSVI supplement/code/experiments/cl/baselines/S-FSVI
 
 	# Notebooks
 	mkdir supplement/code/notebooks

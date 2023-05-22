@@ -76,7 +76,8 @@ supplement:
 	cp -r experiments/sl/configs supplement/code/experiments/sl/configs/
 	rm -rf supplement/code/experiments/sl/configs/hydra/launcher/lumi.yaml
 	cp -r experiments/sl/configs supplement/code/experiments/sl/configs
-	cp -r experiments/sl/bnn_predictive supplement/code/experiments/sl/bnn_predictive
+	cp -r experiments/sl/bnn_predictive/preds supplement/code/experiments/sl/bnn_predictive/preds
+	cp -r experiments/sl/bnn_predictive/data supplement/code/experiments/sl/bnn_predictive/data
 	cp -r experiments/sl/uci supplements/code/experiments/sl/uci
 	cp experiments/sl/README.md supplement/code/experiments/sl/
 

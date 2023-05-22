@@ -12,10 +12,7 @@ source .venv/bin/activate
 ```
 
 ## Reproducing experiments
-- See [src/sl/README.md](./src/sl/README.md) for details of how to reproduce the image classification experiments (MNIST/Fashing-MNIST).
-- See [src/rl/README.md](./src/rl/README.md) for details of how to reproduce the RL experiments.
-- TODO Riccardo add link for CL
-- TODO Ella add link for UCI
+See [experiments/README.md](experiments/README.md) for details of how to reproduce the experiments in the paper.
 
 ## Example
 See the [notebooks](./src/notebooks) for how to use our code.

@@ -6,8 +6,8 @@ _here = pathlib.Path(__file__).resolve().parent
 print(_here)
 
 name = "src"
-author = "Aidan Scannell"
-author_email = "scannell.aidan@gmail.com"
+author = ""
+author_email = ""
 description = (
     "Sparse function-space representation (SFR) of neural networks in PyTorch."
 )
@@ -15,7 +15,7 @@ description = (
 with open(_here / "README.md", "r") as f:
     readme = f.read()
 
-url = "https://github.com/aaltoml/bnn-to-dual-svgp"
+url = ""
 
 license = "Apache-2.0"
 
@@ -52,8 +52,6 @@ install_requires = [
     "numpy==1.24.2",
     "torch==2.0.0",
     "torchvision==0.15.1",
-    "onedrivedownloader",  # from mammoth cl framework
-    "av",  #
     "torchtyping==0.1.4",
     "gpytorch==1.9.1",
     # "laplace-torch",

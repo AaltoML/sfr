@@ -58,6 +58,7 @@ def get_parser() -> ArgumentParser:
                         default=500, help="")
     parser.add_argument("--jitter", type=float, required=False,
                         default=1e-6)
+    parser.add_argument("--no_covariance", action="store_true")
     return parser
 
 
@@ -72,6 +73,7 @@ class SFR(ContinualModel):
         self.n_classes = dataset.N_CLASSES
         self.buffer_size = args.buffer_size
         self.z_per_task = self.buffer_size // self.n_tasks
+        self.seen_classes = []
 
         self.task_cnt = 0
 
@@ -115,7 +117,6 @@ class SFR(ContinualModel):
                 diff = torch.flatten(new_logits[:, c] - logits_t[:, c])[:, None]
                 # print(new_logits[:, c])
                 # print(logits_t[:, c])
-
                 d_iS_d = diff.T @ self.Sigma_inv[t, c] @ diff#.T
 
                 # d_iS_d = torch.einsum('mi, mn, ni -> i',
@@ -193,89 +194,92 @@ class SFR(ContinualModel):
             z_inputs = z_inputs.to(self.device)
             for class_out in range(self.n_classes):
                 self.Sigma_inv[self.task_cnt, class_out] = torch.eye(z_inputs.shape[0])
+            if self.args.no_covariance is False:
+                # print(f"Classes task {self.task_cnt}: {np.unique(A_loader.dataset.targets)}")
+                self.seen_classes = np.unique(np.array(np.unique(A_loader.dataset.targets).tolist() + self.seen_classes)).tolist()
+                print(self.seen_classes)
+                for class_out in self.seen_classes: # range(self.n_classes): #self.seen_classes: #np.unique(A_loader.dataset.targets):
 
-            print(f"Classes task {self.task_cnt}: {np.unique(A_loader.dataset.targets)}")
-            for class_out in  np.unique(A_loader.dataset.targets):# range(self.n_classes): #
+                    def fnet_single(params, x):
+                        f = functional_call(curr_net, params, (x.unsqueeze(0)))[:, class_out] # TODO: Why using self.net doesn't work?
+                        return f
 
-                def fnet_single(params, x):
-                    f = functional_call(curr_net, params, (x.unsqueeze(0)))[:, class_out] # TODO: Why using self.net doesn't work?
-                    return f
-
-                Kzz = 1 / (self.delta * task_num_samples * (self.task_cnt  + 1)) * \
-                      kernel_fn(fnet_single,
-                                current_params,
-                                x1=z_inputs,
-                                x2=z_inputs).squeeze()
-                A_k = torch.zeros((self.z_per_task, self.z_per_task))
-
-                def compute_Ai(kzi, lambda2):
-                    return torch.outer(kzi, kzi) * lambda2
-
-                start_idx = 0
-                for i, batch in enumerate(tqdm(A_loader, ncols=50)):
-                    # A_loader):
-                    _, _, images = batch
-                    images = images.to(self.device)
-                    kzi = 1 / (self.delta * task_num_samples * (self.task_cnt  + 1)) * \
-                          kernel_fn(fnet_single,
+                    Kzz = 1 / (self.delta * task_num_samples * (self.task_cnt  + 1)) * \
+                        kernel_fn(fnet_single,
                                     current_params,
-                                    z_inputs,
-                                    images).squeeze()
-                    end_idx = start_idx + images.shape[0]
-                    # print(kzi.shape, lambdas[start_idx: end_idx, class_out].shape)
-                    A_k += (vmap(compute_Ai)(kzi.T.cpu(),
-                                             lambdas[start_idx: end_idx,
-                                             class_out].cpu())).sum(dim=0)
-                    del kzi, images
-                    start_idx = end_idx
-                self.A_matrix[self.task_cnt, class_out] = A_k
+                                    x1=z_inputs,
+                                    x2=z_inputs).squeeze()
+                    A_k = torch.zeros((self.z_per_task, self.z_per_task))
 
-                
+                    def compute_Ai(kzi, lambda2):
+                        return torch.outer(kzi, kzi) * lambda2
 
-                Kzz = Kzz.cpu().to(torch.float64)
-                Kzz = (Kzz + Kzz.T)/2 + torch.eye(Kzz.shape[0]) * self.jitter
-                det_Kzz = 2 * np.sum(np.log(np.diag(np.linalg.cholesky(Kzz))))
-                print(f"det Kzz: {det_Kzz}")
+                    start_idx = 0
+                    for i, batch in enumerate(tqdm(A_loader, ncols=50)):
+                        # A_loader):
+                        _, _, images = batch
+                        images = images.to(self.device)
+                        kzi = 1 / (self.delta * task_num_samples * (self.task_cnt  + 1)) * \
+                            kernel_fn(fnet_single,
+                                        current_params,
+                                        z_inputs,
+                                        images).squeeze()
+                        end_idx = start_idx + images.shape[0]
+                        # print(kzi.shape, lambdas[start_idx: end_idx, class_out].shape)
+                        A_k += (vmap(compute_Ai)(kzi.T.cpu(),
+                                                lambdas[start_idx: end_idx,
+                                                class_out].cpu())).sum(dim=0)
+                        del kzi, images
+                        start_idx = end_idx
+                    self.A_matrix[self.task_cnt, class_out] = A_k
 
-                A_k = (A_k + torch.eye(Kzz.shape[0]) * self.jitter).numpy()
-                det_A = 2 * np.sum(np.log(np.diag(np.linalg.cholesky(A_k))))
-                print(f"det A_k: {det_A}")
+                    
 
-                Lz = scipy.linalg.cho_factor(Kzz)
-                iKA = scipy.linalg.cho_solve(Lz, A_k)
-                Sigma_inv_k = scipy.linalg.cho_solve(Lz, iKA.T)
+                    Kzz = Kzz.cpu().to(torch.float64)
+                    Kzz = (Kzz + Kzz.T)/2 + torch.eye(Kzz.shape[0]) * self.jitter
+                    det_Kzz = 2 * np.sum(np.log(np.diag(np.linalg.cholesky(Kzz))))
+                    print(f"det Kzz: {det_Kzz}")
 
-                # minS = np.min(np.diag(Sigma_inv_k))
-                # maxS = np.max(np.diag(Sigma_inv_k))
-                # Sigma_inv_k = (Sigma_inv_k - minS) / (maxS - minS)
+                    A_k = (A_k + torch.eye(Kzz.shape[0]) * self.jitter).numpy()
+                    det_A = 2 * np.sum(np.log(np.diag(np.linalg.cholesky(A_k))))
+                    print(f"det A_k: {det_A}")
 
-                self.Sigma_inv[self.task_cnt, class_out] = torch.from_numpy(Sigma_inv_k)
-                print(torch.diag(self.Sigma_inv[self.task_cnt, class_out]))
+                    Lz = scipy.linalg.cho_factor(Kzz)
+                    iKA = scipy.linalg.cho_solve(Lz, A_k)
+                    Sigma_inv_k = scipy.linalg.cho_solve(Lz, iKA.T)
 
-                # torch.set_default_dtype(torch.float64)
-                # A_k = A_k.to(torch.float64).to(self.device)
-                # #Kzz = (Kzz.to(torch.float64).to(self.device) + torch.eye(Kzz.shape[0]).to(
-                # #     self.device) * self.jitter).to(self.device)
-                # Kzz = Kzz.to(self.device)
-                #
-                # iKA = torch.linalg.solve(Kzz, A_k)
-                # Sigma_inv_k = torch.linalg.solve(Kzz, iKA.T).to(
-                #     torch.float32).to(self.device)
-                # print(torch.diag(Sigma_inv_k))
-                #
-                # Lz = torch.linalg.cholesky(Kzz, upper=False)
-                # iKA = torch.linalg.solve_triangular(Lz.T, A_k, upper=True)
-                # iKA = torch.linalg.solve_triangular(Lz, iKA, upper=False)
-                # iKAiK = torch.linalg.solve_triangular(Lz.T, iKA.T, upper=True)
-                # iKAiK = torch.linalg.solve_triangular(Lz, iKAiK, upper=False)
-                # self.Sigma_inv[self.task_cnt, class_out] = iKAiK
-                # print(torch.diag(self.Sigma_inv[self.task_cnt, class_out]))
-                # torch.set_default_dtype(torch.float32)
-                # del A_k, iKA, iKAiK
-            torch.cuda.empty_cache()
-            del z_inputs
+                    # minS = np.min(np.diag(Sigma_inv_k))
+                    # maxS = np.max(np.diag(Sigma_inv_k))
+                    # Sigma_inv_k = (Sigma_inv_k - minS) / (maxS - minS)
 
+                    self.Sigma_inv[self.task_cnt, class_out] = torch.from_numpy(Sigma_inv_k)
+                    print(torch.diag(self.Sigma_inv[self.task_cnt, class_out]))
+
+                    # torch.set_default_dtype(torch.float64)
+                    # A_k = A_k.to(torch.float64).to(self.device)
+                    # #Kzz = (Kzz.to(torch.float64).to(self.device) + torch.eye(Kzz.shape[0]).to(
+                    # #     self.device) * self.jitter).to(self.device)
+                    # Kzz = Kzz.to(self.device)
+                    #
+                    # iKA = torch.linalg.solve(Kzz, A_k)
+                    # Sigma_inv_k = torch.linalg.solve(Kzz, iKA.T).to(
+                    #     torch.float32).to(self.device)
+                    # print(torch.diag(Sigma_inv_k))
+                    #
+                    # Lz = torch.linalg.cholesky(Kzz, upper=False)
+                    # iKA = torch.linalg.solve_triangular(Lz.T, A_k, upper=True)
+                    # iKA = torch.linalg.solve_triangular(Lz, iKA, upper=False)
+                    # iKAiK = torch.linalg.solve_triangular(Lz.T, iKA.T, upper=True)
+                    # iKAiK = torch.linalg.solve_triangular(Lz, iKAiK, upper=False)
+                    # self.Sigma_inv[self.task_cnt, class_out] = iKAiK
+                    # print(torch.diag(self.Sigma_inv[self.task_cnt, class_out]))
+                    # torch.set_default_dtype(torch.float32)
+                    # del A_k, iKA, iKAiK
+                torch.cuda.empty_cache()
+                del z_inputs
+        print(self.Sigma_inv[:self.task_cnt+1])
         self.Sigma_inv.detach_()
+        print(self.Sigma_inv)
         self.net.train()
         self.task_cnt += 1
 

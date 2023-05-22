@@ -29,7 +29,7 @@ pip install -r requirements.txt
 We install `laplace-torch` separately due to version conflicts with `backpacpk-for-pytorch`.
 
 ## Useage
-See the [notebooks/](notebooks/) for using our code for both regression and classification.
+See the [notebooks](notebooks/) for using our code for both regression and classification.
 
 ### Reproducing experiments
 See [experiments/README.md](experiments/README.md) for details of how to reproduce the experiments in the paper.

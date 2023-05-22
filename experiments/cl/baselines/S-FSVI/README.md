@@ -22,6 +22,7 @@ This environment includes all necessary dependencies.
 ```
 #### VCL (with random coresets)
 ``` bash
+python baselines/vcl/run_vcl.py  --dataset smnist_sh --n_epochs 100 --batch_size 256 --hidden_size 256 --n_layers 2  --select_method random_choice --n_permuted_tasks 10 --logroot ablation --subdir vcl_smnist200 --n_coreset_inputs_per_task 40 --seed=<SEED>
 ```
 
 
@@ -31,6 +32,9 @@ This environment includes all necessary dependencies.
 ```
 #### VCL (with random coresets)
 ``` bash
+python ./baselines/vcl/run_vcl.py --dataset smnist_sh --n_epochs 100 --batch_size 256 --hidden_size 256 --n_layers 2 \
+  --select_method random_choice --n_permuted_tasks 10 --logroot ablation --subdir vcl_smnist200 --n_coreset_inputs_per_task 200 \
+  --seed=<SEED>
 ```
 
 ### S-FMNIST 200pts./task
@@ -39,6 +43,7 @@ This environment includes all necessary dependencies.
 ```
 #### VCL (with random coresets)
 ``` bash
+  python baselines/vcl/run_vcl.py  --dataset sfashionmnist_sh --n_epochs 100 --batch_size 256 --hidden_size 256 --n_layers 2  --select_method random_choice --n_permuted_tasks 10 --logroot ablation --subdir vcl_sfmnist --n_coreset_inputs_per_task 200 --seed=<SEED>
 ```
 
 
@@ -46,8 +51,10 @@ This environment includes all necessary dependencies.
 #### S-FSVI
 ``` bash
 ```
+
 #### VCL (with random coresets)
 ``` bash
+python baselines/vcl/run_vcl.py  --dataset pmnist --n_epochs 100 --batch_size 256 --hidden_size 100 --n_layers 2  --select_method random_choice --n_permuted_tasks 10 --n_coreset_inputs_per_task 200 --seed=<SEED>
 ```
 
 
@@ -63,5 +70,3 @@ This environment includes all necessary dependencies.
       publisher ={PMLR},
 }
 ```
-
-Please cite our paper if you use this code in your own work.

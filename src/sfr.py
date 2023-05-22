@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import logging
-from typing import Callable, List, Optional, Tuple
+from typing import List, Optional, Tuple
 
 
 logging.basicConfig(level=logging.INFO)
@@ -10,7 +10,6 @@ import src
 import torch
 import torch.nn as nn
 from src.custom_types import (  # Lambda_1,; Lambda_2,
-    Alpha,
     AlphaInducing,
     Beta,
     BetaInducing,
@@ -30,9 +29,8 @@ from src.custom_types import (  # Lambda_1,; Lambda_2,
 )
 from src.likelihoods import Likelihood
 from src.priors import Prior
-from torch.func import functional_call, hessian, jacrev, jvp, vjp, vmap
+from torch.func import functional_call, jacrev, jvp, vjp, vmap
 from torch.utils.data import DataLoader, TensorDataset
-from torchtyping import TensorType
 
 
 class SFR(nn.Module):

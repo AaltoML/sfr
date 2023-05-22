@@ -1545,17 +1545,27 @@ We train the DDPG agent using Adam for $500$ iterations at each episode, using a
 \label{app:experiments}
 
 
-\subsection{Uncertainty quantification on UCI data sets}
-\label{app:uci}
+\subsection{Uncertainty quantification on UCI data sets}\label{app:uci}
+Our experiments on the $8$ selected UCI benchmarks \cite{UCI} match those presented in \cite{immer2021improving} in their structure: that is, we run the neural network training and the \our prediction pipeline on $16$ values of prior precision $\delta$, and on $10$ seeds matching those used in \cite{immer2021improving}. After completing the $160$ experiments, we select the $\delta$ with the lowest mean validation set NLPD and report the test set performance statistics in our result tables. The range of $\delta$ used for the hyperparameter search varies depending on dataset and the number of inducing points. Below we list the selected $\delta$ ranges 
+\begin{itemize}
+\item If dataset $ = $ {\sc digits}: the $16$ $\delta$ values consist of a logspace between $10^{-1}$ and $10^2$, matching \citet{immer2021improving}.
+\item If dataset $= $ {\sc cancer},  and $M > 128$, the $16$ $\delta$ values consist of a logspace between $10^{-1}$ and $10^2$. With too low values of $\delta$, we observed numerical errors in the Cholesky decomposition required for constructing the \our dual.
+\item If dataset $=$ {\sc satellite} and $M < 512$: the $16$ $\delta$ values consist of a logspace between $10^{-1}$ and $10^2$, matching \citet{immer2021improving}.
+\item If dataset $=$ {\sc satellite} and $M \geq 512$: the $16$ $\delta$ values consist of a logspace between $10^{1}$ and $10^2$.  With too low values of $\delta$, we observed numerical errors in the Cholesky decomposition required for constructing the \our dual.
+\item Othewise  the $16$ $\delta$ values consist of a logspace between $10^{-2}$ and $10^2$, matching \citet{immer2021improving}.
+\end{itemize}
+We note that while the ranges of prior precision were clipped for some data sets, the best performance in terms of NLPD was not achieved near the smallest $\delta$ tested. Other numerical considerations relevant to our method are the clipping of the Hessian of the log likelihood, and adding jitter before performing the Cholesky decomposition within the \our dual computation. In contrast to \citet{immer2021improving}, we did not perform any clipping in the Hessian computation, but some of the UCI experiments required adding jitter of size $10^{-6}$ for numerical stability.  
+
+\par All neural network designs and related hyperparameters are set similarly to \citet{immer2021improving} for a fair comparison, for instance we train the $2$-layer MLPs with learning rate $0.001$ for $10000$ epochs, using the full dataset instead of batching. In addition, we vary the subset size $M \in  \{16, 32, 64, 128, 256, 512 \}$ to observe the impact of sparseness on the predictive performance, see \cref{tbl:uci-appendix} for the complete results. Our code implementation of the UCI experiments has been built on top of the code provided for \citet{immer2021improving}, using the \our methods provided in the supplementary material.
 
 \begin{table}[t!] 
   \centering\scriptsize
-  \caption{Negative log predictive density (NLPD) (lower better) for SVGP (sparse GP mean and variance), SVGP NN (NN mean and sparse GP variance), GP subset (subset GP mean and variance) and GP NN subset (NN mean and GP subset variance) for inducing points in $[16, 32, 64, 128, 256]$. } 
+  \caption{Negative log predictive density (NLPD, lower better) for our \our method compared to a GP subset based method which discards most of the data. Even with a small $M$ our method is able to provide good results.} 
 	\label{tbl:uci-appendix}
 	% Control table spacing
 	\renewcommand{\arraystretch}{1.}
 	\setlength{\tabcolsep}{2pt}
-	\setlength{\tblw}{0.2\textwidth}  
+	\setlength{\tblw}{0.25\textwidth}  
 	
 	% Custom error formatting
 	\newcommand{\val}[2]{%

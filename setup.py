@@ -48,12 +48,11 @@ keywords = [
 python_requires = ">=3.8"
 
 install_requires = [
-    "matplotlib==3.5.1",
-    "numpy==1.24.2",
     "torch==2.0.0",
     "torchvision==0.15.1",
     "torchtyping==0.1.4",
-    "gpytorch==1.9.1",
+    "matplotlib==3.5.1",
+    "numpy==1.24.2",
     # "laplace-torch",
 ]
 extras_require = {
@@ -75,6 +74,7 @@ extras_require = {
         "opencv-python==4.7.0.72",
         "moviepy==1.0.3",  # rendering
         "tikzplotlib==0.10.1",
+        "gpytorch==1.9.1",  # for RL SVGP experiments
         # "tabulate==0.9.0",
         "gym[classic_control]==0.26.2",
         "hamiltorch @ git+https://github.com/AdamCobb/hamiltorch",  # TODO check this works # for HMC banada fig
@@ -99,5 +99,6 @@ setuptools.setup(
     python_requires=python_requires,
     install_requires=install_requires,
     extras_require=extras_require,
-    packages=setuptools.find_namespace_packages(),
+    # packages=setuptools.find_namespace_packages(),
+    packages=setuptools.find_packages(exclude=["notebooks", "paper"]),
 )

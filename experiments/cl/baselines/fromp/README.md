@@ -1,30 +1,33 @@
 # FROMP
+Contains the adapted code for the NeurIPS 2020 paper by Pan et al., "[Continual Deep Learning by Functional Regularisation of Memorable Past](https://arxiv.org/abs/2004.14070)", to run Single Head (SH) experiments on S-MNIST and S-FMNIST
 
-Contains code for the NeurIPS 2020 paper by Pan et al., "[Continual Deep Learning by Functional Regularisation of Memorable Past](https://arxiv.org/abs/2004.14070)".
+## Install the FROMP environment
+``` sh
+conda create env -n "fromp_env" python=3.7
+conda activate fromp_env
+pip install -r fromp_requirements.txt
+```
 
-## Continual learning with functional regularisation
+## Run experiments
+### S-MNIST 40pts./task
+``` bash
+python main_splitsmnist_SH.py --batch_size=32 --num_epochs=10 --select_method=random --num_points=40 --seed=<SEED>
+```
 
-FROMP performs continual continual by functionally regularising on a few memorable past datapoints, in order to avoid forgetting past information.
+### S-MNIST 200pts./task
+``` bash
+python main_splitsmnist_SH.py --batch_size=32 --num_epochs=10 --select_method=random --num_points=200 --seed=<SEED>
+```
 
-FROMP's functional regularisation is implemented in ``opt_fromp.py``. This is a PyTorch optimiser (built upon PyTorch's Adam optimiser), with FROMP's relevant additions. The important lines are in the ``step()`` function.
+### S-FMNIST 200pts./task
+``` bash
+python main_splitfmnist.py --batch_size=32 --num_epochs=10 --select_method=random --num_points=200 --seed=<SEED>
+```
 
-The provided scripts replicate FROMP's results from the paper. Running the code as in the Table below yields the reported average accuracy.
-The files will run each experiment once. Change the ``num_runs`` variable to obtain mean and standard deviation over many runs (as reported in the paper).
-
-| Benchmark | File | Average accuracy |
-|---        |---   |---               |
-| Split MNIST | ``main_splitmnist.py`` | 99.3% |
-| Permuted MNIST | ``main_permutedmnist.py`` | 94.8% |
-| Split CIFAR | ``main_cifar.py`` | 76.2% |
-| Toy dataset | ``main_toydata.py`` | (Visualisation) |
-
-### Further details
-
-The code was run with ``Python 3.7``, ``PyTorch v1.2``. For the full environment, see ``requirements.txt``.
-
-Hyperparameters (reported in Appendix F of the paper) are set in the ``main_*.py`` files. More detailed code is in the corresponding ``train_*.py`` files.
-
-This code was written by Siddharth Swaroop and Pingbo Pan. Please raise issues here via github, or contact [Siddharth](mailto:ss2163@cam.ac.uk).
+### P-MNIST 200pts./task
+``` bash
+python main_permutedmnist.py --batch_size=128 --num_epochs=10 --select_method=lambda_descend --num_points=200 --seed=<SEED>
+```
 
 ## Citation
 

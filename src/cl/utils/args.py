@@ -40,9 +40,9 @@ def add_experiment_args(parser: ArgumentParser) -> None:
 
     parser.add_argument('--distributed', type=str, default='no', choices=['no', 'dp', 'ddp'])
 
-    parser.add_argument("--backbone", type=str, default="resnet18",
-                    choices=["resnet18", "cifarnet"],
-                    required=False)
+    # parser.add_argument("--backbone", type=str, default="resnet18",
+    #                 choices=["resnet18", "cifarnet"],
+    #                 required=False)
 
 
 def add_management_args(parser: ArgumentParser) -> None:
@@ -60,7 +60,7 @@ def add_management_args(parser: ArgumentParser) -> None:
                         help='disable additional metrics')
     parser.add_argument('--debug_mode', type=int, default=0, help='Run only a few forward steps per epoch')
     parser.add_argument('--nowand', default=0, choices=[0, 1], type=int, help='Inhibit wandb logging')
-    parser.add_argument('--wandb_entity', type=str, default='aalto_ml', help='Wandb entity')
+    parser.add_argument('--wandb_entity', type=str, default='', help='Wandb entity')
     parser.add_argument('--wandb_project', type=str, default='sfr_pytorch', help='Wandb project name')
 
 

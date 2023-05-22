@@ -60,7 +60,7 @@ def parse_args():
                             help='Which dataset to perform experiments on.')
 
         parser.add_argument('--optimizer', required=False,
-                            default="sgd", choices=["adam", "sgd"],
+                            default="sgd", choices=["sgd"],
                             help="Select the optimizer")
 
         if hasattr(mod, 'Buffer'):
@@ -120,7 +120,6 @@ def main(args=None):
 
     backbone = dataset.get_backbone()
     
-    # For SFRNTK this will be overridden with the ntksvgp loss 
     loss = dataset.get_loss()
 
     model = get_model(args, backbone, loss, dataset.get_transform(), dataset)

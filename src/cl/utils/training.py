@@ -73,6 +73,7 @@ def evaluate(model: ContinualModel, dataset: ContinualDataset, last=False) -> Tu
                     if 'class-il' in model.COMPATIBILITY else 0)
         accs_mask_classes.append(correct_mask_classes / total * 100)
     print()
+    # TODO: remove print
     print(f"CIL accs: {accs}")
     print(f"TIL accs: {accs_mask_classes}")
     model.net.train(status)
@@ -109,9 +110,6 @@ def train(model: ContinualModel, dataset: ContinualDataset,
             _, _ = dataset_copy.get_data_loaders()
         if model.NAME != 'icarl' and model.NAME != 'pnn':
             random_results_class, random_results_task = evaluate(model, dataset_copy)
-
-    # if args.load_checkpoint:
-    #     model.net.load_state_dict(torch.load(args.load_checkpoint))
 
     print(file=sys.stderr)
     for t in range(dataset.N_TASKS):
@@ -151,14 +149,10 @@ def train(model: ContinualModel, dataset: ContinualDataset,
             if scheduler is not None:
                 scheduler.step()
 
-        if t == 0 and args.dataset=="seq-cifar10" and args.model=="sfr":
-            torch.save(model.net.state_dict(), f"./checkpoints/{args.backbone}_{args.optimizer}_lr{args.lr}_ep{args.n_epochs}_tau{args.tau}_delta{args.delta}.pkl")
-
         if hasattr(model, 'end_task'):
             model.end_task(dataset)
 
         if args.optimizer == "adam":
-            print("reset optimizer")
             model.opt = Adam(model.net.parameters(), lr=args.lr)
 
         accs = evaluate(model, dataset)

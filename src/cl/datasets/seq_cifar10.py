@@ -101,15 +101,8 @@ class SequentialCIFAR10(ContinualDataset):
         return transform
 
     def get_backbone(self):
-        if self.args.backbone == "resnet18":
-            return resnet18(SequentialCIFAR10.N_CLASSES_PER_TASK
+        return resnet18(SequentialCIFAR10.N_CLASSES_PER_TASK
                             * SequentialCIFAR10.N_TASKS)
-        elif self.args.backbone == "cifarnet":
-            return CifarNet(in_channels=3,
-                            n_classes=SequentialCIFAR10.N_CLASSES_PER_TASK
-                                      * SequentialCIFAR10.N_TASKS)
-        else:
-            raise NotImplementedError
 
 
     @staticmethod

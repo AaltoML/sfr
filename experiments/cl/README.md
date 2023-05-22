@@ -1,36 +1,97 @@
-# Sparse Functional Regularizer
+# SFR for Continual Learning
+This part of the repository contains the code to replicate the Continual learning experiments reported in the paper. This part of the repo is based on on the [Mammoth library](https://github.com/aimagelab/mammoth) and allows to reproduce the results for  SFR, DER, Online-EWC, and SI. For running the experiments with the other baselines check [FROMP README](./baselines/fromp/README.md) and [S-SFVI/VCL README](./baselines/S-FSVI/README.md).
 
-## Install the environment
+
+### S-MNIST 40pts./task
+Commands to replicate the results with Split-MNIST using 40 points per task (i.e., a total of 200 points) with the methods implemente
+#### SFR
+
+#### DER
 ```bash
-conda create -n <env_name> python=3.9
-conda activate <env_name>
-pip install -r requirements.txt
+python ./utils/main.py --model=der --dataset=seq-mnist --lr=0.03 --batch_size=10 \
+	--minibatch_size=10 --optimizer=sgd --n_epochs=1 --alpha=0.2 --buffer_size=200 \	
+	--seed=<SEED> --wandb_entity=<WANDB_ENTITY> --wandb_project=<WANDB_PROJECT
 ```
 
-## Launch SFR experiments
+#### Online-EWC
 ```bash
-# Sequential FashionMNIST
-python ./utils/main.py --model=sfr --dataset=seq-fmnist --lr=1e-4 --A_batchsize=1000 --batch_size=32 --buffer_size=200 --tau=5e-2 --delta=1e-5 --seed=66 --optimizer=adam 
+python ./utils/main.py --model=ewc_on --dataset=seq-mnist --lr=0.03 --batch_size=10 \
+	--optimizer=sgd --n_epochs=1 --e_lambda=90 --gamma=1.0 \
+	--seed=<SEED> --wandb_entity=<WANDB_ENTITY> --wandb_project=<WANDB_PROJECT>
 ```
 
+#### SI
 ```bash
-python ./utils/main.py --model=sfr --dataset=seq-mnist --lr=3e-4 --A_batchsize=1000 --batch_size=32 --buffer_size=1000 --tau=5e-2 --delta=1e-4 --seed=66 --optimizer=adam
-
-python ./utils/main.py --model=sfr --dataset=seq-mnist --lr=3e-4 --A_batchsize=1000 --batch_size=32 --buffer_size=200 --tau=5e-2 --delta=1e-4 --seed=66 --optimizer=adam
+python ./utils/main.py --model=si --dataset=seq-mnist --lr=0.1 --batch_size=10 \
+	--optimizer=sgd --n_epochs=1 --c=1.0 --xi=0.9 \
+	--seed=<SEED> --wandb_entity=<WANDB_ENTITY> --wandb_project=<WANDB_PROJECT>
 ```
 
-TODO: The following commands are not up to date
-```bash
-# seq-mnist -> 92% 
-python ./utils/main.py --model=sfr --dataset=seq-mnist --lr=3e-4 --A_batchsize=1000 --batch_size=32 --buffer_size=1000 --tau=5e-2 --delta=1e-4 --seed=66
+### S-MNIST 200pts./task
+#### SFR
 
-# seq-mnist -> 89% 
-python ./utils/main.py --model=sfr --dataset=seq-mnist --lr=3e-4 --A_batchsize=200 --batch_size=32 --buffer_size=1000 --tau=5e-2 --delta=1e-4 --seed=66
+#### DER
+```bash
+python ./utils/main.py --model=der --dataset=seq-mnist --lr=0.03 --batch_size=10 \
+	--minibatch_size=10 --optimizer=sgd --n_epochs=1 --alpha=0.3 --buffer_size=1000 \
+	--seed=<SEED> --wandb_entity=<WANDB_ENTITY> --wandb_project=<WANDB_PROJECT>
 ```
 
+#### Online-EWC
 ```bash
-# seq-cifar10
-python ./utils/main.py --model=sfr --dataset=seq-cifar10 --lr=3e-4 --buffer_size=200 --tau=1e-2 --delta=1e-5 --seed=36
+python ./utils/main.py --model=ewc_on --dataset=seq-mnist --lr=0.03 --batch_size=10 \
+	--optimizer=sgd --n_epochs=1 --e_lambda=90 --gamma=1.0 \
+	--seed=<SEED> --wandb_entity=<WANDB_ENTITY> --wandb_project=<WANDB_PROJECT>
+```
+#### SI
+```bash
+python ./utils/main.py --model=si --dataset=seq-mnist --lr=0.1 --batch_size=10 \
+	--optimizer=sgd --n_epochs=1 --c=1.0 --xi=0.9 \
+	--seed=<SEED> --wandb_entity=<WANDB_ENTITY> --wandb_project=<WANDB_PROJECT>
 ```
 
 
+### S-FMNIST 200pts./task
+
+#### SFR
+
+
+#### DER
+```bash 
+python ./utils/main.py --model=der --dataset=seq-fmnist --lr=0.03 --batch_size=10 \
+	--minibatch_size=10 --optimizer=sgd --n_epochs=5 --alpha=0.3 --buffer_size=1000 \
+	--seed=<SEED> --wandb_entity=<WANDB_ENTITY> --wandb_project=<WANDB_PROJECT>
+```
+
+#### Online-EWC
+```bash
+python ./utils/main.py --model=ewc_on --dataset=seq-fmnist --lr=0.03 --batch_size=10 \
+	--optimizer=sgd --n_epochs=1 --e_lambda=90 --gamma=1.0 \
+	--seed=<SEED> --wandb_entity=<WANDB_ENTITY> --wandb_project=<WANDB_PROJECT>
+```
+#### SI
+```bash
+python ./utils/main.py --model=si --dataset=seq-fmnist --lr=0.1 --batch_size=10 \
+	--optimizer=sgd --n_epochs=1 --c=1.0 --xi=0.9 \
+	--seed=<SEED> --wandb_entity=<WANDB_ENTITY> --wandb_project=<WANDB_PROJECT>
+```
+### P-MNIST 200pts./task
+#### SFR
+#### DER
+```bash
+python ./utils/main.py --model=der --dataset=perm-mnist --lr=0.2 --batch_size=128 \
+	--minibatch_size=128 --optimizer=sgd --n_epochs=1 --alpha=0.3 --buffer_size=2000 \
+	--seed=<SEED> --wandb_entity=<WANDB_ENTITY> --wandb_project=<WANDB_PROJECT>
+```
+#### Online-EWC
+```bash
+python ./utils/main.py --model=ewc_on --dataset=perm-mnist --lr=0.1 --batch_size=128 \
+	--optimizer=sgd --n_epochs=10 --e_lambda=0.7 --gamma=1.0 \
+	--seed=<SEED> --wandb_entity=<WANDB_ENTITY> --wandb_project=<WANDB_PROJECT>
+```
+#### SI
+```bash
+python ./utils/main.py --model=si --dataset=perm-mnist --lr=0.1 --batch_size=128 \
+	--optimizer=sgd --n_epochs=10 --c=0.5 --xi=1.0 \
+	--seed=<SEED> --wandb_entity=<WANDB_ENTITY> --wandb_project=<WANDB_PROJECT>
+```

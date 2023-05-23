@@ -12,7 +12,7 @@ python sl/train.py --multirun +experiment=mnist,fmnist
 ```
 You can display the base config using:
 ``` shell
-python train.py --cfg=job
+python sl/train.py --cfg=job
 ```
 
 # Reproducing tables

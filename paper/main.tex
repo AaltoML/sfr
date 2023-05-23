@@ -1582,7 +1582,7 @@ We then set the prior precision as $\delta=0.0001$.
 \textbf{Value function learning}
 We use DDPG to learn the action value function.
 DDPG learns both a policy and a value function but we do not use the policy.
-In our experiments, we parameterised the value function as an MLP with two hidden layers of width $128$ with ELU activations and the actor as an MLP with two hidden layers of width $128$ with ELU activations.
+In our experiments, we parameterised both the actor and critic as MLPs with two hidden layers of width $128$ with ELU activations.
 We train the DDPG actor/critic using Adam for $500$ iterations at each episode, using a learning rate $0.0001$ and a bacth size of $512$.
 DDPG uses a target value function to stabilise learning and for the soft target updates
 we used $\tau = 0.005$.
@@ -1590,7 +1590,7 @@ DDPG is an off-policy algorithm where the exploration policy samples from a nois
 We sampled from a Gaussian distribution with $\sigma=0.1$ and clipping at $0.3$.
 
 \textbf{Model predictive path integral (MPPI)}
-In all model-based RL experiments we used a $H=5$ step horizon and a discount factor of $\gamma 0.9$.
+In all model-based RL experiments we used a $H=5$ step horizon and a discount factor of $\gamma=0.9$.
 We sampled $N=256$ trajectories for $J=5$ iterations with $K=32$.
 We used a temperature of $0.5$ and momentum $0.1$.
 
@@ -1605,18 +1605,25 @@ by the cyan training curve converging quicker.
 In the Laplace-GGN experiments we use the Laplace library from \cite{daxberger2021laplace}
 with the full hessian structure over all of the network's weights.
 We then use the GLM predictions.
+As expected, the Laplace-GGN is also able to solve the sparse reward environment.
 
 
 \textbf{Ensemble}
-The ensemble experiments used $5$ members where each member was an MLP with two hidden layers of width $128$ and Tanh activations.
+The ensemble experiments used $5$ members where each member was an MLP with two hidden layers of width $128$ and Tanh activations, i.e. the same architecture as the other experiments.
 At each episode, the ensemble was trained for $10000$ iterations using the Adam optimiser.
 We used a learning rate $0.0001$ and a batch size of $64$.
 At each time step in the planning horizon we used the following procedure to sample from the ensemble.
-First, the mean and variance of the ensemble members predictions were calculated and then we
-sampled from the resulting Gaussian.
+First, the mean and variance of the ensemble members predictions were calculated.
+Next, we sampled from the resulting Gaussian.
+\cref{fig:rl} shows that the ensemble required more environment interaction to solve the task.
+This is indicated by the green line not converging within the $50$ episodes shown in the figure.
 
 
-
+\textbf{MLP}
+As a baseline, we ran experiments using only the MLP dynamic model with no uncertainty.
+As can be seen in \cref{fig:rl}, this strategy is not always able to solve the task, indicated by
+the magenta line converging at $\approx 310$.
+This is expected because this strategy has no principled exploration mechanism.
 
 \textbf{DDPG}
 The DDPG experiment serves as our model-free baseline.
@@ -1624,8 +1631,16 @@ In the DDPG experiment we use a standard deviation of $0.6$ for the actor to hel
 the environment.
 We increased the width of the MLPs to $512$ and we increased the discount factor to $\gamma=0.99$.
 As expected, the results show that DDPG requires a lot more environment interaction to solve the task.
-\cref{fig:rl} also shows that DDPG does not converge to the same asymptotic performance as \sfr.
+\cref{fig:rl} also shows that DDPG does not converge to the same asymptotic performance as \our.
 This is due to some of the random seeds not being able to successfuly explore the environment.
+
+\textbf{Summary}
+Our results motivate further experiments looking into neural network uncertainty quantification
+for model-based reinforcement learning.
+To the best of our knowledge, we are the first to leverage the Laplace-GGN for model-based RL.
+We have further demonstrated improved performance using \our.
+We believe this may be due to \our sampling in function space as opposed to weight space like
+Laplace-GGN.
 
 
 \section{Experiment details}

@@ -20,7 +20,6 @@ transition_model:
 
 agent:
   unc_prop_strategy: "sample"
-
-hydra:
-  launcher:
-    timeout_min: 1000
+# hydra:
+#   launcher:
+#     timeout_min: 1000

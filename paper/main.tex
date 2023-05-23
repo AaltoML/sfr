@@ -1438,8 +1438,8 @@ Finally, we can rewrite $\mathcal{R}_\mathrm{\our}$ as follows
 
 \section{\our for model-based reinforcement learning}
 \label{app:rl}
-In this appendix, we provide more background of reinforcement learning and how we propose to use
-\our in this setting.
+In this appendix, we provide more details of the reinforcement learning experiments, including
+how we used \our in this setting.
 
 \textbf{Background}
 We consider environments with states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \),
@@ -1468,7 +1468,7 @@ J(\transitionFn, \policy) = \mathbb{E}_{\noise_{0:\infty}} \bigg[ \sum_{t=0}^{\i
 \quad \text{s.t. } \state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t},
 \end{align}
 where $\gamma \in [0, 1)$ is a discount factor.
-In this work, we consider model-based RL where a model of the transition dynamics is learned \(f_{\mathbf{w}} \approx \transitionFn\) and then used by a planning algorithm.
+In this work, we consider model-based RL where a model of the transition dynamics is learned \(f_{\mathbf{w}^{*}} \approx \transitionFn\) and then used by a planning algorithm.
 A simple approach is to use the learned dynamic model $f_{\mathbf{w}^{*}}$ and maximise the objective in \cref{eq-model-free-objective},
 \begin{align} \label{eq-greedy}
   \policy^{\text{Greedy}} &= \arg \max_{\pi \in \Pi} J(f_{\mathbf{w}^{*}}, \pi).
@@ -1478,7 +1478,7 @@ where $\mathcal{D}$ represents the state transition data set \(\mathcal{D} = \{(
 Importantly, the uncertainty represented by this posterior distribution can be used to balance the exploration-exploitation trade-off,
 using approaches such as posterior sampling \cite{osbandWhyPosteriorSampling2017,osbandMoreEfficientReinforcement2013},
 \begin{align} \label{eq-posterior-sampling}
-  \policy^{\text{PS}} &= \arg \max_{\pi \in \Pi} J(\hat{f}, \pi)
+  \policy^{\text{PS}} &= \arg \max_{\pi \in \Pi} J(\tilde{f}, \pi)
 \quad \text{s.t. } \tilde{\transitionFn} \sim q_{\mathbf{u}}({\transitionFn} \mid \dataset),
 \end{align}
 where a function $\tilde{\transitionFn}$ is sampled from the (approximate) posterior $q_{\mathbf{u}}({\transitionFn} \mid \dataset)$ and used to find a policy as
@@ -1488,7 +1488,44 @@ train the model.
 This strategy should perform well in environments which are hard to explore, for example, those
 with sparse rewards.
 
-\textbf{Cart pole swing up wtih sparse reward}
+
+% \todo{could try to implement Pathwise conditioning in function-space}
+
+\textbf{Algorithm}
+In practice, it is common to approximate the infinite sum in \cref{eq-posterior-sampling}
+by planning over a finite
+horizon and bootstrapping with a learned value function.
+Following this approach, our planning algorithim is given by,
+\begin{align} \label{eq-fast-update-mpc}
+  \policy^{\text{PS}}(\state) = \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}}
+\E \bigg[ \sum_{t=0}^{H-1} \gamma^{t} r(\state_{t},\action_{t}) \mid \state_{0}=\state  \bigg] + Q_{\theta}(\state_{\Horizon}, \action_{H})
+\quad \text{s.t. } \state_{t+1} &= \tilde{\transitionFn}(\state_{t}, \action_{t}) + \noise_{t}
+\end{align}
+where $\tilde{\transitionFn} \sim q_{\mathbf{u}}(\transitionFn \mid \dataset)$ is a sample from the
+dynamics posterior and
+${Q_{\theta}(\state, \action) \approx \E \big[ \sum_{t=0}^{H-1} \gamma^{t} r(\state_{t},\action_{t}) \mid \state_{0}=\state, \action_{0}=\action  \big]}$
+is a learned value function with parameters $\theta$.
+We use deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016} to learn the action value function $Q_{\theta}$.
+Note that we also learn a policy but its sole purpose is for learning the value function.
+
+% \todo{what is correct citation for MPPI?}
+
+\textbf{Model predictive path integral (MPPI)}
+We adopt model predictive path integral (MPPI) control \cite{panSample2015,williamsModel2017}
+to plan online over a $H$ step horizon and then bootstrap with a learned value function.
+MPPI is an online planning algorithim which iteratively improves the action trajectory $\action_{t:t+H}$ using samples.
+At each iteration $j$, $N$ trajectories are sampled according to the currect action trajectory $\action^{j}_{t:t+H}$.
+The top $K$ trajectories with highest returns $\sum_{h=0}^{H} = \gamma^{h} r(\state^{j}_{t+h}, \action^{j}_{t+h}) + \gamma Q_{\theta}(\state_{\Horizon}, \action_{H})$ are selected.
+The next action trajectory $\action^{j+1}_{t:t+H}$ is then computed by taking the weighted average of the top $K$ trajectories
+with weights from the softmax over returns from top $K$ trajectories.
+After $J$ iterations the first action is executed in the environment.
+
+
+
+\subsection{Experiment Configuration}
+This section details how we configured and ran our reinforcement learning experiments.
+
+\textbf{Environment}
 We consider the cart pole swing up task in MuJoCo \cite{todorov2012mujoco}.
 However, we make exploration difficult by implementing a sparse reward function which returns $0$ unless the reward is over a threshold value. That is, our reward function is given by,
 $$\hat{r}(\state_{t}, \action_{t}) =
@@ -1497,80 +1534,66 @@ $$\hat{r}(\state_{t}, \action_{t}) =
     0,              & \text{otherwise}
 \end{cases}
 $$
-
-% \todo{could try to implement Pathwise conditioning in function-space}
-
-In practice, the policy in \cref{eq-posterior-sampling} is hard to calculate.
-It is common to approximate the infinite sum by planning over a horizon and bootstrapping with a learned value function.
-We adopt Model Predictive Path Integral (MPPI) control \cite{panSample2015,williamsModel2017}
-to plan online over a horizon $H=5$ and then bootstrap this with a learned value function.
-% \todo{what is correct citation for MPPI?}
-Our planning algorithim is then given by,
-\begin{align} \label{eq-fast-update-mpc}
-  \policy_{i+1}^{\text{PS}}(\state) = \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}}
-\E \bigg[ \sum_{t=0}^{H-1} \gamma^{t} r(\state_{t},\action_{t}) \mid \state_{0}=\state  \bigg] + Q_{\theta}(\state_{\Horizon}, \action_{H})
-\quad \text{s.t. } \state_{t+1} &= \hat{\transitionFn}(\state_{t}, \action_{t}) + \noise_{t}
-\end{align}
-where ${\transitionFn} \sim q_{\mathbf{u}}(\transitionFn \mid \dataset)$ is a sample from the
-dynamics posterior.
-
-We use deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016} to learn an action value function $Q_{\theta}$.
-Note that we also learn a policy but its sole purpose is for learning the value function.
-
-\subsection{Experiment Configuration}
-This section details how we configured and ran our reinforcement learning experiments.
+In all experiments we collected an initial data set using a random policy for one episode and
+we set action repeat as two.
 
 \textbf{Dynamic model}
-In all experiments we used an MLP dynamic model with a single hidden layer of width 64 and TanH activation functions.
-At each episode we used Adam \cite{adam} to optimise the NN parameters for $5000$ iterations with a learning rate of $0.001$.
+In all experiments we used an MLP dynamic model with a single hidden layer of width 64 and Tanh activation functions.
+At each episode we used Adam \cite{adam} to optimise the NN parameters for $5000$ iterations with a learning rate of $0.001$ and a bacth size of $64$.
 We reset the optimizer after each episode.
 As we are performing regression we instantiate the loss function in \cref{eq-empirical-risk} as the well-known mean squared error.
 This corresponds to a Gaussian likelihood with unit variance.
 We then set the prior precision as $\delta=0.0001$.
 % It is worth noting that $\delta$ effects both the neur
-In all experiments our sparse function-space representation uses $m=128$ inducing points as this seemed to be sufficient.
+
+
+\textbf{Value function learning}
+We use DDPG to learn the action value function.
+DDPG learns both a policy and a value function but we do not use the policy.
+In our experiments, we parameterised the value function as an MLP with two hidden layers of width $128$ with ELU activations and the actor as an MLP with two hidden layers of width $128$ with ELU activations.
+We train the DDPG actor/critic using Adam for $500$ iterations at each episode, using a learning rate $0.0001$ and a bacth size of $512$.
+DDPG uses a target value function to stabilise learning and for the soft target updates
+we used $\tau = 0.005$.
+DDPG is an off-policy algorithm where the exploration policy samples from a noise process.
+We sampled from a Gaussian distribution with $\sigma=0.1$ and clipping at $0.3$.
+
+\textbf{Model predictive path integral (MPPI)}
+In all model-based RL experiments we used a $H=5$ step horizon and a discount factor of $\gamma 0.9$.
+We sampled $N=256$ trajectories for $J=5$ iterations with $K=32$.
+We used a temperature of $0.5$ and momentum $0.1$.
+
+
+\textbf{\our}
+In the \our experiments we used $M=128$ inducing points as this seemed to be sufficient.
+The results in \cref{fig:rl} indicate that \our's uncertainty estimates are of high quality.
+This is because the agent is able to solve the task with less environment interaction, indicated
+by the cyan training curve converging quicker.
+
+\textbf{Laplace-GGN}
+In the Laplace-GGN experiments we use the Laplace library from \cite{daxberger2021laplace}
+with the full hessian structure over all of the network's weights.
+We then use the GLM predictions.
+
 
 \textbf{Ensemble}
 The ensemble experiments used $5$ members where each member was an MLP with two hidden layers of width $128$ and Tanh activations.
 At each episode, the ensemble was trained for $10000$ iterations using the Adam optimiser.
 We used a learning rate $0.0001$ and a batch size of $64$.
-
-
 At each time step in the planning horizon we used the following procedure to sample from the ensemble.
 First, the mean and variance of the ensemble members predictions were calculated and then we
 sampled from the resulting Gaussian.
 
 
-\textbf{Model predictive path integral (MPPI)}
-MPPI is an online planning algorithim which iteratively improves the action trajectory $\action_{t:t+H}$ using samples.
-At each iteration $j$, $N=256$ trajectories are sampled according to the currect action trajectory $\action^{j}_{t:t+H}$.
-The top $K=32$ trajectories with highest returns $\sum_{h=0}^{H} = r(\state^{j}_{t+h}, \action^{j}_{t+h})$ are selected.
-The next action trajectory $\action^{j+1}_{t:t+H}$ is then computed by taking the weighted average of the top $K=32$ trajectories
-with weights from the softmax over returns from top $K=32$ trajectories.
-After $J=5$ iterations the first action is executed in the environment.
 
-We used a discount factor of $\gamma 0.9$
-$\tau=0.005$
-horizon $H=5$
-temperature $0.5$
-momentum $0.1$
 
-\textbf{Initial data set}
-We collect an initial data set using a random policy for one episode.
-
-\textbf{Value function learning}
-We use DDPG to learn the action value function.
-DDPG learns both a policy and a value function but we do not use the policy.
-We parameterise the value function as an MLP with two hidden layers of width $128$ with ELU activations.
-We parameterise the actor as an MLP with two hidden layers of width $128$.
-We train the DDPG agent using Adam for $500$ iterations at each episode, using a learning rate $0.0001$.
-We use a target value function to stabilise learning with a momentum of
-
- we use a standard deviation of $0.1$ for the actor.
-we set action repeat as two.
-we use a bacth size of 512
-
- In the DDPG experiment we use a standard deviation of $0.6$ for the actor.
+\textbf{DDPG}
+The DDPG experiment serves as our model-free baseline.
+In the DDPG experiment we use a standard deviation of $0.6$ for the actor to help it explore
+the environment.
+We increased the width of the MLPs to $512$ and we increased the discount factor to $\gamma=0.99$.
+As expected, the results show that DDPG requires a lot more environment interaction to solve the task.
+\cref{fig:rl} also shows that DDPG does not converge to the same asymptotic performance as \sfr.
+This is due to some of the random seeds not being able to successfuly explore the environment.
 
 
 \section{Experiment details}

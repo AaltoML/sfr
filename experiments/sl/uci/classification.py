@@ -48,7 +48,7 @@ def preds_glm(X, model, likelihood, mu, Sigma_chol, samples):
     return gs.mean(dim=0)
 
 
-def preds_svgp(X, svgp, likelihood, samples=1000, batch_size=100, nn_mean=False,device='cpu'):
+def preds_svgp(X, svgp, likelihood, samples=1000, batch_size=100, nn_mean=False, device='cpu'):
     gs = svgp_sampling_predictive(X, svgp, likelihood, mc_samples=samples, batch_size=batch_size, nn_mean=nn_mean, device=device)
     return gs.mean(dim=0)
 
@@ -66,9 +66,6 @@ def evaluate(p, y, likelihood, name, data):
     res[f"{data}_nll_{name}"] = nll_cls(p.squeeze(), y.squeeze(), likelihood)
     res[f"{data}_acc_{name}"] = acc(p.squeeze(), y.squeeze(), likelihood)
     res[f"{data}_ece_{name}"] = ece(p.squeeze(), y.squeeze(), likelihood, bins=10)
-    if name in ["svgp_ntk", "map", 'glm'] and data == "valid":
-        print(f"Val result for: {name}")
-        print(nll_cls(p.squeeze(), y.squeeze(), likelihood))
     return res
 
 
@@ -79,7 +76,7 @@ def create_ntksvgp(
     n_classes = model(X_train).shape[-1]
     print(f"N classes: {n_classes}")
     print(f"Prior prec: {prior_prec}")
-    prior = ntksvgp.priors.Gaussian(params=model.parameters, delta=prior_prec)
+    prior = src.priors.Gaussian(params=model.parameters, delta=prior_prec)
     if not subset:
         svgp = SFR(
             network=model,
@@ -131,12 +128,10 @@ def inference(
     res = dict()
     torch.manual_seed(seed)
     if ds_train.C == 2:
-        eps = 0.000000001
         eps = 0
         likelihood = src.likelihoods.BernoulliLh(EPS=eps)
         K = 1
     else:
-        eps = 0.0000000001
         eps = 0
         likelihood = src.likelihoodsCategoricalLh(EPS=eps)
         K = ds_train.C
@@ -169,9 +164,9 @@ def inference(
     res.update(evaluate(fs_valid, y_valid, likelihood, "map", "valid"))
 
     # SVGP predictive
-    if isinstance(likelihood, CategoricalLh):
+    if isinstance(likelihood, src.likelihoods.CategoricalLh):
         eps_2 = eps
-        likelihood_svgp = CategoricalLh(EPS=eps_2)
+        likelihood_svgp = src.likelihoods.CategoricalLh(EPS=eps_2)
         y_input = y_train.squeeze()
     else:
         y_input = y_train.unsqueeze(-1)
@@ -342,7 +337,7 @@ if __name__ == "__main__":
     print(f'Number of inducing points: {n_inducing}')
     print(f'Batch size: {batch_size}')
     print(f"Seed: {seed}")
-    print(double)
+    print(f'Double: {double}')
 
     if double:
         torch.set_default_dtype(torch.double)

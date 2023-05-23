@@ -7,9 +7,7 @@ Go the the UCI experiment folder
 ``` sh
 cd experiments/sl/uci
 ```
-
-Run the UCI classification experiment for the australian dataset and a single value of prior precision:
+Run the UCI classification experiment for the australian dataset and an array of prior precisions:
 ``` sh
 python classification.py -d australian --root_dir . --seed 711 --name sparse_64 --n_inducing 64 --double
 ```
-Where dataset is selected from 

@@ -74,8 +74,6 @@ def create_ntksvgp(
 ):
     data = (X_train, y_train)
     n_classes = model(X_train).shape[-1]
-    print(f"N classes: {n_classes}")
-    print(f"Prior prec: {prior_prec}")
     prior = src.priors.Gaussian(params=model.parameters, delta=prior_prec)
     if not subset:
         svgp = SFR(
@@ -136,7 +134,6 @@ def inference(
         likelihood = src.likelihoodsCategoricalLh(EPS=eps)
         K = ds_train.C
 
-    print(f'X_train shape: {X_train.shape[0]}')
     if X_train.shape[0] <= n_inducing:
         print('WARNING: Using all training data as inducing points')
         n_inducing = X_train.shape[0]
@@ -146,7 +143,6 @@ def inference(
         n_inducing = X_train.shape[0]
 
     prior_prec_n = prior_prec / y_train.shape[0]
-    print(f"prior precision: {prior_prec_n}")
 
     model = SiMLP(D, K, n_layers, n_units, activation=activation).to(device)
     optimizer = LaplaceGGN(model, lr=lr, prior_prec=prior_prec_n)
@@ -197,8 +193,6 @@ def inference(
     res.update(evaluate(fs_valid, y_valid, lh, "svgp_ntk_nn", "valid"))
 
     # GP subset predictive
-
-    
     svgp_subset = create_ntksvgp(
         X_train,
         y_input,

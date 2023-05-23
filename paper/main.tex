@@ -1375,7 +1375,16 @@ This supplementary document is organized as follows.
 Optionally include extra information (complete proofs, additional experiments and plots) in the appendix.
 This section will often be part of the supplemental material.
 
-
+\begin{table}[!ht]
+\centering
+\begin{tabular}{@{}ccc@{}}
+\toprule
+Loss        & der 1 & der 2 \\ \midrule
+binomial    &       &       \\
+mse         &       &       \\
+categorical &       &       \\ \bottomrule
+\end{tabular}
+\end{table}
 
 \section{\our for continual learning}
 \label{app:cl}
@@ -1427,7 +1436,7 @@ For the \our-regularizer, at the end of each task we compute the matrix $\bar{\M
  	\quad \text{s.t.} \quad
  	\MBeta_{\vu, c} =  \sum_{i \in \dataset_t} \vkzi \,\hat{\beta}_{i, c} \, \vkzi^{\T}.
 \end{equation}
-However, in practice computing the kernel $\kappa_c$ for classes $c$, for which the model has not seen any data yet is not meaningful \todo{probably better to word this differently}, so we define $\bar{\MB}^{-1}_{t, c}$ to be  $\bar{\MB}^{-1}_{t, c} = \MI_M$ $\forall c \not\in \mathcal{C}_t$, where $\mathcal{C}_t$ is the set of classes observed up to task t. For example, for S-MNIST  we will have after task 1 $\mathcal{C}_1 = \{0, 1\}$, then after task 2 $\mathcal{C}_1 = \{0, 1, 2, 3\}$, and so on. 
+In practice computing the kernel $\kappa_c$ for classes $c$, for which the model has not seen any data yet is not meaningful \todo{probably better to word this differently}, so we define $\bar{\MB}^{-1}_{t, c}$ to be  $\bar{\MB}^{-1}_{t, c} = \MI_M$ $\forall c \not\in \mathcal{C}_t$, where $\mathcal{C}_t$ is the set of classes observed up to task t. For example, for S-MNIST  we will have after task 1 $\mathcal{C}_1 = \{0, 1\}$, then after task 2 $\mathcal{C}_1 = \{0, 1, 2, 3\}$, and so on. 
 Finally, we can rewrite $\mathcal{R}_\mathrm{\our}$ as follows
 \begin{equation}\label{eq-cl-regularizer}\textstyle
 \begin{aligned}

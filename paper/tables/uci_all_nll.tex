@@ -1,7 +1,7 @@
-\begin{tabular}{l l C{0.6\tblw} C{0.6\tblw} C{0.6\tblw} C{0.6\tblw} C{0.6\tblw}  C{0.6\tblw}  C{0.6\tblw} C{0.6\tblw}  C{0.6\tblw}  C{0.6\tblw}}
+\begin{tabular}{l l c c c C{0.6\tblw} C{0.6\tblw}  C{0.6\tblw}  C{0.6\tblw} C{0.6\tblw}  C{0.6\tblw}  C{0.6\tblw}}
 \toprule
-& Method & Dataset size & Input dimension & Number of classes& \our (ours) & \our (ours) & {\sc gp} subset & {\sc gp} subset  \\
-$M$ & Mean from & & & & \sc gp& \sc nn& \sc nn& \sc gp \\
+& & & & & \our (ours) & \our (ours) & {\sc gp} subset & {\sc gp} subset  \\
+$M$ & Method & $N$ & $D$ & $C$ & \sc gp& \sc nn& \sc nn& \sc gp \\
 \midrule
 \multirow{8}{*}{16}
 & \sc australian & 690 & 14 & 2 & \val{\textbf {0.33}}{.03} & \val{\textbf {0.32}}{.03} & \val{\textbf {0.34}}{.02} & \val{0.57}{.01} \\
@@ -62,6 +62,5 @@ $M$ & Mean from & & & & \sc gp& \sc nn& \sc nn& \sc gp \\
 & \sc waveform & 1000 & 21 & 3 & \val{\textbf {0.35}}{.02} & \val{\textbf {0.34}}{.03} & \val{\textbf {0.34}}{.03} & \val{\textbf {0.36}}{.02} \\
 & \sc digits & 1797 & 64 & 10 & \val{0.37}{.02} & \val{\textbf {0.29}}{.02} & \val{0.33}{.02} & \val{0.51}{.02} \\
 & \sc satellite & 6435 & 35 & 6 & \val{0.29}{.01} & \val{\textbf {0.26}}{.01} & \val{0.29}{.01} & \val{0.43}{.01} \\
-\midrule
 \bottomrule
 \end{tabular}

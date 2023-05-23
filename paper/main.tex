@@ -944,7 +944,7 @@ fix the number of inducing points $M=1024$.
 For completeness, we also include the GP predictive result from \cite{immer2021improving} which used more inducing points $M=3200$.
 The results in \cref{tbl:imagesuper} agree with the conclusions drawn from the UCI experiments showing that \our is able to more efficiently capture the posterior using a sparse set of points.
 They further demonstrate that \our's predictive mean (GP) significantly outperforms the GP predictive subset.
-This is an interesting result as we cannot rely on the NN's prediction if we wish to condition on new data, using the dual conditioning from \label{sec:sequential}.
+This is an interesting result as we cannot rely on the NN's prediction if we wish to condition on new data, using the dual conditioning from \cref{sec:sequential}.
 In this setting, we must rely on our GP's predictive mean.
 % Other approaches, \cite{immer2021improving} never inten
 % The resutls demonstrate that \our's predictive GP mean significantly outperforms the
@@ -1372,29 +1372,61 @@ This supplementary document is organized as follows.
 \section{Method details}
 \label{app:method}
 %
-Optionally include extra information (complete proofs, additional experiments and plots) in the appendix.
-This section will often be part of the supplemental material.
+Key to our method is the ability to compute the dual parameters in \cref{eq:dual_param}. For general exponential family likelihoods we can derive simpler expressions:
+\begin{equation}
+ \ell(\sigma(f), y) = -\log p(y \mid f) =  A(f)  - \langle y, f\rangle
+\end{equation}
+where $A(f)$ is the log partition function and $\sigma(.)$ is the link function. Taking the first and second derivative of the loss in this form then become:
+
+ For the Bernoulli distribution with a given link function, typically the sigmoid, $\sigma(f_{\vw}(\vx)):= \sigma(f) = \frac{1}{1+e^f}$. Then, we can write the log probability as
+%\begin{equation}
+%\begin{aligned}
+%	\ell(y, \vf_\vw(\vx)) 
+%%	&:= - \log p(y | \sigma(f))) \\
+%%	&= -y \log(\sigma(f)) - (1-y) \log(1-\sigma(f))\\
+%%	&= -y f + \log(1+e^f) \red{ \left[ = - (\langle f, y\rangle - \log(1+e^f)) \right] }
+%\end{aligned}
+%\end{equation}
+
+\begin{table}[!ht]
+\centering
+\begin{tabular}{@{}ccc@{}}
+\toprule
+Loss        & der 1 & der 2 \\ \midrule
+Bernoulli    & $\sigma(f) - y$   & $\sigma(f)(1-\sigma(f))$      \\
+Mse         & $y - f$      & $1$       \\
+Categorical &  $\textrm{softmax}(f_i) - y_i$     &   $\begin{bmatrix}
+		p_1\\ \vdots\\p_k
+	\end{bmatrix}$,     \\ \bottomrule
+\end{tabular}
+\end{table}
 
 
 
 \section{\our for continual learning}
 \label{app:cl}
 \subsection{Derivation of the regularizer term}
-An alternative view of the dual parameters is that they parameterize approximate likelihoods, as shown in \citep{khan2017conjugate, adam2021dual}. Then, we can rewrite the GP posterior for $q(\vu)$ in terms of the following approximate normal distributions:
-
+For continual learning, the model cannot access the training data from previous tasks, denoted here as $\dataset_\textrm{old} = \bigcup_{s=1}^{t-1} \dataset_s$, and for each new tasks receives a new chunk of data $\dataset_\textrm{new} = \dataset_t$. On the other hand, in the supervised learning setting (described in \cref{sec:methods}) the neural network model has access to all the training data at once, \ie, the objective we are trying to optimize is
 \begin{equation}
-\begin{aligned}
- q(\vu) 
- 	&\propto \Norm(0, \MKzz) \prod_{i=1}^n \exp \! \left(-\frac{\tilde{\beta}_i}{2}(\tilde{y}_i - \va_i^\top \vu)^2 \right) \\
- 	&= \Norm(0, \MKzz) \, \exp\left((\bar{\vy} - \vu)^\top \bar{\MSigma}^{-1}(\bar{\vy} - \vu)\right)  
-\end{aligned}
-\end{equation}
-
-The first normals are the approximate likelihoods where $\va_i^\top = \vkzi^\top \MKzz^{-1}$ and $\tilde{y}_i = \hat{\alpha}_i + f_{\vw^*}(\vx_i)\hat{\beta}$,  replacing $\va_i^\top \vu$ with $\vx_i^{\top}\vw$ and we can see the similarity between the sparse GP and a linear model where the kernel matrix determines the prior. To arrive at the MVN Gaussian, we need to rearrange the quadratic terms to match the prior sufficient statistics we present a derivation in [appendix]. Performing conjugate summation of prior and likelihood, we would arrive at the sparse GP posterior at the inducing points. The correlated covariance structure $\MSigma$ and the corresponding $\tilde{\vy}$ are simply a different form of the sparse dual variables,
+	\weights^* = \argmin_\weights \mathcal{L}(\dataset_\textrm{old} \cup \dataset_\textrm{new}, \weights) = \argmin_\weights \sum_{i \in \dataset_\textrm{old} \cup \dataset_\textrm{new}}\ell(f_\weights(\mathbf{x}_{i}), y_i) + \delta \mathcal{R}(\weights).
+\end{equation} 
+Our goal in the continual setting is to replace the missing data coming from $\dataset_\textrm{old}$ by resorting to a functional regularizer that accounts for that by forcing the predictions of the neural networks over the inducing points $\mathcal{Z}_t$ to come with high probability from $f_\weights(\vz_i) \sim q(\vu),  \forall \vz_i \in \mathcal{Z}_t$. As shown in \citep{khan2017conjugate, adam2021dual}, we can view the dual parameters derived in \cref{sec:sparse-dual-gp}, as {\color{red} TODO}.  Then, we can rewrite the sparse GP posterior for $q(\vu)$ in terms of the following approximate normal distributions:
+%
+\begin{align}
+	q(\vu)
+	& \propto p_\weights(\vu) \Norm(\tilde{\vy}; \vu, \MB_\vu)\\
+	& \propto  \Norm(0, \MKzz) \prod_{i \in \dataset_\textrm{old}} \exp \! \left(-\frac{\hat{\beta}_i}{2}(\tilde{y}_i - \va_i^\top \vu)^2 \right) \\
+	& \propto \Norm(0, \MKzz) \, \exp\left((\tilde{\vy} - \vu)^\top \bar{\MB}^{-1}(\tilde{\vy} - \vu)\right)
+\end{align}
+% The first normals are the approximate likelihoods 
+where $\va_i^\top = \vkzi^\top \MKzz^{-1}$ and $\tilde{y}_i = \hat{\alpha}_i + f_{\vw^*}(\vx_i)\hat{\beta}_i$.
+The sparse GP posterior $q(\vu)$ is proportional to the product between the prior over the weights $p_\weights(\vu)$ and a Gaussian term $\Norm(\tilde{\vy}; \vu, \MB_\vu)$, which arises from {\color{red} TODO}
+ 
+Replacing $\va_i^\top \vu$ with $\vx_i^{\top}\vw$, we can see the similarity between the sparse GP and a linear model where the kernel matrix determines the prior. To arrive at the MVN Gaussian, we need to rearrange the quadratic terms to match the prior sufficient statistics. Performing conjugate summation of prior and likelihood, we would arrive at the sparse GP posterior at the inducing points. The correlated covariance structure $\MSigma$ and the corresponding $\tilde{\vy}$ are simply a different form of the sparse dual variables,
 \begin{equation}
-\quad \bar{\MSigma} =  \MKzz \vbeta_\vu^{-1} \MKzz \quad \bar{\vy} = \MKzz \vbeta_{\vu}\valpha_{\vu}.
+\quad \bar{\MB}^{-1} =  \MKzz \MB_\vu^{-1} \MKzz \quad \tilde{\vy} = \MKzz \MB_{\vu}\valpha_{\vu}.
 \end{equation}
-Written as above, we can see that the spare dual variables can be interpreted as a sparse MVN representation. We now show how we use this for a regularizer in continual learning with more details in [appendix].
+Written as above, we can see that the spare dual variables can be interpreted as a sparse MVN representation.
 
 \subsection{Extending the CL regularizer to multi-class settings} 
 \label{sec:cl_multioutput}
@@ -1421,7 +1453,7 @@ For the \our-regularizer, at the end of each task we compute the matrix $\bar{\M
  	\quad \text{s.t.} \quad
  	\MBeta_{\vu, c} =  \sum_{i \in \dataset_t} \vkzi \,\hat{\beta}_{i, c} \, \vkzi^{\T}.
 \end{equation}
-However, in practice computing the kernel $\kappa_c$ for classes $c$, for which the model has not seen any data yet is not meaningful \todo{probably better to word this differently}, so we define $\bar{\MB}^{-1}_{t, c}$ to be  $\bar{\MB}^{-1}_{t, c} = \MI_M$ $\forall c \not\in \mathcal{C}_t$, where $\mathcal{C}_t$ is the set of classes observed up to task t. For example, for S-MNIST  we will have after task 1 $\mathcal{C}_1 = \{0, 1\}$, then after task 2 $\mathcal{C}_1 = \{0, 1, 2, 3\}$, and so on. 
+In practice computing the kernel $\kappa_c$ for classes $c$, for which the model has not seen any data yet is not meaningful \todo{probably better to word this differently}, so we define $\bar{\MB}^{-1}_{t, c}$ to be  $\bar{\MB}^{-1}_{t, c} = \MI_M$ $\forall c \not\in \mathcal{C}_t$, where $\mathcal{C}_t$ is the set of classes observed up to task t. For example, for S-MNIST  we will have after task 1 $\mathcal{C}_1 = \{0, 1\}$, then after task 2 $\mathcal{C}_1 = \{0, 1, 2, 3\}$, and so on. 
 Finally, we can rewrite $\mathcal{R}_\mathrm{\our}$ as follows
 \begin{equation}\label{eq-cl-regularizer}\textstyle
 \begin{aligned}
@@ -1612,16 +1644,16 @@ Our experiments on the $8$ selected UCI benchmarks \cite{UCI} match those presen
 For each dataset, the prior precision values reported above are in practice divided by the training set size, as we use a mean loss instead of a sum loss. The $\delta$ values are reported here before the scaling for comparison to the implementation in \citet{immer2021improving}.
 We note that while the ranges of prior precision were clipped for some data sets, the best performance in terms of NLPD was not achieved near the smallest $\delta$ tested. Other numerical considerations relevant to our method are the clipping of the Hessian of the log likelihood, and adding jitter before performing the Cholesky decomposition within the \our dual computation. In contrast to \citet{immer2021improving}, we did not perform any clipping in the Hessian computation, but some of the UCI experiments required adding jitter of size $10^{-6}$ for numerical stability.  
 
-\par All neural network designs and related hyperparameters are set similarly to \citet{immer2021improving} for a fair comparison, for instance we train the $2$-layer MLPs with learning rate $0.001$ for $10000$ epochs, using the full dataset instead of batching. In addition, we vary the subset size $M \in  \{16, 32, 64, 128, 256, 512 \}$ to observe the impact of sparseness on the predictive performance, see \cref{tbl:uci-appendix} and \cref{tbl:uci-appendix-acc} for the complete NLPD and accuracy results. Our code implementation of the UCI experiments has been built on top of the code provided for \citet{immer2021improving}, using the \our methods provided in the supplementary material.
+All neural network designs and related hyperparameters are set similarly to \citet{immer2021improving} for a fair comparison, for instance we train the $2$-layer MLPs with learning rate $0.001$ for $10000$ epochs, using the full dataset instead of batching. In addition, we vary the subset size $M \in  \{16, 32, 64, 128, 256, 512 \}$ to observe the impact of sparseness on the predictive performance, see \cref{tbl:uci-appendix} and \cref{tbl:uci-appendix-acc} for the complete NLPD and accuracy results. Our code implementation of the UCI experiments has been built on top of the code provided for \citet{immer2021improving}, using the \our methods provided in the supplementary material.
 
 \begin{table}[t!] 
   \centering\scriptsize
-  \caption{Negative log predictive density (NLPD, lower better) for our \our method compared to a GP subset based method which discards most of the data. Even with a small $M$ our method is able to provide good results.} 
+  \caption{Complements \cref{tbl:uci} in the main paper: Negative log predictive density (NLPD, lower better) for our \our method compared to a GP subset based method~\cite{immer2021improving} which discards most of the data. These UCI data sets (num.\ of points $N$, input dim.\ $D$, num.\ classes $C$) demonstrate that even with a small number $M$ of inducing points our method is able to capture good predictive densities.} 
 	\label{tbl:uci-appendix}
 	% Control table spacing
 	\renewcommand{\arraystretch}{1.}
 	\setlength{\tabcolsep}{2pt}
-	\setlength{\tblw}{0.15\textwidth}  
+	\setlength{\tblw}{0.25\textwidth}  
 	
 	% Custom error formatting
 	\newcommand{\val}[2]{%
@@ -1635,12 +1667,12 @@ We note that while the ranges of prior precision were clipped for some data sets
 
 \begin{table}[t!] 
   \centering\scriptsize
-  \caption{The accuracy of our \our method compared to a GP subset based method which discards most of the data. Even with a small $M$ our method is able to provide good results.} 
+  \caption{Complements \cref{tbl:uci-appendix}: We also report the accuracy for each number of inducing points $M$ for both our \our and the GP subset method. The differences in the accuracies is not as big as in NLPD which is not surprising as it is generally easier to capture first-order information with sparse methods. However, with small $M$ \our still shows clearly better performance.} 
 	\label{tbl:uci-appendix-acc}
 	% Control table spacing
 	\renewcommand{\arraystretch}{1.}
 	\setlength{\tabcolsep}{2pt}
-	\setlength{\tblw}{0.15\textwidth}  
+	\setlength{\tblw}{0.25\textwidth}  
 	
 	% Custom error formatting
 	\newcommand{\val}[2]{%
@@ -1660,6 +1692,7 @@ We note that while the ranges of prior precision were clipped for some data sets
 % First, we trained a neural network (MLP for MNIST, CNN for FMNIST) using a prior precision $\delta$.
 % After training, we performed inference by calculating the dual parameters.
 % Finally, we evaluated the predictive performance of \our on the validation set.
+% Similarly to the supervised UCI benchmark tasks, a single image experiment consists of the following steps: first, we train a neural network (a MLP for MNIST, a CNN for FMNIST) in the classification task, using a prior precision $\delta$. After training, we prepare the \our method for predictions by computing the dual parameters, and then evaluate the validation set predictive performance of \our. While in principle our method's predictions consist of the GP mean and variance, we include results for using the neural network prediction as a mean instead. For comparison, we gather the GP subset method results for both the GP and neural network means. This experiment set-up is then replicated for a range of prior precision values and learning rates, as we perform a grid search over these hyperparameters by optimizing for the validation set NLPD. We run the experiment on $5$ seeds and pick the hyperparameter by the best mean performance over the seeds. The results reported in \cref{tbl:imagesuper} used a learning rate of $10^{-4}$, and a prior precision of $\delta = 0.0013$ for FMNIST and $\delta = 0.0001$ for MNIST \todo{double check}.
 
 For the image-based classification experiments,
 we include results using both the GP mean prediction and the NN prediction for both \our and the GP subset.

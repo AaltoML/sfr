@@ -1374,9 +1374,14 @@ This supplementary document is organized as follows.
 %
 Key to our method is the ability to compute the dual parameters in \cref{eq:dual_param}. For general exponential family likelihoods we can derive simpler expressions:
 \begin{equation}
- \ell(\sigma(f_{i}), y_i) = -\log p(y_i \mid f_{i}) =  A(f_i)  - y_i f_i
+ \ell(\sigma(f), y) = -\log p(y \mid f) =  A(f)  - \langle y, f\rangle
 \end{equation}
-where $A(f_i)$ is the log partition function and $\sigma(\cdots)$ is the link function. In the
+where $A(f)$ is the log partition function and $\sigma(.)$ is the link function. Taking the first and second derivative of the loss in this form then become:
+\begin{equation}
+
+\end{equation}
+
+
 
  For the Bernoulli distribution with a given link function, typically the sigmoid, $\sigma(f_{\vw}(\vx)):= \sigma(f) = \frac{1}{1+e^f}$. Then, we can write the log probability as
 %\begin{equation}

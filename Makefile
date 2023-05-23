@@ -79,7 +79,10 @@ supplement:
 	mkdir supplement/code/experiments/sl/bnn_predictive
 	cp -r experiments/sl/bnn_predictive/preds supplement/code/experiments/sl/bnn_predictive/preds
 	mkdir supplement/code/experiments/sl/uci
-	cp -r experiments/sl/uci supplement/code/experiments/sl/uci
+	mkdir supplement/code/experiments/sl/uci/results
+	cp -r experiments/sl/uci/data supplement/code/experiments/sl/uci/data
+	cp experiments/sl/uci/README.md supplement/code/experiments/sl/uci
+	cp experiments/sl/uci/classification.py supplement/code/experiments/sl/uci
 	cp experiments/sl/README.md supplement/code/experiments/sl/
 
 

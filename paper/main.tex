@@ -1616,14 +1616,14 @@ This is because the agent is able to solve the task with less environment intera
 by the cyan training curve converging quicker.
 
 \textbf{Laplace-GGN}
-In the Laplace-GGN experiments we use the Laplace library from \cite{daxberger2021laplace}
+In the Laplace-GGN experiments we used the Laplace library from \cite{daxberger2021laplace}
 with the full hessian structure over all of the network's weights.
-We then use the GLM predictions.
+We then used the GLM predictions.
 As expected, the Laplace-GGN is also able to solve the sparse reward environment.
 
 
 \textbf{Ensemble}
-The ensemble experiments used $5$ members where each member was an MLP with two hidden layers of width $128$ and Tanh activations, \ie\ the same architecture as the other experiments.
+The ensemble experiments used $5$ members where each member was an MLP with one hidden layer of width $128$ and Tanh activations, \ie\ the same architecture as the other experiments.
 At each episode, the ensemble was trained for $10000$ iterations using the Adam optimiser.
 We used a learning rate $0.0001$ and a batch size of $64$.
 At each time step in the planning horizon we used the following procedure to sample from the ensemble.

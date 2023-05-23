@@ -1473,7 +1473,7 @@ Finally, we can rewrite $\mathcal{R}_\mathrm{\our}$ as follows
 In this appendix, we provide more details of the reinforcement learning experiments, including
 how we used \our in this setting.
 
-\textbf{Background}
+\subsection{Background}
 We consider environments with states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \),
 actions \(\action \in \actionDomain \subseteq \R^{D_{\action}}\) and transition dynamics
 \(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \), such that
@@ -1523,7 +1523,7 @@ with sparse rewards.
 
 % \todo{could try to implement Pathwise conditioning in function-space}
 
-\textbf{Algorithm}
+\subsection{Algorithm}
 In practice, it is common to approximate the infinite sum in \cref{eq-posterior-sampling}
 by planning over a finite
 horizon and bootstrapping with a learned value function.
@@ -1553,11 +1553,7 @@ with weights from the softmax over returns from top $K$ trajectories.
 After $J$ iterations the first action is executed in the environment.
 
 
-
-\subsection{Experiment Configuration}
-This section details how we configured and ran our reinforcement learning experiments.
-
-\textbf{Environment}
+\subsection{Environment}
 We consider the cart pole swing up task in MuJoCo \cite{todorov2012mujoco}.
 However, we make exploration difficult by implementing a sparse reward function which returns $0$ unless the reward is over a threshold value. That is, our reward function is given by,
 $$\hat{r}(\state_{t}, \action_{t}) =
@@ -1568,6 +1564,9 @@ $$\hat{r}(\state_{t}, \action_{t}) =
 $$
 In all experiments we collected an initial data set using a random policy for one episode and
 we set action repeat as two.
+
+\subsection{Experiment Configuration}
+This section details how we configured and ran our reinforcement learning experiments.
 
 \textbf{Dynamic model}
 In all experiments we used an MLP dynamic model with a single hidden layer of width 64 and Tanh activation functions.
@@ -1583,7 +1582,7 @@ We then set the prior precision as $\delta=0.0001$.
 We use DDPG to learn the action value function.
 DDPG learns both a policy and a value function but we do not use the policy.
 In our experiments, we parameterised both the actor and critic as MLPs with two hidden layers of width $128$ with ELU activations.
-We train the DDPG actor/critic using Adam for $500$ iterations at each episode, using a learning rate $0.0001$ and a bacth size of $512$.
+We train them using Adam for $500$ iterations at each episode, using a learning rate $0.0001$ and a bacth size of $512$.
 DDPG uses a target value function to stabilise learning and for the soft target updates
 we used $\tau = 0.005$.
 DDPG is an off-policy algorithm where the exploration policy samples from a noise process.
@@ -1593,6 +1592,15 @@ We sampled from a Gaussian distribution with $\sigma=0.1$ and clipping at $0.3$.
 In all model-based RL experiments we used a $H=5$ step horizon and a discount factor of $\gamma=0.9$.
 We sampled $N=256$ trajectories for $J=5$ iterations with $K=32$.
 We used a temperature of $0.5$ and momentum $0.1$.
+
+
+% \subsubsection{Experiments}
+
+\textbf{MLP}
+As a baseline, we ran experiments using only the MLP dynamic model with no uncertainty.
+As can be seen in \cref{fig:rl}, this strategy is not always able to solve the task, indicated by
+the magenta line converging at $\sim 310$.
+This is expected because this strategy has no principled exploration mechanism.
 
 
 \textbf{\our}
@@ -1619,14 +1627,8 @@ Next, we sampled from the resulting Gaussian.
 This is indicated by the green line not converging within the $50$ episodes shown in the figure.
 
 
-\textbf{MLP}
-As a baseline, we ran experiments using only the MLP dynamic model with no uncertainty.
-As can be seen in \cref{fig:rl}, this strategy is not always able to solve the task, indicated by
-the magenta line converging at $\approx 310$.
-This is expected because this strategy has no principled exploration mechanism.
-
 \textbf{DDPG}
-The DDPG experiment serves as our model-free baseline.
+The DDPG experiment serves as our model-free RL baseline.
 In the DDPG experiment we use a standard deviation of $0.6$ for the actor to help it explore
 the environment.
 We increased the width of the MLPs to $512$ and we increased the discount factor to $\gamma=0.99$.
@@ -1634,11 +1636,15 @@ As expected, the results show that DDPG requires a lot more environment interact
 \cref{fig:rl} also shows that DDPG does not converge to the same asymptotic performance as \our.
 This is due to some of the random seeds not being able to successfuly explore the environment.
 
-\textbf{Summary}
-Our results motivate further experiments looking into neural network uncertainty quantification
-for model-based reinforcement learning.
+% \textbf{Summary}
+\subsubsection{Summary}
+Our results motivate further experiments looking into NN uncertainty quantification
+for model-based RL.
 To the best of our knowledge, we are the first to leverage the Laplace-GGN for model-based RL.
-We have further demonstrated improved performance using \our.
+Our results indicate that both the Laplace approximation and \our could offer benefits over
+ensembles of NNs, which are typical in model-based RL.
+Although further experiments are required, our results indicate that \our could offer
+better uncertainty estimates for model-based RL.
 We believe this may be due to \our sampling in function space as opposed to weight space like
 Laplace-GGN.
 

@@ -1372,7 +1372,20 @@ This supplementary document is organized as follows.
 \section{Method details}
 \label{app:method}
 %
+Key to our method is the ability to compute the dual parameters in \cref{eq:dual_param}. For general exponential family likelihoods we can derive simpler expressions. We now detail two common losses dual parameters the Gaussian (MSE) and the Bernoulli (cross entropy).  The general method is to rewrite the exponential family in the $\log$ of its natural form \ie:
+\begin{equation}
+ \ell(f_\weights(\mathbf{x}_{i}), y_i) = -\log p()
+\end{equation}
 
+  For the Bernoulli distribution with a given link function, typically the sigmoid, $\sigma(f_{\vw}(\vx)):= \sigma(f) = \frac{1}{1+e^f}$. Then, we can write the log probability as
+%\begin{equation}
+%\begin{aligned}
+%	\ell(y, \vf_\vw(\vx)) 
+%%	&:= - \log p(y | \sigma(f))) \\
+%%	&= -y \log(\sigma(f)) - (1-y) \log(1-\sigma(f))\\
+%%	&= -y f + \log(1+e^f) \red{ \left[ = - (\langle f, y\rangle - \log(1+e^f)) \right] }
+%\end{aligned}
+%\end{equation}
 
 
 \section{\our for continual learning}

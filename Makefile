@@ -101,8 +101,8 @@ supplement:
 	cp experiments/rl/models/transitions/*.py supplement/code/experiments/rl/models/transitions
 	cp experiments/rl/models/rewards/*.py supplement/code/experiments/rl/models/rewards
 	cp -r experiments/rl/configs supplement/code/experiments/rl/configs/
-	rm -rf supplement/code/experiments/rl/configs/hydra/launcher/lumi.yaml # contains lumi project code
-	rm supplement/code/experiments/rl/plot_rl_figure.py # contains aalto-ml in wandb name
+	rm -rf supplement/code/experiments/rl/configs/hydra/launcher/lumi.yaml
+	rm supplement/code/experiments/rl/plot_rl_figure.py
 
 	# CL stuff
 	mkdir supplement/code/experiments/cl
@@ -114,7 +114,7 @@ supplement:
 	mkdir supplement/code/experiments/cl/models/
 	mkdir supplement/code/experiments/cl/models/utils
 	mkdir supplement/code/experiments/cl/utils
-	
+
 	cp experiments/cl/gem_license supplement/code/experiments/cl/gem_license
 	cp experiments/cl/LICENSE supplement/code/experiments/cl/LICENSE
 	cp experiments/cl/README.md supplement/code/experiments/cl/README.md
@@ -134,7 +134,7 @@ supplement:
 	mkdir supplement/code/experiments/cl/baselines/S-FSVI
 	cp experiments/cl/baselines/S-FSVI/*.py supplement/code/experiments/cl/baselines/S-FSVI
 	cp experiments/cl/baselines/S-FSVI/environment.yml experiments/cl/baselines/S-FSVI/LICENSE experiments/cl/baselines/S-FSVI/README.md supplement/code/experiments/cl/baselines/S-FSVI
-	
+
 	mkdir supplement/code/experiments/cl/baselines/S-FSVI/baselines
 	mkdir supplement/code/experiments/cl/baselines/S-FSVI/baselines/vcl
 	mkdir supplement/code/experiments/cl/baselines/S-FSVI/baselines/vcl/alg

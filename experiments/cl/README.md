@@ -1,5 +1,5 @@
 # SFR for Continual Learning
-This part of the repository contains the code to replicate the Continual learning experiments reported in the paper. This part of the repo is based on on the [Mammoth library](https://github.com/aimagelab/mammoth) and allows to reproduce the results for  SFR, DER, Online-EWC, and SI. For running the experiments with the other baselines check [FROMP README](./baselines/fromp/README.md) and [S-SFVI/VCL README](./baselines/S-FSVI/README.md).
+This part of the repository contains the code to replicate the Continual learning experiments reported in the paper. This part of the repo is based on the [Mammoth library](https://github.com/aimagelab/mammoth) and allows to reproduce the results for  SFR, DER, Online-EWC, and SI. For running the experiments with the other baselines check [FROMP README](./baselines/fromp/README.md) and [S-SFVI/VCL README](./baselines/S-FSVI/README.md).
 
 
 ### S-MNIST 40pts./task

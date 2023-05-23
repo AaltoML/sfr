@@ -684,7 +684,7 @@ where the sparse dual variables are now a sum over \emph{all data points}, with 
 \end{equation}
 where $\MKzz$ and $\vkzs$ are defined similarly to $\MKxx$ and $\vk_{\vx i}$ but over the inducing points $\{\vz_j\}_{i=1}^M$, $\vz \in \R^{D}$, instead of the full data set $\dataset$. The key quantities we need to make predictions from our sparse GP from the converged neural network are $(\hat{\alpha}_i, \hat{\beta}_i)$ (\cref{eq:dual_param_laplace}) and a kernel function $\kappa$ (\cref{eq-laplace-approx-function-space}). Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred}, we can see that the computational complexity went from $\mathcal{O}(N^3)$ to $\mathcal{O}(M^3)$, with $M \ll N$.  Crucially, given the structure of our probabilistic model, our sparse dual variables \cref{eq:dual_sparse} are a compact representation of the full model projected using the kernel. 
 
-Unlike our approach, \citet{immer2021improving} employ a subset of the data points to construct a sparse GP, reducing computational complexity. However, the method could be considered less principled for building a sparse model, as it ignores contribution from the complete dataset. It is important to note that the sparsifying process is independent of the approximate inference technique because the dual variables of \cref{eq:dual_param} are computed using \cref{eq-empirical-risk} and a Laplace approximation. More complicated inference techniques, such as variational inference, could be used, but given its simplicity, in our experiments we used the Laplace-GGN approximation with the trained neural network. Furthermore, our dual variable view of approximate inference means we do not need to retrain a separate sparse GP.\looseness-2
+Unlike our approach, \citet{immer2021improving} employ a subset of the data points to construct a sparse GP, reducing computational complexity. However, the method could be considered less principled for building a sparse model, as it ignores contribution from the complete data set. It is important to note that the sparsifying process is independent of the approximate inference technique because the dual variables of \cref{eq:dual_param} are computed using \cref{eq-empirical-risk} and a Laplace approximation. More complicated inference techniques, such as variational inference, could be used, but given its simplicity, in our experiments we used the Laplace-GGN approximation with the trained neural network. Furthermore, our dual variable view of approximate inference means we do not need to retrain a separate sparse GP.\looseness-2
 % \todo{shouldn't this sentence be clear from the context? we derive the mean/kernel function that define the process, then we have a sparse GP already}
 
 
@@ -1408,7 +1408,7 @@ Categorical &  $\textrm{softmax}(f_i) - y_i$     &   $\begin{bmatrix}
 \subsection{Derivation of the regularizer term}
 For continual learning, the model cannot access the training data from previous tasks, denoted here as $\dataset_\textrm{old} = \bigcup_{s=1}^{t-1} \dataset_s$, and for each new tasks receives a new chunk of data $\dataset_\textrm{new} = \dataset_t$. On the other hand, in the supervised learning setting (described in \cref{sec:methods}) the neural network model has access to all the training data at once, \ie, the objective we are trying to optimize is
 \begin{equation}
-	\weights^* = \argmin_\weights \mathcal{L}(\dataset_\textrm{old} \cup \dataset_\textrm{new}, \weights) = \argmin_\weights \sum_{i \in \dataset_\textrm{old} \cup \dataset_\textrm{new}}\ell(f_\weights(\mathbf{x}_{i}), y_i) + \delta \mathcal{R}(\weights).
+	\weights^* = \arg \min_\weights \mathcal{L}(\dataset_\textrm{old} \cup \dataset_\textrm{new}, \weights) = \arg \min_\weights \sum_{i \in \dataset_\textrm{old} \cup \dataset_\textrm{new}}\ell(f_\weights(\mathbf{x}_{i}), y_i) + \delta \mathcal{R}(\weights).
 \end{equation} 
 Our goal in the continual setting is to replace the missing data coming from $\dataset_\textrm{old}$ by resorting to a functional regularizer that accounts for that by forcing the predictions of the neural networks over the inducing points $\mathcal{Z}_t$ to come with high probability from $f_\weights(\vz_i) \sim q(\vu),  \forall \vz_i \in \mathcal{Z}_t$. As shown in \citep{khan2017conjugate, adam2021dual}, we can view the dual parameters derived in \cref{sec:sparse-dual-gp}, as {\color{red} TODO}.  Then, we can rewrite the sparse GP posterior for $q(\vu)$ in terms of the following approximate normal distributions:
 %
@@ -1655,21 +1655,31 @@ Laplace-GGN.
 
 \section{Experiment details}
 \label{app:experiments}
+%
+We provide further details for the experiments presented in the main paper. The illustrative examples in \cref{fig:teaser,fig:banana} include toy problems for regression and classification. The 1D regression problem (\cref{fig:teaser}) uses an MLP with two hidden layers (64 hidden units each, with tanh activation), whereas the 2D banana binary classification problem uses an MLP with two hidden layers (64 hidden units each, with sigmoid activation). Both examples use Adam as the optimizer. We include Python notebooks for trying out the models. The illustrative HMC baseline in \cref{fig:banana} (right) was implemented with the help of hamiltorch (\url{https://github.com/AdamCobb/hamiltorch}). We used ten chains with 10,000 samples each and remove 2000 samples as burn-in.
 
 
-\subsection{Uncertainty quantification on UCI data sets}\label{app:uci}
-Our experiments on the $8$ selected UCI benchmarks \cite{UCI} match those presented in \cite{immer2021improving} in their structure: that is, we run the neural network training and the \our prediction pipeline on $10$ values of prior precision $\delta$, and on $10$ seeds matching those used in \cite{immer2021improving}. After completing the $100$ experiments, we select the $\delta$ with the lowest mean validation set NLPD and report the test set performance statistics in our result tables. The range of $\delta$ used for the hyperparameter search varies depending on dataset and the number of inducing points. Below we list the selected $\delta$ ranges 
+
+
+
+\subsection{Capturing uncertainty in UCI tasks under supervised learning}
+\label{app:uci}
+%
+In \cref{sec:uci} in the main paper, we showed experiments on 8 UCI data sets \cite{UCI} matching those presented in \cite{immer2021improving}. For direct comparison, we replicate the benchmark as in \cite{immer2021improving}: for each data set, we run the neural network training and the \our prediction pipeline on 10 values of prior precision $\delta$ and 10 seeds matching those used in \cite{immer2021improving}. After completing these 100 runs, we select the $\delta$ with the lowest mean validation set NLPD and report the test set performance statistics in our result tables. The range of $\delta$ used for the hyperparameter search varies depending on data set and the number of inducing points. Below we list the selected $\delta$ ranges:
 \begin{itemize}
-\item If dataset $ = $ {\sc digits}: the $10$ $\delta$ values consist of a logspace between $10^{-1}$ and $10^2$, matching \citet{immer2021improving}.
-\item If dataset $= $ {\sc cancer},  and $M > 128$, the $10$ $\delta$ values consist of a logspace between $10^{-1}$ and $10^2$. With too low values of $\delta$, we observed numerical errors in the Cholesky decomposition required for constructing the \our dual.
-\item If dataset $=$ {\sc satellite} and $M < 512$: the $10$ $\delta$ values consist of a logspace between $10^{-1}$ and $10^2$, matching \citet{immer2021improving}.
-\item If dataset $=$ {\sc satellite} and $M \geq 512$: the $10$ $\delta$ values consist of a logspace between $10^{1}$ and $10^2$.  With too low values of $\delta$, we observed numerical errors in the Cholesky decomposition required for constructing the \our dual.
-\item Othewise  the $10$ $\delta$ values consist of a logspace between $10^{-2}$ and $10^2$, matching \citet{immer2021improving}.
+\item {\sc digits}: The ten $\delta$ values are logspaced between $10^{-1}$ and $10^2$, matching~\cite{immer2021improving}.
+\item {\sc cancer}: For $M > 128$, the ten $\delta$ values are logspaced between $10^{-1}$ and $10^2$. With too low values of $\delta$, we observed numerical errors in the Cholesky decomposition required for constructing the \our dual.
+\item {\sc satellite}: For $M < 512$, the tend $\delta$ values are logspaced between $10^{-1}$ and $10^2$, matching~\cite{immer2021improving}.
+\item {\sc satellite}: For $M \geq 512$, the ten $\delta$ values are logspaced between $10^{1}$ and $10^2$.  With too low values of $\delta$, we observed numerical errors in the Cholesky decomposition required for constructing the \our dual.
+\item Othewise: The ten $\delta$ values are logspaced between $10^{-2}$ and $10^2$, matching~\cite{immer2021improving}.
 \end{itemize}
-For each dataset, the prior precision values reported above are in practice divided by the training set size, as we use a mean loss instead of a sum loss. The $\delta$ values are reported here before the scaling for comparison to the implementation in \citet{immer2021improving}.
+
+For each data set, the prior precision values reported above are in practice divided by the training set size, as we use a mean loss instead of a sum loss. The $\delta$ values are reported here before the scaling for matching with the implementation in \cite{immer2021improving}.
 We note that while the ranges of prior precision were clipped for some data sets, the best performance in terms of NLPD was not achieved near the smallest $\delta$ tested. Other numerical considerations relevant to our method are the clipping of the Hessian of the log likelihood, and adding jitter before performing the Cholesky decomposition within the \our dual computation. In contrast to \citet{immer2021improving}, we did not perform any clipping in the Hessian computation, but some of the UCI experiments required adding jitter of size $10^{-6}$ for numerical stability.  
 
-All neural network designs and related hyperparameters are set similarly to \citet{immer2021improving} for a fair comparison, for instance we train the $2$-layer MLPs with learning rate $0.001$ for $10000$ epochs, using the full dataset instead of batching. In addition, we vary the subset size $M \in  \{16, 32, 64, 128, 256, 512 \}$ to observe the impact of sparseness on the predictive performance, see \cref{tbl:uci-appendix} and \cref{tbl:uci-appendix-acc} for the complete NLPD and accuracy results. Our code implementation of the UCI experiments has been built on top of the code provided for \citet{immer2021improving}, using the \our methods provided in the supplementary material.
+All neural network designs and related hyperparameters are set as in \cite{immer2021improving} for a fair comparison, for instance we train the 2-layer MLPs with learning rate $0.001$ for 10,000 epochs, using the full data set instead of batching. In addition, we vary the subset size $M \in  \{16, 32, 64, 128, 256, 512\}$ to observe the impact of sparseness on the predictive performance, see \cref{tbl:uci-appendix} and \cref{tbl:uci-appendix-acc} for the complete NLPD and accuracy results. 
+
+Our code implementation of the UCI experiments has been built on top of the code provided for \cite{immer2021improving}, using the \our method, and is provided in the supplementary material zip file.
 
 \begin{table}[t!] 
   \centering\scriptsize
@@ -1711,7 +1721,7 @@ All neural network designs and related hyperparameters are set similarly to \cit
 %	\setlength{\tabcolsep}{1.2pt}
 %	\setlength{\tblw}{0.083\textwidth}  
 
-\subsection{Uncertainty benchmarks for image data}
+\subsection{Supervised learning on image data sets}
 \label{app:image}
 % Each experiment with the image data sets consisted of the following steps.
 % First, we trained a neural network (MLP for MNIST, CNN for FMNIST) using a prior precision $\delta$.
@@ -1719,9 +1729,8 @@ All neural network designs and related hyperparameters are set similarly to \cit
 % Finally, we evaluated the predictive performance of \our on the validation set.
 % Similarly to the supervised UCI benchmark tasks, a single image experiment consists of the following steps: first, we train a neural network (a MLP for MNIST, a CNN for FMNIST) in the classification task, using a prior precision $\delta$. After training, we prepare the \our method for predictions by computing the dual parameters, and then evaluate the validation set predictive performance of \our. While in principle our method's predictions consist of the GP mean and variance, we include results for using the neural network prediction as a mean instead. For comparison, we gather the GP subset method results for both the GP and neural network means. This experiment set-up is then replicated for a range of prior precision values and learning rates, as we perform a grid search over these hyperparameters by optimizing for the validation set NLPD. We run the experiment on $5$ seeds and pick the hyperparameter by the best mean performance over the seeds. The results reported in \cref{tbl:imagesuper} used a learning rate of $10^{-4}$, and a prior precision of $\delta = 0.0013$ for FMNIST and $\delta = 0.0001$ for MNIST \todo{double check}.
 
-For the image-based classification experiments,
-we include results using both the GP mean prediction and the NN prediction for both \our and the GP subset.
-For the neural network training, we used the same set-up as in \citet{immer2021improving},
+In \cref{sec:image} in the main paper, we included experiments on image data sets. For the image-based classification experiments, we include results using both the GP mean prediction and the NN prediction for both \our and the GP subset.
+For the neural network training, we used the same set-up as in \cite{immer2021improving},
 training the neural networok using Adam for $500$ epochs using a batch size of $512$.
 The results reported in \cref{tbl:imagesuper} used a learning rate of $10^{-4}$
 and we ran each experiment for $5$ seeds.
@@ -1729,87 +1738,88 @@ The MNIST experiments used a prior precision of $\delta=0.0008$
 and the FMNIST experiments used a prior precision of $\delta=0.0013$.
 The experiments with MNIST  used an MLP with two hidden layers of width 128 and Tanh activtions.
 In the FMNIST experiments we followed \cite{immer2021improving} and used a CNN
-architecture with two fully connected classification layers and Tanh activations.
+architecture with two fully connected classification layers and tanh activations.
 
 In contrast to the GP subset implementation in \citet{immer2021improving},
 we do not perform scaling of $\delta$ after the neural network has been trained.
 Instead, we use the same prior precision that was used during training.
 We performeed a grid search over the prior precision for the NN MAP using the validation NLPD.
 We then used this prior precision for the GP predictive (NN) with $M=1024$,
-GP predictive with $M=1024$, SFR (NN) and SFR.
+GP predictive with $M=1024$, \our (NN) and \our.
 We found the MNIST and FMNIST experiments to be numerically stable, even when not performing any clipping in computing the Hessian of the log likelihood, or adding jitter before Cholesky decomposition within the \our dual computation.
 
-\subsection{\our for continual learning}
+\subsection{Updating the network representation in continual learning}
 \label{app:cl-exp}
-\textbf{CL Data sets}
-We conducted our experiments on three common CL data sets \cite{de2021continual, pan2020continual, rudner2022continual}: 
+
+In \cref{sec:cl-exp} in the main paper, we showed how the regularizer described in \cref{sec:sequential} can be used in continual learning to retain a compact representation of the neural network. We conducted our experiments on three common CL data sets \cite{de2021continual, pan2020continual, rudner2022continual}: 
 \begin{itemize}
-	\item[-] Split-MNIST (S-MNIST), that consists in five binary classification tasks each on pair on MNIST classes (\ie, \digit{0}~and~\digit{1}, \digit{2}~and~\digit{3}, \dots, \digit{8}~and~\digit{9});
-	\item[-] Split-FashionMNIST (S-FMNIST), composed of five binary tasks as S-MNIST, but using instead Fashion-MNIST;
-	\item[-] Permuted-MNIST (P-MNIST), that consists of ten tasks, where each one is a ten-way classification task on the entire MNIST data set, where the images' pixels are randomly permuted.
+	\item Split-MNIST (S-MNIST), that consists in five binary classification tasks each on pair on MNIST classes (\ie, \digit{0}~and~\digit{1}, \digit{2}~and~\digit{3}, \dots, \digit{8}~and~\digit{9});
+	\item Split-FashionMNIST (S-FMNIST), composed of five binary tasks as S-MNIST, but using instead Fashion-MNIST;
+	\item Permuted-MNIST (P-MNIST), that consists of ten tasks, where each one is a ten-way classification task on the entire MNIST data set, where the images' pixels are randomly permuted.
 \end{itemize}
 
-Following \cite{pan2020continual, rudner2022continual}, we used a two-layer MLP with 256 hidden units and ReLU activations for S-MNIST and S-FMNIST and a two-layer MLP with 100 hidden units and ReLU activations for P-MNIST, to ensure consistency with the other methods. In our experiments we only consider the single-head setting (SH). This means that for S-MNIST and S-FMNIST, we are dealing with a Class-Incremental Learning (CIL) scenario, where for each task a pair of dijoint classes are presented to the model. The P-MNIST experiments falls instead into the Domain-Incremental Learning (DIL) setting, where the model deals with a data-distribution shift, by progressively observing tasks with different permutations of the image pixels that need to be classified into ten different classes.
+Following \cite{pan2020continual, rudner2022continual}, we used a two-layer MLP with 256 hidden units and ReLU activations for S-MNIST and S-FMNIST and a two-layer MLP with 100 hidden units and ReLU activations for P-MNIST, to ensure consistency with the other methods. In our experiments we only consider the single-head (SH) setting. This means that for S-MNIST and S-FMNIST, we are dealing with a \emph{Class-Incremental Learning} (CIL) scenario, where for each task a pair of dijoint classes are presented to the model. The P-MNIST experiments falls instead into the \emph{Domain-Incremental Learning} (DIL) setting, where the model deals with a data-distribution shift, by progressively observing tasks with different permutations of the image pixels that need to be classified into ten different classes.
 
-In our experiments, we compared the performance of \our-based regularizer against two families of methods: weight-space regularization methods and function-space regularization ones.
+In our experiments, we compared the performance of the \our-based regularizer against two families of methods: weight-space regularization methods and function-space regularization ones.
 For the weight-space methods, we considered Online-EWC~\citep{schwarz2018progress}, SI~\citep{zenke2017continual}, and VCL~\citep{nguyen2018variational}.  % In \cref{tbl:cl_table_1}, we considered VCL with random coresets, which uses coreset points t 
 For the function-space methods, we considered DER~\citep{buzzega2020dark}, FROMP~\citep{pan2020continual}, and S-FSVI~\citep{rudner2022continual}.
 
-For our method, DER, Online-EWC, and SI, we relied on the Mammoth framework proposed by \citep{buzzega2020dark}. On the other hand, we used the available open-source FROMP codebase to conduct the experiments with FROMP, and the S-FSVI codebase to run the experiments on S-FSVI and VCL. We selected the hyperparameters to use with all these methods trying to adapt the ones pointed out in the their original papers. For this reason, we relied on SGD for DER, Online-EWC, and SI, which requires higher learning rates, compared to the others methods for which we used Adam, \ie, our \our regularizer, FROMP, S-FSVI and VCL.
+For our method, DER, Online-EWC, and SI, we relied on the Mammoth framework proposed by \citep{buzzega2020dark}. On the other hand, we used the available open-source FROMP codebase to conduct the experiments with FROMP, and the S-FSVI codebase to run the experiments on S-FSVI and VCL. We selected the hyperparameters to use with all these methods trying to adapt the ones pointed out in the their original papers and the reference implementations. For this reason, we relied on SGD for DER, Online-EWC, and SI, which requires higher learning rates, compared to the others methods for which we used Adam, \ie, our \our regularizer, FROMP, S-FSVI, and VCL.
 
-For the methods relying on a stored subset of training data for each task, we make sure that the same amount of data points store are the same for each method. For DER, which does not select the rehearsal training samples at task boundaries, we cannot apply directly the definition of points per task ($M$), and then we set the dimension of the reservoir buffer to be $T \cdot M$, \ie, total number of tasks times the points per task.
+For the methods relying on a stored subset of training data for each task, we make sure that the number of data points stored are the same for each method. For DER, which does not select the rehearsal training samples at task boundaries, we cannot apply directly the definition of points per task ($M$), and thus we set the dimension of the reservoir buffer to be $T \cdot M$, \ie, total number of tasks times the points per task.
 
-The results reported in \cref{tbl:cl_table_1}, are obtained using the following hyperparameters:
+The results reported in \cref{tbl:cl_table_1}, are obtained using the following hyperparameters. The results are in-line with what has been reported in previous work, notably even better for some of the baseline methods. Thus, we consider the presented results to give a realistic picture of the relative performance of the different methods, and a demonstrating a clear case for applicability of the \our approach in continual learning.
  
 %% Hyperparms used in the different experiments:
-\textbf{S-MNIST (40 pts./task):}
-\begin{itemize}
-	\item[-] Online-EWC: SGD, learning rate $0.03$, batch size  10, number of epochs 1, $\lambda=90$, $\gamma=1.0$.
-	\item[-] SI: SGD, learning rate 0.1, batch size 10, number of epochs 1, $c=1.0$, $\xi=0.9$.
-	\item[-] VCL (with coresets): Adam, learning rate 0.001, batch size 256, number of epochs 100, selection method for coresets random choice.
-	\item[-] DER: SGD with learning rate 0.03, batch size 10, buffer batch size 10, number epochs 1, $\alpha=0.3$, reservoir buffer size 200.
-	\item[-] FROMP: Adam, learning rate $1 \cdot 10^{-4}$, batch size 32, number of epochs 10, $\tau = 10$, random selection for memorable points.
-	\item[-] S-FSVI: Adam, learning rate $5 \cdot 10^{-4}$, batch size 128, number of epochs 10.
-	\item[-] SFR: Adam, learning rate $3 \cdot 10^{-4}$, batch size 32, $\tau=1$, $\delta=0.0001$,  number of epochs 1.
-\end{itemize}
+\paragraph{S-MNIST (40 pts./task):}
+%\begin{itemize}
+	\textbf{Online-EWC}: SGD, learning rate $0.03$, batch size  10, number of epochs 1, $\lambda=90$, $\gamma=1.0$.
+	\textbf{SI}: SGD, learning rate 0.1, batch size 10, number of epochs 1, $c=1.0$, $\xi=0.9$.
+	\textbf{VCL (with coresets)}: Adam, learning rate 0.001, batch size 256, number of epochs 100, selection method for coresets random choice.
+	\textbf{DER}: SGD with learning rate 0.03, batch size 10, buffer batch size 10, number epochs 1, $\alpha=0.3$, reservoir buffer size 200.
+	\textbf{FROMP}: Adam, learning rate $1 \cdot 10^{-4}$, batch size 32, number of epochs 10, $\tau = 10$, random selection for memorable points.
+	\textbf{S-FSVI}: Adam, learning rate $5 \cdot 10^{-4}$, batch size 128, number of epochs 10.
+	\textbf{SFR}: Adam, learning rate $3 \cdot 10^{-4}$, batch size 32, $\tau=1$, $\delta=0.0001$, number of epochs 1.
+%\end{itemize}
 
 
-\textbf{S-MNIST (200 pts./task):}
-\begin{itemize}
-	\item[-] Online-EWC: SGD, learning rate $0.03$, batch size  10, number of epochs 1, $\lambda=90$, $\gamma=1.0$.
-	\item[-] SI: SGD, learning rate 0.1, batch size 10, number of epochs 1, $c=1.0$, $\xi=0.9$.
-	\item[-] VCL (with coresets): Adam, learning rate 0.001, batch size 256, number of epochs 100, selection method for coresets random choice.
-	\item[-] DER: SGD, learning rate 0.03, batch size 10, buffer batch size 10, number epochs 1, $\alpha$ 0.2, reservoir buffer size 1000.
-	\item[-] FROMP: Adam, learning rate $1 \cdot 10^{-4}$, batch size 32, number of epochs 10, $\tau = 10$, random selection for memorable points.
-	\item[-] S-FSVI: Adam, learning rate $5 \cdot 10^{-4}$, batch size 128, number of epochs 80.
-	\item[-] SFR: Adam, learning rate $1 \cdot 10^{-4}$, batch size 32, $\tau=0.5$, $\delta=1 \cdot 10^{-5}$, number of epochs=5.
-\end{itemize}
+\paragraph{S-MNIST (200 pts./task):}
+%\begin{itemize}
+	\textbf{Online-EWC}: SGD, learning rate $0.03$, batch size  10, number of epochs 1, $\lambda=90$, $\gamma=1.0$.
+	\textbf{SI}: SGD, learning rate 0.1, batch size 10, number of epochs 1, $c=1.0$, $\xi=0.9$.
+	\textbf{VCL (with coresets)}: Adam, learning rate 0.001, batch size 256, number of epochs 100, selection method for coresets random choice.
+	\textbf{DER}: SGD, learning rate 0.03, batch size 10, buffer batch size 10, number epochs 1, $\alpha$ 0.2, reservoir buffer size 1000.
+	\textbf{FROMP}: Adam, learning rate $1 \cdot 10^{-4}$, batch size 32, number of epochs 10, $\tau = 10$, random selection for memorable points.
+	\textbf{S-FSVI}: Adam, learning rate $5 \cdot 10^{-4}$, batch size 128, number of epochs 80.
+	\textbf{SFR}: Adam, learning rate $1 \cdot 10^{-4}$, batch size 32, $\tau=0.5$, $\delta=1 \cdot 10^{-5}$, number of epochs 5.
+%\end{itemize}
  
 %% Placeholders for now
-\textbf{S-FMNIST (200 pts./task):}
-\begin{itemize}
-	\item[-] Online-EWC: SGD, learning rate $0.03$, batch size  10, number of epochs 5, $\lambda=90$, $\gamma=1.0$.
-	\item[-] SI: SGD, learning rate 0.1, batch size 10, number of epochs 5, $c=1.0$, $\xi=0.9$.
-	\item[-] VCL (with coresets): Adam, learning rate $1 \cdot 10^{-3}$, batch size 256, number of epochs 100, selection method for coresets random choice.
-	\item[-] DER: SGD, learning rate 0.03, batch size 10, buffer batch size 10, number epochs 5, $\alpha =  0.2$, reservoir buffer size 200.
-	\item[-] FROMP: Adam, learning rate $1 \cdot 10^{-4}$, batch size 32, number of epochs 10, $\tau = 10$, random selection for memorable points.
-	\item[-] S-FSVI: Adam, learning rate $5 \cdot 10^{-4}$, batch size 128, number of epochs 60.
-	\item[-] SFR: Adam, learning rate $3 \cdot 10^{-4}$, batch size 32, $\tau=1.0$, $\delta=0.0001$, number of epochs=5.
-\end{itemize}
+\paragraph{S-FMNIST (200 pts./task):}
+%\begin{itemize}
+	\textbf{Online-EWC}: SGD, learning rate $0.03$, batch size  10, number of epochs 5, $\lambda=90$, $\gamma=1.0$.
+	\textbf{SI}: SGD, learning rate 0.1, batch size 10, number of epochs 5, $c=1.0$, $\xi=0.9$.
+	\textbf{VCL (with coresets)}: Adam, learning rate $1 \cdot 10^{-3}$, batch size 256, number of epochs 100, selection method for coresets random choice.
+	\textbf{DER}: SGD, learning rate 0.03, batch size 10, buffer batch size 10, number epochs 5, $\alpha =  0.2$, reservoir buffer size 200.
+	\textbf{FROMP}: Adam, learning rate $1 \cdot 10^{-4}$, batch size 32, number of epochs 10, $\tau = 10$, random selection for memorable points.
+	\textbf{S-FSVI}: Adam, learning rate $5 \cdot 10^{-4}$, batch size 128, number of epochs 60.
+	\textbf{SFR}: Adam, learning rate $3 \cdot 10^{-4}$, batch size 32, $\tau=1.0$, $\delta=0.0001$, number of epochs 5.
+%\end{itemize}
 
 
-\textbf{P-MNIST (200 pts./task):}
-\begin{itemize}
-	\item[-] Online-EWC: SGD, learning rate $0.1$, batch size 128, number of epochs 10, $\lambda=0.7$, $\gamma=1.0$.
-	\item[-] SI: SGD, learning rate 0.1, batch size 138, number of epochs 10, $c=0.5$, $\xi=1.0$. 
-	\item[-] VCL (with coresets): Adam, learning rate 0.001, batch size 256, number of epochs 100, selection method for coresets random choice.
-	\item[-] DER:  SGD, learning rate 0.01, batch size 128, buffer batch size 128, number epochs 10, $\alpha=0.3$, reservoir buffer size 2000.
-	\item[-] FROMP: Adam, learning rate $1 \cdot 10^{-3}$, batch size 128, number of epochs 10, $\tau = 0.5$, lambda descend selection for memorable points.
-	\item[-] S-FSVI: Adam, learning rate $5 \cdot 10^{-4}$, batch size 128, number of epochs 10.
-	\item[-] SFR: Adam, learning rate $3 \cdot 10^{-4}$, batch size 64, $\tau=1.0$, $\delta=0.0001$. 
-\end{itemize}
+\paragraph{P-MNIST (200 pts./task):}
+%\begin{itemize}
+	\textbf{Online-EWC}: SGD, learning rate $0.1$, batch size 128, number of epochs 10, $\lambda=0.7$, $\gamma=1.0$.
+	\textbf{SI}: SGD, learning rate 0.1, batch size 138, number of epochs 10, $c=0.5$, $\xi=1.0$. 
+	\textbf{VCL (with coresets)}: Adam, learning rate 0.001, batch size 256, number of epochs 100, selection method for coresets random choice.
+	\textbf{DER}:  SGD, learning rate 0.01, batch size 128, buffer batch size 128, number epochs 10, $\alpha=0.3$, reservoir buffer size 2000.
+	\textbf{FROMP}: Adam, learning rate $1 \cdot 10^{-3}$, batch size 128, number of epochs 10, $\tau = 0.5$, lambda descend selection for memorable points.
+	\textbf{S-FSVI}: Adam, learning rate $5 \cdot 10^{-4}$, batch size 128, number of epochs 10.
+	\textbf{SFR}: Adam, learning rate $3 \cdot 10^{-4}$, batch size 64, $\tau=1.0$, $\delta=0.0001$. 
+%\end{itemize}
 
-In addition the ablation experiments for SFR, we used the same hyperparameters reported for the full approach.
+
+Additionally, for the ablation experiments for \our, we used the same hyperparameters as reported for the full approach.
 
 %\section{Extending the CL regularizer to multi-class settings}
 %%\label{sec:cl_multioutput}

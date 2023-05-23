@@ -1393,9 +1393,11 @@ where $A(f)$ is the log partition function and $\sigma(.)$ is the link function.
 \begin{tabular}{@{}ccc@{}}
 \toprule
 Loss        & der 1 & der 2 \\ \midrule
-binomial    &       &       \\
-mse         &       &       \\
-categorical &       &       \\ \bottomrule
+Bernoulli    & $\sigma(f) - y$   & $\sigma(f)(1-\sigma(f))$      \\
+Mse         & $y - f$      & $1$       \\
+Categorical &  $\textrm{softmax}(f_i) - y_i$     &   $\begin{bmatrix}
+		p_1\\ \vdots\\p_k
+	\end{bmatrix}$,     \\ \bottomrule
 \end{tabular}
 \end{table}
 

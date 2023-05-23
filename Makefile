@@ -50,7 +50,7 @@ supplement:
 	mkdir supplement
 
 	# make appendix
-	#gs -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dSAFER -dPrinted=false -dFirstPage=14 -sOutputFile=supplement/supplement.pdf paper/main.pdf
+	gs -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dSAFER -dPrinted=false -dFirstPage=14 -sOutputFile=supplement/supplement.pdf paper/main.pdf
 
 	# make code directory
 	mkdir supplement/code

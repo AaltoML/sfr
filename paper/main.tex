@@ -1652,11 +1652,8 @@ Laplace-GGN.
 \section{Experiment details}
 \label{app:experiments}
 %
-We provide further details for the experiments presented in the main paper. The illustrative examples in \cref{fig:teaser,fig:banana} include toy problems for regression and classification. The 1D regression problem (\cref{fig:teaser}) uses a\todo{Arno adds this.}
+We provide further details for the experiments presented in the main paper. The illustrative examples in \cref{fig:teaser,fig:banana} include toy problems for regression and classification. The 1D regression problem (\cref{fig:teaser}) uses an MLP with two hidden layers (64 hidden units each, with tanh activation), whereas the 2D banana binary classification problem uses an MLP with two hidden layers (64 hidden units each, with sigmoid activation). Both examples use Adam as the optimizer. We include Python notebooks for trying out the models. The illustrative HMC baseline in \cref{fig:banana} (right) was implemented with the help of hamiltorch (\url{https://github.com/AdamCobb/hamiltorch}). We used ten chains with 10,000 samples each and remove 2000 samples as burn-in.
 
-We include Python notebooks for 
-
-%For illustrative purposes, we show our approach on a 1D regression problem (\cref{fig:teaser}) and on the 2D {\sc Banana} classification task (\cref{fig:banana}). In \cref{fig:teaser}, we train an MLP neural network with two hidden layers (64 hidden units each, tanh activation) and pass it through \our. The middle panel shows the \our result on a sparse set of data examples, while the rightmost panel demonstrates fast dual conditioning on new data (from \cref{sec:sequential}). In \cref{fig:banana}, we use an MLP with two hidden layers (64 units, sigmoid) and compare to a HMC sampling result obtained by hamiltorch~\cite{cobb2020scaling}. The HMC result is more expressive, but the results are still similar in terms of quantifying the uncertainty in low-data regions.
 
 
 
@@ -1664,19 +1661,19 @@ We include Python notebooks for
 \subsection{Uncertainty quantification on UCI data sets}
 \label{app:uci}
 %
-Our experiments on the $8$ selected UCI benchmarks \cite{UCI} match those presented in \cite{immer2021improving} in their structure: that is, we run the neural network training and the \our prediction pipeline on $10$ values of prior precision $\delta$, and on $10$ seeds matching those used in \cite{immer2021improving}. After completing the $100$ experiments, we select the $\delta$ with the lowest mean validation set NLPD and report the test set performance statistics in our result tables. The range of $\delta$ used for the hyperparameter search varies depending on data set and the number of inducing points. Below we list the selected $\delta$ ranges 
+In \cref{sec:uci} in the main paper, we showed experiments on 8 UCI data sets \cite{UCI} matching those presented in \cite{immer2021improving}. For direct comparison, we replicate the benchmark as in \cite{immer2021improving}: for each data set, we run the neural network training and the \our prediction pipeline on 10 values of prior precision $\delta$ and 10 seeds matching those used in \cite{immer2021improving}. After completing these 100 runs, we select the $\delta$ with the lowest mean validation set NLPD and report the test set performance statistics in our result tables. The range of $\delta$ used for the hyperparameter search varies depending on data set and the number of inducing points. Below we list the selected $\delta$ ranges:
 \begin{itemize}
-\item {\sc digits}: the $10$ $\delta$ values consist of a logspace between $10^{-1}$ and $10^2$, matching \citet{immer2021improving}.
-\item {\sc cancer}:  and $M > 128$, the $10$ $\delta$ values consist of a logspace between $10^{-1}$ and $10^2$. With too low values of $\delta$, we observed numerical errors in the Cholesky decomposition required for constructing the \our dual.
-\item {\sc satellite}: and $M < 512$: the $10$ $\delta$ values consist of a logspace between $10^{-1}$ and $10^2$, matching \citet{immer2021improving}.
-\item {\sc satellite}: and $M \geq 512$: the $10$ $\delta$ values consist of a logspace between $10^{1}$ and $10^2$.  With too low values of $\delta$, we observed numerical errors in the Cholesky decomposition required for constructing the \our dual.
-\item Othewise:  the $10$ $\delta$ values consist of a logspace between $10^{-2}$ and $10^2$, matching \citet{immer2021improving}.
+\item {\sc digits}: The ten $\delta$ values are logspaced between $10^{-1}$ and $10^2$, matching \cite{immer2021improving}.
+\item {\sc cancer}: For $M > 128$, the ten $\delta$ values are logspaced between $10^{-1}$ and $10^2$. With too low values of $\delta$, we observed numerical errors in the Cholesky decomposition required for constructing the \our dual.
+\item {\sc satellite}: For $M < 512$, the tend $\delta$ values are logspaced between $10^{-1}$ and $10^2$, matching \cite{immer2021improving}.
+\item {\sc satellite}: For $M \geq 512$, the ten $\delta$ values are logspaced between $10^{1}$ and $10^2$.  With too low values of $\delta$, we observed numerical errors in the Cholesky decomposition required for constructing the \our dual.
+\item Othewise: The ten $\delta$ values are logspaced between $10^{-2}$ and $10^2$, matching \cite{immer2021improving}.
 \end{itemize}
 
-For each data set, the prior precision values reported above are in practice divided by the training set size, as we use a mean loss instead of a sum loss. The $\delta$ values are reported here before the scaling for comparison to the implementation in \citet{immer2021improving}.
+For each data set, the prior precision values reported above are in practice divided by the training set size, as we use a mean loss instead of a sum loss. The $\delta$ values are reported here before the scaling for matching with the implementation in \cite{immer2021improving}.
 We note that while the ranges of prior precision were clipped for some data sets, the best performance in terms of NLPD was not achieved near the smallest $\delta$ tested. Other numerical considerations relevant to our method are the clipping of the Hessian of the log likelihood, and adding jitter before performing the Cholesky decomposition within the \our dual computation. In contrast to \citet{immer2021improving}, we did not perform any clipping in the Hessian computation, but some of the UCI experiments required adding jitter of size $10^{-6}$ for numerical stability.  
 
-All neural network designs and related hyperparameters are set similarly to \citet{immer2021improving} for a fair comparison, for instance we train the $2$-layer MLPs with learning rate $0.001$ for 10,000 epochs, using the full data set instead of batching. In addition, we vary the subset size $M \in  \{16, 32, 64, 128, 256, 512 \}$ to observe the impact of sparseness on the predictive performance, see \cref{tbl:uci-appendix} and \cref{tbl:uci-appendix-acc} for the complete NLPD and accuracy results. Our code implementation of the UCI experiments has been built on top of the code provided for \citet{immer2021improving}, using the \our methods provided in the supplementary material.
+All neural network designs and related hyperparameters are set as in \cite{immer2021improving} for a fair comparison, for instance we train the 2-layer MLPs with learning rate $0.001$ for 10,000 epochs, using the full data set instead of batching. In addition, we vary the subset size $M \in  \{16, 32, 64, 128, 256, 512\}$ to observe the impact of sparseness on the predictive performance, see \cref{tbl:uci-appendix} and \cref{tbl:uci-appendix-acc} for the complete NLPD and accuracy results. Our code implementation of the UCI experiments has been built on top of the code provided for \cite{immer2021improving}, using the \our methods provided in the supplementary material.
 
 \begin{table}[t!] 
   \centering\scriptsize

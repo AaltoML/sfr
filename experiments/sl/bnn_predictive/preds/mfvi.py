@@ -1,7 +1,7 @@
 import torch
 from torch.optim import Adam
 
-from preds.models import SiBayesianMLP
+from experiments.sl.bnn_predictive.preds.models import SiBayesianMLP
 from src import BernoulliLh
 import src as ntksvgp
 

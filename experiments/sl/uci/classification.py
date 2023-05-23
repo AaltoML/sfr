@@ -7,8 +7,8 @@ from torch.nn.utils import parameters_to_vector
 
 from experiments.sl.bnn_predictive.preds.optimizers import LaplaceGGN, get_diagonal_ggn
 from experiments.sl.bnn_predictive.preds.models import SiMLP
-from src import BernoulliLh, CategoricalLh, NTKSVGP, NN2GPSubset
-import src as ntksvgp
+from src import SFR, NN2GPSubset
+import src
 
 from experiments.sl.bnn_predictive.preds.predictives import (
     nn_sampling_predictive,
@@ -16,9 +16,7 @@ from experiments.sl.bnn_predictive.preds.predictives import (
     svgp_sampling_predictive,
 )
 from experiments.sl.bnn_predictive.preds.utils import acc, nll_cls, ece
-from experiments.sl.bnn_predictive.preds.mfvi import run_bbb
-from experiments.sl.bnn_predictive.preds.refine import laplace_refine, vi_refine, vi_diag_refine
-from experiments.al.bnn_predictive.preds.datasets import UCIClassificationDatasets
+from experiments.sl.bnn_predictive.preds.datasets import UCIClassificationDatasets
 
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
@@ -27,19 +25,12 @@ torch.backends.cudnn.benchmark = False
 def train(model, likelihood, X_train, y_train, optimizer, n_epochs):
     """Train model with given optimizer and run postprocessing"""
     losses = list()
-    is_bernoulli = isinstance(likelihood, BernoulliLh)
     for i in range(n_epochs):
 
         def closure():
             model.zero_grad()
             f = model(X_train)
-            if not is_bernoulli:
-                return (
-                    likelihood.nn_loss(f=f.squeeze(), y=y_train.squeeze()),
-                    X_train.shape[0],
-                )
-            else:
-                return (
+            return (
                     likelihood.nn_loss(f=f.squeeze(), y=y_train.squeeze()),
                     X_train.shape[0],
                 )
@@ -90,7 +81,7 @@ def create_ntksvgp(
     print(f"Prior prec: {prior_prec}")
     prior = ntksvgp.priors.Gaussian(params=model.parameters, delta=prior_prec)
     if not subset:
-        svgp = NTKSVGP(
+        svgp = SFR(
             network=model,
             prior=prior,
             output_dim=n_classes,
@@ -126,8 +117,7 @@ def inference(
     batch_size=1000,
     activation="tanh",
     n_inducing=64,
-    n_samples=1000,
-    refine=True,
+    n_samples=1000
 ):
     """Full inference (training and prediction)
     storing all relevant quantities and returning a state dictionary.
@@ -143,12 +133,12 @@ def inference(
     if ds_train.C == 2:
         eps = 0.000000001
         eps = 0
-        likelihood = BernoulliLh(EPS=eps)
+        likelihood = src.likelihoods.BernoulliLh(EPS=eps)
         K = 1
     else:
         eps = 0.0000000001
         eps = 0
-        likelihood = CategoricalLh(EPS=eps)
+        likelihood = src.likelihoodsCategoricalLh(EPS=eps)
         K = ds_train.C
 
     print(f'X_train shape: {X_train.shape[0]}')
@@ -240,150 +230,7 @@ def inference(
     res.update(evaluate(fs_test, y_test, lh, "gp_subset_nn", "test"))
     res.update(evaluate(fs_valid, y_valid, lh, "gp_subset_nn", "valid"))
 
-    # BBB
-    # baseline  (needs higher lr)
-    lrv, epochsv = lr * 10, int(n_epochs / 2)
-    res_bbb = run_bbb(
-        ds_train,
-        ds_test,
-        ds_valid,
-        prior_prec,
-        device,
-        likelihood,
-        epochsv,
-        lr=lrv,
-        n_samples_train=1,
-        n_samples_pred=100, # was n_samples
-        n_layers=n_layers,  
-        n_units=n_units,
-        activation=activation,
-    )
-    res["elbos_bbb"] = res_bbb["elbos"]
-    res.update(evaluate(res_bbb["preds_train"], y_train, lh, "bbb", "train"))
-    res.update(evaluate(res_bbb["preds_test"], y_test, lh, "bbb", "test"))
-    res.update(evaluate(res_bbb["preds_valid"], y_valid, lh, "bbb", "valid"))
-
-    # return res
-
-    # Extract relevant variables
-    theta_star = parameters_to_vector(model.parameters()).detach()
-    Sigmad, Sigma_chold = get_diagonal_ggn(optimizer, num_data=X_train.shape[0])
-    Sigma_chol = optimizer.state["Sigma_chol"]
-
-    # SVGP predictive (with GP subset, not true sparse GP)
-    #   fs_train, data_sparse = preds_svgp(X_train, X_train, y_train, model, likelihood,prior_prec,  n_sparse=n_sparse, samples=n_samples, sparse_points=data_sparse, subset=True)
-    #   fs_test, _ = preds_svgp(X_test, X_train, y_train, model, likelihood, prior_prec, n_sparse=n_sparse,  samples=n_samples, sparse_points=data_sparse, subset=True)
-    #   fs_valid, _ = preds_svgp(X_valid, X_train, y_train, model, likelihood, prior_prec,  n_sparse=n_sparse, samples=n_samples, sparse_points=data_sparse, subset=True)
-    #   res.update(evaluate(fs_train, y_train, lh, 'gp_subset', 'train'))
-    #   res.update(evaluate(fs_test, y_test, lh, 'gp_subset', 'test'))
-    #   res.update(evaluate(fs_valid, y_valid, lh, 'gp_subset', 'valid'))
-
-    # LinLaplace full Cov assuming convergence
-    fs_train = preds_glm(
-        X_train, model, likelihood, theta_star, Sigma_chol, samples=n_samples
-    )
-    fs_test = preds_glm(
-        X_test, model, likelihood, theta_star, Sigma_chol, samples=n_samples
-    )
-    fs_valid = preds_glm(
-        X_valid, model, likelihood, theta_star, Sigma_chol, samples=n_samples
-    )
-    res.update(evaluate(fs_train, y_train, lh, "glm", "train"))
-    res.update(evaluate(fs_test, y_test, lh, "glm", "test"))
-    res.update(evaluate(fs_valid, y_valid, lh, "glm", "valid"))
-
-    # LinLapalce diagonal cov
-    fs_train = preds_glm(
-        X_train, model, likelihood, theta_star, Sigma_chold, samples=n_samples
-    )
-    fs_test = preds_glm(
-        X_test, model, likelihood, theta_star, Sigma_chold, samples=n_samples
-    )
-    fs_valid = preds_glm(
-        X_valid, model, likelihood, theta_star, Sigma_chold, samples=n_samples
-    )
-    res.update(evaluate(fs_train, y_train, lh, "glmd", "train"))
-    res.update(evaluate(fs_test, y_test, lh, "glmd", "test"))
-    res.update(evaluate(fs_valid, y_valid, lh, "glmd", "valid"))
-
-    # Laplace-GGN NN sampling (cf Ritter et al.)
-    fs_train = preds_nn(
-        X_train, model, likelihood, theta_star, Sigma_chol, samples=n_samples
-    )
-    fs_test = preds_nn(
-        X_test, model, likelihood, theta_star, Sigma_chol, samples=n_samples
-    )
-    fs_valid = preds_nn(
-        X_valid, model, likelihood, theta_star, Sigma_chol, samples=n_samples
-    )
-    res.update(evaluate(fs_train, y_train, lh, "nn", "train"))
-    res.update(evaluate(fs_test, y_test, lh, "nn", "test"))
-    res.update(evaluate(fs_valid, y_valid, lh, "nn", "valid"))
-
-    # Laplace-GGN diagonal cov
-    fs_train = preds_nn(
-        X_train, model, likelihood, theta_star, Sigma_chold, samples=n_samples
-    )
-    fs_test = preds_nn(
-        X_test, model, likelihood, theta_star, Sigma_chold, samples=n_samples
-    )
-    fs_valid = preds_nn(
-        X_valid, model, likelihood, theta_star, Sigma_chold, samples=n_samples
-    )
-    res.update(evaluate(fs_train, y_train, lh, "nnd", "train"))
-    res.update(evaluate(fs_test, y_test, lh, "nnd", "test"))
-    res.update(evaluate(fs_valid, y_valid, lh, "nnd", "valid"))
-
-    # REFINEMENT
-    if not refine:
-        print("Skipping refinement")
-        return res
-
-    # Full Laplace
-    m, S_chol, S_chold, losses = laplace_refine(
-        model, X_train, y_train, likelihood, prior_prec
-    )
-
-    res["losses_lap"] = losses
-    fs_train = preds_glm(X_train, model, likelihood, m, S_chol, samples=n_samples)
-    fs_test = preds_glm(X_test, model, likelihood, m, S_chol, samples=n_samples)
-    fs_valid = preds_glm(X_valid, model, likelihood, m, S_chol, samples=n_samples)
-    res.update(evaluate(fs_train, y_train, lh, "glmLap", "train"))
-    res.update(evaluate(fs_test, y_test, lh, "glmLap", "test"))
-    res.update(evaluate(fs_valid, y_valid, lh, "glmLap", "valid"))
-
-    # Diag Laplace
-    fs_train = preds_glm(X_train, model, likelihood, m, S_chold, samples=n_samples)
-    fs_test = preds_glm(X_test, model, likelihood, m, S_chold, samples=n_samples)
-    fs_valid = preds_glm(X_valid, model, likelihood, m, S_chold, samples=n_samples)
-    res.update(evaluate(fs_train, y_train, lh, "glmLapd", "train"))
-    res.update(evaluate(fs_test, y_test, lh, "glmLapd", "test"))
-    res.update(evaluate(fs_valid, y_valid, lh, "glmLapd", "valid"))
-
-    # Full VI
-    m, S_chol, losses = vi_refine(model, optimizer, X_train, y_train, likelihood)
-    res["elbos_vi"] = losses
-    res["elbo_glm"] = losses[-1]
-    fs_train = preds_glm(X_train, model, likelihood, m, S_chol, samples=n_samples)
-    fs_test = preds_glm(X_test, model, likelihood, m, S_chol, samples=n_samples)
-    fs_valid = preds_glm(X_valid, model, likelihood, m, S_chol, samples=n_samples)
-    res.update(evaluate(fs_train, y_train, lh, "glmVI", "train"))
-    res.update(evaluate(fs_test, y_test, lh, "glmVI", "test"))
-    res.update(evaluate(fs_valid, y_valid, lh, "glmVI", "valid"))
-
-    # Diag VI
-    m, S_chold, losses = vi_diag_refine(model, optimizer, X_train, y_train, likelihood)
-    res["elbos_vid"] = losses
-    res["elbo_glmd"] = losses[-1]
-    fs_train = preds_glm(X_train, model, likelihood, m, S_chold, samples=n_samples)
-    fs_test = preds_glm(X_test, model, likelihood, m, S_chold, samples=n_samples)
-    fs_valid = preds_glm(X_valid, model, likelihood, m, S_chold, samples=n_samples)
-    res.update(evaluate(fs_train, y_train, lh, "glmVId", "train"))
-    res.update(evaluate(fs_test, y_test, lh, "glmVId", "test"))
-    res.update(evaluate(fs_valid, y_valid, lh, "glmVId", "valid"))
-
     return res
-
 
 def main(
     ds_train, ds_test, ds_valid, deltas, device, dataset, name, seed, res_dir, **kwargs
@@ -468,9 +315,6 @@ if __name__ == "__main__":
         type=int,
         default=64,
     )
-    parser.add_argument(
-        "--refine", help="on/off switch for posterior refinement", type=int
-    )
     args = parser.parse_args()
     dataset = args.dataset
     double = args.double
@@ -487,12 +331,9 @@ if __name__ == "__main__":
     root_dir = args.root_dir
     res_folder = args.res_folder
     batch_size = args.batch_size
-    refine = args.refine
-    refine = bool(refine)
-    print(f"Refine: {refine}")
 
     data_dir = os.path.join(root_dir, "data")
-    res_dir = os.path.join(root_dir, "experiments", "results", "uci", res_folder)
+    res_dir = os.path.join(root_dir,  "results", res_folder)
     if not os.path.isdir(res_dir):
         os.mkdir(res_dir)
     print(f"Writing results to {res_dir}")
@@ -557,6 +398,5 @@ if __name__ == "__main__":
         batch_size=batch_size, 
         activation=activation,
         n_inducing=n_inducing,
-        n_samples=n_samples,
-        refine=refine,
+        n_samples=n_samples
     )

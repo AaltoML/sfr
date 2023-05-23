@@ -78,7 +78,6 @@ supplement:
 	cp -r experiments/sl/configs supplement/code/experiments/sl/configs
 	mkdir supplement/code/experiments/sl/bnn_predictive
 	cp -r experiments/sl/bnn_predictive/preds supplement/code/experiments/sl/bnn_predictive/preds
-	cp -r experiments/sl/bnn_predictive/data supplement/code/experiments/sl/bnn_predictive/data
 	mkdir supplement/code/experiments/sl/uci
 	cp -r experiments/sl/uci supplement/code/experiments/sl/uci
 	cp experiments/sl/README.md supplement/code/experiments/sl/

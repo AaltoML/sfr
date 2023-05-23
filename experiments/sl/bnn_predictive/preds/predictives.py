@@ -2,12 +2,10 @@ import logging
 
 import src as ntksvgp
 import torch
-from preds.gradients import Jacobians_naive
-from preds.kron import Kron
-from preds.likelihoods import GaussianLh, get_Lams_Vys
-from preds.optimizers import GGN
-from preds.svgp import SVGPNTK
-from src import NTKSVGP
+from experiments.sl.bnn_predictive.preds.gradients import Jacobians_naive
+from experiments.sl.bnn_predictive.preds.kron import Kron
+from experiments.sl.bnn_predictive.preds.likelihoods import GaussianLh, get_Lams_Vys
+from experiments.sl.bnn_predictive.preds.optimizers import GGN
 from torch.distributions import LowRankMultivariateNormal, MultivariateNormal, Normal
 from torch.nn.utils import parameters_to_vector, vector_to_parameters
 from torch.utils.data import DataLoader, TensorDataset

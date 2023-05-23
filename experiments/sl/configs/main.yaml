@@ -87,7 +87,6 @@ likelihood:
 
 wandb:
   group: ${dataset}
-  entity: "XXXXX"
   project: "sfr-sl"
   use_wandb: False
   run_name: delta=${prior.delta}-lr=${lr}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}

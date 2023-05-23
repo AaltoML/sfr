@@ -1578,17 +1578,18 @@ we use a bacth size of 512
 
 
 \subsection{Uncertainty quantification on UCI data sets}\label{app:uci}
-Our experiments on the $8$ selected UCI benchmarks \cite{UCI} match those presented in \cite{immer2021improving} in their structure: that is, we run the neural network training and the \our prediction pipeline on $16$ values of prior precision $\delta$, and on $10$ seeds matching those used in \cite{immer2021improving}. After completing the $160$ experiments, we select the $\delta$ with the lowest mean validation set NLPD and report the test set performance statistics in our result tables. The range of $\delta$ used for the hyperparameter search varies depending on dataset and the number of inducing points. Below we list the selected $\delta$ ranges 
+Our experiments on the $8$ selected UCI benchmarks \cite{UCI} match those presented in \cite{immer2021improving} in their structure: that is, we run the neural network training and the \our prediction pipeline on $10$ values of prior precision $\delta$, and on $10$ seeds matching those used in \cite{immer2021improving}. After completing the $100$ experiments, we select the $\delta$ with the lowest mean validation set NLPD and report the test set performance statistics in our result tables. The range of $\delta$ used for the hyperparameter search varies depending on dataset and the number of inducing points. Below we list the selected $\delta$ ranges 
 \begin{itemize}
-\item If dataset $ = $ {\sc digits}: the $16$ $\delta$ values consist of a logspace between $10^{-1}$ and $10^2$, matching \citet{immer2021improving}.
-\item If dataset $= $ {\sc cancer},  and $M > 128$, the $16$ $\delta$ values consist of a logspace between $10^{-1}$ and $10^2$. With too low values of $\delta$, we observed numerical errors in the Cholesky decomposition required for constructing the \our dual.
-\item If dataset $=$ {\sc satellite} and $M < 512$: the $16$ $\delta$ values consist of a logspace between $10^{-1}$ and $10^2$, matching \citet{immer2021improving}.
-\item If dataset $=$ {\sc satellite} and $M \geq 512$: the $16$ $\delta$ values consist of a logspace between $10^{1}$ and $10^2$.  With too low values of $\delta$, we observed numerical errors in the Cholesky decomposition required for constructing the \our dual.
-\item Othewise  the $16$ $\delta$ values consist of a logspace between $10^{-2}$ and $10^2$, matching \citet{immer2021improving}.
+\item If dataset $ = $ {\sc digits}: the $10$ $\delta$ values consist of a logspace between $10^{-1}$ and $10^2$, matching \citet{immer2021improving}.
+\item If dataset $= $ {\sc cancer},  and $M > 128$, the $10$ $\delta$ values consist of a logspace between $10^{-1}$ and $10^2$. With too low values of $\delta$, we observed numerical errors in the Cholesky decomposition required for constructing the \our dual.
+\item If dataset $=$ {\sc satellite} and $M < 512$: the $10$ $\delta$ values consist of a logspace between $10^{-1}$ and $10^2$, matching \citet{immer2021improving}.
+\item If dataset $=$ {\sc satellite} and $M \geq 512$: the $10$ $\delta$ values consist of a logspace between $10^{1}$ and $10^2$.  With too low values of $\delta$, we observed numerical errors in the Cholesky decomposition required for constructing the \our dual.
+\item Othewise  the $10$ $\delta$ values consist of a logspace between $10^{-2}$ and $10^2$, matching \citet{immer2021improving}.
 \end{itemize}
+For each dataset, the prior precision values reported above are in practice divided by the training set size, as we use a mean loss instead of a sum loss. The $\delta$ values are reported here before the scaling for comparison to the implementation in \citet{immer2021improving}.
 We note that while the ranges of prior precision were clipped for some data sets, the best performance in terms of NLPD was not achieved near the smallest $\delta$ tested. Other numerical considerations relevant to our method are the clipping of the Hessian of the log likelihood, and adding jitter before performing the Cholesky decomposition within the \our dual computation. In contrast to \citet{immer2021improving}, we did not perform any clipping in the Hessian computation, but some of the UCI experiments required adding jitter of size $10^{-6}$ for numerical stability.  
 
-\par All neural network designs and related hyperparameters are set similarly to \citet{immer2021improving} for a fair comparison, for instance we train the $2$-layer MLPs with learning rate $0.001$ for $10000$ epochs, using the full dataset instead of batching. In addition, we vary the subset size $M \in  \{16, 32, 64, 128, 256, 512 \}$ to observe the impact of sparseness on the predictive performance, see \cref{tbl:uci-appendix} for the complete results. Our code implementation of the UCI experiments has been built on top of the code provided for \citet{immer2021improving}, using the \our methods provided in the supplementary material.
+\par All neural network designs and related hyperparameters are set similarly to \citet{immer2021improving} for a fair comparison, for instance we train the $2$-layer MLPs with learning rate $0.001$ for $10000$ epochs, using the full dataset instead of batching. In addition, we vary the subset size $M \in  \{16, 32, 64, 128, 256, 512 \}$ to observe the impact of sparseness on the predictive performance, see \cref{tbl:uci-appendix} and \cref{tbl:uci-appendix-acc} for the complete NLPD and accuracy results. Our code implementation of the UCI experiments has been built on top of the code provided for \citet{immer2021improving}, using the \our methods provided in the supplementary material.
 
 \begin{table}[t!] 
   \centering\scriptsize
@@ -1597,7 +1598,7 @@ We note that while the ranges of prior precision were clipped for some data sets
 	% Control table spacing
 	\renewcommand{\arraystretch}{1.}
 	\setlength{\tabcolsep}{2pt}
-	\setlength{\tblw}{0.25\textwidth}  
+	\setlength{\tblw}{0.15\textwidth}  
 	
 	% Custom error formatting
 	\newcommand{\val}[2]{%
@@ -1605,13 +1606,37 @@ We note that while the ranges of prior precision were clipped for some data sets
 	} 
 
     % THE TABLE NUMBER ARE GENERATED BY A SCRIPT	
-	\input{tables/uci_all.tex}
+	\input{tables/uci_all_nll.tex}
 \end{table}
 
 
+\begin{table}[t!] 
+  \centering\scriptsize
+  \caption{The accuracy of our \our method compared to a GP subset based method which discards most of the data. Even with a small $M$ our method is able to provide good results.} 
+	\label{tbl:uci-appendix-acc}
+	% Control table spacing
+	\renewcommand{\arraystretch}{1.}
+	\setlength{\tabcolsep}{2pt}
+	\setlength{\tblw}{0.15\textwidth}  
+	
+	% Custom error formatting
+	\newcommand{\val}[2]{%
+		$#1$\textcolor{gray}{\tiny ${\pm}#2$}
+	} 
+
+    % THE TABLE NUMBER ARE GENERATED BY A SCRIPT	
+	\input{tables/uci_all_acc.tex}
+\end{table}
+%\renewcommand{\arraystretch}{1.}
+%	\setlength{\tabcolsep}{1.2pt}
+%	\setlength{\tblw}{0.083\textwidth}  
+
 \subsection{Uncertainty benchmarks for image data}
 \label{app:image}
+Similarly to the supervised UCI benchmark tasks, a single image experiment consists of the following steps: first, we train a neural network (a MLP for MNIST, a CNN for FMNIST) in the classification task, using a prior precision $\delta$. After training, we prepare the \our method for predictions by computing the dual, and then evaluate the validation set predictive performance of \our. While in principle our method's predictions consist of the GP mean and variance, we include results for using the neural network prediction as a mean instead. For comparison, we gather the GP subset method results for both the GP and neural network means. This experiment set-up is then replicated for a range of prior precision values and learning rates, as we perform a grid search over these hyperparameters by optimizing for the validation set NLPD. We run the experiment on $5$ seeds and pick the hyperparameter by the best mean performance over the seeds. The results reported in \cref{tbl:imagesuper} used a learning rate of $10^{-4}$ and a prior precision of [INSERT VALUE]. 
 
+
+For the neural network training, we used the same set-up as in \citet{immer2021improving}, where the batch size is $512$ and the neural networks are trained for $500$ epochs, and the neural network designs were unchanged. In contrast to the GP subset implementation in \citet{immer2021improving}, we do not perform scaling of $\delta$ after the neural network has been trained, but use the same prior precision in \our as was used in the regularizer term while training. Avoiding this post-hoc tuning stage allows us to forgo the additional hyperparameter optimization step for the prior precision multiplier. We found the MNIST and FMNIST experiments to be numerically stable, even when not performing any clipping in computing the Hessian of the log likelihood, or adding jitter before Cholesky decomposition within the \our dual computation. 
 
 \subsection{\our for continual learning}
 \label{app:cl-exp}

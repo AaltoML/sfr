@@ -539,7 +539,10 @@ if __name__ == "__main__":
         valid=True,
         double=double,
     )
-
+    print(f'Dataset size: {len(ds_train) + len(ds_valid) + len(ds_test)}')
+    print(f'N classes: {ds_train.C}')
+    print(f'N inputs: {ds_train.data.shape}')
+    assert 1 == 0
     deltas = np.logspace(logd_min, logd_max, n_deltas)
     main(
         ds_train,

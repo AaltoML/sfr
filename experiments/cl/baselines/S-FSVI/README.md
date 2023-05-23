@@ -17,14 +17,14 @@ This environment includes all necessary dependencies.
 ### S-MNIST 40pts./task
 #### S-FSVI
 ``` bash
-python cl_v2 --data_training continual_learning_smnist_sh_40 --model_type fsvi_mlp --optimizer adam --momentum 0.0 --momentum_var 0.0 \
---architecture fc_256_256 --activation relu --prior_mean 0.0 --prior_cov 0.001 --prior_covs 0.0 --prior_type bnn_induced --epochs 10 \
---start_var_opt 0 --batch_size 128 --learning_rate 0.0005 --learning_rate_var 0.001 --dropout_rate 0.0 --regularization 0.0 --context_points 0 \
---n_marginals 1 --n_condition 0 --context_point_type uniform_rand --kl_scale equal --td_prior_scale 0.0 --feature_update 1 --n_samples 5 \
---n_samples_eval 5 --tau 1.0 --noise_std 1.0 --ind_lim ind_-1_1 --name --init_logvar 0.0 0.0 --init_logvar_lin 0.0 0.0 --init_logvar_conv 0.0 0.0 \
---perturbation_param 0.01 --logroot sfsvi --subdir smnist_40 --n_context_points 40 --context_points_bound 0.0 1.0 --context_points_add_mode 0 --logging 1 \
---coreset random --coreset_entropy_mode soft_highest --coreset_entropy_offset 0.0 --coreset_kl_heuristic lowest --coreset_kl_offset 0.0 --coreset_elbo_heuristic lowest \
---coreset_elbo_offset 0.0 --coreset_entropy_n_mixed 1 --augment_mode constant --loss_type 1 --seed=<SEED>
+python cli.py cl_v2 --data_training continual_learning_smnist_sh_40 --model_type fsvi_mlp --optimizer adam --momentum 0.0 --momentum_var 0.0 \
+    --architecture fc_256_256 --activation relu --prior_mean 0.0 --prior_cov 0.001 --prior_covs 0.0 --prior_type bnn_induced --epochs 10 \
+    --start_var_opt 0 --batch_size 128 --learning_rate 0.0005 --learning_rate_var 0.001 --dropout_rate 0.0 --regularization 0.0 --context_points 0 \
+    --n_marginals 1 --n_condition 0 --context_point_type uniform_rand --kl_scale equal --td_prior_scale 0.0 --feature_update 1 --n_samples 5 \
+    --n_samples_eval 5 --tau 1.0 --noise_std 1.0 --ind_lim ind_-1_1 --name --init_logvar 0.0 0.0 --init_logvar_lin 0.0 0.0 --init_logvar_conv 0.0 0.0 \
+    --perturbation_param 0.01 --logroot sfsvi --subdir smnist_40 --n_context_points 40 --context_points_bound 0.0 1.0 --context_points_add_mode 0 --logging 1 \
+    --coreset random --coreset_entropy_mode soft_highest --coreset_entropy_offset 0.0 --coreset_kl_heuristic lowest --coreset_kl_offset 0.0 --coreset_elbo_heuristic lowest \
+    --coreset_elbo_offset 0.0 --coreset_entropy_n_mixed 1 --augment_mode constant --loss_type 1 --seed=<SEED>
 ```
 #### VCL (with random coresets)
 ``` bash

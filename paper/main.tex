@@ -944,7 +944,7 @@ fix the number of inducing points $M=1024$.
 For completeness, we also include the GP predictive result from \cite{immer2021improving} which used more inducing points $M=3200$.
 The results in \cref{tbl:imagesuper} agree with the conclusions drawn from the UCI experiments showing that \our is able to more efficiently capture the posterior using a sparse set of points.
 They further demonstrate that \our's predictive mean (GP) significantly outperforms the GP predictive subset.
-This is an interesting result as we cannot rely on the NN's prediction if we wish to condition on new data, using the dual conditioning from \label{sec:sequential}.
+This is an interesting result as we cannot rely on the NN's prediction if we wish to condition on new data, using the dual conditioning from \cref{sec:sequential}.
 In this setting, we must rely on our GP's predictive mean.
 % Other approaches, \cite{immer2021improving} never inten
 % The resutls demonstrate that \our's predictive GP mean significantly outperforms the

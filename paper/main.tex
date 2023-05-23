@@ -1593,7 +1593,7 @@ All neural network designs and related hyperparameters are set similarly to \cit
 
 \begin{table}[t!] 
   \centering\scriptsize
-  \caption{Complements \cref{tbl:uci} in the main paper: Negative log predictive density (NLPD, lower better) for our \our method compared to a GP subset based method which discards most of the data \cite{immer2021improving}. These UCI data sets (num.\ of points $N$, input dim.\ $D$, num.\ classes $C$) demonstrate that even with a small number $M$ of inducing points our method is able to capture good predictive densities.} 
+  \caption{Complements \cref{tbl:uci} in the main paper: Negative log predictive density (NLPD, lower better) for our \our method compared to a GP subset based method~\cite{immer2021improving} which discards most of the data. These UCI data sets (num.\ of points $N$, input dim.\ $D$, num.\ classes $C$) demonstrate that even with a small number $M$ of inducing points our method is able to capture good predictive densities.} 
 	\label{tbl:uci-appendix}
 	% Control table spacing
 	\renewcommand{\arraystretch}{1.}
@@ -1612,12 +1612,12 @@ All neural network designs and related hyperparameters are set similarly to \cit
 
 \begin{table}[t!] 
   \centering\scriptsize
-  \caption{The accuracy of our \our method compared to a GP subset based method which discards most of the data. Even with a small $M$ our method is able to provide good results.} 
+  \caption{Complements \cref{tbl:uci-appendix}: We also report the accuracy for each number of inducing points $M$ for both our \our and the GP subset method. The differences in the accuracies is not as big as in NLPD which is not surprising as it is generally easier to capture first-order information with sparse methods. However, with small $M$ \our still shows clearly better performance.} 
 	\label{tbl:uci-appendix-acc}
 	% Control table spacing
 	\renewcommand{\arraystretch}{1.}
 	\setlength{\tabcolsep}{2pt}
-	\setlength{\tblw}{0.15\textwidth}  
+	\setlength{\tblw}{0.25\textwidth}  
 	
 	% Custom error formatting
 	\newcommand{\val}[2]{%

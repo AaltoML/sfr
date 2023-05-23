@@ -1470,15 +1470,15 @@ Finally, we can rewrite $\mathcal{R}_\mathrm{\our}$ as follows
 
 \section{\our for model-based reinforcement learning}
 \label{app:rl}
-In this appendix, we provide more details of the reinforcement learning experiments, including
-how we used \our in this setting.
+%
+As a final experiment in the main paper in \cref{sec:rl-exp}, we provided a demonstration of combining our \our approach with model-based reinforcement learning. As such, this is a direct extension of the uncertainty quantification and representation capabilities already demonstrated in the supervised (and continual) learning examples in the main paper. However, the RL setting requires slightly more background to it and thus \cref{app:rl} has been separated out to a separate section in the appendix. In this appendix, we provide details of the reinforcement learning experiments, including how we used \our in this setting.
 
 \subsection{Background}
 We consider environments with states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \),
 actions \(\action \in \actionDomain \subseteq \R^{D_{\action}}\) and transition dynamics
 \(\transitionFn: \stateDomain \times \actionDomain \rightarrow \stateDomain \), such that
 $\state_{t+1} = \transitionFn(\state_{t}, \action_{t}) + \noise_{t}$, where  $\noise_{t}$
-is i.i.d. transition noise.
+is i.i.d.\ transition noise.
 We consider the episodic setting where the system is reset to an initial state $\state_{0}$ at each episode and we
 assume that there is a known reward function $r : \stateDomain \times \actionDomain \rightarrow \R$.
 % Following the Markov decision process formulation \cite{bellmanMarkovianDecisionProcess1957a}, we
@@ -1528,16 +1528,16 @@ In practice, it is common to approximate the infinite sum in \cref{eq-posterior-
 by planning over a finite
 horizon and bootstrapping with a learned value function.
 Following this approach, our planning algorithim is given by,
-\begin{align} \label{eq-fast-update-mpc}
+\begin{equation} \label{eq-fast-update-mpc}
   \policy^{\text{PS}}(\state) = \arg \max_{\action_{0}} \max_{\action_{1:\Horizon}}
-\E \bigg[ \sum_{t=0}^{H-1} \gamma^{t} r(\state_{t},\action_{t}) \mid \state_{0}=\state  \bigg] + Q_{\theta}(\state_{\Horizon}, \action_{H})
-\quad \text{s.t. } \state_{t+1} &= \tilde{\transitionFn}(\state_{t}, \action_{t}) + \noise_{t}
-\end{align}
-where $\tilde{\transitionFn} \sim q_{\mathbf{u}}(\transitionFn \mid \dataset)$ is a sample from the
-dynamics posterior and
+\E \bigg[ \sum_{t=0}^{H-1} \gamma^{t} r(\state_{t},\action_{t}) \mid \state_{0}=\state  \bigg] + Q_{\theta}(\state_{\Horizon}, \action_{H}),
+%\quad \text{s.t. } \state_{t+1} &= \tilde{\transitionFn}(\state_{t}, \action_{t}) + \noise_{t}
+\end{equation}
+such that $\state_{t+1} = \tilde{\transitionFn}(\state_{t}, \action_{t}) + \noise_{t}$, 
+where $\tilde{\transitionFn} \sim q_{\mathbf{u}}(\transitionFn \mid \dataset)$ is a sample from the dynamics posterior and
 ${Q_{\theta}(\state, \action) \approx \E \big[ \sum_{t=0}^{H-1} \gamma^{t} r(\state_{t},\action_{t}) \mid \state_{0}=\state, \action_{0}=\action  \big]}$
 is a learned value function with parameters $\theta$.
-We use deep deterministic policy gradient (DDPG) \cite{lillicrapContinuousControlDeep2016} to learn the action value function $Q_{\theta}$.
+We use deep deterministic policy gradient (DDPG, \cite{lillicrapContinuousControlDeep2016}) to learn the action value function $Q_{\theta}$.
 Note that we also learn a policy but its sole purpose is for learning the value function.
 
 % \todo{what is correct citation for MPPI?}
@@ -1554,7 +1554,7 @@ After $J$ iterations the first action is executed in the environment.
 
 
 \subsection{Environment}
-We consider the cart pole swing up task in MuJoCo \cite{todorov2012mujoco}.
+We consider the cartpole swingup task in MuJoCo~\cite{todorov2012mujoco}.
 However, we make exploration difficult by implementing a sparse reward function which returns $0$ unless the reward is over a threshold value. That is, our reward function is given by,
 $$\hat{r}(\state_{t}, \action_{t}) =
 \begin{cases}
@@ -1562,10 +1562,10 @@ $$\hat{r}(\state_{t}, \action_{t}) =
     0,              & \text{otherwise}
 \end{cases}
 $$
-In all experiments we collected an initial data set using a random policy for one episode and
-we set action repeat as two.
+In all experiments we collected an initial data set using a random policy for one episode and we set action repeat as two.
 
-\subsection{Experiment Configuration}
+\subsection{Experiment configuration}
+%
 This section details how we configured and ran our reinforcement learning experiments.
 
 \textbf{Dynamic model}
@@ -1598,8 +1598,7 @@ We used a temperature of $0.5$ and momentum $0.1$.
 
 \textbf{MLP}
 As a baseline, we ran experiments using only the MLP dynamic model with no uncertainty.
-As can be seen in \cref{fig:rl}, this strategy is not always able to solve the task, indicated by
-the magenta line converging at $\sim 310$.
+As can be seen in \cref{fig:rl}, this strategy is not always able to solve the task, indicated by the magenta line converging at $\sim 310$.
 This is expected because this strategy has no principled exploration mechanism.
 
 
@@ -1617,7 +1616,7 @@ As expected, the Laplace-GGN is also able to solve the sparse reward environment
 
 
 \textbf{Ensemble}
-The ensemble experiments used $5$ members where each member was an MLP with two hidden layers of width $128$ and Tanh activations, i.e. the same architecture as the other experiments.
+The ensemble experiments used $5$ members where each member was an MLP with two hidden layers of width $128$ and Tanh activations, \ie\ the same architecture as the other experiments.
 At each episode, the ensemble was trained for $10000$ iterations using the Adam optimiser.
 We used a learning rate $0.0001$ and a batch size of $64$.
 At each time step in the planning horizon we used the following procedure to sample from the ensemble.

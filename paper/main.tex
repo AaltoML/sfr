@@ -684,7 +684,7 @@ where the sparse dual variables are now a sum over \emph{all data points}, with 
 \end{equation}
 where $\MKzz$ and $\vkzs$ are defined similarly to $\MKxx$ and $\vk_{\vx i}$ but over the inducing points $\{\vz_j\}_{i=1}^M$, $\vz \in \R^{D}$, instead of the full data set $\dataset$. The key quantities we need to make predictions from our sparse GP from the converged neural network are $(\hat{\alpha}_i, \hat{\beta}_i)$ (\cref{eq:dual_param_laplace}) and a kernel function $\kappa$ (\cref{eq-laplace-approx-function-space}). Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred}, we can see that the computational complexity went from $\mathcal{O}(N^3)$ to $\mathcal{O}(M^3)$, with $M \ll N$.  Crucially, given the structure of our probabilistic model, our sparse dual variables \cref{eq:dual_sparse} are a compact representation of the full model projected using the kernel. 
 
-Unlike our approach, \citet{immer2021improving} employ a subset of the data points to construct a sparse GP, reducing computational complexity. However, the method could be considered less principled for building a sparse model, as it ignores contribution from the complete dataset. It is important to note that the sparsifying process is independent of the approximate inference technique because the dual variables of \cref{eq:dual_param} are computed using \cref{eq-empirical-risk} and a Laplace approximation. More complicated inference techniques, such as variational inference, could be used, but given its simplicity, in our experiments we used the Laplace-GGN approximation with the trained neural network. Furthermore, our dual variable view of approximate inference means we do not need to retrain a separate sparse GP.\looseness-2
+Unlike our approach, \citet{immer2021improving} employ a subset of the data points to construct a sparse GP, reducing computational complexity. However, the method could be considered less principled for building a sparse model, as it ignores contribution from the complete data set. It is important to note that the sparsifying process is independent of the approximate inference technique because the dual variables of \cref{eq:dual_param} are computed using \cref{eq-empirical-risk} and a Laplace approximation. More complicated inference techniques, such as variational inference, could be used, but given its simplicity, in our experiments we used the Laplace-GGN approximation with the trained neural network. Furthermore, our dual variable view of approximate inference means we do not need to retrain a separate sparse GP.\looseness-2
 % \todo{shouldn't this sentence be clear from the context? we derive the mean/kernel function that define the process, then we have a sparse GP already}
 
 
@@ -1408,7 +1408,7 @@ Categorical &  $\textrm{softmax}(f_i) - y_i$     &   $\begin{bmatrix}
 \subsection{Derivation of the regularizer term}
 For continual learning, the model cannot access the training data from previous tasks, denoted here as $\dataset_\textrm{old} = \bigcup_{s=1}^{t-1} \dataset_s$, and for each new tasks receives a new chunk of data $\dataset_\textrm{new} = \dataset_t$. On the other hand, in the supervised learning setting (described in \cref{sec:methods}) the neural network model has access to all the training data at once, \ie, the objective we are trying to optimize is
 \begin{equation}
-	\weights^* = \argmin_\weights \mathcal{L}(\dataset_\textrm{old} \cup \dataset_\textrm{new}, \weights) = \argmin_\weights \sum_{i \in \dataset_\textrm{old} \cup \dataset_\textrm{new}}\ell(f_\weights(\mathbf{x}_{i}), y_i) + \delta \mathcal{R}(\weights).
+	\weights^* = \arg \min_\weights \mathcal{L}(\dataset_\textrm{old} \cup \dataset_\textrm{new}, \weights) = \arg \min_\weights \sum_{i \in \dataset_\textrm{old} \cup \dataset_\textrm{new}}\ell(f_\weights(\mathbf{x}_{i}), y_i) + \delta \mathcal{R}(\weights).
 \end{equation} 
 Our goal in the continual setting is to replace the missing data coming from $\dataset_\textrm{old}$ by resorting to a functional regularizer that accounts for that by forcing the predictions of the neural networks over the inducing points $\mathcal{Z}_t$ to come with high probability from $f_\weights(\vz_i) \sim q(\vu),  \forall \vz_i \in \mathcal{Z}_t$. As shown in \citep{khan2017conjugate, adam2021dual}, we can view the dual parameters derived in \cref{sec:sparse-dual-gp}, as {\color{red} TODO}.  Then, we can rewrite the sparse GP posterior for $q(\vu)$ in terms of the following approximate normal distributions:
 %
@@ -1645,21 +1645,32 @@ Laplace-GGN.
 
 \section{Experiment details}
 \label{app:experiments}
+%
+We provide further details for the experiments presented in the main paper. The illustrative examples in \cref{fig:teaser,fig:banana} include toy problems for regression and classification. The 1D regression problem (\cref{fig:teaser}) uses a\todo{Arno adds this.}
+
+We include Python notebooks for 
+
+%For illustrative purposes, we show our approach on a 1D regression problem (\cref{fig:teaser}) and on the 2D {\sc Banana} classification task (\cref{fig:banana}). In \cref{fig:teaser}, we train an MLP neural network with two hidden layers (64 hidden units each, tanh activation) and pass it through \our. The middle panel shows the \our result on a sparse set of data examples, while the rightmost panel demonstrates fast dual conditioning on new data (from \cref{sec:sequential}). In \cref{fig:banana}, we use an MLP with two hidden layers (64 units, sigmoid) and compare to a HMC sampling result obtained by hamiltorch~\cite{cobb2020scaling}. The HMC result is more expressive, but the results are still similar in terms of quantifying the uncertainty in low-data regions.
 
 
-\subsection{Uncertainty quantification on UCI data sets}\label{app:uci}
-Our experiments on the $8$ selected UCI benchmarks \cite{UCI} match those presented in \cite{immer2021improving} in their structure: that is, we run the neural network training and the \our prediction pipeline on $10$ values of prior precision $\delta$, and on $10$ seeds matching those used in \cite{immer2021improving}. After completing the $100$ experiments, we select the $\delta$ with the lowest mean validation set NLPD and report the test set performance statistics in our result tables. The range of $\delta$ used for the hyperparameter search varies depending on dataset and the number of inducing points. Below we list the selected $\delta$ ranges 
+
+
+\subsection{Uncertainty quantification on UCI data sets}
+\label{app:uci}
+%
+Our experiments on the $8$ selected UCI benchmarks \cite{UCI} match those presented in \cite{immer2021improving} in their structure: that is, we run the neural network training and the \our prediction pipeline on $10$ values of prior precision $\delta$, and on $10$ seeds matching those used in \cite{immer2021improving}. After completing the $100$ experiments, we select the $\delta$ with the lowest mean validation set NLPD and report the test set performance statistics in our result tables. The range of $\delta$ used for the hyperparameter search varies depending on data set and the number of inducing points. Below we list the selected $\delta$ ranges 
 \begin{itemize}
-\item If dataset $ = $ {\sc digits}: the $10$ $\delta$ values consist of a logspace between $10^{-1}$ and $10^2$, matching \citet{immer2021improving}.
-\item If dataset $= $ {\sc cancer},  and $M > 128$, the $10$ $\delta$ values consist of a logspace between $10^{-1}$ and $10^2$. With too low values of $\delta$, we observed numerical errors in the Cholesky decomposition required for constructing the \our dual.
-\item If dataset $=$ {\sc satellite} and $M < 512$: the $10$ $\delta$ values consist of a logspace between $10^{-1}$ and $10^2$, matching \citet{immer2021improving}.
-\item If dataset $=$ {\sc satellite} and $M \geq 512$: the $10$ $\delta$ values consist of a logspace between $10^{1}$ and $10^2$.  With too low values of $\delta$, we observed numerical errors in the Cholesky decomposition required for constructing the \our dual.
-\item Othewise  the $10$ $\delta$ values consist of a logspace between $10^{-2}$ and $10^2$, matching \citet{immer2021improving}.
+\item {\sc digits}: the $10$ $\delta$ values consist of a logspace between $10^{-1}$ and $10^2$, matching \citet{immer2021improving}.
+\item {\sc cancer}:  and $M > 128$, the $10$ $\delta$ values consist of a logspace between $10^{-1}$ and $10^2$. With too low values of $\delta$, we observed numerical errors in the Cholesky decomposition required for constructing the \our dual.
+\item {\sc satellite}: and $M < 512$: the $10$ $\delta$ values consist of a logspace between $10^{-1}$ and $10^2$, matching \citet{immer2021improving}.
+\item {\sc satellite}: and $M \geq 512$: the $10$ $\delta$ values consist of a logspace between $10^{1}$ and $10^2$.  With too low values of $\delta$, we observed numerical errors in the Cholesky decomposition required for constructing the \our dual.
+\item Othewise:  the $10$ $\delta$ values consist of a logspace between $10^{-2}$ and $10^2$, matching \citet{immer2021improving}.
 \end{itemize}
-For each dataset, the prior precision values reported above are in practice divided by the training set size, as we use a mean loss instead of a sum loss. The $\delta$ values are reported here before the scaling for comparison to the implementation in \citet{immer2021improving}.
+
+For each data set, the prior precision values reported above are in practice divided by the training set size, as we use a mean loss instead of a sum loss. The $\delta$ values are reported here before the scaling for comparison to the implementation in \citet{immer2021improving}.
 We note that while the ranges of prior precision were clipped for some data sets, the best performance in terms of NLPD was not achieved near the smallest $\delta$ tested. Other numerical considerations relevant to our method are the clipping of the Hessian of the log likelihood, and adding jitter before performing the Cholesky decomposition within the \our dual computation. In contrast to \citet{immer2021improving}, we did not perform any clipping in the Hessian computation, but some of the UCI experiments required adding jitter of size $10^{-6}$ for numerical stability.  
 
-All neural network designs and related hyperparameters are set similarly to \citet{immer2021improving} for a fair comparison, for instance we train the $2$-layer MLPs with learning rate $0.001$ for $10000$ epochs, using the full dataset instead of batching. In addition, we vary the subset size $M \in  \{16, 32, 64, 128, 256, 512 \}$ to observe the impact of sparseness on the predictive performance, see \cref{tbl:uci-appendix} and \cref{tbl:uci-appendix-acc} for the complete NLPD and accuracy results. Our code implementation of the UCI experiments has been built on top of the code provided for \citet{immer2021improving}, using the \our methods provided in the supplementary material.
+All neural network designs and related hyperparameters are set similarly to \citet{immer2021improving} for a fair comparison, for instance we train the $2$-layer MLPs with learning rate $0.001$ for 10,000 epochs, using the full data set instead of batching. In addition, we vary the subset size $M \in  \{16, 32, 64, 128, 256, 512 \}$ to observe the impact of sparseness on the predictive performance, see \cref{tbl:uci-appendix} and \cref{tbl:uci-appendix-acc} for the complete NLPD and accuracy results. Our code implementation of the UCI experiments has been built on top of the code provided for \citet{immer2021improving}, using the \our methods provided in the supplementary material.
 
 \begin{table}[t!] 
   \centering\scriptsize

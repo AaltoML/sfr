@@ -18,6 +18,7 @@ from benchmarking.data_loaders.toy import get_toy_data
 DATA_LOAD = {
     "smnist": get_mnist_or_cifar,
     "smnist_sh": get_mnist_or_cifar,
+    "smnist_sh_40": get_mnist_or_cifar,
     "sfashionmnist": get_mnist_or_cifar,
     "sfashionmnist_sh": get_mnist_or_cifar,
     "pmnist": get_mnist_or_cifar,

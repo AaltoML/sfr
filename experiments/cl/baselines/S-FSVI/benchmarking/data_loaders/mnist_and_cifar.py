@@ -27,6 +27,13 @@ METADATA = {
         "head": "single",
         "n_coreset_inputs_per_task": 200,
     },
+    "smnist_sh_40": {
+        "n_tasks": 5,
+        "n_classes": 10,
+        "mode": "split",
+        "head": "single",
+        "n_coreset_inputs_per_task": 40,
+    },
     "sfashionmnist": {
         "n_tasks": 5,
         "n_classes": 10,
@@ -180,7 +187,7 @@ def _load_raw_dataset(
     :param task: name of the task sequence.
     :return:
     """
-    if task in {"smnist", "smnist_sh", "pmnist"}:
+    if task in {"smnist", "smnist_sh", "smnist_sh_40", "pmnist"}:
         (x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data()
     elif task in {"sfashionmnist", "sfashionmnist_sh", "pfashionmnist"}:
         (x_train, y_train), (
@@ -239,7 +246,7 @@ def _preprocess_data(
     )
     x_train = tf.image.convert_image_dtype(x_train, dtype).numpy()
     x_test = tf.image.convert_image_dtype(x_test, dtype).numpy()
-    if dataset in {"smnist", "smnist_sh", "pmnist", "sfashionmnist", "sfashionmnist_sh", "pfashionmnist"}:
+    if dataset in {"smnist", "smnist_sh", "smnist_sh_40", "pmnist", "sfashionmnist", "sfashionmnist_sh", "pfashionmnist"}:
         x_train = _flatten(x_train)
         x_test = _flatten(x_test)
     y_train = _squeeze(y_train)

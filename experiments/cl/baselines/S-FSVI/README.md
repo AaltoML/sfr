@@ -1,6 +1,6 @@
 # Continual Learning via Sequential Function-Space Variational Inference (S-FSVI)
 
-Contains the adapted implementation for "**_Continual Learning via Sequential Function-Space Variational Inference_**"; Tim G. J. Rudner, Freddie Bickford Smith, Qixuan Feng, Yee Whye Teh, Yarin Gal. **ICML 2022**, to obtain the results with Split-FashionMNIST (SH). This was used to run both models using S-FSVI and VCL.
+Contains the adapted implementation for "**_Continual Learning via Sequential Function-Space Variational Inference_**"; Tim G. J. Rudner, Freddie Bickford Smith, Qixuan Feng, Yee Whye Teh, Yarin Gal. **ICML 2022**, to compute the results with Split-MNIST (SH), Split-FashionMNIST (SH), and Permuted-MNIST (SH). This was used to run both models using S-FSVI and VCL.
 
 ## Installation
 

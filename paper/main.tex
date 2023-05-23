@@ -1372,8 +1372,21 @@ This supplementary document is organized as follows.
 \section{Method details}
 \label{app:method}
 %
-Optionally include extra information (complete proofs, additional experiments and plots) in the appendix.
-This section will often be part of the supplemental material.
+Key to our method is the ability to compute the dual parameters in \cref{eq:dual_param}. For general exponential family likelihoods we can derive simpler expressions:
+\begin{equation}
+ \ell(\sigma(f), y) = -\log p(y \mid f) =  A(f)  - \langle y, f\rangle
+\end{equation}
+where $A(f)$ is the log partition function and $\sigma(.)$ is the link function. Taking the first and second derivative of the loss in this form then become:
+
+ For the Bernoulli distribution with a given link function, typically the sigmoid, $\sigma(f_{\vw}(\vx)):= \sigma(f) = \frac{1}{1+e^f}$. Then, we can write the log probability as
+%\begin{equation}
+%\begin{aligned}
+%	\ell(y, \vf_\vw(\vx)) 
+%%	&:= - \log p(y | \sigma(f))) \\
+%%	&= -y \log(\sigma(f)) - (1-y) \log(1-\sigma(f))\\
+%%	&= -y f + \log(1+e^f) \red{ \left[ = - (\langle f, y\rangle - \log(1+e^f)) \right] }
+%\end{aligned}
+%\end{equation}
 
 \begin{table}[!ht]
 \centering
@@ -1385,6 +1398,8 @@ mse         &       &       \\
 categorical &       &       \\ \bottomrule
 \end{tabular}
 \end{table}
+
+
 
 \section{\our for continual learning}
 \label{app:cl}

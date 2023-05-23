@@ -269,7 +269,9 @@ def train(cfg: DictConfig):
             # reward = reward_fn(state[None, ...], action_input[None, ...]).reward_mean
             reward_output = reward.to(cfg.device)
             reward_diff = reward - time_step["reward"]
-            wandb.log({"env_reward_diff": reward_diff})
+
+            if cfg.wandb.use_wandb:  # Initialise WandB
+                wandb.log({"env_reward_diff": reward_diff})
             # reward_output = torch.Tensor([time_step["reward"]]).to(cfg.device)
             # print("reward_output {}".format(reward_output.shape))
             state_action_input = torch.concatenate(
@@ -495,7 +497,8 @@ def train(cfg: DictConfig):
                     mse_transition_model_nn = torch.mean(
                         (state_diff_nn - state_diff_output) ** 2
                     )
-                    wandb.log({"mse_transition_model_nn": mse_transition_model_nn})
+                    if cfg.wandb.use_wandb:  # Initialise WandB
+                        wandb.log({"mse_transition_model_nn": mse_transition_model_nn})
                 elif isinstance(
                     agent.transition_model,
                     experiments.rl.models.transitions.LaplaceTransitionModel,
@@ -508,14 +511,16 @@ def train(cfg: DictConfig):
                     mse_transition_model_nn = torch.mean(
                         (state_diff_nn - state_diff_output) ** 2
                     )
-                    wandb.log({"mse_transition_model_nn": mse_transition_model_nn})
+                    if cfg.wandb.use_wandb:  # Initialise WandB
+                        wandb.log({"mse_transition_model_nn": mse_transition_model_nn})
 
                 try:
                     # Log transition model stuff
                     mse_transition_model = torch.mean(
                         (state_diff_mean - state_diff_output) ** 2
                     )
-                    wandb.log({"mse_transition_model_svgp": mse_transition_model})
+                    if cfg.wandb.use_wandb:  # Initialise WandB
+                        wandb.log({"mse_transition_model_svgp": mse_transition_model})
                 except:
                     pass
 
@@ -525,9 +530,10 @@ def train(cfg: DictConfig):
                             state_diff_mean, torch.sqrt(state_diff_var)
                         ).log_prob(state_diff_output)
                     )
-                    wandb.log(
-                        {"nlpd_transition_model": torch.mean(nlpd_transition_model)}
-                    )
+                    if cfg.wandb.use_wandb:  # Initialise WandB
+                        wandb.log(
+                            {"nlpd_transition_model": torch.mean(nlpd_transition_model)}
+                        )
                 except:
                     pass
 
@@ -561,7 +567,8 @@ def train(cfg: DictConfig):
                         # print(
                         #     "mse_reward_model_hard {}".format(mse_reward_model_hard.shape)
                         # )
-                        wandb.log({"mse_reward_model_hard": mse_reward_model_hard})
+                        if cfg.wandb.use_wandb:  # Initialise WandB
+                            wandb.log({"mse_reward_model_hard": mse_reward_model_hard})
 
                     # # Log reward model stuff
                     # reward_output = dataset["reward"].to(cfg.device)
@@ -600,14 +607,18 @@ def train(cfg: DictConfig):
                         mse_reward_model_nn = torch.mean(
                             (reward_nn - reward_output) ** 2
                         )
-                        wandb.log({"mse_reward_model_svgp": mse_reward_model})
-                        wandb.log({"mse_reward_model_nn": mse_reward_model_nn})
+                        if cfg.wandb.use_wandb:  # Initialise WandB
+                            wandb.log({"mse_reward_model_svgp": mse_reward_model})
+                            wandb.log({"mse_reward_model_nn": mse_reward_model_nn})
                         nlpd_reward_model = -torch.mean(
                             torch.distributions.Normal(
                                 reward_mean, torch.sqrt(reward_var)
                             ).log_prob(reward_output)
                         )
-                        wandb.log({"nlpd_reward_model": torch.mean(nlpd_reward_model)})
+                        if cfg.wandb.use_wandb:  # Initialise WandB
+                            wandb.log(
+                                {"nlpd_reward_model": torch.mean(nlpd_reward_model)}
+                            )
                 except:
                     pass
 

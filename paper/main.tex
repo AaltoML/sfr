@@ -1471,7 +1471,11 @@ Finally, we can rewrite $\mathcal{R}_\mathrm{\our}$ as follows
 \section{\our for model-based reinforcement learning}
 \label{app:rl}
 %
-As a final experiment in the main paper in \cref{sec:rl-exp}, we provided a demonstration of combining our \our approach with model-based reinforcement learning. As such, this is a direct extension of the uncertainty quantification and representation capabilities already demonstrated in the supervised (and continual) learning examples in the main paper. However, the RL setting requires slightly more background to it and thus \cref{app:rl} has been separated out to a separate section in the appendix. In this appendix, we provide details of the reinforcement learning experiments, including how we used \our in this setting.
+As a final experiment in the main paper in \cref{sec:rl-exp}, we provided a demonstration of combining our \our approach with model-based reinforcement learning. As such, this is a direct extension of the uncertainty quantification and representation capabilities already demonstrated in the supervised (and continual) learning examples in the main paper. However, the RL setting requires slightly more background to it and thus \cref{app:rl} has been separated out to a separate section in the appendix.
+
+In this appendix, we provide a background of the reinforcement learning problem, details of our model-based RL algorithim, an overview of the cartpole swingup environment, and
+all details of our experiments configuration for reproducibility.
+
 
 \subsection{Background}
 We consider environments with states \(\state \in \stateDomain \subseteq \R^{D_{\state}} \),

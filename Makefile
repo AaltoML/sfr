@@ -50,7 +50,7 @@ supplement:
 	mkdir supplement
 
 	# make appendix
-	gs -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dSAFER -dPrinted=false -dFirstPage=14 -sOutputFile=supplement/supplement.pdf paper/main.pdf
+	#gs -sDEVICE=pdfwrite -dNOPAUSE -dBATCH -dSAFER -dPrinted=false -dFirstPage=14 -sOutputFile=supplement/supplement.pdf paper/main.pdf
 
 	# make code directory
 	mkdir supplement/code
@@ -128,8 +128,38 @@ supplement:
 	mkdir supplement/code/experiments/cl/baselines/
 	mkdir supplement/code/experiments/cl/baselines/fromp
 	cp -r experiments/cl/baselines/fromp supplement/code/experiments/cl/baselines/fromp
+
 	mkdir supplement/code/experiments/cl/baselines/S-FSVI
-	cp -r experiments/cl/baselines/S-FSVI supplement/code/experiments/cl/baselines/S-FSVI
+	cp experiments/cl/baselines/S-FSVI/*.py supplement/code/experiments/cl/baselines/S-FSVI
+	cp experiments/cl/baselines/S-FSVI/environment.yml experiments/cl/baselines/S-FSVI/LICENSE experiments/cl/baselines/S-FSVI/README.md supplement/code/experiments/cl/baselines/S-FSVI
+	
+	mkdir supplement/code/experiments/cl/baselines/S-FSVI/baselines
+	mkdir supplement/code/experiments/cl/baselines/S-FSVI/baselines/vcl
+	mkdir supplement/code/experiments/cl/baselines/S-FSVI/baselines/vcl/alg
+	cp experiments/cl/baselines/S-FSVI/baselines/vcl/*.py supplement/code/experiments/cl/baselines/S-FSVI/baselines/vcl
+	cp experiments/cl/baselines/S-FSVI/baselines/vcl/README.md supplement/code/experiments/cl/baselines/S-FSVI/baselines/vcl
+	cp experiments/cl/baselines/S-FSVI/baselines/vcl/alg/*.py supplement/code/experiments/cl/baselines/S-FSVI/baselines/vcl/alg
+
+	mkdir supplement/code/experiments/cl/baselines/S-FSVI/benchmarking
+	mkdir supplement/code/experiments/cl/baselines/S-FSVI/benchmarking/data_loaders
+	cp experiments/cl/baselines/S-FSVI/benchmarking/*.py supplement/code/experiments/cl/baselines/S-FSVI/benchmarking/
+	cp experiments/cl/baselines/S-FSVI/benchmarking/data_loaders/*.py supplement/code/experiments/cl/baselines/S-FSVI/benchmarking/data_loaders/
+
+	mkdir supplement/code/experiments/cl/baselines/S-FSVI/sfsvi
+	cp experiments/cl/baselines/S-FSVI/sfsvi/*.py supplement/code/experiments/cl/baselines/S-FSVI/sfsvi
+	mkdir supplement/code/experiments/cl/baselines/S-FSVI/sfsvi/models
+	cp experiments/cl/baselines/S-FSVI/sfsvi/models/*.py supplement/code/experiments/cl/baselines/S-FSVI/sfsvi/models
+	mkdir supplement/code/experiments/cl/baselines/S-FSVI/sfsvi/general_utils
+	cp experiments/cl/baselines/S-FSVI/sfsvi/general_utils/*.py supplement/code/experiments/cl/baselines/S-FSVI/sfsvi/general_utils
+	mkdir supplement/code/experiments/cl/baselines/S-FSVI/sfsvi/fsvi_utils
+	cp experiments/cl/baselines/S-FSVI/sfsvi/fsvi_utils/*.py supplement/code/experiments/cl/baselines/S-FSVI/sfsvi/fsvi_utils/
+	mkdir supplement/code/experiments/cl/baselines/S-FSVI/sfsvi/fsvi_utils/coreset
+	cp experiments/cl/baselines/S-FSVI/sfsvi/fsvi_utils/coreset/*.py supplement/code/experiments/cl/baselines/S-FSVI/sfsvi/fsvi_utils/coreset
+	mkdir supplement/code/experiments/cl/baselines/S-FSVI/sfsvi/exps
+	cp experiments/cl/baselines/S-FSVI/sfsvi/exps/*.py supplement/code/experiments/cl/baselines/S-FSVI/sfsvi/exps
+	mkdir supplement/code/experiments/cl/baselines/S-FSVI/sfsvi/exps/utils
+	cp experiments/cl/baselines/S-FSVI/sfsvi/exps/utils/*.py supplement/code/experiments/cl/baselines/S-FSVI/sfsvi/exps/utils
+
 
 	# Notebooks
 	mkdir supplement/code/notebooks

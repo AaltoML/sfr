@@ -1380,12 +1380,12 @@ This section will often be part of the supplemental material.
 \section{\our for continual learning}
 \label{app:cl}
 \subsection{Derivation of the regularizer term}
-An alternative view of the dual parameters is that they parameterize approximate likelihoods, as shown in \citep{khan2017conjugate, adam2021dual}. Then, we can rewrite the GP posterior for $q(\vu)$ in terms of the following approximate normal distributions:
+An alternative view of the dual parameters is that they parameterize approximate likelihoods, as shown in \citep{khan2017conjugate, adam2021dual}. Then, we can rewrite the {\color{red} sparse} GP posterior for $q(\vu)$ in terms of the following approximate normal distributions:
 
 \begin{equation}
 \begin{aligned}
  q(\vu) 
- 	&\propto \Norm(0, \MKzz) \prod_{i=1}^n \exp \! \left(-\frac{\tilde{\beta}_i}{2}(\tilde{y}_i - \va_i^\top \vu)^2 \right) \\
+ 	&\propto \Norm(0, \MKzz) \prod_{i=1}^n \exp \! \left(-\frac{\hat{\beta}_i}{2}(\tilde{y}_i - \va_i^\top \vu)^2 \right) \\
  	&= \Norm(0, \MKzz) \, \exp\left((\bar{\vy} - \vu)^\top \bar{\MSigma}^{-1}(\bar{\vy} - \vu)\right)  
 \end{aligned}
 \end{equation}
@@ -1633,10 +1633,10 @@ We note that while the ranges of prior precision were clipped for some data sets
 
 \subsection{Uncertainty benchmarks for image data}
 \label{app:image}
-Similarly to the supervised UCI benchmark tasks, a single image experiment consists of the following steps: first, we train a neural network (a MLP for MNIST, a CNN for FMNIST) in the classification task, using a prior precision $\delta$. After training, we prepare the \our method for predictions by computing the dual, and then evaluate the validation set predictive performance of \our. While in principle our method's predictions consist of the GP mean and variance, we include results for using the neural network prediction as a mean instead. For comparison, we gather the GP subset method results for both the GP and neural network means. This experiment set-up is then replicated for a range of prior precision values and learning rates, as we perform a grid search over these hyperparameters by optimizing for the validation set NLPD. We run the experiment on $5$ seeds and pick the hyperparameter by the best mean performance over the seeds. The results reported in \cref{tbl:imagesuper} used a learning rate of $10^{-4}$ and a prior precision of [INSERT VALUE]. 
+Similarly to the supervised UCI benchmark tasks, a single image experiment consists of the following steps: first, we train a neural network (a MLP for MNIST, a CNN for FMNIST) in the classification task, using a prior precision $\delta$. After training, we prepare the \our method for predictions by computing the dual parameters, and then evaluate the validation set predictive performance of \our. While in principle our method's predictions consist of the GP mean and variance, we include results for using the neural network prediction as a mean instead. For comparison, we gather the GP subset method results for both the GP and neural network means. This experiment set-up is then replicated for a range of prior precision values and learning rates, as we perform a grid search over these hyperparameters by optimizing for the validation set NLPD. We run the experiment on $5$ seeds and pick the hyperparameter by the best mean performance over the seeds. The results reported in \cref{tbl:imagesuper} used a learning rate of $10^{-4}$ and a prior precision of $\delta = 0.0013$ \todo{double check}. 
 
 
-For the neural network training, we used the same set-up as in \citet{immer2021improving}, where the batch size is $512$ and the neural networks are trained for $500$ epochs, and the neural network designs were unchanged. In contrast to the GP subset implementation in \citet{immer2021improving}, we do not perform scaling of $\delta$ after the neural network has been trained, but use the same prior precision in \our as was used in the regularizer term while training. Avoiding this post-hoc tuning stage allows us to forgo the additional hyperparameter optimization step for the prior precision multiplier. We found the MNIST and FMNIST experiments to be numerically stable, even when not performing any clipping in computing the Hessian of the log likelihood, or adding jitter before Cholesky decomposition within the \our dual computation. 
+For the neural network training, we used the same set-up and neural network architectures as in \citet{immer2021improving}, then we trained them for $500$ epochs with batch size of $512$. In contrast to the GP subset implementation in \citet{immer2021improving}, we do not perform scaling of $\delta$ after the neural network has been trained, but use the same prior precision in \our as was used in the regularizer term while training. Avoiding this post-hoc tuning stage allows us to forgo the additional hyperparameter optimization step for the prior precision multiplier. We found the MNIST and FMNIST experiments to be numerically stable, even when not performing any clipping in computing the Hessian of the log likelihood, or adding jitter before Cholesky decomposition within the \our dual computation. 
 
 \subsection{\our for continual learning}
 \label{app:cl-exp}

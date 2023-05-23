@@ -10,7 +10,7 @@ n_epochs: 200
 prior:
   _target_: src.priors.Gaussian
   # params: ???
-  delta: 0.003
+  delta: 0.0013
 
 hydra:
   launcher:

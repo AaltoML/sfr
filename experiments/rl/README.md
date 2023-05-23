@@ -10,7 +10,7 @@ You can display the base config using:
 ``` shell
 python train.py --cfg=job
 ```
-and an experiments config with:
+and an experiment's config with:
 ``` shell
 python train.py +experiment=sfr-sample --cfg=job
 ```

@@ -1408,17 +1408,24 @@ In binary classification, we deal with Bernoulli likelihoods. The inverse link f
 \end{equation}
 Then, it follows that the the derivative we are interested in are
 \begin{equation}
-	\nabla_f \ell(\sigma(f), y_i)|_{f=f_i} = - y_i + \sigma(f_i) \quad \text{ and } \quad  \nabla_{f\!f} \ell(h(f), y_i)|_{f=f_i} = \sigma(f_i) (1 - \sigma(f_i)).
+	\nabla_f \ell(h(f), y_i)|_{f=f_i} = - y_i + \sigma(f_i) \quad \text{ and } \quad  \nabla_{f\!f} \ell(h(f), y_i)|_{f=f_i} = \sigma(f_i) (1 - \sigma(f_i)).
 \end{equation}
 
-Moving to the multi class classification, the function outputs is no more a scalar but a vector of logits $\bm{f} \in \R^C$. The inverse link function for the categorical loss is the softmax function $\textrm{Softmax}(\bm{f}) : \R^C \to \R^C$ defined as $h(\bm{f}) = \textrm{Softmax}(\bm{f}) = \frac{\exp(\bm{f})}{ \sum^C_{j=1} \exp(\bm{f}_j)} \in \R^C$. If we write the targets $y_i$ as a one-hot $C$-shaped one-hot encoding vector, we can write the negative log likelihood as:
+Moving to the multi class classification, the function outputs is no more a scalar but a vector of logits $\bm{f} \in \R^C$. The inverse link function for the categorical loss is the softmax function $\textrm{Softmax}(\bm{f}) : \R^C \mapsto \R^C$ defined as $h(\bm{f}) = \textrm{Softmax}(\bm{f}) = \frac{\exp(\bm{f})}{ \sum^C_{j=1} \exp(\bm{f}_j)} \in \R^C$. If we write the targets $y_i$ as a one-hot $C$-shaped one-hot encoding vector, we can write the negative log likelihood as:
 \begin{equation}
 \begin{aligned}
 	\ell(h(\bm{f}),\vy) &= - \log\left( \vy^\T \textrm{Softmax}(\bm{f})\right)\\
-	&= - y_i \log \left( \left[ \textrm{Softmax}(\bm{f}) \right]_i \right)
+	&= - y_i \cdot \log \left( \left[ \textrm{Softmax}(\bm{f}) \right]_i \right)
 \end{aligned}
 \end{equation}
-where $\left[\textrm{Softmax}(\bm{f})\right]_i = \frac{\exp(\bm{f}_i)}{\sum_{j=1}^{C} \exp(\bm{f}_j)}$ defines the $i$\textsuperscript{th} entry of the logits fed through the $\textrm{Softmax}(\cdot)$ function. 
+where $\left[\textrm{Softmax}(\bm{f})\right]_i = \frac{\exp(\bm{f}_i)}{\sum_{j=1}^{C} \exp(\bm{f}_j)} \in \R$ defines the $i$\textsuperscript{th} entry of the logits fed through the $\textrm{Softmax}(\cdot)$ function. Finally, we can write the first and second derivatives as follows
+
+\begin{equation}
+\begin{aligned}
+	\nabla_f \ell(h(f), y_i)|_{f=f_i} &= - y_i + \left[ \textrm{Softmax}(\bm{f}) \right]_i \\
+	\nabla_{f\!f} \ell(h(f), y_i)|_{f=f_i} &= \left[\textrm{Softmax}(\bm{f})\right]_i (1 - \left[\textrm{Softmax}(\bm{f})\right]_i).
+\end{aligned}
+\end{equation}
 
 
 % While these equations deal with single output functions, we can extend them to multi output functions, such as for the categorical loss.

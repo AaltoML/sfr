@@ -1397,8 +1397,6 @@ where the inverse link function is the sigmoid function $h(f) = \sigma(f) = \fra
 	\nabla_f \ell(\sigma(f), y_i)|_{f=f_i} = y_i - f_i \quad \text{ and } \quad  \nabla_{f\!f} \ell(h(f), y_i)|_{f=f_i} = 1
 \end{equation}
 
-
-
 % While these equations deal with single output functions, we can extend them to multi output functions, such as for the categorical loss.
 %The easiest example to deal with is the Bernoulli loss, where 
 %The above formulation can be extended to vector input and outputs, \ie, for the categorical loss. In the following table, we list the likelihoods we use and their dual parameter below:
@@ -1427,6 +1425,8 @@ Categorical & $\mathcal{S}_i(\vf) = \frac{e^{\vf_i}}{\sum_{j=1}^C e^{\vf_j}}$ & 
 \end{tabular}
 \end{table}
 
+\subsection{Computational complexity}
+
 
 \section{\our for continual learning}
 \label{app:cl}
@@ -1436,7 +1436,7 @@ For continual learning, the model cannot access the training data from previous 
 \begin{equation}
 	\weights^* = \arg \min_\weights \mathcal{L}(\dataset_\textrm{old} \cup \dataset_\textrm{new}, \weights) = \arg \min_\weights \sum_{i \in \dataset_\textrm{old} \cup \dataset_\textrm{new}}\ell(f_\weights(\mathbf{x}_{i}), y_i) + \delta \mathcal{R}(\weights).
 \end{equation} 
-Our goal in the continual setting is to replace the missing data coming from $\dataset_\textrm{old}$ by resorting to a functional regularizer that accounts for that by forcing the predictions of the neural networks over the inducing points $\mathcal{Z}_t$ to come with high probability from $f_\weights(\vz_i) \sim q(\vu),  \forall \vz_i \in \mathcal{Z}_t$. As shown in \citep{khan2017conjugate, adam2021dual}, we can view the dual parameters derived in \cref{sec:sparse-dual-gp}. Then, we can rewrite the sparse GP posterior for $q(\vu)$ in terms of the following approximate normal distributions:
+Our goal in the continual setting is to replace the missing data coming from $\dataset_\textrm{old}$ by resorting to a functional regularizer that accounts for that by forcing the predictions of the neural networks over the inducing points $\mathcal{Z}_t$ to come from $f^{\textrm{old}}_\weights(\vz_i) \sim q^\textrm{old}(\vu),  \forall \vz_i \in \mathcal{Z}_t$. As shown in \citep{khan2017conjugate, adam2021dual}, we can view the dual parameters derived in \cref{sec:sparse-dual-gp} as linked to approximate likelihood terms. Using this insight, we can rewrite the sparse GP posterior for $q(\vu)$ in terms of the following approximate normal distributions:
 %
 \begin{align} \label{eq:normal}
 	q(\vu)

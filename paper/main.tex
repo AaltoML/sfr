@@ -1598,7 +1598,7 @@ DDPG is an off-policy algorithm where the exploration policy samples from a nois
 We sampled from a Gaussian distribution with $\sigma=0.1$ and clipping at $0.3$.
 
 \textbf{Model predictive path integral (MPPI)}
-In all model-based RL experiments we used a $H=5$ step horizon and a discount factor of $\gamma=0.9$.
+In all model-based RL experiments, we used a $H=5$ step horizon and a discount factor of $\gamma=0.9$.
 We sampled $N=256$ trajectories for $J=5$ iterations with $K=32$.
 We used a temperature of $0.5$ and momentum $0.1$.
 
@@ -1735,19 +1735,19 @@ Our code implementation of the UCI experiments has been built on top of the code
 
 In \cref{sec:image} in the main paper, we included experiments on image data sets. For the image-based classification experiments, we include results using both the GP mean prediction and the NN prediction for both \our and the GP subset.
 For the neural network training, we used the same set-up as in \cite{immer2021improving},
-training the neural networok using Adam for $500$ epochs using a batch size of $512$.
+training the neural network using Adam for $500$ epochs using a batch size of $512$.
 The results reported in \cref{tbl:imagesuper} used a learning rate of $10^{-4}$
 and we ran each experiment for $5$ seeds.
 The MNIST experiments used a prior precision of $\delta=0.0008$
 and the FMNIST experiments used a prior precision of $\delta=0.0013$.
-The experiments with MNIST  used an MLP with two hidden layers of width 128 and Tanh activtions.
+The experiments with MNIST  used an MLP with two hidden layers of width 128 and Tanh activations.
 In the FMNIST experiments we followed \cite{immer2021improving} and used a CNN
-architecture with two fully connected classification layers and tanh activations.
+architecture with two fully connected classification layers and Tanh activations.
 
 In contrast to the GP subset implementation in \citet{immer2021improving},
 we do not perform scaling of $\delta$ after the neural network has been trained.
 Instead, we use the same prior precision that was used during training.
-We performeed a grid search over the prior precision for the NN MAP using the validation NLPD.
+We performed a grid search over the prior precision for the NN MAP using the validation NLPD.
 We then used this prior precision for the GP predictive (NN) with $M=1024$,
 GP predictive with $M=1024$, \our (NN) and \our.
 We found the MNIST and FMNIST experiments to be numerically stable, even when not performing any clipping in computing the Hessian of the log likelihood, or adding jitter before Cholesky decomposition within the \our dual computation.
@@ -1768,11 +1768,11 @@ In our experiments, we compared the performance of the \our-based regularizer ag
 For the weight-space methods, we considered Online-EWC~\citep{schwarz2018progress}, SI~\citep{zenke2017continual}, and VCL~\citep{nguyen2018variational}.  % In \cref{tbl:cl_table_1}, we considered VCL with random coresets, which uses coreset points t 
 For the function-space methods, we considered DER~\citep{buzzega2020dark}, FROMP~\citep{pan2020continual}, and S-FSVI~\citep{rudner2022continual}.
 
-For our method, DER, Online-EWC, and SI, we relied on the Mammoth framework proposed by \citep{buzzega2020dark}. On the other hand, we used the available open-source FROMP codebase to conduct the experiments with FROMP, and the S-FSVI codebase to run the experiments on S-FSVI and VCL. We selected the hyperparameters to use with all these methods trying to adapt the ones pointed out in the their original papers and the reference implementations. For this reason, we relied on SGD for DER, Online-EWC, and SI, which requires higher learning rates, compared to the others methods for which we used Adam, \ie, our \our regularizer, FROMP, S-FSVI, and VCL.
+For our method, DER, Online-EWC, and SI, we relied on the Mammoth framework proposed by \citep{buzzega2020dark}. On the other hand, we used the available open-source FROMP codebase to conduct the experiments with FROMP, and the S-FSVI codebase to run the experiments on S-FSVI and VCL. We selected the hyperparameters to use with all these methods trying to adapt the ones pointed out in the their original papers and the reference implementations. For this reason, we relied on SGD for DER, Online-EWC, and SI, which requires higher learning rates, compared to the others methods for which we used Adam \cite{adam}, \ie, our \our regularizer, FROMP, S-FSVI, and VCL.
 
 For the methods relying on a stored subset of training data for each task, we make sure that the number of data points stored are the same for each method. For DER, which does not select the rehearsal training samples at task boundaries, we cannot apply directly the definition of points per task ($M$), and thus we set the dimension of the reservoir buffer to be $T \cdot M$, \ie, total number of tasks times the points per task.
 
-The results reported in \cref{tbl:cl_table_1}, are obtained using the following hyperparameters. The results are in-line with what has been reported in previous work, notably even better for some of the baseline methods. Thus, we consider the presented results to give a realistic picture of the relative performance of the different methods, and a demonstrating a clear case for applicability of the \our approach in continual learning.
+The results reported in \cref{tbl:cl_table_1}, are obtained using the following hyperparameters and repeating the run five times with different seeds. The results are in-line with what has been reported in previous work, notably even better for some of the baseline methods. Thus, we consider the presented results to give a realistic picture of the relative performance of the different methods, and a demonstrating a clear case for applicability of the \our approach in continual learning.
  
 %% Hyperparms used in the different experiments:
 \paragraph{S-MNIST (40 pts./task):}

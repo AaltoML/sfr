@@ -1461,19 +1461,24 @@ where $\left[\textrm{Softmax}(\bm{f})\right]_i = \frac{\exp(\bm{f}_i)}{\sum_{j=1
 
 \subsection{Computational complexity}
 \label{app:comp_compl}
-
 % Big O
 % train neural network
 % compute the NTK -> from the NTK paper
 % we outer product of the kzi O(NM^2)
 % inversion O(M^3)
+In this section, we analyze the computational complexity of \our. We first need to train a neural network $f_\weights$ and then compute the posterior covariance matrix that characterizes our sparse GP representation of the model. The first step then requires the usual complexity cost for training a neural network, where defining the cost of a forward pass (and backward pass
+%\todo{these two should be similar, we can't cite the NTK paper were they are using this notation unfortunately}
+) as $[F\!P]$, this can roughly sketched as $\mathcal{O}(2  E  N[F\!P])$, where $E$ is the number of training epochs and  $N$ the number of training samples. Thus, there is no additional cost involved in the training phase of the neural network.
+
+Given the trained network, we construct the covariance function  which is defined through the NTK~\citep{jacot2018neural}. We relied on the Jacobian contraction implementation using PyTorch~\citep{paszke2019pytorch}. To compute the kernel Gram matrix for a batch of $B$ samples with this implementation has a computational complexity of $\mathcal{O}( B C [F\!P] + B^2 C^2 P)$, where $C$ is the number of NN outputs and $P$ is the number of parameters of the neural network. In \cref{eq:dual_sparse}, we compute $\MB_\vu$ iterating through all the $N$ training points to compute the $\vkzi$ and then use them to compute the outer product, that has a cost of $\mathcal{O}(M^2)$, with $M$ being the number of inducing points following the notation used in the main paper. The total cost of this operation becomes $\mathcal{O}(N M^2)$, which is also the dominating cost of our approach.
 
 % Practical implementation
 % mention that we do that in batches not full N 
 % role of jitter 
 % role of clamping
 % GPU A100 Nvidia
-
+In practical terms, some care needs to be taken during the implementation, both in terms of memory consumption and numerical stability. For the former, we batched over the number of training samples, $N$, which keeps the memory consumption in check without need for any further approximations. The computation of the terms in \cref{eq:dual_sparse_post} require the inversion of an $M \times M$ matrix, that we implemented in a numerically stable manner by using Cholesky factorization. We also introduce a small jitter and clip of the GGN matrix for numerical stability where needed (see discussions in \cref{app:experiments}). 
+ We run our experiments GPU clusters equipped with NVIDIA A100 GPUs.
 
 \section{\our for continual learning}
 \label{app:cl}
@@ -1503,7 +1508,7 @@ In a multi-class classification setting, the neural network can be seen as a fun
   \valpha_{\vu, c}  =  \sum_{i=1}^N  \vkzic \, \hat{\alpha}_{i, c} \in \R^{M}
   \quad \text{and} \quad
   \MBeta_{\vu, c} =  \sum_{i=1}^N \vkzic \,\hat{\beta}_{i, c} \, \vkzic^{\T} \in \R^{M \times M} ,    
-\label{eq:dual_sparse}
+\label{eq:app_dual_sparse}
 \end{equation}
 %
 where $\vkzic$ is the kernel $\kappa_c(\cdot, \cdot)$ computed for the inducing points $\vz \in \mathcal{Z}$ and the input point $\vx_i$ for class $c$. In this setting, the dual variables are
@@ -1836,7 +1841,7 @@ For our method, DER, Online-EWC, and SI, we relied on the Mammoth framework prop
 
 For the methods relying on a stored subset of training data for each task, we make sure that the number of data points stored are the same for each method. For DER, which does not select the rehearsal training samples at task boundaries, we cannot apply directly the definition of points per task ($M$), and thus we set the dimension of the reservoir buffer to be $T \cdot M$, \ie, total number of tasks times the points per task.
 
-The results reported in \cref{tbl:cl_table_1}, are obtained using the following hyperparameters and repeating the run five times with different seeds. The results are in-line with what has been reported in previous work, notably even better for some of the baseline methods. Thus, we consider the presented results to give a realistic picture of the relative performance of the different methods, and a demonstrating a clear case for applicability of the \our approach in continual learning.
+The results reported in \cref{tbl:cl_table_1}, are obtained using the following hyperparameters and repeating the runs five times with different seeds. The results are in-line with what has been reported in previous work, notably even better for some of the baseline methods. Thus, we consider the presented results to give a realistic picture of the relative performance of the different methods, and a demonstrating a clear case for applicability of the \our approach in continual learning.
  
 %% Hyperparms used in the different experiments:
 \paragraph{S-MNIST (40 pts./task):}

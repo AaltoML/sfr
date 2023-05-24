@@ -1430,15 +1430,6 @@ Finally, we can write the first and second derivatives as follows
 \end{aligned}
 \end{equation}
 
-where $\left[\textrm{Softmax}(\bm{f})\right]_i = \frac{\exp(\bm{f}_i)}{\sum_{j=1}^{C} \exp(\bm{f}_j)} \in [0, 1]$ defines the $i$\textsuperscript{th} entry of the logits fed through the $\textrm{Softmax}(\cdot)$ function. Finally, we can write the first and second derivatives as follows
-
-\begin{equation}
-\begin{aligned}
-	\nabla_f \ell(h(f), y_i)|_{f=f_i} &= - y_i + \left[ \textrm{Softmax}(\bm{f}) \right]_i \\
-	\nabla_{f\!f} \ell(h(f), y_i)|_{f=f_i} &= \left[\textrm{Softmax}(\bm{f})\right]_i (1 - \left[\textrm{Softmax}(\bm{f})\right]_i).
-\end{aligned}
-\end{equation}
-
 where we only need the $\textrm{diag}$ given our independence assumption. 
 
 % While these equations deal with single output functions, we can extend them to multi output functions, such as for the categorical loss.

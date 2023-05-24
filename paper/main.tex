@@ -1479,7 +1479,7 @@ Given the trained network, we construct the covariance function  which is define
 % role of clamping
 % GPU A100 Nvidia
 In practical terms, some care needs to be taken during the implementation, both in terms of memory consumption and numerical stability. For the former, we batched over the number of training samples, $N$, which keeps the memory consumption in check without need for any further approximations. The computation of the terms in \cref{eq:dual_sparse_post} require the inversion of an $M \times M$ matrix, that we implemented in a numerically stable manner by using Cholesky factorization. We also introduce a small jitter and clip of the GGN matrix for numerical stability where needed (see discussions in \cref{app:experiments}). 
- We run our experiments GPU clusters equipped with NVIDIA A100 GPUs.
+ We run our experiments on GPU clusters equipped with NVIDIA A100 GPUs.
 
 \section{\our for continual learning}
 \label{app:cl}

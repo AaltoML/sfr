@@ -1362,7 +1362,7 @@ This supplementary document is organized as follows.
 %
 \cref{app:method} provides a more extensive overview of the technical details of \our.
 %
-\cref{app:cl} covers the sparse-functional regularisation (SFR) setup for continual learning.
+\cref{app:cl} covers additional details on the \our-based regularizer used for continual learning.
 %
 \cref{app:rl} provides a more extensive writeup of the reinforcement learning setup used in the experiments.
 %
@@ -1406,12 +1406,13 @@ Categorical &  $\textrm{softmax}(f_i) - y_i$     &   $\begin{bmatrix}
 
 \section{\our for continual learning}
 \label{app:cl}
+This section provides additional details about the derivation of the \our-based regularizer described in \cref{sec:sequential} and how we extended it for dealing with the multi-output setting in our experiments.
 \subsection{Derivation of the regularizer term}
-For continual learning, the model cannot access the training data from previous tasks, denoted here as $\dataset_\textrm{old} = \bigcup_{s=1}^{t-1} \dataset_s$, and for each new tasks the model receives a new chunk of data $\dataset_\textrm{new} = \dataset_t$. On the other hand, in the supervised learning setting (described in \cref{sec:methods}) the neural network model has access to all the training data at once, \ie, the objective we are trying to optimize is
+For continual learning, the model cannot access the training data from previous tasks, denoted here as $\dataset_\textrm{old} = \bigcup_{s=1}^{t-1} \dataset_s$, and for each new task receives a new chunk of data $\dataset_\textrm{new} = \dataset_t$. On the other hand, in the supervised learning setting (described in \cref{sec:methods}), the neural network model has access to all the training data at once, \ie, the objective we are trying to optimize is
 \begin{equation}
 	\weights^* = \arg \min_\weights \mathcal{L}(\dataset_\textrm{old} \cup \dataset_\textrm{new}, \weights) = \arg \min_\weights \sum_{i \in \dataset_\textrm{old} \cup \dataset_\textrm{new}}\ell(f_\weights(\mathbf{x}_{i}), y_i) + \delta \mathcal{R}(\weights).
 \end{equation} 
-Our goal in the continual setting is to replace the missing data coming from $\dataset_\textrm{old}$ by resorting to a functional regularizer that accounts for the missing data by forcing the predictions of the neural networks over the inducing points $\mathcal{Z}_t$ to come with high probability from $f_\weights(\vz_i) \sim q(\vu),  \forall \vz_i \in \mathcal{Z}_t$. As shown in \citep{khan2017conjugate, adam2021dual}, we can view the dual parameters derived in \cref{sec:sparse-dual-gp}, as {\color{red} TODO}.  Then, we can rewrite the sparse GP posterior for $q(\vu)$ in terms of the following approximate normal distributions:
+Our goal in the continual setting is to replace the missing data coming from $\dataset_\textrm{old}$ by resorting to a functional regularizer that accounts for that by forcing the predictions of the neural networks over the inducing points $\mathcal{Z}_t$ to come with high probability from $f_\weights(\vz_i) \sim q(\vu),  \forall \vz_i \in \mathcal{Z}_t$. As shown in \citep{khan2017conjugate, adam2021dual}, we can view the dual parameters derived in \cref{sec:sparse-dual-gp}, as {\color{red} TODO}. Then, we can rewrite the sparse GP posterior for $q(\vu)$ in terms of the following approximate normal distributions:
 %
 \begin{align}
 	q(\vu)
@@ -1432,7 +1433,7 @@ Written as above, we can see that the sparse dual variables can be interpreted a
 \subsection{Extending the CL regularizer to multi-class settings} 
 \label{sec:cl_multioutput}
 %
-In a multi-class classification setting, the neural network can be seen as a function approximator that maps inputs $\vx \in \inputDomain$ to the logits $\textit{\textbf{f}} \in \outputDomain$, \ie, $f_\mathbf{w}: \inputDomain \to \outputDomain$. As a consequence, the Jacobian matrix is $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{C \times P}$, and the kernel of the associated sparse GP derived in \cref{sec:sfr} is $\kappa(\vx, \vx')$, which is a tensor in $\R^{C \times P \times P}$. This means that we need to compute the dual parameters and the matrix $\bar{\MB}^{-1}_{t, c}$ for all the function's outputs. If we denote $\kappa_c(\vx, \vx') \in \R$, as the kernel related to the $c$\textsuperscript{th} output function, \ie, the logit for class $c$, we can write the dual parameters as
+In a multi-class classification setting, the neural network can be seen as a function approximator that maps inputs $\vx \in \inputDomain$ to the logits $\textit{\textbf{f}} \in \outputDomain$, \ie, $f_\mathbf{w}: \inputDomain \to \outputDomain$. As a consequence, the Jacobian matrix is $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{C \times P}$ and the kernel of the associated sparse GP derived in \cref{sec:sfr}, $\kappa(\vx, \vx')$ is a tensor in $\R^{C \times P \times P}$. This means that we need to compute the dual parameters and the matrix $\bar{\MB}^{-1}_{t, c}$ for all the function's outputs. If we denote $\kappa_c(\vx, \vx') \in \R$, as the kernel related to the $c$\textsuperscript{th} output function, \ie, the logit for class $c$, we can write the dual parameters as
 %
 \begin{equation} \textstyle
   \valpha_{\vu, c}  =  \sum_{i=1}^N  \vkzic \, \hat{\alpha}_{i, c} \in \R^{M}
@@ -1449,13 +1450,14 @@ where $\vkzic$ is the kernel $\kappa_c(\cdot, \cdot)$ computed for the inducing 
 \end{aligned}
 \end{equation}
 where the operator $[ \cdot ]_c$ is taking the $c$\textsuperscript{th} element of a vector. In fact, in the multi-class setting $\hat{\valpha}_{i}$ is a vector in $\R^C$ and $\hat{\vbeta}_{i}$ a matrix in $\R^{C \times C}$.
-For the \our-regularizer, at the end of each task we compute the matrix $\bar{\MB}^{-1}_{t, c}$ as 
+For the \our-regularizer, at the end of each task, we compute the matrix $\bar{\MB}^{-1}_{t, c}$ as 
 \begin{equation}\textstyle
  	\bar{\MB}^{-1}_{t, c} = \MKzzc^{-1} \MBeta_{\vu, c} \MKzzc^{-1} \in \R^{M \times M}, 
  	\quad \text{s.t.} \quad
  	\MBeta_{\vu, c} =  \sum_{i \in \dataset_t} \vkzi \,\hat{\beta}_{i, c} \, \vkzi^{\T}.
 \end{equation}
-In practice computing the kernel $\kappa_c$ for classes $c$, for which the model has not seen any data yet is not meaningful \todo{probably better to word this differently}, so we define $\bar{\MB}^{-1}_{t, c}$ to be  $\bar{\MB}^{-1}_{t, c} = \MI_M$ $\forall c \not\in \mathcal{C}_t$, where $\mathcal{C}_t$ is the set of classes observed up to task t. For example, for S-MNIST  we will have after task 1 $\mathcal{C}_1 = \{0, 1\}$, then after task 2 $\mathcal{C}_1 = \{0, 1, 2, 3\}$, and so on. 
+The kernel computation is based on the relationship between the observed data and the parametrized function. For this reason, computing the kernel $\kappa_c$ for classes $c$, for which the model has not observed any data yet, is not meaningful.  \todo{probably better to word this differently}
+In practice, for our method we define $\bar{\MB}^{-1}_{t, c}$ to be $\bar{\MB}^{-1}_{t, c} = \MI_M$ $\forall c \not\in \mathcal{C}_t$, where $\mathcal{C}_t$ is the set of classes observed up to task t. For example, for S-MNIST, after task 1 the set of observed classes for which we will compute the kernel is $\mathcal{C}_1 = \{0, 1\}$, then after task 2 it becomes $\mathcal{C}_1 = \{0, 1, 2, 3\}$, et cetera. 
 Finally, we can rewrite $\mathcal{R}_\mathrm{\our}$ as follows
 \begin{equation}\label{eq-cl-regularizer}%\textstyle
   \mathcal{R}_\mathrm{\our}(\weights, \mathcal{M}) = \frac{1}{2} \sum_{s=1}^{t-1} \sum_{c=1}^{C} \frac{1}{M} 
@@ -1465,6 +1467,7 @@ Finally, we can rewrite $\mathcal{R}_\mathrm{\our}$ as follows
 \end{equation}
 %
 with $\vu_c \in \R^M$ and $u_{i, c} = \left[ f_{\weights}(\vz_{i}) \right]_c, \forall {\vz_i} \in \mathcal{Z}_s$.
+
 
 
 

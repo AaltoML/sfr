@@ -1383,44 +1383,52 @@ where $A(f)$ is the log partition function, $h(\cdot)$ is the inverse link funct
 %given the loss functions we use $t(y) = y$. 
 Then, taking the first and second derivatives of the loss in this form become:
 \begin{equation}\label{eq:dual_param_app}
-  \nabla_{f} - \log p(y_i \mid f) |_{f=f_i} =  - A'(f_i) y_i
+  -\nabla_{f} \log p(y_i \mid f) |_{f=f_i} =  A'(f_i) - y_i
   \quad \text{and} \quad
   \nabla^2_{f\!f} - \log p(y_i \mid f) |_{f=f_i} = A''(f_i).
 \end{equation}
-\todo{check the signs with the main paper}
 % The second derivative of the log partition function is easily calculated and
 In this section, we provide the derivatives needed for the losses used in this work, \ie, the mean squared error (MSE) likelihood, used for the regression tasks, the Bernoulli likelihood, for binary classification, and the categorical likelihood, used for multi-class classification.
 
 For regression, the negative log likelihood comes from the MSE, and for a single input it can be written as:
 \begin{equation}
-	\ell(h(f), y) = \frac{1}{2} (y -f).% -\log \Norm( h(f) | y, \sigma^2) 	= - \log 
+	\ell(h(f), y) = \frac{1}{2} (y_i -f_i)^2.% -\log \Norm( h(f) | y, \sigma^2) 	= - \log 
 \end{equation}
 where the inverse link function is simply $h(f) = f$. Thus, the first and second derivatives are
 \begin{equation}
-	\nabla_f \ell(\sigma(f), y_i)|_{f=f_i} = y_i - f_i \quad \text{ and } \quad  \nabla_{f\!f} \ell(h(f), y_i)|_{f=f_i} = 1
+	\nabla_f \ell(\sigma(f), y_i)|_{f=f_i} =  f_i - y_i \quad \text{ and } \quad  \nabla_{f\!f} \ell(h(f), y_i)|_{f=f_i} = 1
 \end{equation}
 
-In binary classification, we deal with Bernoulli likelihoods. The inverse link function is the sigmoid function $h(f) = \sigma(f) = \frac{1}{1 + e^{-f}}$, and we can then write the negative log likelihood as
+In binary classification, we deal with Bernoulli likelihoods. The inverse link function is the sigmoid function $h(f) = \sigma(f) = \frac{1}{1 + e^{-f}}$, and we can then write the derivates as follows
+%\begin{equation}
+%\begin{aligned}
+%	\ell(h(f), y) 
+%	&= -\log \left( \sigma(f)^y (1 - \sigma(f))^{1-y} \right) \\
+%	&= - y \log(\sigma(f)) - (1-y) \log(1- \sigma(f)) \\
+%	&= - y f + \log(1 + e^f) 
+%\end{aligned}
+%\end{equation}
+%Then, it follows that the the derivative we are interested in are
+\begin{equation}
+	\nabla_f \ell(h(f), y_i)|_{f=f_i} = \sigma(f_i) - y_i  \quad \text{ and } \quad  \nabla_{f\!f} \ell(h(f), y_i)|_{f=f_i} = \sigma(f_i) (1 - \sigma(f_i)).
+\end{equation} 
+
+Moving to the multi class classification, the function outputs is no more a scalar but a vect ogits $f_\weights(\vx_i) = \bm{f _i} \in \R^C$. The inverse link function for the categorical loss is the softmax function $\textrm{Softmax}(\bm{f}) : \R^C \mapsto \R^C$ defined as $h(\bm{f}) = \textrm{Softmax}(\bm{f}) = \frac{\exp(\bm{f})}{ \sum^C_{c=1} \exp(\bm{f}_c)} \in \R^C$. If we write the targets as a one-hot  encoded vector $\vy_i$, we can write the negative log likelihood as:
 \begin{equation}
 \begin{aligned}
-	\ell(h(f), y) 
-	&= -\log \left( \sigma(f)^y (1 - \sigma(f))^{1-y} \right) \\
-	&= - y \log(\sigma(f)) - (1-y) \log(1- \sigma(f)) \\
-	&= - y f + \log(1 + e^f) 
+	\ell(h(\bm{f}),\vy_i) &= - \log\left( \vy_i^\T \textrm{Softmax}(\bm{f})\right)\\
+	% &= - y_i \cdot \log \left( \left[ \textrm{Softmax}(\bm{f}) \right]_i \right)
 \end{aligned}
 \end{equation}
-Then, it follows that the the derivative we are interested in are
+% where $\left[\textrm{Softmax}(\bm{f})\right]_j = \frac{\exp(\bm{f}_j)}{\sum_{c=1}^{C} \exp(\bm{f}_c)} \in \R$ defines the $j$\textsuperscript{th} entry of the logits fed through the $\textrm{Softmax}(\cdot)$ function. 
+Finally, we can write the first and second derivatives as follows
 \begin{equation}
-	\nabla_f \ell(h(f), y_i)|_{f=f_i} = - y_i + \sigma(f_i) \quad \text{ and } \quad  \nabla_{f\!f} \ell(h(f), y_i)|_{f=f_i} = \sigma(f_i) (1 - \sigma(f_i)).
+\begin{aligned}
+	[\nabla_{\bm{f}} \ell(h(\bm{f}), \vy_i)|_{\bm{f}=\bm{f}_i}]_j &= \left[\textrm{Softmax}(\bm{f}) - \vy_i  \right]_j \\
+	\left[\textrm{diag}\left(\nabla_{\bm{f}\!\bm{f}} \ell(h(\bm{f}), \vy_i)|_{\bm{f}=\bm{f}_i}\right)\right]_{j} &= \left[\textrm{Softmax}(\bm{f})\right]_j (1 - \left[\textrm{Softmax}(\bm{f})\right]_j),
+\end{aligned}
 \end{equation}
 
-Moving to the multi class classification, the function outputs is no more a scalar but a vector of logits $\bm{f} \in \R^C$. The inverse link function for the categorical loss is the softmax function $\textrm{Softmax}(\bm{f}) : \R^C \mapsto \R^C$ defined as $h(\bm{f}) = \textrm{Softmax}(\bm{f}) = \frac{\exp(\bm{f})}{ \sum^C_{j=1} \exp(\bm{f}_j)} \in \R^C$. If we write the targets $y_i$ as a one-hot $C$-shaped one-hot encoding vector, we can write the negative log likelihood as:
-\begin{equation}
-\begin{aligned}
-	\ell(h(\bm{f}),\vy) &= - \log\left( \vy^\T \textrm{Softmax}(\bm{f})\right)\\
-	&= - y_i \cdot \log \left( \left[ \textrm{Softmax}(\bm{f}) \right]_i \right)
-\end{aligned}
-\end{equation}
 where $\left[\textrm{Softmax}(\bm{f})\right]_i = \frac{\exp(\bm{f}_i)}{\sum_{j=1}^{C} \exp(\bm{f}_j)} \in [0, 1]$ defines the $i$\textsuperscript{th} entry of the logits fed through the $\textrm{Softmax}(\cdot)$ function. Finally, we can write the first and second derivatives as follows
 
 \begin{equation}
@@ -1429,7 +1437,7 @@ where $\left[\textrm{Softmax}(\bm{f})\right]_i = \frac{\exp(\bm{f}_i)}{\sum_{j=1
 	\nabla_{f\!f} \ell(h(f), y_i)|_{f=f_i} &= \left[\textrm{Softmax}(\bm{f})\right]_i (1 - \left[\textrm{Softmax}(\bm{f})\right]_i).
 \end{aligned}
 \end{equation}
-
+where we only need the $\textrm{diag}$ given our independence assumption. 
 
 % While these equations deal with single output functions, we can extend them to multi output functions, such as for the categorical loss.
 %The easiest example to deal with is the Bernoulli loss, where 

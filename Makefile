@@ -187,6 +187,7 @@ supplement:
 	zip -r supplement.zip supplement/code -i '*.gz'
 	zip supplement.zip supplement/code/notebooks/data/banana_X_train
 	zip supplement.zip supplement/code/notebooks/data/banana_Y_train
+	zip supplement.zip supplement/code/Makefile
 	# zip -r supplement.zip supplement/code -i 'LICENSE'
 
 

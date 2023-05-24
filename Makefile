@@ -54,7 +54,7 @@ supplement:
 
 	# make code directory
 	mkdir supplement/code
-	cp Makefile supplement/code
+	cp Makefile_nosupplement supplement/code/Makefile
 	cp README.md supplement/code
 	cp LICENSE supplement/code
 	cp requirements.txt supplement/code
@@ -129,7 +129,9 @@ supplement:
 
 	mkdir supplement/code/experiments/cl/baselines/
 	mkdir supplement/code/experiments/cl/baselines/fromp
-	cp -r experiments/cl/baselines/fromp supplement/code/experiments/cl/baselines/fromp
+	mkdir supplement/code/experiments/cl/baselines/fromp/data
+	cp experiments/cl/baselines/fromp/*.py supplement/code/experiments/cl/baselines/fromp
+	cp experiments/cl/baselines/fromp/data/mnist.pkl.gz supplement/code/experiments/cl/baselines/fromp/data
 
 	mkdir supplement/code/experiments/cl/baselines/S-FSVI
 	cp experiments/cl/baselines/S-FSVI/*.py supplement/code/experiments/cl/baselines/S-FSVI
@@ -174,5 +176,13 @@ supplement:
 	zip -r supplement.zip supplement/code -i '*.txt'
 	zip -r supplement.zip supplement/code -i '*.md'
 	zip -r supplement.zip supplement/code -i '*.ipynb'
+	zip -r supplement.zip supplement/code -i '*.yaml'
+	zip -r supplement.zip supplement/code -i '*.yml'
+	zip -r supplement.zip supplement/code -i '*.csv'
+	zip -r supplement.zip supplement/code -i '*.data'
+	zip -r supplement.zip supplement/code -i '*.names'
+	zip -r supplement.zip supplement/code -i '*.spy'
+	zip -r supplement.zip supplement/code -i '*.gz'
+	# zip -r supplement.zip supplement/code -i 'LICENSE'
 
 

@@ -1424,13 +1424,14 @@ The sparse GP posterior $q(\vu)$ is proportional to the product between the prio
  
 Replacing $\va_i^\top \vu$ with $\vx_i^{\top}\vw$, we can see the similarity between the sparse GP and a linear model where the kernel matrix determines the prior. To arrive at the MVN Gaussian, we need to rearrange the quadratic terms to match the prior sufficient statistics. Performing conjugate summation of prior and likelihood, we would arrive at the sparse GP posterior at the inducing points. The correlated covariance structure $\MSigma$ and the corresponding $\tilde{\vy}$ are simply a different form of the sparse dual variables,
 \begin{equation}
-\quad \bar{\MB}^{-1} =  \MKzz \MB_\vu^{-1} \MKzz \quad \tilde{\vy} = \MKzz \MB_{\vu}\valpha_{\vu}.
+\quad \bar{\MB}^{-1} =  \MKzz \MB_\vu^{-1} \MKzz \quad \text{and} \quad \tilde{\vy} = \MKzz \MB_{\vu}\valpha_{\vu}.
 \end{equation}
 Written as above, we can see that the spare dual variables can be interpreted as a sparse MVN representation.
 
 \subsection{Extending the CL regularizer to multi-class settings} 
 \label{sec:cl_multioutput}
-In the multi-class setting, the neural network can be seen as a function approximator that maps inputs $\vx \in \inputDomain$ to  the logits $\textit{\textbf{f}} \in \outputDomain$, \ie, $f_\mathbf{w}: \inputDomain \to \outputDomain$. As a consequence, the Jacobian matrix is $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{C \times P}$ and the kernel of the associated sparse GP derived in \cref{sec:sfr}, $\kappa(\vx, \vx')$ is a tensor in $\R^{C \times P \times P}$. This means that we need compute the dual parameters and the matrix $\bar{\MB}^{-1}_{t, c}$ for all the function's outputs. If we denote $\kappa_c(\vx, \vx') \in \R$, as the kernel related to the $c$\textsuperscript{th} output function, \ie, the logit for class $c$, we can write the dual parameters as
+%
+In a multi-class classification setting, the neural network can be seen as a function approximator that maps inputs $\vx \in \inputDomain$ to the logits $\textit{\textbf{f}} \in \outputDomain$, \ie, $f_\mathbf{w}: \inputDomain \to \outputDomain$. As a consequence, the Jacobian matrix is $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{C \times P}$ and the kernel of the associated sparse GP derived in \cref{sec:sfr}, $\kappa(\vx, \vx')$ is a tensor in $\R^{C \times P \times P}$. This means that we need compute the dual parameters and the matrix $\bar{\MB}^{-1}_{t, c}$ for all the function's outputs. If we denote $\kappa_c(\vx, \vx') \in \R$, as the kernel related to the $c$\textsuperscript{th} output function, \ie, the logit for class $c$, we can write the dual parameters as
 %
 \begin{equation} \textstyle
   \valpha_{\vu, c}  =  \sum_{i=1}^N  \vkzic \, \hat{\alpha}_{i, c} \in \R^{M}
@@ -1442,8 +1443,8 @@ In the multi-class setting, the neural network can be seen as a function approxi
 where $\vkzic$ is the kernel $\kappa_c(\cdot, \cdot)$ computed for the inducing points $\vz \in \mathcal{Z}$ and the input point $\vx_i$ for class $c$. In this setting, the dual variables are
 \begin{equation}
 \begin{aligned}
-  \hat{\alpha}_{i,c} &\coloneqq  \left[\hat{\valpha}_{i}\right]_c = \left[\nabla_{f}\log p(y_i \mid f) |_{f=f_i} \right]_c \in \R\\
-  \hat{\beta}_{i,c} &\coloneqq \left[\textrm{diag}(\hat{\vbeta}_i)\right]_c = \left[ - \nabla^2_{ff}\log p(y_i \mid f) |_{f=f_i} \right]_c \in \R 
+  \hat{\alpha}_{i,c} &\coloneqq  \left[\hat{\valpha}_{i}\right]_c = \left[\nabla_{f}\log p(y_i \mid f) |_{f=f_i} \right]_c \in \R,\\
+  \hat{\beta}_{i,c} &\coloneqq \left[\textrm{diag}(\hat{\vbeta}_i)\right]_c = \left[ - \nabla^2_{ff}\log p(y_i \mid f) |_{f=f_i} \right]_c \in \R,
 \end{aligned}
 \end{equation}
 where the operator $[ \cdot ]_c$ is taking the $c$\textsuperscript{th} element of a vector. In fact, in the multi-class setting $\hat{\valpha}_{i}$ is a vector in $\R^C$ and $\hat{\vbeta}_{i}$ a matrix in $\R^{C \times C}$.
@@ -1455,16 +1456,14 @@ For the \our-regularizer, at the end of each task we compute the matrix $\bar{\M
 \end{equation}
 In practice computing the kernel $\kappa_c$ for classes $c$, for which the model has not seen any data yet is not meaningful \todo{probably better to word this differently}, so we define $\bar{\MB}^{-1}_{t, c}$ to be  $\bar{\MB}^{-1}_{t, c} = \MI_M$ $\forall c \not\in \mathcal{C}_t$, where $\mathcal{C}_t$ is the set of classes observed up to task t. For example, for S-MNIST  we will have after task 1 $\mathcal{C}_1 = \{0, 1\}$, then after task 2 $\mathcal{C}_1 = \{0, 1, 2, 3\}$, and so on. 
 Finally, we can rewrite $\mathcal{R}_\mathrm{\our}$ as follows
-\begin{equation}\label{eq-cl-regularizer}\textstyle
-\begin{aligned}
+\begin{equation}\label{eq-cl-regularizer}%\textstyle
   \mathcal{R}_\mathrm{\our}(\weights, \mathcal{M}) = \frac{1}{2} \sum_{s=1}^{t-1} \sum_{c=1}^{C} \frac{1}{M} 
 	\left\lVert 
 	\vu_c - \vu_{s,c} % f_{\weights_{s}}(\MZ_s)
-	\right\rVert_{\bar{\MB}^{-1}_{s}}, \\
-	\text{~with~} \vu_c \in \R^M \text{~with~} u_{i, c} = \left[ f_{\weights}(\vz_{i}) \right]_c,~\forall {\vz_i} \in \mathcal{Z}_s .
-\end{aligned}
+	\right\rVert_{\bar{\MB}^{-1}_{s}},
 \end{equation}
-
+%
+with $\vu_c \in \R^M$ and $u_{i, c} = \left[ f_{\weights}(\vz_{i}) \right]_c, \forall {\vz_i} \in \mathcal{Z}_s$.
 
 
 

@@ -1372,14 +1372,16 @@ This supplementary document is organized as follows.
 \section{Method details}
 \label{app:method}
 %
-\todo{This reads a bit off, is it grammatically correct?} Key to our method is the ability to compute the dual parameters as in \cref{eq:dual_param}. For general exponential family likelihoods we can derive simpler expressions:
-\todo{How does this connect to Eq 5?}
-\begin{equation}
- \ell(\sigma(f), y) = -\log p(y \mid f) =  A(f)  - \langle y, f\rangle
-\end{equation}
-where $A(f)$ is the log partition function and $\sigma(.)$ is the link function. Taking the first and second derivative of the loss in this form then becomes: \todo{Becomes what, to be written?}
+Key to our method is the ability to compute the dual parameters in \cref{eq:dual_param}. For general exponential family likelihoods we can derive simpler expressions by rewriting the loss in the natural form:
 
- For the Bernoulli distribution with a given link function, typically the sigmoid, $\sigma(f_{\vw}(\vx)):= \sigma(f) = \frac{1}{1+e^f}$. Then, we can write the log probability as
+\begin{equation}
+ \ell(h(f), y) = -\log p(y \mid f) =  A(f)  - \langle t(y), f\rangle
+\end{equation}
+where $A(f)$ is the log partition function and $h(.)$ is the link function and $t(y)$ are the sufficient, given the loss functions we use $t(y) = y$. Taking the first and second derivative of the loss in this form then become:
+\begin{equation} \label{eq:}
+\nabla_{f}\log p(y_i \mid f) =  A'(f) - y  \quad \nabla^2_{f f}\log p(y_i \mid f_i) = A''(y) 
+\end{equation}
+The derivative second derivative of the log partition function is easily calculated and the above formulation can be extended to vector input and outputs \ie for the categorical loss, we list the likelihoods we use and their dual parameter below:
 %\begin{equation}
 %\begin{aligned}
 %	\ell(y, \vf_\vw(\vx)) 
@@ -1391,14 +1393,16 @@ where $A(f)$ is the log partition function and $\sigma(.)$ is the link function.
 
 \begin{table}[!ht]
 \centering
-\begin{tabular}{@{}ccc@{}}
+\begin{tabular}{@{}cccc@{}}
 \toprule
-Loss        & der 1 & der 2 \\ \midrule
-Bernoulli    & $\sigma(f) - y$   & $\sigma(f)(1-\sigma(f))$      \\
-Mse         & $y - f$      & $1$       \\
-Categorical &  $\textrm{softmax}(f_i) - y_i$     &   $\begin{bmatrix}
+Loss        & $\nabla_{f}$ & $\nabla^2_{f f}$ &   $h()$ \\ \midrule
+Bernoulli    & $\sigma(f) - y$   & $\sigma(f)(1-\sigma(f))$  & \\
+Mse         & $y - f$      & $1$       & \\
+Categorical &  $\begin{bmatrix}
 		p_1\\ \vdots\\p_k
-	\end{bmatrix}$,     \\ \bottomrule
+	\end{bmatrix}$     &   $\begin{bmatrix}
+		p_1\\ \vdots\\p_k
+	\end{bmatrix}$,    & \\ \bottomrule
 \end{tabular}
 \end{table}
 

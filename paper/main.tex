@@ -1371,7 +1371,10 @@ This supplementary document is organized as follows.
 
 \section{Method details}
 \label{app:method}
+In this section, we first show in \cref{app:losses} how the dual parameters used for \our are computed for the different losses employed in our experiments, and then we discuss the computational complexity of our method in \cref{app:comp_compl}.
 %
+\subsection{Computation of the dual parameters for different losses}\todo{just a placeholder}
+\label{app:losses}
 As shown in \cref{eq:dual_param} in the main paper, our method rely on computation of the dual parameters. We show here how we can derive them in general for the family of exponential likelihoods. By rewriting the loss in the natural form, we have,
 \begin{equation}
  \ell(h(f), y) = -\log p(y \mid f) =  A(f)  - \langle t(y), f \rangle
@@ -1457,7 +1460,7 @@ where $\left[\textrm{Softmax}(\bm{f})\right]_i = \frac{\exp(\bm{f}_i)}{\sum_{j=1
 %\end{table}
 
 \subsection{Computational complexity}
-
+\label{app:comp_compl}
 
 \section{\our for continual learning}
 \label{app:cl}

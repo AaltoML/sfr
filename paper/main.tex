@@ -1384,16 +1384,16 @@ where $A(f)$ is the log partition function, $h(\cdot)$ is the inverse link funct
 %given the loss functions we use $t(y) = y$. 
 Then, taking the first and second derivatives of the loss in this form become:
 \begin{equation}\label{eq:dual_param_app}
-  -\nabla_{f} \log p(y_i \mid f) |_{f=f_i} =  A'(f_i) - y_i
+  \nabla_{f}  \ell(h(f), y_i) |_{f=f_i} =  A'(f_i) - y_i
   \quad \text{and} \quad
-  \nabla^2_{f\!f} - \log p(y_i \mid f) |_{f=f_i} = A''(f_i).
+  \nabla^2_{f\!f} \ell(h(f), y_i)  |_{f=f_i} = A''(f_i).
 \end{equation}
 % The second derivative of the log partition function is easily calculated and
 In this section, we provide the derivatives needed for the losses used in this work, \ie, the mean squared error (MSE) likelihood, used for the regression tasks, the Bernoulli likelihood, for binary classification, and the categorical likelihood, used for multi-class classification.
 
 For regression, the negative log likelihood comes from the MSE, and for a single input it can be written as
 \begin{equation}
-	\ell(h(f), y) = \frac{1}{2} (y_i -f_i)^2,% -\log \Norm( h(f) | y, \sigma^2) 	= - \log 
+	\ell(h(f_i), y_i) = \frac{1}{2} (y_i -f_i)^2,% -\log \Norm( h(f) | y, \sigma^2) 	= - \log 
 \end{equation}
 where the inverse link function is simply $h(f) = f$. Thus, the first and second derivatives are
 \begin{equation}

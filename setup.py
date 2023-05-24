@@ -78,7 +78,7 @@ extras_require = {
         "gym[classic_control]==0.26.2",
     ],
     "figures": [  # needed to get the HMC result for figure 1
-        "hamiltorch @ git+https://github.com/AdamCobb/hamiltorch",  # TODO check this works # for HMC banada fig
+        "hamiltorch @ git+https://github.com/AdamCobb/hamiltorch",
     ],
 }
 

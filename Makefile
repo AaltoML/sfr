@@ -75,7 +75,7 @@ supplement:
 	cp experiments/sl/*.py supplement/code/experiments/sl/
 	cp -r experiments/sl/configs supplement/code/experiments/sl/configs/
 	rm -rf supplement/code/experiments/sl/configs/hydra/launcher/lumi.yaml
-	cp -r experiments/sl/configs supplement/code/experiments/sl/configs
+	# cp -r experiments/sl/configs supplement/code/experiments/sl/configs
 	mkdir supplement/code/experiments/sl/bnn_predictive
 	cp -r experiments/sl/bnn_predictive/preds supplement/code/experiments/sl/bnn_predictive/preds
 	mkdir supplement/code/experiments/sl/uci
@@ -185,8 +185,8 @@ supplement:
 	zip -r supplement.zip supplement/code -i '*.names'
 	zip -r supplement.zip supplement/code -i '*.spy'
 	zip -r supplement.zip supplement/code -i '*.gz'
-	zip -r supplement.zip supplement/code/experiments/notebooks/banana_X_train
-	zip -r supplement.zip supplement/code/experiments/notebooks/banana_Y_train
+	zip supplement.zip supplement/code/notebooks/data/banana_X_train
+	zip supplement.zip supplement/code/notebooks/data/banana_Y_train
 	# zip -r supplement.zip supplement/code -i 'LICENSE'
 
 

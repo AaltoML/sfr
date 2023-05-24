@@ -1437,24 +1437,17 @@ For continual learning, the model cannot access the training data from previous 
 \begin{equation}
 	\weights^* = \arg \min_\weights \mathcal{L}(\dataset_\textrm{old} \cup \dataset_\textrm{new}, \weights) = \arg \min_\weights \sum_{i \in \dataset_\textrm{old} \cup \dataset_\textrm{new}}\ell(f_\weights(\mathbf{x}_{i}), y_i) + \delta \mathcal{R}(\weights).
 \end{equation} 
-Our goal in the continual setting is to replace the missing data coming from $\dataset_\textrm{old}$ by resorting to a functional regularizer that accounts for that by forcing the predictions of the neural networks over the inducing points $\mathcal{Z}_t$ to come with high probability from $f_\weights(\vz_i) \sim q(\vu),  \forall \vz_i \in \mathcal{Z}_t$. As shown in \citep{khan2017conjugate, adam2021dual}, we can view the dual parameters derived in \cref{sec:sparse-dual-gp}, as {\color{red} TODO}. Then, we can rewrite the sparse GP posterior for $q(\vu)$ in terms of the following approximate normal distributions:
+Our goal in the continual setting is to replace the missing data coming from $\dataset_\textrm{old}$ by resorting to a functional regularizer that accounts for that by forcing the predictions of the neural networks over the inducing points $\mathcal{Z}_t$ to come with high probability from $f_\weights(\vz_i) \sim q(\vu),  \forall \vz_i \in \mathcal{Z}_t$. As shown in \citep{khan2017conjugate, adam2021dual}, we can view the dual parameters derived in \cref{sec:sparse-dual-gp}. Then, we can rewrite the sparse GP posterior for $q(\vu)$ in terms of the following approximate normal distributions:
 %
-\begin{align}
+\begin{align} \label{eq:normal}
 	q(\vu)
-	& \propto p_\weights(\vu) \Norm(\tilde{\vy}; \vu, \MB_\vu)\\
 	& \propto  \Norm(0, \MKzz) \prod_{i \in \dataset_\textrm{old}} \exp \! \left(-\frac{\hat{\beta}_i}{2}(\tilde{y}_i - \va_i^\top \vu)^2 \right) \\
-	& \propto \Norm(0, \MKzz) \, \exp\left((\tilde{\vy} - \vu)^\top \bar{\MB}^{-1}(\tilde{\vy} - \vu)\right),
+        & \propto p(\vu) \Norm(\tilde{\vy}; \vu, \MB_\vu),
 \end{align}
 % The first normals are the approximate likelihoods 
 where $\va_i^\top = \vkzi^\top \MKzz^{-1}$ and $\tilde{y}_i = \hat{\alpha}_i + f_{\vw^*}(\vx_i)\hat{\beta}_i$.
-The sparse GP posterior $q(\vu)$ is proportional to the product between the prior over the weights $p_\weights(\vu)$ and a Gaussian term $\Norm(\tilde{\vy}; \vu, \MB_\vu)$, which arises from {\color{red} TODO}
+The sparse GP posterior $q(\vu)$ is proportional to the product between the prior over the inducing points $p(\vu)$ and a Gaussian term $\Norm(\tilde{\vy}; \vu, \MB_\vu)$, which arises from the sparse approximation to the likelihood. Replacing $\va_i^\top \vu$ with $\vx_i^{\top}\vw$, we can see the similarity between the sparse GP and a linear model where the kernel is the linear kernel. We therefore use the key quadratic term from  $\Norm(\tilde{\vy}; \vu, \MB_\vu)$ as our regularizer as the missing data term, which after we take the $\log$ becomes $(\tilde{\vy} - \vu)^\top \bar{\MB}^{-1}(\tilde{\vy} - \vu)$.  Given that $\tilde{\vy}$ are in the function space we can instead us simply the previous neural network predictions $f^{\textrm{old}}_\weights(\vz_i)$ and save computations.
  
-Replacing $\va_i^\top \vu$ with $\vx_i^{\top}\vw$, we can see the similarity between the sparse GP and a linear model where the kernel matrix determines the prior. To arrive at the MVN \todo{What is MVN short for?}Gaussian, we need to rearrange the quadratic terms to match the prior sufficient statistics. When performing conjugate summation of prior and likelihood, we arrive at the sparse GP posterior at the inducing points. The correlated covariance structure $\MSigma$ and the corresponding $\tilde{\vy}$ are simply a different form of the sparse dual variables,
-\begin{equation}
-\quad \bar{\MB}^{-1} =  \MKzz \MB_\vu^{-1} \MKzz \quad \text{and} \quad \tilde{\vy} = \MKzz \MB_{\vu}\valpha_{\vu}.
-\end{equation}
-Written as above, we can see that the sparse dual variables can be interpreted as a sparse MVN representation.
-
 \subsection{Extending the CL regularizer to multi-class settings} 
 \label{sec:cl_multioutput}
 %

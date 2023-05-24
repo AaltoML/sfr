@@ -1433,21 +1433,21 @@ where $\left[\textrm{Softmax}(\bm{f})\right]_i = \frac{\exp(\bm{f}_i)}{\sum_{j=1
 %\end{aligned}
 %\end{equation}
 
-\begin{table}[!ht]
-\centering
-\caption{}
-\begin{tabular}{@{}cccc@{}}
-\toprule
-Loss        & $h(\cdot)$ & $\nabla_{f}$ & $\nabla^2_{f\!f}$  \\ \midrule
-Bernoulli   & $\sigma(f) = \frac{1}{1 + e^{-f}}$ & $\sigma(f) - y$   & $\sigma(f)(1-\sigma(f))$ \\
-MSE         & & $y - f$      & $1$ \\
-Categorical & $\mathcal{S}_i(\vf) = \frac{e^{\vf_i}}{\sum_{j=1}^C e^{\vf_j}}$ &  $\begin{bmatrix}
-		p_1\\ \vdots\\p_k
-	\end{bmatrix}$     &   $\begin{bmatrix}
-		p_1\\ \vdots\\p_k
-	\end{bmatrix}$ \\ \bottomrule
-\end{tabular}
-\end{table}
+%\begin{table}[!ht]
+%\centering
+%\caption{}
+%\begin{tabular}{@{}cccc@{}}
+%\toprule
+%Loss        & $h(\cdot)$ & $\nabla_{f}$ & $\nabla^2_{f\!f}$  \\ \midrule
+%Bernoulli   & $\sigma(f) = \frac{1}{1 + e^{-f}}$ & $\sigma(f) - y$   & $\sigma(f)(1-\sigma(f))$ \\
+%MSE         & & $y - f$      & $1$ \\
+%Categorical & $\mathcal{S}_i(\vf) = \frac{e^{\vf_i}}{\sum_{j=1}^C e^{\vf_j}}$ &  $\begin{bmatrix}
+%		p_1\\ \vdots\\p_k
+%	\end{bmatrix}$     &   $\begin{bmatrix}
+%		p_1\\ \vdots\\p_k
+%	\end{bmatrix}$ \\ \bottomrule
+%\end{tabular}
+%\end{table}
 
 \subsection{Computational complexity}
 

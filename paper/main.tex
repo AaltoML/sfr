@@ -1421,7 +1421,7 @@ Moving to the multi class classification, the function outputs is no more a scal
 	&= - y_i \cdot \log \left( \left[ \textrm{Softmax}(\bm{f}) \right]_i \right)
 \end{aligned}
 \end{equation}
-where $\left[\textrm{Softmax}(\bm{f})\right]_i = \frac{\exp(\bm{f}_i)}{\sum_{j=1}^{C} \exp(\bm{f}_j)} \in \R$ defines the $i$\textsuperscript{th} entry of the logits fed through the $\textrm{Softmax}(\cdot)$ function. Finally, we can write the first and second derivatives as follows
+where $\left[\textrm{Softmax}(\bm{f})\right]_i = \frac{\exp(\bm{f}_i)}{\sum_{j=1}^{C} \exp(\bm{f}_j)} \in [0, 1]$ defines the $i$\textsuperscript{th} entry of the logits fed through the $\textrm{Softmax}(\cdot)$ function. Finally, we can write the first and second derivatives as follows
 
 \begin{equation}
 \begin{aligned}
@@ -1461,6 +1461,19 @@ where $\left[\textrm{Softmax}(\bm{f})\right]_i = \frac{\exp(\bm{f}_i)}{\sum_{j=1
 
 \subsection{Computational complexity}
 \label{app:comp_compl}
+
+% Big O
+% train neural network
+% compute the NTK -> from the NTK paper
+% we outer product of the kzi O(NM^2)
+% inversion O(M^3)
+
+% Practical implementation
+% mention that we do that in batches not full N 
+% role of jitter 
+% role of clamping
+% GPU A100 Nvidia
+
 
 \section{\our for continual learning}
 \label{app:cl}

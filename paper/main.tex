@@ -1380,7 +1380,7 @@ As shown in \cref{eq:dual_param} in the main paper, our method relies on computa
 \begin{equation}
  \ell(h(f), y) = -\log p(y \mid f) =  A(f)  - \langle t(y), f \rangle,
 \end{equation}
-where $A(f)$ is the log partition function, $h(\cdot)$ is the inverse link function, $t(y)$ are the sufficient statistics which for all our likelihoods is simply $t(y)=y$, finally $f$ denotes the neural network output before the link function. 
+where $A(f)$ is the log partition function, $h(\cdot)$ is the inverse link function, $t(y)$ are the sufficient statistics which for all our likelihoods is simply $t(y)=y$, finally $f$ denotes the neural network output before the inverse link function. 
 %given the loss functions we use $t(y) = y$. 
 Then, taking the first and second derivatives of the loss in this form become:
 \begin{equation}\label{eq:dual_param_app}

@@ -88,7 +88,7 @@ likelihood:
 
 wandb:
   group: ${dataset}
-  entity: "aidanscannell"
+  entity: "" # dropped for anonymity, replace with your own
   project: "sfr-sl-inference"
   use_wandb: True
   run_name: delta=${prior.delta}-lr=${lr}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}

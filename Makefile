@@ -170,7 +170,7 @@ supplement:
 	mkdir supplement/code/notebooks/data
 	cp -r notebooks/1D-regression-and-dual-updates.ipynb supplement/code/notebooks/
 	cp -r notebooks/classification-banana-data-set.ipynb supplement/code/notebooks/
-	cp notebooks/data/
+	cp notebooks/data/banana_X_train notebooks/data/banana_Y_train supplement/code/notebooks/data
 	
 	rm -f supplement.zip
 	zip supplement.zip 'supplement/supplement.pdf'

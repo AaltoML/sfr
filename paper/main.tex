@@ -1526,7 +1526,7 @@ For the \our-regularizer, at the end of each task, we compute the matrix $\bar{\
  	\quad \text{s.t.} \quad
  	\MBeta_{\vu, c} =  \sum_{i \in \dataset_t} \vkzi \,\hat{\beta}_{i, c} \, \vkzi^{\T}.
 \end{equation}
-The kernel computation is based on the relationship between the observed data and the parametrized function. For this reason, computing the kernel $\kappa_c$ for classes $c$, for which the model has not observed any data yet, is not meaningful.  \todo{probably better to word this differently}
+The kernel computation is based on the relationship between the observed data and the parametrized function. For this reason, computing the kernel $\kappa_c$ for classes $c$, for which the model has not observed any data yet, is not meaningful.
 In practice, for our method we define $\bar{\MB}^{-1}_{t, c}$ to be $\bar{\MB}^{-1}_{t, c} = \MI_M$ $\forall c \not\in \mathcal{C}_t$, where $\mathcal{C}_t$ is the set of classes observed up to task t. For example, for S-MNIST, after task 1 the set of observed classes for which we will compute the kernel is $\mathcal{C}_1 = \{0, 1\}$, then after task 2 it becomes $\mathcal{C}_1 = \{0, 1, 2, 3\}$, et cetera. 
 Finally, we can rewrite $\mathcal{R}_\mathrm{\our}$ as follows
 \begin{equation}\label{eq-cl-regularizer}%\textstyle

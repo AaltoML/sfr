@@ -1360,23 +1360,24 @@ A reference implementation of the methods presented in this paper is currently a
 
 This supplementary document is organized as follows. 
 %
-\cref{app:method} provides a more extensive overview of the techncical details of \our.
+\cref{app:method} provides a more extensive overview of the technical details of \our.
 %
 \cref{app:cl} covers the sparse-functional regularisation (SFR) setup for continual learning.
 %
 \cref{app:rl} provides a more extensive writeup of the reinforcement learning setup used in the experiments.
 %
-\cref{app:experiments} provides the full details of each individual experiments in the main paper.
+\cref{app:experiments} provides the full details of each individual experiment in the main paper.
 
 
 \section{Method details}
 \label{app:method}
 %
-Key to our method is the ability to compute the dual parameters in \cref{eq:dual_param}. For general exponential family likelihoods we can derive simpler expressions:
+\todo{This reads a bit off, is it grammatically correct?} Key to our method is the ability to compute the dual parameters as in \cref{eq:dual_param}. For general exponential family likelihoods we can derive simpler expressions:
+\todo{How does this connect to Eq 5?}
 \begin{equation}
  \ell(\sigma(f), y) = -\log p(y \mid f) =  A(f)  - \langle y, f\rangle
 \end{equation}
-where $A(f)$ is the log partition function and $\sigma(.)$ is the link function. Taking the first and second derivative of the loss in this form then become:
+where $A(f)$ is the log partition function and $\sigma(.)$ is the link function. Taking the first and second derivative of the loss in this form then becomes: \todo{Becomes what, to be written?}
 
  For the Bernoulli distribution with a given link function, typically the sigmoid, $\sigma(f_{\vw}(\vx)):= \sigma(f) = \frac{1}{1+e^f}$. Then, we can write the log probability as
 %\begin{equation}
@@ -1406,32 +1407,32 @@ Categorical &  $\textrm{softmax}(f_i) - y_i$     &   $\begin{bmatrix}
 \section{\our for continual learning}
 \label{app:cl}
 \subsection{Derivation of the regularizer term}
-For continual learning, the model cannot access the training data from previous tasks, denoted here as $\dataset_\textrm{old} = \bigcup_{s=1}^{t-1} \dataset_s$, and for each new tasks receives a new chunk of data $\dataset_\textrm{new} = \dataset_t$. On the other hand, in the supervised learning setting (described in \cref{sec:methods}) the neural network model has access to all the training data at once, \ie, the objective we are trying to optimize is
+For continual learning, the model cannot access the training data from previous tasks, denoted here as $\dataset_\textrm{old} = \bigcup_{s=1}^{t-1} \dataset_s$, and for each new tasks the model receives a new chunk of data $\dataset_\textrm{new} = \dataset_t$. On the other hand, in the supervised learning setting (described in \cref{sec:methods}) the neural network model has access to all the training data at once, \ie, the objective we are trying to optimize is
 \begin{equation}
 	\weights^* = \arg \min_\weights \mathcal{L}(\dataset_\textrm{old} \cup \dataset_\textrm{new}, \weights) = \arg \min_\weights \sum_{i \in \dataset_\textrm{old} \cup \dataset_\textrm{new}}\ell(f_\weights(\mathbf{x}_{i}), y_i) + \delta \mathcal{R}(\weights).
 \end{equation} 
-Our goal in the continual setting is to replace the missing data coming from $\dataset_\textrm{old}$ by resorting to a functional regularizer that accounts for that by forcing the predictions of the neural networks over the inducing points $\mathcal{Z}_t$ to come with high probability from $f_\weights(\vz_i) \sim q(\vu),  \forall \vz_i \in \mathcal{Z}_t$. As shown in \citep{khan2017conjugate, adam2021dual}, we can view the dual parameters derived in \cref{sec:sparse-dual-gp}, as {\color{red} TODO}.  Then, we can rewrite the sparse GP posterior for $q(\vu)$ in terms of the following approximate normal distributions:
+Our goal in the continual setting is to replace the missing data coming from $\dataset_\textrm{old}$ by resorting to a functional regularizer that accounts for the missing data by forcing the predictions of the neural networks over the inducing points $\mathcal{Z}_t$ to come with high probability from $f_\weights(\vz_i) \sim q(\vu),  \forall \vz_i \in \mathcal{Z}_t$. As shown in \citep{khan2017conjugate, adam2021dual}, we can view the dual parameters derived in \cref{sec:sparse-dual-gp}, as {\color{red} TODO}.  Then, we can rewrite the sparse GP posterior for $q(\vu)$ in terms of the following approximate normal distributions:
 %
 \begin{align}
 	q(\vu)
 	& \propto p_\weights(\vu) \Norm(\tilde{\vy}; \vu, \MB_\vu)\\
 	& \propto  \Norm(0, \MKzz) \prod_{i \in \dataset_\textrm{old}} \exp \! \left(-\frac{\hat{\beta}_i}{2}(\tilde{y}_i - \va_i^\top \vu)^2 \right) \\
-	& \propto \Norm(0, \MKzz) \, \exp\left((\tilde{\vy} - \vu)^\top \bar{\MB}^{-1}(\tilde{\vy} - \vu)\right)
+	& \propto \Norm(0, \MKzz) \, \exp\left((\tilde{\vy} - \vu)^\top \bar{\MB}^{-1}(\tilde{\vy} - \vu)\right),
 \end{align}
 % The first normals are the approximate likelihoods 
 where $\va_i^\top = \vkzi^\top \MKzz^{-1}$ and $\tilde{y}_i = \hat{\alpha}_i + f_{\vw^*}(\vx_i)\hat{\beta}_i$.
 The sparse GP posterior $q(\vu)$ is proportional to the product between the prior over the weights $p_\weights(\vu)$ and a Gaussian term $\Norm(\tilde{\vy}; \vu, \MB_\vu)$, which arises from {\color{red} TODO}
  
-Replacing $\va_i^\top \vu$ with $\vx_i^{\top}\vw$, we can see the similarity between the sparse GP and a linear model where the kernel matrix determines the prior. To arrive at the MVN Gaussian, we need to rearrange the quadratic terms to match the prior sufficient statistics. Performing conjugate summation of prior and likelihood, we would arrive at the sparse GP posterior at the inducing points. The correlated covariance structure $\MSigma$ and the corresponding $\tilde{\vy}$ are simply a different form of the sparse dual variables,
+Replacing $\va_i^\top \vu$ with $\vx_i^{\top}\vw$, we can see the similarity between the sparse GP and a linear model where the kernel matrix determines the prior. To arrive at the MVN \todo{What is MVN short for?}Gaussian, we need to rearrange the quadratic terms to match the prior sufficient statistics. When performing conjugate summation of prior and likelihood, we arrive at the sparse GP posterior at the inducing points. The correlated covariance structure $\MSigma$ and the corresponding $\tilde{\vy}$ are simply a different form of the sparse dual variables,
 \begin{equation}
 \quad \bar{\MB}^{-1} =  \MKzz \MB_\vu^{-1} \MKzz \quad \text{and} \quad \tilde{\vy} = \MKzz \MB_{\vu}\valpha_{\vu}.
 \end{equation}
-Written as above, we can see that the spare dual variables can be interpreted as a sparse MVN representation.
+Written as above, we can see that the sparse dual variables can be interpreted as a sparse MVN representation.
 
 \subsection{Extending the CL regularizer to multi-class settings} 
 \label{sec:cl_multioutput}
 %
-In a multi-class classification setting, the neural network can be seen as a function approximator that maps inputs $\vx \in \inputDomain$ to the logits $\textit{\textbf{f}} \in \outputDomain$, \ie, $f_\mathbf{w}: \inputDomain \to \outputDomain$. As a consequence, the Jacobian matrix is $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{C \times P}$ and the kernel of the associated sparse GP derived in \cref{sec:sfr}, $\kappa(\vx, \vx')$ is a tensor in $\R^{C \times P \times P}$. This means that we need compute the dual parameters and the matrix $\bar{\MB}^{-1}_{t, c}$ for all the function's outputs. If we denote $\kappa_c(\vx, \vx') \in \R$, as the kernel related to the $c$\textsuperscript{th} output function, \ie, the logit for class $c$, we can write the dual parameters as
+In a multi-class classification setting, the neural network can be seen as a function approximator that maps inputs $\vx \in \inputDomain$ to the logits $\textit{\textbf{f}} \in \outputDomain$, \ie, $f_\mathbf{w}: \inputDomain \to \outputDomain$. As a consequence, the Jacobian matrix is $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{C \times P}$, and the kernel of the associated sparse GP derived in \cref{sec:sfr} is $\kappa(\vx, \vx')$, which is a tensor in $\R^{C \times P \times P}$. This means that we need to compute the dual parameters and the matrix $\bar{\MB}^{-1}_{t, c}$ for all the function's outputs. If we denote $\kappa_c(\vx, \vx') \in \R$, as the kernel related to the $c$\textsuperscript{th} output function, \ie, the logit for class $c$, we can write the dual parameters as
 %
 \begin{equation} \textstyle
   \valpha_{\vu, c}  =  \sum_{i=1}^N  \vkzic \, \hat{\alpha}_{i, c} \in \R^{M}
@@ -1470,7 +1471,7 @@ with $\vu_c \in \R^M$ and $u_{i, c} = \left[ f_{\weights}(\vz_{i}) \right]_c, \f
 \section{\our for model-based reinforcement learning}
 \label{app:rl}
 %
-As a final experiment in the main paper in \cref{sec:rl-exp}, we provided a demonstration of combining our \our approach with model-based reinforcement learning. As such, this is a direct extension of the uncertainty quantification and representation capabilities already demonstrated in the supervised (and continual) learning examples in the main paper. However, the RL setting requires slightly more background to it and thus \cref{app:rl} has been separated out to a separate section in the appendix.
+As a final experiment in the main paper in \cref{sec:rl-exp}, we provided a demonstration of combining our \our approach with model-based reinforcement learning. As such, this is a direct extension of the uncertainty quantification and representation capabilities already demonstrated in the supervised (and continual) learning examples in the main paper. However, as the RL setting differs from the supervised and continual learning settings, we present additional background material on it and thus \cref{app:rl} has been separated out to a separate section in the appendix.
 
 In this appendix, we provide a background of the reinforcement learning problem, details of our
 model-based RL algorithim, an overview of the cart pole swing up environment, and
@@ -1576,7 +1577,7 @@ This section details how we configured and ran our reinforcement learning experi
 
 \textbf{Dynamic model}
 In all experiments we used an MLP dynamic model with a single hidden layer of width 64 and Tanh activation functions.
-At each episode we used Adam \cite{adam} to optimise the NN parameters for $5000$ iterations with a learning rate of $0.001$ and a bacth size of $64$.
+At each episode we used Adam \cite{adam} to optimise the NN parameters for $5000$ iterations with a learning rate of $0.001$ and a batch size of $64$.
 We reset the optimizer after each episode.
 As we are performing regression we instantiate the loss function in \cref{eq-empirical-risk} as the well-known mean squared error.
 This corresponds to a Gaussian likelihood with unit variance.
@@ -1588,11 +1589,10 @@ We then set the prior precision as $\delta=0.0001$.
 We use DDPG to learn the action value function.
 DDPG learns both a policy and a value function but we do not use the policy.
 In our experiments, we parameterised both the actor and critic as MLPs with two hidden layers of width $128$ with ELU activations.
-We train them using Adam for $500$ iterations at each episode, using a learning rate $0.0001$ and a bacth size of $512$.
+We train them using Adam for $500$ iterations at each episode, using a learning rate $0.0001$ and a batch size of $512$.
 DDPG uses a target value function to stabilise learning and for the soft target updates
-we used $\tau = 0.005$.
-DDPG is an off-policy algorithm where the exploration policy samples from a noise process.
-We sampled from a Gaussian distribution with $\sigma=0.1$ and clipping at $0.3$.
+we used $\tau = 0.005$. \todo{What is $\tau$ ?}
+DDPG is an off-policy algorithm where the exploration policy samples from a noise process, which here was a Gaussian distribution with $\sigma=0.1$ and clipping at $0.3$.
 
 \textbf{Model predictive path integral (MPPI)}
 In all model-based RL experiments we used a $H=5$ step horizon and a discount factor of $\gamma=0.9$.
@@ -1649,7 +1649,7 @@ To the best of our knowledge, we are the first to leverage the Laplace-GGN for m
 Our results indicate that both the Laplace approximation and \our could offer benefits over
 ensembles of NNs, which are typical in model-based RL.
 Although further experiments are required, our results indicate that \our could offer
-better uncertainty estimates for model-based RL.
+better uncertainty estimates in these tasks.
 We believe this may be due to \our sampling in function space as opposed to weight space like
 Laplace-GGN.
 
@@ -1732,7 +1732,7 @@ Our code implementation of the UCI experiments has been built on top of the code
 
 In \cref{sec:image} in the main paper, we included experiments on image data sets. For the image-based classification experiments, we include results using both the GP mean prediction and the NN prediction for both \our and the GP subset.
 For the neural network training, we used the same set-up as in \cite{immer2021improving},
-training the neural networok using Adam for $500$ epochs using a batch size of $512$.
+training the neural network using Adam for $500$ epochs with a batch size of $512$.
 The results reported in \cref{tbl:imagesuper} used a learning rate of $10^{-4}$
 and we ran each experiment for $5$ seeds.
 The MNIST experiments used a prior precision of $\delta=0.0008$

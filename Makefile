@@ -167,8 +167,10 @@ supplement:
 
 	# Notebooks
 	mkdir supplement/code/notebooks
+	mkdir supplement/code/notebooks/data
 	cp -r notebooks/1D-regression-and-dual-updates.ipynb supplement/code/notebooks/
 	cp -r notebooks/classification-banana-data-set.ipynb supplement/code/notebooks/
+	cp notebooks/data/
 	
 	rm -f supplement.zip
 	zip supplement.zip 'supplement/supplement.pdf'
@@ -183,6 +185,8 @@ supplement:
 	zip -r supplement.zip supplement/code -i '*.names'
 	zip -r supplement.zip supplement/code -i '*.spy'
 	zip -r supplement.zip supplement/code -i '*.gz'
+	zip -r supplement.zip supplement/code/experiments/notebooks/banana_X_train
+	zip -r supplement.zip supplement/code/experiments/notebooks/banana_Y_train
 	# zip -r supplement.zip supplement/code -i 'LICENSE'
 
 

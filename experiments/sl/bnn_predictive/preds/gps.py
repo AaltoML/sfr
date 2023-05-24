@@ -109,7 +109,6 @@ class Parallel_calc_E_z(nn.Module):
         E = A
         return E, z.view(1)
 
-# TODO: can save memory if compute b is separated as it doesn't need M
 class Parallel_calc_b_c_pred(nn.Module):
     def __init__(self, M):
         super(Parallel_calc_b_c_pred, self).__init__()
@@ -180,7 +179,7 @@ class Parallel_calc_mu(nn.Module):
         jitters = [0, 1e-3, 1e-2, 1e-1, 1]
         for i, v in enumerate(jitters):
             try:
-                K_train_train.diagonal(dim1=-2, dim2=-1).add_(v * torch.ones_like(pi))  # TODO: rewrite this
+                K_train_train.diagonal(dim1=-2, dim2=-1).add_(v * torch.ones_like(pi)) 
                 L = torch.cholesky(K_train_train, out=K_train_train)
                 if i > 0:
                     print('Added jitter of', v)
@@ -188,7 +187,7 @@ class Parallel_calc_mu(nn.Module):
             except RuntimeError as e:
                 if i == len(jitters) - 1:
                     raise e
-        alpha = torch.cholesky_solve(gp_f_train_map.squeeze(0).unsqueeze(-1), L.squeeze(0)).squeeze(-1)  # TODO  .squeeze(0) needed?
+        alpha = torch.cholesky_solve(gp_f_train_map.squeeze(0).unsqueeze(-1), L.squeeze(0)).squeeze(-1) 
         if alpha.ndim == 1:
             alpha.unsqueeze_(0)
         mu = contract('cnm,cn->cm', K_train_test, alpha)
@@ -274,7 +273,7 @@ def GP_LBFGS(likelihood, K_train_train, y_train, gp_train_mean, f_init, lbfgs_kw
 
     y = likelihood.expand_targets(y_train, K_train_train.shape[0]).t()
 #     trajectory = [f_init.detach().clone().to(out_device)]
-    f = f_init.detach().clone().to(device).requires_grad_()  # TODO put to some cuda device
+    f = f_init.detach().clone().to(device).requires_grad_()
     opt = torch.optim.LBFGS([f], **lbfgs_kwargs)
     loss_prev = torch.tensor(float('inf'))
 #     opt = torch.optim.Adam([f], **lbfgs_kwargs)
@@ -784,13 +783,13 @@ def gp_quantities(model, X_train, X_test=None, outputs=-1, optimize_params=set()
         for row_idcs in row_idcs_loader:
             row_slice = slice(row_idcs[0].item(), row_idcs[-1].item() + 1)
 
-            is_train_row = total_rows_train < n_train  # TODO rename to is_train_col / row
+            is_train_row = total_rows_train < n_train  
             total_cols = total_rows_train
 
             X = X_train if is_train_row else X_test
 
             if train_jacobians is None or not is_train_row:
-                for idcs in DataLoader(range(len(row_idcs)), batch_size=batch_size_per_gpu * len(device_ids)): # TODO: change these data loaders to simple range()
+                for idcs in DataLoader(range(len(row_idcs)), batch_size=batch_size_per_gpu * len(device_ids)): 
                     row_start, row_stop = idcs[0].item(), idcs[-1].item() + 1
                     row_slice2 = slice(row_slice.start + row_start, row_slice.start + row_stop)
     #                 jac_batch = J_row[row_start: row_stop]
@@ -828,7 +827,7 @@ def gp_quantities(model, X_train, X_test=None, outputs=-1, optimize_params=set()
                     print(row_slice, col_slice)
                 is_train_col = total_cols < n_train and train_jacobians is None
                 is_first = is_train_row and row_slice.start == 0
-                X = X_train if is_train_col else X_test  # TODO implement dataset
+                X = X_train if is_train_col else X_test  
 
                 if is_train_col is is_train_row and col_slice.start < row_slice.stop:
                     row_slice2 = slice(col_slice.start - row_slice.start, col_slice.stop - row_slice.start)
@@ -892,7 +891,6 @@ def gp_quantities(model, X_train, X_test=None, outputs=-1, optimize_params=set()
     del gpu_models
 
     def _collapse_groups(K):
-        # TODO: think on gradient computatation in combination with gpytorch model including multiple prior precisions
         if len(vars_to_optimize) > 0:
             if K.shape[1] > 1:
                 kernel = K[:, -1].clone() if len(vars_to_optimize) < n_groups else torch.zeros_like(K[:, -1])
@@ -912,7 +910,7 @@ def gp_quantities(model, X_train, X_test=None, outputs=-1, optimize_params=set()
         'K_train': _collapse_groups(K_train) if collapse_groups else K_train,
         'f_gp_train': f_gp_train,
         'f_star_train': f_star_train,
-        'prior_var': (list(all_vars)[0].exp().item() if len(all_vars) == 1 else None) if collapse_groups else None  # TODO ensure this is stored correctly
+        'prior_var': (list(all_vars)[0].exp().item() if len(all_vars) == 1 else None) if collapse_groups else None  
     }
 
     if X_test is not None:

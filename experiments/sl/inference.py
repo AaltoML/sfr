@@ -26,12 +26,8 @@ def set_seed_everywhere(random_seed):
     torch.manual_seed(random_seed)
     torch.cuda.manual_seed(random_seed)
     torch.manual_seed(random_seed)
-    # torch.cuda.manual_seed(cfg.random_seed)
-    # torch.backends.cudnn.deterministic = True
-    # torch.backends.cudnn.benchmark = False
     np.random.seed(random_seed)
     random.seed(random_seed)
-    # pl.seed_everything(random_seed)
 
 
 def get_dataset(dataset, double, dir, cfg, device=None):
@@ -112,14 +108,11 @@ def get_svgp_predictive(
 
 def get_la_predictive(loader, la_pred, seeding: bool = False):
     ys, ps = list(), list()
-    for X, y in loader:  # tqdm(loader):
-        # X, y = X.cuda(), y.cuda()
-        # X, y = X.cuda(), y.cuda() TODO put this back
+    for X, y in loader:  
         if seeding:
             torch.manual_seed(711)
         ps.append(
             la_pred(x=X).mean(dim=0)
-            # sample_svgp(X, likelihood, svgp, use_nn_out, n_samples=100).mean(dim=0)
         )
         ys.append(y)
     ps = torch.cat(ps)
@@ -149,17 +142,13 @@ def sample_svgp(X, likelihood, svgp, use_nn_out: bool, n_samples: int):
 
 
 def evaluate(lh, yte, gstar_te, yva, gstar_va):
-    print("inside evaluate")
     res = dict()
     res["nll_te"] = nll_cls(gstar_te, yte, lh)
-    print("after nll_cls")
-    # res["nll_va"] = nll_cls(gstar_va, yva, lh)
+    res["nll_va"] = nll_cls(gstar_va, yva, lh)
     res["acc_te"] = macc(gstar_te, yte)
-    print("after macc")
-    # res["acc_va"] = macc(gstar_va, yva)
+    res["acc_va"] = macc(gstar_va, yva)
     res["ece_te"] = ece(gstar_te, yte)
-    print("after ece")
-    # res["ece_va"] = ece(gstar_va, yva)
+    res["ece_va"] = ece(gstar_va, yva)
     return res
 
 
@@ -175,13 +164,10 @@ def main(cfg: DictConfig):
         torch.set_default_dtype(torch.double)
 
     # Ensure that all operations are deterministic on GPU (if used) for reproducibility
-    # torch.backends.cudnn.determinstic = True
     eval('setattr(torch.backends.cudnn, "determinstic", True)')
-    # torch.backends.cudnn.benchmark = False
     eval('setattr(torch.backends.cudnn, "benchmark", False)')
 
     cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
-    # cfg.device = "cpu"
     print("Using device: {}".format(cfg.device))
 
     ds_train, ds_test = get_dataset(
@@ -318,7 +304,6 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
             prior_precision=sfr.prior.delta,
             backend=laplace.curvature.asdl.AsdlGGN,
         )
-        # la.to(cfg.device)
 
         print("Making train_loader fo LA...")
         # train_loader = DataLoader(ds_train, batch_size=cfg.inference_batch_size)
@@ -336,29 +321,8 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
         logging.info("GLM")
 
         def la_pred(x):
-            # ys = []
-            # for i in range(100):
-            #     print("sample {}".format(i))
-            #     ys.append(
-            #         la.predictive_samples(
-            #             x=x,
-            #             pred_type="glm",
-            #             n_samples=1,
-            #             # diagonal_output=False,
-            #             # generator=cfg.random_seed,
-            #         )
-            #     )
-            #     torch.cuda.empty_cache()
-            # return torch.stack(ys, 0)
             return la.predictive_samples(x=x, pred_type="glm", n_samples=100)
 
-        # la_pred = partial(
-        #     la.predictive_samples,
-        #     pred_type="glm",
-        #     n_samples=100,
-        #     diagonal_output=False,
-        #     # generator=cfg.random_seed,
-        # )
         gstar_te, yte = get_la_predictive(test_loader, la_pred, seeding=True)
         gstar_va, yva = get_la_predictive(val_loader, la_pred, seeding=True)
         checkpoint[conf_name] = evaluate(
@@ -376,10 +340,8 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
             prior_precision=sfr.prior.delta,
             backend=laplace.curvature.asdl.AsdlGGN,
         )
-        # la.to(cfg.device)
 
         print("Making train_loader fo LA...")
-        # train_loader = DataLoader(ds_train, batch_size=cfg.inference_batch_size)
         train_loader_double = DataLoader(
             TensorDataset(*data), batch_size=cfg.inference_batch_size
         )
@@ -395,23 +357,6 @@ def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
         logging.info("BNN predictive")
 
         def la_pred(x):
-            ys = []
-            # for i in range(100):
-            #     print("sample {}".format(i))
-            #     try:
-            #         p = la.predictive_samples(
-            #             x=x,
-            #             pred_type="nn",
-            #             n_samples=1,
-            #             # diagonal_output=False,
-            #             # generator=cfg.random_seed,
-            #         )
-            #     except Exception as e:
-            #         print("e {}".format(e))
-            #     print("p {}".format(p.shape))
-            #     ys.append(p)
-            #     torch.cuda.empty_cache()
-            # return torch.stack(ys, 0)
             return la.predictive_samples(x=x, pred_type="nn", n_samples=100)
 
         gstar_te, yte = get_la_predictive(test_loader, la_pred, seeding=True)

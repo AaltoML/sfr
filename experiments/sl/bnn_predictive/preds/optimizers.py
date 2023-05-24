@@ -11,7 +11,7 @@ def GGN(model, likelihood, data, target=None, ret_f=False):
     print(f.shape)
     print(target.shape)
     if target is not None:
-        rs = -likelihood.residual(y=target.unsqueeze(-1), f=f)    # TODO: changed from original
+        rs = -likelihood.residual(y=target.unsqueeze(-1), f=f) 
     if f.ndim == 1:
         f = f.unsqueeze(-1)
     Hess = likelihood.Hessian(f)

@@ -965,7 +965,6 @@ class EfficientNet(MammothBackbone):
             out_channels = round_filters(32, self._global_params)
             self._conv_stem = Conv2d(in_channels, out_channels, kernel_size=3, stride=2, bias=False)
 
-    # TODO se va piallare
     # def get_params(self, discard_classifier=False) -> torch.Tensor:
     #     """
     #     Returns all the parameters concatenated in a single tensor.

@@ -10,7 +10,7 @@ from typing import List
 
 import torch
 import torch.nn as nn
-from torch.optim import SGD, Adam ## TODO: NOW WE ARE USING Adam
+from torch.optim import SGD, Adam
 
 from utils.conf import get_device
 from utils.magic import persistent_locals

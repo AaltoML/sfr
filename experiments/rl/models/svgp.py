@@ -111,7 +111,7 @@ class SVGP(gpytorch.models.ApproximateGP):
             mean_x = self.mean_module(x)
             covar_x = self.covar_module(x)
         else:
-            raise NotImplementedError("# TODO Paul implement fast update here")
+            raise NotImplementedError("# TODO implement fast update here")
         return gpytorch.distributions.MultivariateNormal(mean_x, covar_x)
 
     @torch.no_grad()

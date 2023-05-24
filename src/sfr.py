@@ -37,7 +37,6 @@ class SFR(nn.Module):
     def __init__(
         self,
         network: torch.nn.Module,
-        # train_data: Data,
         prior: Prior,
         likelihood: Likelihood,
         output_dim: int,
@@ -62,28 +61,11 @@ class SFR(nn.Module):
         X_train, Y_train = train_data
         X_train = torch.clone(X_train)
         Y_train = torch.clone(Y_train)
-        # if X_train.ndim > 2:
-        #     # TODO flatten dims for images
-        #     logger.info("X_train.ndim>2 so flattening {}".format(X_train.shape))
-        #     X_train = torch.flatten(X_train, 1, -1)
-        #     logger.info("X_train shape after flattening {}".format(X_train.shape))
-        # assert X_train.ndim == 2
-        # assert X_train.ndim >= 2
-        # assert Y_train.ndim == 2
         assert X_train.shape[0] == Y_train.shape[0]
         self.train_data = (X_train, Y_train)
-        # self.train_data = (X_train.to(self.device), Y_train.to(self.device))
-        # num_data, input_dim = X_train.shape
         num_data = Y_train.shape[0]
         indices = torch.randperm(num_data)[: self.num_inducing]
-        # TODO will this work for image classification??
         self.Z = X_train[indices.to(X_train.device)].to(self.device)
-        # self.Z = X_train
-        # assert self.Z.ndim == 2
-        # num_inducing = 100
-        # self.Z = torch.linspace(-1, 3, self.num_inducing).reshape(self.num_inducing, -1)
-        # Z = torch.rand(num_inducing, 1) * 3
-        # self.num_inducing, self.input_dim = Z.shape
 
         self.build_sfr()
 
@@ -138,7 +120,6 @@ class SFR(nn.Module):
         assert self.beta_u.shape[1] == self.num_inducing
         assert self.beta_u.shape[2] == self.num_inducing
 
-        # self.alpha_2 = torch.linalg.solve((Kzz + self.beta_u), self.alpha_u[..., None])
         self._predict_fn = predict_from_sparse_duals(
             alpha_u=self.alpha_u,
             beta_u=self.beta_u,
@@ -155,8 +136,6 @@ class SFR(nn.Module):
     def predict_mean(self, x: TestInput) -> FuncMean:
         x = x.to(self.Z.device)
         Kxz = self.kernel(x, self.Z)
-        # print("kxz {}".format(Kxz.shape))
-        # print("alpa_u {}".format(self.alpha_u.shape))
         f_mean = (Kxz @ self.alpha_u[..., None])[..., 0].T
         return f_mean
 
@@ -167,8 +146,6 @@ class SFR(nn.Module):
 
     @torch.no_grad()
     def predict_f(self, x: TestInput) -> Tuple[FuncMean, FuncVar]:
-        # TODO implement full_cov=True
-        # TODO implement noise_var correctly
         f_mean, f_var = self._predict_fn(x, full_cov=False)
         return f_mean, f_var
 
@@ -176,14 +153,11 @@ class SFR(nn.Module):
         f = self.network(x)
         neg_log_likelihood = self.likelihood.nn_loss(f=f, y=y)
         neg_log_prior = self.prior.nn_loss()
-        # neg_log_prior = self.prior.nn_loss(self.network.parameters)
         return neg_log_likelihood + neg_log_prior
 
     @torch.no_grad()
     def update(self, x: InputData, y: OutputData):
         logger.info("Updating dual params...")
-        # TODO what about classificatin
-        # assert x.ndim == 2 and y.ndim == 2
         if x.ndim > 2:
             print("x before flatten {}".format(x.shape))
             x = torch.flatten(x, 1, -1)
@@ -191,17 +165,6 @@ class SFR(nn.Module):
         assert x.ndim == 2
         num_new_data, input_dim = x.shape
         Kzx = self.kernel(self.Z, x)
-
-        # lambda_1, lambda_2 = calc_lambdas(Y=Y, F=F, nll=nll)
-
-        # TODO only works for regression (should be lambda_1)
-
-        # f = self.network(x)
-        # lambda_1, _ = calc_lambdas(Y=y, F=f, nll=None, likelihood=self.likelihood)
-        # lambda_1_minus_y = y-lambda_1
-        # print(" hereh lambda_1 {}".format(lambda_1.shape))
-        # self.alpha += (Kzx @ lambda_1_minus_y.T[..., None])[..., 0]
-        # self.alpha_u += (Kzx @ y.T[..., None])[..., 0]
 
         if isinstance(self.likelihood, src.likelihoods.Gaussian):
             self.beta_u += (
@@ -249,30 +212,22 @@ def build_ntk(
     network: nn.Module, num_data: int, output_dim: int, delta: float = 1.0
 ) -> Tuple[NTK, NTK_single]:
     network = network.eval()
-    # Detaching the parameters because we won't be calling Tensor.backward().
     params = {k: v.detach() for k, v in network.named_parameters()}
-
-    # def fnet_single(params, x, i):
-    #     f = functional_call(network, params, (x,))[:, i]
-    #     return f
 
     @torch.no_grad()
     def single_output_ntk_contraction(
         x1: InputData, x2: InputData, i: int, full_cov: Optional[bool] = True
     ):
-        # @torch.no_grad()
         def fnet_single(params, x):
             f = functional_call(network, params, (x.unsqueeze(0),))[:, i]
             return f
 
         # Compute J(x1)
         jac1 = vmap(jacrev(fnet_single), (None, 0))(params, x1)
-        # print("jac1 {}".format(jac1.shape))
         jac1 = [j.flatten(2) for j in jac1.values()]
 
         # Compute J(x2)
         jac2 = vmap(jacrev(fnet_single), (None, 0))(params, x2)
-        # print("jac2 {}".format(jac2.shape))
         jac2 = [j.flatten(2) for j in jac2.values()]
 
         # Compute J(x1) @ J(x2).T
@@ -288,7 +243,6 @@ def build_ntk(
         if full_cov:
             return 1 / (delta * num_data) * result[..., 0, 0]
         else:
-            # TODO this could be more efficient
             result = torch.diagonal(result[..., 0], dim1=-1, dim2=-2)
             return 1 / (delta * num_data) * result
 
@@ -308,10 +262,8 @@ def build_ntk(
             # This computes vec @ J(x2).T
             # `vec` is some unit vector (a single slice of the Identity matrix)
             vjps = vjp_fn(vec)
-            # print("vjps {}".format(vjps))
             # This computes J(X1) @ vjps
             _, jvps = jvp(func_X2, (params,), vjps)
-            # print("jvps {}".format(jvps))
             return jvps
 
         # Here's our identity matrix
@@ -329,7 +281,6 @@ def build_ntk(
         else:
             K = torch.empty(output_dim, X1.shape[0]).to(X1.device)
         for i in range(output_dim):
-            # K[i, ...] = single_output_ntk(X1, X2, i=i, full_cov=full_cov)
             K[i, ...] = single_output_ntk_contraction(X1, X2, i=i, full_cov=full_cov)
         return K
 
@@ -355,14 +306,8 @@ def predict_from_sparse_duals(
     KzzplusBeta = (Kzz + beta_u) + Iz * jitter
     assert beta_u.shape == Kzz.shape
 
-    # beta_u += Iz * jitter
     Lm = torch.linalg.cholesky(Kzz, upper=True)
-    # L = torch.linalg.cholesky(beta_u, upper=True)
-    # Lb = torch.linalg.cholesky(Kzz, upper=True)
     Lb = torch.linalg.cholesky(KzzplusBeta, upper=True)
-    # Lb = Iz
-
-    # L = torch.linalg.cholesky(Kzz, upper=True)
 
     @torch.no_grad()
     def predict(x, full_cov: bool = False) -> Tuple[OutputMean, OutputVar]:
@@ -372,7 +317,6 @@ def predict_from_sparse_duals(
         f_mean = (Kxz @ alpha_u[..., None])[..., 0].T
 
         if full_cov:
-            # TODO tmp could be computed before
             tmp = torch.linalg.solve(Kzz, Iz) - torch.linalg.solve(beta_u + Kzz, Iz)
             f_cov = Kxx - torch.matmul(
                 torch.matmul(Kxz, tmp), torch.transpose(Kxz, -1, -2)
@@ -406,7 +350,6 @@ def calc_sparse_dual_params_batch(
     subset_out_dim: Optional[List] = None,
     device: str = "cpu",
 ) -> Tuple[AlphaInducing, BetaInducing, Lambda]:
-    ################  Compute lambdas batched version START ################
     num_train = len(train_loader.dataset)
     items_shape = (num_train, out_dim)
 
@@ -432,12 +375,6 @@ def calc_sparse_dual_params_batch(
         beta_diag[start_idx:end_idx] = beta_i
         start_idx = end_idx
 
-    # Clip the lambdas  (?)
-    # lambda_1 = torch.clip(lambda_1, min=1e-7)
-    # lambda_2_diag = torch.clip(lambda_2_diag, min=1e-7)
-    ################  Compute lambdas batched version END ################
-
-    ################  Compute alpha/beta batched version START ################
     alpha_u = torch.zeros((out_dim, Z.shape[0])).cpu()
     Lambda_u = torch.zeros((out_dim, Z.shape[0])).cpu()
     beta_u = torch.zeros((out_dim, Z.shape[0], Z.shape[0])).cpu()
@@ -478,7 +415,6 @@ def calc_sparse_dual_params_batch(
         )
 
     return alpha_u.to(device), beta_u.to(device), Lambda_u.to(device)
-    ################  Compute alpha/beta batched version END ################
 
 
 @torch.no_grad()
@@ -490,41 +426,22 @@ def calc_sparse_dual_params(
     likelihood: Likelihood,
     jitter: float = 1e-3,
 ) -> Tuple[AlphaInducing, BetaInducing, Lambda]:
-    # num_inducing, input_dim = Z.shape
     X, Y = train_data
-    # assert X.ndim == 2
-    # assert X.shape[0] == Y.shape[0]
-    # assert X.shape[1] == input_dim
     Kzx = kernel(Z, X)
 
     F = network(X)
     Lambda, beta = calc_lambdas(Y=Y, F=F, likelihood=likelihood)
-    # assert Lambda.ndim == 2
-    # num_data, output_dim = Lambda.shape
-    # assert beta.ndim == 3
-    # assert beta.shape[0] == num_data
-    # assert beta.shape[1] == beta.shape[2] == output_dim
-    # assert Kzx.ndim == 3
-    # assert Kzx.shape[0] == output_dim
-    # assert Kzx.shape[2] == num_data
+
     beta_diag = torch.diagonal(beta, dim1=-2, dim2=-1)  # [num_data, output_dim]
     beta = torch.diag_embed(beta_diag.T)  # [output_dim, num_data, num_data]
     beta_u = torch.matmul(torch.matmul(Kzx, beta), torch.transpose(Kzx, -1, -2))
-    # beta_u = torch.matmul(Kzx, torch.transpose(Kzx, -1, -2))
-    # print("beta_u {}".format(beta_u.shape))
-    # beta_u = beta_u + Iz * jitter
+
 
     Lambda_u = torch.matmul(Kzx, torch.transpose(Lambda, -1, -2)[..., None])[..., 0]
-    # print("Lambda_u {}".format(Lambda_u.shape))
 
     alpha_u = calc_alpha_u_from_lambda(
         beta_u=beta_u, Lambda_u=Lambda_u, Z=Z, kernel=kernel, jitter=jitter
     )
-    # print("(Kzz + beta_u) {}".format(Kzz + beta_u))
-    # KzzplusBeta = (Kzz + beta_u) + Iz * jitter
-    # alpha_u = torch.linalg.solve(KzzplusBeta, Lambda_u[..., None])[..., 0]
-    # alpha_u = torch.linalg.solve((Kzz + beta_u), Lambda_u[..., None])[..., 0]
-    # print("alpha_u {}".format(alpha_u.shape))
     return alpha_u, beta_u, Lambda_u
 
 
@@ -579,19 +496,3 @@ def calc_lambda(
     Lambda = alpha + F * beta_diag
     return Lambda
 
-
-# TODO: need that to be out of the function
-def loss_cl(
-    x: InputData,
-    y: OutputData,
-    network: nn.Module,
-    likelihood: Likelihood,
-    prior: Prior,
-):
-    f = network(x)
-    neg_log_likelihood = likelihood.nn_loss(f=f, y=y)
-    neg_log_prior = prior.nn_loss()
-    return neg_log_likelihood + neg_log_prior
-
-
-NTKSVGP = SFR  # for backward compatibility

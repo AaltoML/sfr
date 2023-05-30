@@ -1,0 +1,807 @@
+%%%%%%%% ICML 2023 EXAMPLE LATEX SUBMISSION FILE %%%%%%%%%%%%%%%%%
+
+\documentclass{article}
+
+% Recommended, but optional, packages for figures and better typesetting:
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{microtype}
+\usepackage{graphicx}
+
+% For theorems and such
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathtools}
+\usepackage{amsthm}
+
+% \usepackage{subfigure}
+\usepackage{booktabs} % for professional tables
+\usepackage[aboveskip=2pt]{subcaption} % This needs to be here to have captions display correctly
+\usepackage{wrapfig}
+
+% hyperref makes hyperlinks in the resulting PDF.
+% If your build breaks (sometimes temporarily if a hyperlink spans a page)
+% please comment out the following usepackage line and replace
+% \usepackage{icml2023} with \usepackage[nohyperref]{icml2023} above.
+%\usepackage{hyperref}
+
+
+% Attempt to make hyperref and algorithmic work together better:
+\newcommand{\theHalgorithm}{\arabic{algorithm}}
+
+
+
+
+% Use the following line for the initial blind version submitted for review:
+\usepackage[nohyperref]{icml2023_dp4ml}
+
+% If accepted, instead use the following line for the camera-ready submission:
+%\usepackage[accepted]{icml2023_dp4ml}
+
+% if you use cleveref..
+% \usepackage[capitalize,noabbrev]{cleveref}
+%\usepackage[capitalize,nameinlink]{cleveref}
+%\crefname{section}{Sec.}{Secs.}
+%\crefname{appendix}{App.}{Apps.}
+%\crefname{algorithm}{Alg.}{Algs.}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% THEOREMS
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%\theoremstyle{plain}
+%\newtheorem{theorem}{Theorem}[section]
+%\newtheorem{proposition}[theorem]{Proposition}
+%\newtheorem{lemma}[theorem]{Lemma}
+%\newtheorem{corollary}[theorem]{Corollary}
+%\theoremstyle{definition}
+%\newtheorem{definition}[theorem]{Definition}
+%\newtheorem{assumption}[theorem]{Assumption}
+%\theoremstyle{remark}
+%\newtheorem{remark}[theorem]{Remark}
+
+%Definitions and macros
+%\input{defns}
+
+% Todonotes is useful during development; simply uncomment the next line
+%    and comment out the line below the next line to turn off comments
+%\usepackage[disable,textsize=tiny]{todonotes}
+\usepackage[textsize=tiny]{todonotes}
+
+% TikZ
+\usepackage{tikz,pgfplots}
+\usetikzlibrary{shapes,arrows,positioning,calc}
+\usetikzlibrary{decorations.pathmorphing}
+\usepackage[outline]{contour}
+\pgfkeys{/pgf/number format/.cd,1000 sep={}}
+
+% Redefine paragraph to be tighter
+\renewcommand{\paragraph}[1]{{\bf #1}~~}
+
+% Array/table packages
+\usepackage{tabularx}
+\usepackage{array,multirow}
+\usepackage{colortbl}
+\newcommand{\PreserveBackslash}[1]{\let\temp=\\#1\let\\=\temp}
+\newcolumntype{C}[1]{>{\PreserveBackslash\centering}p{#1}}
+\newlength{\tblw}
+
+% Latin
+\usepackage{xspace}
+\newcommand{\eg}{\textit{e.g.\@}\xspace}
+\newcommand{\ie}{\textit{i.e.\@}\xspace}
+\newcommand{\cf}{\textit{cf.\@}\xspace}
+\newcommand{\etc}{\textit{etc.\@}\xspace}
+\newcommand{\etal}{\textit{et~al.\@}\xspace}
+
+% Our method
+\newcommand{\our}{\textsc{sfr}\xspace}
+
+% Tikz
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usetikzlibrary{patterns}
+\usetikzlibrary{decorations,backgrounds,arrows.meta,calc}
+\usetikzlibrary{shapes,arrows,positioning}
+
+% Appendix/supplement title
+\newcommand{\nipstitle}[1]{{%
+    % rules for title box at top and bottom
+    \def\toptitlebar{\hrule height4pt \vskip .25in \vskip -\parskip} 
+    \def\bottomtitlebar{\vskip .29in \vskip -\parskip \hrule height1pt \vskip .09in} 
+    \phantomsection\hsize\textwidth\linewidth\hsize%
+    \vskip 0.1in%
+    \toptitlebar%
+    \begin{minipage}{\textwidth}%
+        \centering{\LARGE\bf #1\par}%
+    \end{minipage}%
+    \bottomtitlebar%
+    \addcontentsline{toc}{section}{#1}%
+}}
+
+% Bibliography
+%\usepackage[maxcitenames=1, maxbibnames=4, doi=false, isbn=false, eprint=true, backend=bibtex, hyperref=true, url=false, style=authoryear-comp]{biblatex}
+%\addbibresource{zotero-library.bib}
+% \addbibresource{paper/zotero-library.bib}
+
+% Let's use good old bibtex instead
+
+% Figure customization: Tight legend box
+\pgfplotsset{every axis/.append style={
+		legend style={inner xsep=1pt, inner ysep=0.5pt, nodes={inner sep=1pt, text depth=0.1em},draw=none,fill=none}
+}}
+
+% Our packages
+\usepackage{todonotes}
+\usepackage[colorlinks=true,linkcolor=black,allcolors=black,urlcolor=black,citecolor=black]{hyperref}
+\usepackage{amsmath}
+\usepackage{bm}
+%\usepackage{algpseudocode}
+%\usepackage{algorithm}
+\usepackage{derivative}
+\usepackage{wrapfig}
+
+\usepackage{tikz,pgfplots}
+\usepackage{subcaption}
+\usetikzlibrary{}
+
+\input{aidans-utils.tex}
+
+% Short section names etc
+% This must be imported last!
+%\usepackage{cleveref}
+\usepackage[capitalise,nameinlink]{cleveref}
+\crefname{section}{Sec.}{Secs.}
+\crefname{algorithm}{Alg.}{Algs.}
+\crefname{appendix}{App.}{Apps.}
+\crefname{definition}{Def.}{Defs.}
+\crefname{table}{Table}{Tables}
+
+% Config for Arno's awesome TikZ plotting stuff
+\newlength{\figurewidth}
+\newlength{\figureheight}
+
+
+% Variables
+\newcommand{\state}{\ensuremath{\mathbf{s}}}
+\newcommand{\action}{\ensuremath{\mathbf{a}}}
+\newcommand{\noise}{\ensuremath{\bm\epsilon}}
+\newcommand{\discount}{\ensuremath{\gamma}}
+\newcommand{\inducingInput}{\ensuremath{\mathbf{Z}}}
+\newcommand{\inducingVariable}{\ensuremath{\mathbf{u}}}
+\newcommand{\dataset}{\ensuremath{\mathcal{D}}}
+\newcommand{\dualParam}[1]{\ensuremath{\bm{\lambda}_{#1}}}
+\newcommand{\meanParam}[1]{\ensuremath{\bm{\mu}_{#1}}}
+
+% Indexes
+\newcommand{\horizon}{\ensuremath{h}}
+\newcommand{\Horizon}{\ensuremath{H}}
+\newcommand{\numDataNew}{\ensuremath{N^{\text{new}}}}
+\newcommand{\numDataOld}{\ensuremath{N^{\text{old}}}}
+\newcommand{\numInducing}{\ensuremath{M}}
+
+% Domains
+\newcommand{\stateDomain}{\ensuremath{\mathcal{S}}}
+\newcommand{\actionDomain}{\ensuremath{\mathcal{A}}}
+\newcommand{\inputDomain}{\ensuremath{\mathbb{R}^{D}}}
+\newcommand{\outputDomain}{\ensuremath{\mathbb{R}^{C}}}
+\newcommand{\policyDomain}{\ensuremath{\Pi}}
+
+% Functions
+\newcommand{\rewardFn}{\ensuremath{r}}
+\newcommand{\transitionFn}{\ensuremath{f}}
+\newcommand{\latentFn}{\ensuremath{f}}
+
+\newcommand{\optimisticTransition}{\ensuremath{\hat{f}}}
+\newcommand{\optimisticTransitionMean}{\ensuremath{\mu_{\optimisticTransition}}}
+\newcommand{\optimisticTransitionCov}{\ensuremath{\mu_{\optimisticTransition}}}
+\newcommand{\optimisticTransitionSet}{\ensuremath{\mathcal{M}}}
+
+
+% Parameters
+% \newcommand{\weights}{\ensuremath{\bm\phi}}
+\newcommand{\weights}{\ensuremath{\mathbf{w}}}
+\newcommand{\valueFnParams}{\ensuremath{\psi}}
+\newcommand{\policyParams}{\ensuremath{\theta}}
+
+% Networks
+\newcommand{\transitionFnWithParams}{\ensuremath{\transitionFn_{\weights}}}
+\newcommand{\valueFn}{\ensuremath{\mathbf{Q}}}
+\newcommand{\stateValueFn}{\ensuremath{\mathbf{V}}}
+% \newcommand{\valueFn}{\ensuremath{\mathbf{Q}_{\valueFnParams}}}
+\newcommand{\policy}{\ensuremath{\pi}}
+\newcommand{\pPolicy}{\ensuremath{\pi_{\policyParams}}}
+
+
+% Packages for bold math
+\usepackage{bm}
+\newcommand{\mathbold}[1]{\bm{#1}}
+\newcommand{\mbf}[1]{\mathbf{#1}}
+\renewcommand{\mid}{\,|\,}
+
+
+% Math Macros
+\newcommand{\MB}{\mbf{B}}
+\newcommand{\MC}{\mbf{C}}
+\newcommand{\MZ}{\mbf{Z}}
+\newcommand{\MV}{\mbf{V}}
+\newcommand{\MX}{\mbf{X}}
+\newcommand{\MA}{\mbf{A}}
+\newcommand{\MK}{\mbf{K}}
+\newcommand{\MI}{\mbf{I}}
+\newcommand{\MH}{\mbf{H}}
+\newcommand{\T}{\top}
+\newcommand{\vzeros}{\mbf{0}}
+\newcommand{\vtheta}[0]{\mathbold{\theta}}
+\newcommand{\valpha}[0]{\mathbold{\alpha}}
+\newcommand{\vkappa}[0]{\mathbold{\kappa}}
+\newcommand{\vbeta}[0]{\mathbold{\beta}}
+\newcommand{\MBeta}[0]{\mathbold{B}}
+\newcommand{\vlambda}[0]{\mathbold{\lambda}}
+\newcommand{\diag}{\text{{diag}}}
+
+\newcommand{\vm}{\mbf{m}}
+\newcommand{\vz}{\mbf{z}}
+\newcommand{\vf}{\mbf{f}}
+\newcommand{\vu}{\mbf{u}}
+\newcommand{\vx}{\mbf{x}}
+\newcommand{\vy}{\mbf{y}}
+\newcommand{\vw}{\mbf{w}}
+\newcommand{\va}{\mbf{a}}
+
+\newcommand{\Jac}[2]{\mathcal{J}_{#1}(#2)}
+\newcommand{\JacT}[2]{\mathcal{J}_{#1}^\top(#2)}
+
+
+\newcommand{\GP}{\mathcal{GP}}
+\newcommand{\KL}[2]{\mathrm{D}_\textrm{KL} \dbar*{#1}{#2}}
+\newcommand{\MKzz}{\mbf{K}_{\mbf{z}\mbf{z}}}
+\newcommand{\MKzzc}{\mbf{K}_{\mbf{z}\mbf{z}, c}}
+\newcommand{\MKxx}{\mbf{K}_{\mbf{x}\mbf{x}}}
+\newcommand{\MKzx}{\mbf{K}_{\mbf{z}\mbf{x}}}
+\newcommand{\MKxz}{\mbf{K}_{\mbf{x}\mbf{z}}}
+\newcommand{\vkzi}{\mbf{k}_{\mbf{z}i}}
+\newcommand{\vkzic}{\mbf{k}_{\mbf{z}i,c}}
+\newcommand{\vkzs}{\mbf{k}_{\mbf{z}i}}
+\newcommand{\vk}{\mbf{k}}
+\newcommand{\MLambda}[0]{\mathbold{\Lambda}}
+\newcommand{\MSigma}[0]{\mathbold{\Sigma}}
+\definecolor{matplotlib-blue}{HTML}{1f77b4}
+\newcommand{\N}{\mathrm{N}}
+%\newcommand{\R}{\mathrm{R}}
+\newcommand{\myexpect}{\mathbb{E}}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\newcommand{\Norm}{\mathcal{N}}
+
+\newcommand{\digit}[1]{\tikz[baseline=-.5ex]\node[inner sep=1pt,rounded corners=1pt,draw=black,text width=5pt,minimum width=5pt,align=center,fill=black!20]{\tiny\bf\sf#1};}
+
+
+% The \icmltitle you define below is probably too long as a header.
+% Therefore, a short form for the running title is supplied here:
+\icmltitlerunning{Sparse Function-space Representation of Neural Networks}
+
+\begin{document}
+
+\twocolumn[
+\icmltitle{Sparse Function-space Representation of Neural Networks}
+
+% It is OKAY to include author information, even for blind
+% submissions: the style file will automatically remove it for you
+% unless you've provided the [accepted] option to the icml2023
+% package.
+
+% List of affiliations: The first argument should be a (short)
+% identifier you will use later to specify author affiliations
+% Academic affiliations should list Department, University, City, Region, Country
+% Industry affiliations should list Company, City, Region, Country
+
+% You can specify symbols, otherwise they are numbered in order.
+% Ideally, you should not use this facility. Affiliations will be numbered
+% in order of appearance and this is the preferred way.
+\icmlsetsymbol{equal}{*}
+
+\begin{icmlauthorlist}
+\icmlauthor{Firstname1 Lastname1}{equal,yyy}
+\icmlauthor{Firstname2 Lastname2}{equal,yyy,comp}
+\icmlauthor{Firstname3 Lastname3}{comp}
+\icmlauthor{Firstname4 Lastname4}{sch}
+\icmlauthor{Firstname5 Lastname5}{yyy}
+\icmlauthor{Firstname6 Lastname6}{sch,yyy,comp}
+\icmlauthor{Firstname7 Lastname7}{comp}
+%\icmlauthor{}{sch}
+\icmlauthor{Firstname8 Lastname8}{sch}
+\icmlauthor{Firstname8 Lastname8}{yyy,comp}
+%\icmlauthor{}{sch}
+%\icmlauthor{}{sch}
+\end{icmlauthorlist}
+
+\icmlaffiliation{yyy}{Department of XXX, University of YYY, Location, Country}
+\icmlaffiliation{comp}{Company Name, Location, Country}
+\icmlaffiliation{sch}{School of ZZZ, Institute of WWW, Location, Country}
+
+\icmlcorrespondingauthor{Firstname1 Lastname1}{first1.last1@xxx.edu}
+\icmlcorrespondingauthor{Firstname2 Lastname2}{first2.last2@www.uk}
+
+% You may provide any keywords that you
+% find helpful for describing your paper; these are used to populate
+% the "keywords" metadata in the PDF but will not be shown in the document
+\icmlkeywords{Machine Learning, ICML}
+
+\vskip 0.3in
+]
+
+% this must go after the closing bracket ] following \twocolumn[ ...
+
+% This command actually creates the footnote in the first column
+% listing the affiliations and the copyright notice.
+% The command takes one argument, which is text to display at the start of the footnote.
+% The \icmlEqualContribution command is standard text for equal contribution.
+% Remove it (just {}) if you do not need this facility.
+
+%\printAffiliationsAndNotice{}  % leave blank if no need to mention equal contribution
+\printAffiliationsAndNotice{\icmlEqualContribution} % otherwise use the standard text.
+
+\begin{abstract}
+Deep neural networks are known to lack uncertainty estimates, struggle to incorporate new data, and suffer from catastrophic forgetting. We present a method that mitigates these issues by converting neural networks from weight-space to a low-rank function-space representation, via the so-called dual parameters. In contrast to previous work, our sparse representation captures the joint distribution over the entire data set, rather than only over a subset. This offers a compact and principled way of capturing uncertainty and enables us to incorporate new data without retraining whilst retaining predictive performance. We demonstrate the proposed approach for quantifying uncertainty in supervised learning and maintaining an expressive functional representation for sequential learning.\looseness-1
+\end{abstract}
+
+\section{Introduction}
+%
+Deep learning \cite{goodfellow2016deep} has become the cornerstone of contemporary artificial intelligence, proving remarkably effective in tackling supervised and unsupervised learning tasks in the {\em large data}, {\em offline}, and {\em gradient-based training} regime. Despite its success, gradient-based learning techniques exhibit limitations. Firstly, how can we efficiently quantify uncertainty without resorting to expensive and hard-to-interpret sampling in the model's weight-space? Secondly, how to update the weights of an already trained model with new batches of data without compromising the performance on past data? These questions become central when applied to sequential learning paradigms, such as continual learning (CL, \citep{parisi2019continual, de2021continual}) and reinforcement learning (RL, \cite{sutton2018reinforcement}). In CL, access to the previous data is lost, and then the challenge is retaining a compact representation of the problem to alleviate forgetting over the life-long learning horizon~\cite{mccloskey1989catastrophic}. Similarly, in RL, the model must adapt to environmental observations through exploration, while leveraging prediction uncertainties to assess potential future paths.\looseness-1
+
+
+\begin{figure}[t!]
+  \centering\scriptsize
+  % Figure options
+  \pgfplotsset{axis on top,scale only axis,width=\figurewidth,height=\figureheight, ylabel near ticks,ylabel style={yshift=-2pt},y tick label style={rotate=90},legend style={nodes={scale=1., transform shape}},tick label style={font=\tiny,scale=1}}
+  \pgfplotsset{xlabel={Input, $x$},axis line style={rounded corners=2pt}}
+  % Set figure 
+  \setlength{\figurewidth}{.19\textwidth}
+  \setlength{\figureheight}{\figurewidth}
+  %
+  \def\inducing{\large Sparse inducing points}
+  %
+  \begin{subfigure}[c]{.52\columnwidth}
+    \raggedleft
+    \pgfplotsset{ylabel={Output, $y$}}
+    \input{./fig/regression-nn.tex}%
+  \end{subfigure}
+  \hfill  
+  \begin{subfigure}[c]{.02\columnwidth}
+    \centering
+    \tikz[overlay,remember picture]\node(p0){};
+  \end{subfigure}  
+  \hfill
+  \begin{subfigure}[c]{.4\columnwidth}
+    \raggedleft
+    \pgfplotsset{yticklabels={,,},ytick={\empty}}
+    \input{./fig/regression-nn2svgp.tex}%
+  \end{subfigure}
+%  \hfill  
+%  \begin{subfigure}[c]{.01\textwidth}
+%    \centering
+%    \tikz[overlay,remember picture]\node(p1){};
+%  \end{subfigure}  
+%  \hfill
+%  \begin{subfigure}[c]{.28\textwidth}
+%    \raggedleft
+%    \pgfplotsset{yticklabels={,,},ytick={\empty}}        
+%    \input{./fig/regression-update.tex}%
+%  \end{subfigure}
+  \vspace*{-1em}
+  \caption{\textbf{Regression example on an MLP with two hidden layers.} Left:~Predictions from the trained neural network. Right:~Our approach summarizes all the training data with the help of a set of inducing points.} %The model captures the predictive mean and uncertainty, and (right) makes it possible to incorporate new data without retraining the model.}
+  \label{fig:teaser} 
+  % 
+  \begin{tikzpicture}[remember picture,overlay]
+    % Arrow style
+    \tikzstyle{myarrow} = [draw=black!80, single arrow, minimum height=14mm, minimum width=2pt, single arrow head extend=4pt, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
+    % Arrows
+    \node[myarrow] (p0-arr) at ($(p0) + (1em,1.5em)$) {};
+    %\node[myarrow] (p1-arr) at ($(p1) + (1em,1.5em)$) {};
+    % Arrow labels
+    \node[font=\scriptsize\sc,color=white] at (p0-arr) {\our};
+    %\node[font=\scriptsize\sc,color=white] at (p1-arr) {new data};   
+  \end{tikzpicture}
+  \vspace*{-2em}
+\end{figure}
+
+
+%Current state of affairs 
+Recent techniques (\eg, \cite{ritter2018kfac,khan2019approximate,daxberger2021laplace,fortuin2021bayesian,immer2021scalable}) apply a Laplace-GGN approximation to convert trained neural networks into Bayesian neural networks, that can provide uncertainty without sacrificing additional resources to training \cite{foong2019between}. Furthermore, the resultant weight-space posterior can be converted to the function-space as shown in \cite{khan2019approximate, immer2021improving}. The function-space representation allows for a principled mathematical approach for analyzing its behaviour \cite{cho2009kernel,meronen2020stationary}, performing probabilistic inference \cite{khan2019approximate}, and quantifying uncertainty in neural networks \cite{foong2019between}. These methods rely on the linearization of the neural network and the resultant neural tangent kernel (NTK, \cite{jacot2018neural}). The neural network is characterized in function-space by its first two moment functions, a mean function and covariance function (or kernel)---defining a Gaussian process (GP, \cite{rasmussen2006gaussian}). GPs provide a widely-used probabilistic toolkit with principled uncertainty estimates. They serve as a standard surrogate model for Bayesian optimization \citep{garnett_bayesoptbook_2022} and are effective in model-based reinforcement learning \citep{deisenroth2011pilco} with theoretical guarantees on regret bounds \citep{srinivas2009gaussian}.
+%Yet many problems lie in high dimensional input space; for example, images are where GPs cannot learn representations. In such scenarios such as in many reinforcement learning environments neural networks are used as the surrogate model. However, uncertainty is still essential to ensure effective exploration for sequential algorithms. Successful approaches have attempted to blend neural networks with uncertainty estimates around predictions, allowing for sophisticated exploration strategies. However, there has been limited use of hybrid models that possess the feature representation ability of neural networks but also attractive the properties of GPs, such a hybrid method we propose in this paper.
+
+%Need for adaptive learning methods + failures with current methods
+Given an approximate inference technique, we demonstrate that the neural network emits `dual' parameters which are the building blocks of a GP~\cite{csato2002sparse, adam2021dual, chang2020fast} . In contrast to previous work that utilizes subsets of training data \cite{immer2021scalable},
+this parameterization allows capturing the contributions from {\em all} data points into a sparse representation, essential for predictive uncertainty. Crucially, the resulting GP directly predicts in the same space as the original trained neural network, with the benefit of avoiding the complexity introduced by working in weight-space and the notorious cubic complexity of vanilla GPs.
+%\todo{Could make it clearer that the GP predicts in the output space while avoiding the NN parameter space}
+%, a feature not present in previous approaches, while avoiding the notorious cubic complexity of vanilla GPs. 
+Through the dual parameter formulation, we establish a connection between the neural network, full GPs, and a sparse approximation similar to sparse variational GPs~\cite{titsias2009variational}. We refer to our method as Sparse Function-space Representation (\our)---a sparse GP derived from a trained neural network. Moreover, this dual parameterization can be exploited to perform dual conditioning \citep{chang2022fantasizing}, \ie, an effective approach for conditioning on new data without needing to retrain the model (see \cref{fig:teaser}).
+%As \our is in the dual parameters, we can perform dual conditioning recently shown effective in \cite{chang2022fantasizing}, that is, avoid retraining and condition new data into our model (see \cref{fig:teaser}) \todo{Effective compared to what?}.
+\looseness-2
+
+
+
+
+
+
+
+%
+%\begin{figure*}[t!]
+%  \centering
+%  % Set figure size
+%  \setlength{\figurewidth}{.31\textwidth}
+%  \setlength{\figureheight}{\figurewidth}
+%  %
+%  % Colours
+%  \definecolor{C0}{HTML}{DF6679}
+%  \definecolor{C1}{HTML}{69A9CE}
+%  %
+%  \begin{tikzpicture}[outer sep=0,inner sep=0]
+%
+%    \newcommand{\addfig}[2]{
+%    \begin{scope}
+%      \clip[rounded corners=3pt] ($(#1)+(-.5\figurewidth,-.5\figureheight)$) rectangle ++(\figurewidth,\figureheight);
+%      \node (#2) at (#1) {\includegraphics[width=1.05\figurewidth]{./fig/#2}};
+%    \end{scope}
+%    %\draw[rounded corners=3pt,line width=1.2pt,black!60] ($(#1)+(-.5\figurewidth,-.5\figureheight)$) rectangle ++(\figurewidth,\figureheight);
+%    }
+%
+%    % The neural network
+%    \addfig{0,0}{banana-nn}
+%
+%    % The nn2svgp
+%    \addfig{1.1\figurewidth,0}{banana-nn2svgp}
+%
+%    % The update
+%    \addfig{2.2\figurewidth,0}{banana-hmc}
+%
+%    % The arrow
+%    \tikzstyle{myarrow} = [draw=black!80, single arrow, minimum height=14mm, minimum width=2pt, single arrow head extend=4pt, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
+%    \tikzstyle{myblock} = [draw=black!80, minimum height=4mm, minimum width=7mm, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
+%    \node[myarrow] (first-arr) at ($(banana-nn)!0.5!(banana-nn2svgp)$) {};
+%    \node[myblock] (second-arr) at ($(banana-nn2svgp)!0.5!(banana-hmc)$) {};
+%
+%    % Arrow labels
+%    \node[font=\scriptsize\sc,color=white] at (first-arr) {\our};
+%    \node[font=\scriptsize\sc,color=white] at (second-arr) {\normalsize$\bm\approx$};
+%         
+%    % Labels
+%    \node[anchor=north, font=\small] at ($(banana-nn) + (0,-.55\figureheight)$) {Neural network prediction};
+%    \node[anchor=north, font=\small] at ($(banana-nn2svgp) + (0,-.55\figureheight)$) {Sparse function-space representation};
+%    \node[anchor=north, font=\small] at ($(banana-hmc) + (0,-.55\figureheight)$) {HMC result as baseline};      
+%
+%  \end{tikzpicture}
+%  \newcommand{\mycircle}{\protect\tikz[baseline=-.6ex]\protect\node[circle,inner sep=2pt,draw=black,fill=C0,opacity=.5]{};}
+%  \newcommand{\mysquare}{\protect\tikz[baseline=-.6ex]\protect\node[inner sep=2.5pt,draw=black,fill=C1,opacity=.5]{};}
+%  \newcommand{\myinducing}{\protect\tikz[baseline=-.7ex]\protect\node[circle,inner sep=1.5pt,draw=black,fill=black]{};}
+%  %
+%  \caption{\textbf{Uncertainty quantification} for binary classification (\mysquare~vs.~\mycircle). We convert the trained neural network (left) to a sparse GP model that summarizes all data onto a sparse set of inducing points~\myinducing\ (middle). This gives similar behaviour as running full Hamiltonian Monte Carlo (HMC) on the original neural network model weights (right). Marginal uncertainty depicted by colour intensity.\looseness-1}
+%  \label{fig:banana}  
+%\end{figure*}
+
+
+\section{Background: Function-space representation of neural networks}
+\label{sec:methods}
+%
+%In this section, we recap how a trained neural network (NN) can be converted to a Gaussian process by locally linearising its weights.
+% a GP posterior -- can be obtained
+% around the Maximum a Posteriori (MAP) weights.
+
+% by linearising a neural network around the Maximum a Posteriori (MAP) weights.
+% a GP posterior -- can be obtained
+%
+In supervised learning, given a data set $\dataset = \{(\vx_{i} , \vy_{i})\}_{i=1}^{N}$, with input $\vx_i \in \inputDomain$ and output $\vy_i \in \outputDomain$ pairs, the weights $\weights \in \R^{P}$ of a neural network, $f_\mathbf{w}: \inputDomain \to \outputDomain$ (yet, to simplify the notation we restrict presentation to scalar output), are usually trained to minimize the (regularized) empirical risk,\looseness-1
+%
+\begin{align} \label{eq-empirical-risk}
+  \weights^{*} &= 
+  \arg \min_{\weights} \mathcal{L}(\dataset,\weights) \nonumber \\ &=
+  \arg \min_{\weights} \textstyle\sum_{i=1}^{N} \ell(f_\weights(\mathbf{x}_{i}), y_i) + \delta \mathcal{R}(\weights).
+\end{align}
+%
+If $\ell(f_\weights(\vx_{i}), y_i) = -\log(p(y \mid f_\weights(\vx_{i}))$ and the regularizer $\mathcal{R}(\weights) = \frac{1}{2}\|\weights\|^{2}_2$, then we can view \cref{eq-empirical-risk} as the maximum {\it a~posteriori} (MAP) solution to a Bayesian objective, where the regularization weight takes the role of a prior precision parameter, \ie, $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$.
+%Bayesian inference offers a principled approach to quantifying uncertainty in neural networks.
+%The goal is to find the posterior over the weights ${p(\vw \mid \vy) \propto p(\vy \mid f_{\weights}(\vx)) \, p(\weights)}$ as it represents our belief in the parameters after combining data $\dataset$ with our prior $p(\vw)$.
+%Although the true posterior $p(\vw \mid \dataset)$ is intractable given the non-linearities of the neural network, one can resort to sampling techniques such as Hamiltonian Monte-Carlo (HMC).
+%However, for most applications their high computational costs make them impractical so we need approximate inference techniques.
+%In \cref{fig:banana}, we show a qualitative example of the induced function-space posterior obtained with our method compared to the posterior obtained through HMC sampling on the Banana toy dataset. 
+The posterior over the weights ${p(\vw \mid \dataset) \propto p(y \mid f_{\weights}(\vx)) \, p(\weights)}$ is generally not available in closed form. Sampling methods that characterize the posterior with a finite set of samples in weight-space---such as the Hamiltonian Monte Carlo (HMC) baseline used in \cref{fig:banana} (right)---are general-purpose, but computationally heavy and impractical for downstream applications.
+
+\textbf{Neural network function-space} %\todo{Could be titled some other way, like Function-space representation}
+%As a neural network is a deterministic mapping, the weight-space posterior induces a distribution over the function values.
+%Intuitively, if one was to sample from the weight posterior, the corresponding functions created can
+%be viewed as perturbed versions of the function at the MAP estimate $f_{\vw^*}$.
+%In most applications, we care about predictions from the neural network and not the weights themselves.
+%As such, it is the distribution over function values that we are actually interested in.
+Neural networks are deterministic parametric functions, but even if the training is typically an optimization in the weight-space, in most applications, we are interested in the parametrized function and not in the weights themselves.
+%While neural networks are deterministic mappings defined by their weights, the ultimate goal of training a neural network is to optimize the function it represents, not the weights themselves. 
+Consequently, the weight-space posterior corresponds to a distribution over function values. 
+Intuitively, if one was to sample from the weight posterior, the corresponding functions created can be viewed as perturbed versions of the function at the MAP estimate $f_{\vw^*}$. This perspective aligns better with the main objective of making representative predictions given the observations.
+
+
+\textbf{Linearization gives rise to a Gaussian process}
+Our goal is to capture the distribution over the neural network model functions through their first two moments. The first two moments characterize a Gaussian process with a mean function $\mu(\cdot)$ and a covariance function (kernel) $\kappa(\cdot,\cdot)$.
+Recent work \cite{khan2019approximate,maddox2021fast} has shown that linearizing approximations in the weight space lead to function-space equivalent approximations.
+As Gaussian distributions remain tractable under linear transformations, a linear function in terms of parameters can be converted from the weight space to the function space (see Ch.~2.1 in \cite{rasmussen2006gaussian}) as follows:
+%
+\begin{align} \label{eq:weight_func}
+ &f_\weights(\vx) \approx 
+%g_\weights(\mathbf{x}) = 
+ \phi^\top\!(\vx) \, \vw \quad\implies \nonumber \\
+ &\mu(\vx) = 0 \quad \text{and} \quad \kappa(\vx, \vx') = \frac{1}{\delta} \phi^\T\!(\vx) \, \phi(\vx').
+\end{align}
+% The posterior structure directly relates to the optimization loss around the MAP weights $\vw^*$.
+A common approach is to approximate the correlation structure of a distribution centred at the MAP estimate as done in the Laplace-GGN~\cite{khan2019approximate, daxberger2021laplace, maddox2021fast}. 
+The Laplace-GGN takes the MAP solution and approximates the Hessian of the loss function
+with the GGN.
+Following the work of \citet{khan2019approximate}, we can view this approximation as building an approximate linear model of the neural network as $f_{\weights^*}(\vx) \approx 
+%g_{\weights}(\vx) = 
+\Jac{\weights_*}{\vx} \, \weights$, where $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{1 \times P}$ is the Jacobian at the MAP.
+For notational conciseness, we % \cref{eq-laplace-approx-function-space},
+restrict our notatin to a single function output. The extension to multiple outputs is straightforward.
+
+Using the Hessian of the approximate model, we arrive at the Laplace-GGN approximate posterior over $\vw$.
+Therefore, the Laplace-GGN linear model can be used to convert our weight space model to the function space,
+\begin{equation}
+\label{eq-laplace-approx-function-space}
+% g(\vx) \sim \GP \left( \mu(\vx), \kappa(\vx, \vx') \right) \quad \text{with} \quad
+  \mu(\vx) =  0 \quad \text{and} \quad
+  \kappa(\vx, \vx')
+  = \frac{1}{\delta} \Jac{\weights^*}{\vx} \, \JacT{\weights^*}{\vx'}, 
+\end{equation}
+where the kernel is the so-called Neural Tangent Kernel (NTK, \cite{jacot2018neural}).
+We can combine this kernel function with the data set $\dataset$ to construct the posterior.
+%
+\citet{khan2019approximate} took a similar approach, but instead of fitting the GP posterior to the actual $\vy$, they rely on a transformation of $\vy$. Similarly, \citet{immer2021improving} obtain the same covariance function but use a different mean because they rely on a first-order approximation of the neural network to form a Bayesian GLM model. Both approaches adjust the GP posterior mean function to ensure the predictions are from the neural network $f_{\vw^*}(\vx)$.
+In contrast, our method makes predictions directly from the GP and avoids such adjustments.
+In the next section, we present our method for converting a trained NN to a sparse functional representation.
+% on the non-sparse approximation.
+% of our
+% based on the non-sparse approximation.
+% we will present the general formulation of the sparse functional representation of our trained neural network based on the non-sparse approximation.
+
+
+
+\section{\our: Sparse function-space representation of neural networks}\label{sec:sfr}
+%\paragraph{GP in the dual parameters}
+The seminal work by \citet{csato2002sparse} (parameterization Lemma~1) gives a parameterization for the posterior process that can be found through the Bayesian update using the GP prior and the likelihood function. This gives a `dual' parameterization, $\valpha$ and $\vbeta$,
+%
+\begin{align}  \label{eq:gp_pred}
+  \myexpect_{p(f_i \mid\vy)}[f_i] &= \vk_{\vx i}^\top \valpha, \\
+  \mathrm{Var}_{p(f_i \mid \vy)}[f_i] &= k_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i}, \nonumber
+\end{align}
+%
+where the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{N \times N}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $k_{ii} = \kappa(\vx_i, \vx_i)$.
+\cref{eq:gp_pred} states that the first two moments of the resultant posterior process (which may not be a GP), can be parameterized via the dual
+parameters $\valpha, \vbeta \in \R^{N}$,
+% which are the vectors
+defined as, \looseness-1
+%
+\begin{align}
+  \label{eq:dual_param}
+  \alpha_i &\coloneqq \myexpect_{p(\vw \mid \vy)}[\nabla_{f}\log p(y_i \mid f) |_{f=f_i}], \\
+  %\quad \text{and} \quad
+  \beta_i &\coloneqq - \myexpect_{p(\vw \mid \vy)}[\nabla^2_{f f}\log p(y_i \mid f_i) |_{f=f_i}],
+\end{align}
+%
+where $f_\vw(\vx_i) = f_i$ is the function output at input $\vx_i$. The relationships specified are valid for generic likelihoods, and involve no approximations since the expectation is under the exact posterior, but given that the model can be expressed in a kernel formulation. \cref{eq:gp_pred} and \cref{eq:dual_param} highlight that the approximate inference technique, usually viewed as a posterior approximation, can be alternatively interpreted as an approximation of the expectation of gradients of loss/likelihoods.
+
+Originally \citet{csato2002sparse} iteratively find dual variables using an expectation propagation (EP, \cite{minka2001expectation}) method. More recently, \cite{khan2017conjugate,adam2021dual} have shown this relationship for variational Gaussian processes where the above expectation is with respect to the approximate variational posterior. Meanwhile in \citet{wilkinson2023bayes}, they show links between linearization methods and how they solve the \cref{eq:dual_param}.
+
+\paragraph{Dual parameters from NN}
+Given that we use a Laplace approximation of the neural network, we remove the expectation over the posterior (see Ch.~3.4.1 in \cite{rasmussen2006gaussian} for derivation) and we get the the following formulation of the dual variables,
+%
+\begin{align}
+  \label{eq:dual_param_laplace}
+  \hat{\alpha}_i &\coloneqq \nabla_{f}\log p(y_i \mid f) |_{f=f_i} , \\
+  %\quad \text{and} \quad
+  \hat{\beta}_i &\coloneqq - \nabla^2_{ff}\log p(y_i \mid f) |_{f=f_i}.
+\end{align}
+%
+Substituting \cref{eq:dual_param_laplace} into \cref{eq:gp_pred}, we obtain our GP model based on the converged neural network. Again, this is similar to what was derived in \citet{immer2021improving} for the posterior variance function. However, they use the $f_{\vw^*}$ for the posterior mean and do not emphasize the significance of the dual variables. The problem with \cref{eq:gp_pred} is that to make predictions and compute variances we must incur a cost of $O(N^3)$ which limits the use of the GP on large data sets.
+
+
+
+
+\begin{table*}[t!] 
+  \centering\scriptsize
+  \caption{Comparisons and ablations on UCI data with negative log predictive density (NLPD\textcolor{gray}{\footnotesize$\pm$std}, lower better). Our sparse \our ($M=256$) is on par with full models (left) and outperforms the GP subset approach of \cite{immer2021improving} (right). Results for methods marked with * as reported in the original benchmark~\cite{immer2021improving}. See \cref{app:uci} for additional tables with comparisons.}
+	\label{tbl:uci}
+	\vspace*{-4pt}
+	
+	% Control table spacing
+	\renewcommand{\arraystretch}{1.}
+	\setlength{\tabcolsep}{1.2pt}
+	\setlength{\tblw}{0.083\textwidth}  
+	
+	% Custom error formatting
+	\newcommand{\val}[2]{%
+		$#1$\textcolor{gray}{\tiny ${\pm}#2$}
+	} 
+
+    % THE TABLE NUMBER ARE GENERATED BY A SCRIPT	
+	\input{tables/uci.tex}
+\end{table*}
+
+\begin{figure*}[t]
+  \centering\scriptsize
+  \setlength{\figurewidth}{.16\textwidth}
+  \setlength{\figureheight}{\figurewidth}
+  \pgfplotsset{axis on top,scale only axis,y tick label style={rotate=90}, x tick label style={font=\footnotesize},y tick label style={font=\footnotesize},title style={yshift=-4pt,font=\large}, y label style={font=\large},x label style={font=\large},grid=major, width=\figurewidth, height=\figureheight}
+  \pgfplotsset{grid style={line width=.1pt, draw=gray!10,dashed}}
+  \pgfplotsset{xlabel={$M$},ylabel style={yshift=-12pt}}  
+  %
+  \begin{minipage}[t]{.13\textwidth}
+    \raggedleft
+    \pgfplotsset{ylabel=NLPD}
+    \input{./fig/australian.tex}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{.12\textwidth}
+    \raggedleft
+    \input{./fig/breast_cancer.tex}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{.12\textwidth}
+    \raggedleft
+    \input{./fig/ionosphere.tex}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{.12\textwidth}
+    \raggedleft
+    \input{./fig/glass.tex}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{.12\textwidth}
+    \raggedleft
+    \input{./fig/vehicle.tex}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{.12\textwidth}
+    \raggedleft
+    \input{./fig/waveform.tex}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{.12\textwidth}
+    \raggedleft
+    \input{./fig/digits.tex}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{.12\textwidth}
+    \raggedleft
+    \input{./fig/satellite.tex}
+  \end{minipage}\\[-1em]
+  %
+  % Legend  
+  \definecolor{steelblue31119180}{RGB}{31,119,180}
+  \definecolor{darkorange25512714}{RGB}{255,127,14}  
+  \newcommand{\myline}[1]{\protect\tikz[baseline=-.5ex,line width=1.6pt]\protect\draw[draw=#1](0,0)--(1.2em,0);}
+  \caption{Comparison of convergence in terms of number of inducing points $M$ in NLPD (mean over 10 seeds) on UCI classification tasks: \our (thick) vs.\ subsets (\cite{immer2021improving}, thin). Orange lines (\myline{darkorange25512714}) use the GP mean, whereas blue lines (\myline{steelblue31119180}) the NN MAP estimate as mean. Our \our converges fast for all cases.\looseness-1}
+  \label{fig:uci}
+  %\vspace*{-6pt}
+\end{figure*}
+
+
+
+\paragraph{Sparsifying the NN GP}
+\label{sec:sparse-dual-gp}
+%
+Sparse Gaussian processes reduce the computational complexity by representing the GP as a low-rank approximation induced by a sparse set of input points (see \cite{quinonero2005unifying} for an early overview). Given that we have computed the dual variables derived from our neural network predictions and a kernel function, we could essentially employ any of these sparsification methods. In this work, we opt for the approach suggested by \citet{titsias2009variational} (also used in the DTC approximation, see \cite{quinonero2005unifying}), which defines the marginal predictive distribution as $q_{\vu}(f_i)  = \int p(f_i  \mid \vu) \, q(\vu) \, \mathrm{d}\vu$. Given that we have $p(f_i \mid \vu)$ determined by our GP prior, the goal is to find a $q(\vu)$. 
+
+As demonstrated in \cite{adam2021dual}, the posterior under this model bears a structure akin to \cref{eq:gp_pred}. The authors of that paper exploit the dual variables for approximate inference, but write them using the natural parameterization, primarily because this form is more suitable for optimization through natural gradients. In order to link the dual variables defined in \cref{eq:dual_param}, we write them in the sparse GP using the dual variables
+%
+\begin{equation} \textstyle
+  \valpha_{\vu}  =  \sum_{i=1}^N  \vkzi \, \hat{\alpha}_{i}
+  \quad \text{and} \quad
+  \MBeta_{\vu} =  \sum_{i=1}^N \vkzi \,\hat{\beta}_{i} \, \vkzi^{\T} ,    
+\label{eq:dual_sparse}
+\end{equation}
+%
+where the sparse dual variables are now a sum over \emph{all data points}, with $\valpha_{\vu} \in \R^{M}$ and $\MBeta_{\vu} \in \R^{M  \times M}$. Using this sparse definition of the dual variables, our sparse GP posterior takes the following form:
+\begin{align}\label{eq:dual_sparse_post}
+   \myexpect_{q_{\vu}(\vf)}[f_i] &= \vkzs^{\T} \MKzz^{-1} \valpha_{\vu}, \\
+   %\quad \text{and} \quad 
+   \textrm{Var}_{q_{\vu}(\vf)}[f_i]  &= k_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \MBeta_{\vu})^{-1} ]\vkzs, \nonumber
+\end{align}
+where $\MKzz$ and $\vkzs$ are defined similarly to $\MKxx$ and $\vk_{\vx i}$ but over the inducing points $\{\vz_j\}_{i=1}^M$, $\vz \in \R^{D}$, instead of the full data set $\dataset$. The key quantities we need to make predictions from our sparse GP from the converged neural network are $(\hat{\alpha}_i, \hat{\beta}_i)$ (\cref{eq:dual_param_laplace}) and a kernel function $\kappa$ (\cref{eq-laplace-approx-function-space}). Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred}, we can see that the computational complexity went from $\mathcal{O}(N^3)$ to $\mathcal{O}(M^3)$, with $M \ll N$.  Crucially, given the structure of our probabilistic model, our sparse dual variables \cref{eq:dual_sparse} are a compact representation of the full model projected using the kernel. 
+
+Unlike our approach, \citet{immer2021improving} employ a subset of the data points to construct a sparse GP, reducing computational complexity. However, the method could be considered less principled for building a sparse model, as it ignores contribution from the complete data set. It is important to note that the sparsifying process is independent of the approximate inference technique because the dual variables of \cref{eq:dual_param} are computed using \cref{eq-empirical-risk} and a Laplace approximation. More complicated inference techniques, such as variational inference, could be used, but given its simplicity, in our experiments we used the Laplace-GGN approximation with the trained neural network. Furthermore, our dual variable view of approximate inference means we do not need to retrain a separate sparse GP.\looseness-2
+% \todo{shouldn't this sentence be clear from the context? we derive the mean/kernel function that define the process, then we have a sparse GP already}
+
+
+
+
+
+\section{Experiments}
+\label{sec:experiments}
+%
+%\paragraph{Toy examples} For illustrative purposes, we show our approach on a 1D regression problem (\cref{fig:teaser}) and on the 2D {\sc Banana} classification task (\cref{fig:banana}). In \cref{fig:teaser}, we train an MLP neural network with two hidden layers (64 hidden units each, tanh activation) and pass it through \our. The middle panel shows the \our result on a sparse set of data examples, while the rightmost panel demonstrates fast dual conditioning on new data (from \cref{sec:sequential}). In \cref{fig:banana}, we use an MLP with two hidden layers (64 units, sigmoid) and compare to a HMC sampling result obtained by hamiltorch~\cite{cobb2020scaling}. The HMC result is more expressive, but the results are still similar in terms of quantifying the uncertainty in low-data regions.\looseness-1
+
+
+%Initially, we explore the capability of our method to capture predictive uncertainty through supervised learning tasks using UCI datasets. Subsequently, we extend our supervised learning experiment to image datasets, demonstrating our method's robustness and adaptability to more complex, high-dimensional data. Next, we investigate the potential of our method in a continual learning context, where we update the neural network representation in response to incoming data without necessitating retraining. Lastly, we delve into the realm of reinforcement learning to ascertain the applicability of our approach in an environment that requires sequential decision-making. Each experiment is designed to illuminate a different facet of our method, thereby exemplifying its broad range of applicability and potential for future utilization.
+
+%
+%Our experiments seek to answer the following questions:
+%\begin{enumerate}
+%  \item \textbf{Predictions:} How do predictions with our sparse function-space approximation compare to weight-space approximations? Does our method's ability to consider the full data set offer benefits over subset function-space methods?
+%  % \item Does our method's ability to consider the full data set offer benefits over subset function-space methods?
+%  \item \textbf{Function-space updates:} How fast are our function-space updates relative to retraining from scratch? Do they improve predictive performance? Are they as good as retraining from scratch?
+%  \item \textbf{Uncertainty:} How good are our uncertainty estimates? Can they be used in downstream settings like RL?
+%  \item \textbf{Representation:} Is our sparse function-space representation useful for continual learning?
+%\end{enumerate}
+
+%
+We evaluate \our on eight UCI benchmarks~\cite{UCI}, a variety of binary and multi-class classification tasks with different data set sizes.
+We train a two-layer MLP for each of the classification tasks and follow the experiment set up in \cite{immer2021improving}.
+%by using the same hyperparameters, performing a hyperparameter search over the prior precision $\delta$,
+% We follow \cite{immer2021improving} by using the same hyperparameters, performing a hyperparameter search over the prior precision $\delta$,
+% and run the experiment over $10$ random splits.
+% That is, after training we construct the \our dual and use the resulting model for uncertainty quantification.
+% for the neural network training as in the UCI experiments of
+\cref{tbl:uci} (left) shows that \our with $M=256$ either matches or outperforms the predictive performance of the NN MAP, mean-field VI, Bayesian NN, and GLM
+predictions %in terms of negative log-predictive density (NLPD).
+(baselines from \cite{immer2021improving}).
+That is, we match predictive performance despite being sparse.
+%
+In \cref{tbl:uci} (right) we compare to the subset GP method from \cite{immer2021improving} whilst using only $M=32$ inducing points.
+It shows that \our is able to summarize the full data set more effectively than the GP subset method as it maintains predictive performance
+whilst using fewer inducing points.
+\cref{fig:uci} further shows that as the number of inducing points is lowered $M=512,\ldots, 16$, \our is able to maintain a much better NLPD than the GP subset.
+These results demonstrate \our's sparse representation captures information from the entire data set and as a result provides good uncertainty estimates.
+We provide further details of our experiments in \cref{app:uci}.
+% as well as further results with varying number of inducing poitns ,64,128,256$
+% We provide full details of our experiments as well as further experiments with varying number of inducing poitns and further results using $M=16,32,64,128,256$ in \cref{app:uci}.
+% benefits of \our in summarizing the full data distribution onto a small set of inducing
+% points over just picking a random subset.
+
+
+\section{Discussion and conclusion}
+\label{sec:conclusion}
+%
+In this paper, we have introduced \our, a novel approach for representing neural networks in sparse function space, exploiting the dual parameters for an efficient low-rank approximation that accommodates information from the entire data distribution. Our method offers a powerful mechanism for capturing predictive uncertainty, updating the model with new data without retraining, and providing a compact representation suitable for continual learning. These aspects were demonstrated in a wide range of problems, data sets, and learning contexts. We showcased our method's ability to capture uncertainty in UCI classification tasks (\cref{sec:uci}), demonstrated robustness on image data sets (\cref{,sec:image}), established its potential for continual learning (\cref{sec:cl-exp}), and finally, verified its applicability in reinforcement learning scenarios (\cref{sec:rl-exp}).
+
+% Discussion points
+In practical terms, our model serves a role similar to a sparse GP. However, unlike a conventional GP, it does not provide a straightforward method for specifying or tuning the prior covariance function. This limitation can be addressed indirectly: the architecture of the neural network and the choice of activation functions can be used to implicitly specify and tune the prior assumptions, thereby incorporating a broad range of inductive biases into the model. It is important to note that the Laplace-GGN approach linearizes the network around the MAP solution $\weights^{*}$, resulting in the function-space prior (and consequently the posterior) being only a locally linear approximation of the neural network model.\looseness-1
+
+
+
+\clearpage
+
+% In the unusual situation where you want a paper to appear in the
+% references without citing it in the main text, use \nocite
+% \nocite{langley00}
+
+\bibliography{bibliography}
+\bibliographystyle{icml2023}
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% APPENDIX
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\newpage
+\appendix
+\onecolumn
+
+
+
+
+
+
+\end{document}
+
+
+% This document was modified from the file originally made available by
+% Pat Langley and Andrea Danyluk for ICML-2K. This version was created
+% by Iain Murray in 2018, and modified by Alexandre Bouchard in
+% 2019 and 2021 and by Csaba Szepesvari, Gang Niu and Sivan Sabato in 2022.
+% Modified again in 2023 by Sivan Sabato and Jonathan Scarlett.
+% Previous contributors include Dan Roy, Lise Getoor and Tobias
+% Scheffer, which was slightly modified from the 2010 version by
+% Thorsten Joachims & Johannes Fuernkranz, slightly modified from the
+% 2009 version by Kiri Wagstaff and Sam Roweis's 2008 version, which is
+% slightly modified from Prasad Tadepalli's 2007 version which is a
+% lightly changed version of the previous year's version by Andrew
+% Moore, which was in turn edited from those of Kristian Kersting and
+% Codrina Lauth. Alex Smola contributed to the algorithmic style files.

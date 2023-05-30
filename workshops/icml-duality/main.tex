@@ -601,12 +601,14 @@ The relationships specified are valid for generic likelihoods, and involve no ap
 \paragraph{Dual parameters from NN}
 Given that we use a Laplace approximation of the NN, we remove the expectation over the posterior \citep[see Ch.~3.4.1 in][for derivation]{rasmussen2006gaussian} and our dual parameters are given by,
 %
-\begin{align}
+\begin{equation}
+\begin{split}
   \label{eq:dual_param_laplace}
   \hat{\alpha}_i &\coloneqq \nabla_{f}\log p(y_i \mid f) |_{f=f_i} , \\
   %\quad \text{and} \quad
   \hat{\beta}_i &\coloneqq - \nabla^2_{ff}\log p(y_i \mid f) |_{f=f_i}.
-\end{align}
+  \end{split}
+\end{equation}
 %
 Substituting \cref{eq:dual_param_laplace} into \cref{eq:gp_pred}, we obtain our GP based on the converged NN. Again, this is similar to what was derived in \citet{immer2021improving} for the posterior variance function.
 However, they use the NN's prediction $f_{\vw^*}(\cdot)$ for the posterior mean and do not emphasize the significance of the dual parameters.

@@ -577,12 +577,14 @@ parameters $\valpha, \vbeta \in \R^{N}$,
 % which are the vectors
 defined as, \looseness-1
 %
-\begin{align}
+\begin{equation}
+\begin{split}
   \label{eq:dual_param}
   \alpha_i &\coloneqq \myexpect_{p(\vw \mid \vy)}[\nabla_{f}\log p(y_i \mid f) |_{f=f_i}], \\
   %\quad \text{and} \quad
   \beta_i &\coloneqq - \myexpect_{p(\vw \mid \vy)}[\nabla^2_{f f}\log p(y_i \mid f_i) |_{f=f_i}],
-\end{align}
+  \end{split}
+\end{equation}
 %
 where $f_\vw(\vx_i) = f_i$ is the function output at input $\vx_i$. The relationships specified are valid for generic likelihoods, and involve no approximations since the expectation is under the exact posterior, but given that the model can be expressed in a kernel formulation. \cref{eq:gp_pred} and \cref{eq:dual_param} highlight that the approximate inference technique, usually viewed as a posterior approximation, can be alternatively interpreted as an approximation of the expectation of gradients of loss/likelihoods.
 

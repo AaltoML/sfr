@@ -40,7 +40,7 @@
 
 % if you use cleveref..
 % \usepackage[capitalize,noabbrev]{cleveref}
-%\usepackage[capitalize,nameinlink]{cleveref}
+%\usepackage[capitalize,nameinlink]{cleveref}pdf
 %\crefname{section}{Sec.}{Secs.}
 %\crefname{appendix}{App.}{Apps.}
 %\crefname{algorithm}{Alg.}{Algs.}
@@ -505,7 +505,7 @@ If $\ell(f_\weights(\vx_{i}), y_i) = -\log(p(y \mid f_\weights(\vx_{i}))$ and th
 %Although the true posterior $p(\vw \mid \dataset)$ is intractable given the non-linearities of the neural network, one can resort to sampling techniques such as Hamiltonian Monte-Carlo (HMC).
 %However, for most applications their high computational costs make them impractical so we need approximate inference techniques.
 %In \cref{fig:banana}, we show a qualitative example of the induced function-space posterior obtained with our method compared to the posterior obtained through HMC sampling on the Banana toy dataset. 
-The posterior over the weights ${p(\vw \mid \dataset) \propto p(y \mid f_{\weights}(\vx)) \, p(\weights)}$ is generally not available in closed form. Sampling methods that characterize the posterior with a finite set of samples in weight-space---such as the Hamiltonian Monte Carlo (HMC) baseline used in \cref{fig:banana} (right)---are general-purpose, but computationally heavy and impractical for downstream applications.
+The posterior over the weights ${p(\vw \mid \dataset) \propto p(y \mid f_{\weights}(\vx)) \, p(\weights)}$ is generally not available in closed form. Sampling methods that characterize the posterior with a finite set of samples in weight-space---such as the Hamiltonian Monte Carlo (HMC) baseline used in ---are general-purpose, but computationally heavy and impractical for downstream applications.
 
 \textbf{Neural network function-space} %\todo{Could be titled some other way, like Function-space representation}
 %As a neural network is a deterministic mapping, the weight-space posterior induces a distribution over the function values.

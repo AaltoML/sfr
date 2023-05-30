@@ -403,7 +403,7 @@ Deep learning \citep{goodfellow2016deep} has become the cornerstone of contempor
     \node[font=\scriptsize\sc,color=white] at (p0-arr) {\our};
     %\node[font=\scriptsize\sc,color=white] at (p1-arr) {new data};   
   \end{tikzpicture}
-  \vspace*{-2em}
+  \vspace*{-1em}
 \end{figure}
 
 
@@ -677,7 +677,7 @@ Substituting \cref{eq:dual_param_laplace} into \cref{eq:gp_pred}, we obtain our 
   \definecolor{steelblue31119180}{RGB}{31,119,180}
   \definecolor{darkorange25512714}{RGB}{255,127,14}  
   \newcommand{\myline}[1]{\protect\tikz[baseline=-.5ex,line width=1.6pt]\protect\draw[draw=#1](0,0)--(1.2em,0);}
-  \caption{Comparison of convergence in terms of number of inducing points $M$ in NLPD (mean over 10 seeds) on UCI classification tasks: \our (thick) vs.\ subsets \citep[][thin]{immer2021improving}. Orange lines (\myline{darkorange25512714}) use the GP mean, whereas blue lines (\myline{steelblue31119180}) the NN MAP estimate as mean. Our \our converges fast for all cases.\looseness-1}
+  \caption{Comparison of convergence in terms of number of inducing points $M$ in NLPD (mean over 10 seeds) on UCI classification tasks: \our (thick) vs.\ subsets \citep[][thin]{immer2021improving}. Orange lines (\myline{darkorange25512714}) use the GP mean, whereas blue lines (\myline{steelblue31119180}) the NN MAP estimate as mean. Our \our converges fast for all cases showing clear benefits of its ability to summarize all the data onto a sparse set of inducing points.\looseness-1}
   \label{fig:uci}
   %\vspace*{-6pt}
 \end{figure*}
@@ -733,10 +733,9 @@ Unlike our approach, \citet{immer2021improving} employ a subset of the data poin
 
 %
 We provide a proof-of-concept example by evaluating \our on eight UCI benchmarks~\citep{UCI}, a variety of binary and multi-class classification tasks with different data set sizes. 
-We train a two-layer MLP for each of the classification tasks and follow the experiment set up in \citet{immer2021improving}.
-%by using the same hyperparameters, performing a hyperparameter search over the prior precision $\delta$,
+We train a two-layer MLP for each of the classification tasks and follow the experiment set up in \citet{immer2021improving} by using the same hyperparameters, performing a hyperparameter search over the prior precision $\delta$, and run the experiment over $10$ random splits.
 % We follow \cite{immer2021improving} by using the same hyperparameters, performing a hyperparameter search over the prior precision $\delta$,
-% and run the experiment over $10$ random splits.
+% 
 % That is, after training we construct the \our dual and use the resulting model for uncertainty quantification.
 % for the neural network training as in the UCI experiments of
 \cref{tbl:uci} (left) shows that \our with $M=256$ either matches or outperforms the predictive performance of the NN MAP, mean-field VI, Bayesian NN, and GLM

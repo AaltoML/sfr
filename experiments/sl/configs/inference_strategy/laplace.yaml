@@ -11,11 +11,11 @@ model:
     _target_: laplace.curvature.asdl.AsdlGGN
     _partial_: true
 pred:
-  - _target_: experiments.sl.new_inference.la_pred
+  - _target_: experiments.sl.inference.la_pred
     pred_type: "nn"
     link_approx: "mc"
     num_samples: 100 # num_samples for link_approx="mc"
-  - _target_: experiments.sl.new_inference.la_pred
+  - _target_: experiments.sl.inference.la_pred
     pred_type: "glm"
     link_approx: "mc"
     num_samples: 100 # num_samples for link_approx="mc"

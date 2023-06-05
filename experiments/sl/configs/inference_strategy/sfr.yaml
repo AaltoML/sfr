@@ -13,10 +13,10 @@ model:
   jitter: 1e-4
   device: ${device} # TODO should this always be cpu??
 pred:
-  - _target_: experiments.sl.new_inference.sfr_pred
+  - _target_: experiments.sl.inference.sfr_pred
     pred_type: "nn"
     num_samples: 100
-  - _target_: experiments.sl.new_inference.sfr_pred
+  - _target_: experiments.sl.inference.sfr_pred
     pred_type: "gp"
     num_samples: 100
 optimize_prior_precision_kwargs: null

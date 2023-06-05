@@ -11,13 +11,13 @@ import torchvision.transforms as transforms
 from torchvision.datasets import CIFAR10, CIFAR100, VisionDataset
 from backbone.CifarNet import CifarNet
 
-# from utils.conf import base_path_dataset as base_path
+from utils.conf import base_path_dataset as base_path
 from datasets.utils.continual_dataset import (ContinualDataset, 
                                               store_masked_loaders)
 from datasets.utils.validation import get_train_val
 
-def base_path():
-    return "/tmp/datasets/"
+# def base_path():
+#     return "/tmp/datasets/"
 
 
 class MyCIFAR(VisionDataset):

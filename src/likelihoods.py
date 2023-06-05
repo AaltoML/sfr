@@ -5,8 +5,7 @@ import numpy as np
 import torch
 import torch.nn as nn
 from src.custom_types import FuncData, FuncMean, FuncVar, OutputData
-from torch.distributions import Bernoulli, Categorical
-
+from torch.distributions import Bernoulli, Categorical, Normal
 
 
 EPS = 0.01
@@ -108,13 +107,35 @@ class CategoricalLh(Likelihood):
         self.num_classes = num_classes
 
     def __call__(
-        self, f_mean: Union[FuncData, FuncMean], f_var: Optional[FuncVar] = None
+        self,
+        f_mean: Union[FuncData, FuncMean],
+        f_var: Optional[FuncVar] = None,
+        num_samples: int = 100,
     ):
         if f_var is None:
             p = self.prob(f=f_mean)
-            mean = p
         else:
-            raise NotImplementedError
+            # raise NotImplementedError
+            # dist = Normal(f_mean, torch.sqrt(f_var.clamp(10 ** (-32))))
+            print("f_mean {}".format(f_mean.shape))
+            print("f_var {}".format(f_var.shape))
+            dist = Normal(f_mean, torch.sqrt(f_var))
+            print("made dist")
+            logit_samples = dist.sample((num_samples,))
+            print("logit samples")
+            samples = self.inv_link(logit_samples)
+            print("samples {}".format(samples.shape))
+            # samples_flat = torch.flatten(samples, start_dim=0, end_dim=1)
+            # print("samples_flat {}".format(samples_flat.shape))
+            # ps_flat = self.prob(f=samples_flat)
+            # print("ps_flat {}".format(ps_flat.shape))
+            # ps = torch.reshape(ps_flat, samples.shape)
+            # print("ps {}".format(ps.shape))
+            p = torch.mean(samples, 0)
+            print("p {}".format(p.shape))
+
+        mean = p
+        print("mean {}".format(mean.shape))
         var = p - torch.square(p)
         return mean, var
 
@@ -145,4 +166,3 @@ class CategoricalLh(Likelihood):
 
     def nn_loss(self, f: FuncData, y: OutputData):
         return torch.nn.CrossEntropyLoss(reduction="mean")(f, y)
-

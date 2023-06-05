@@ -46,3 +46,5 @@ hydra:
     chdir: False
   run:
     dir: ""
+  sweep:
+    dir: ""

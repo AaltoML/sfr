@@ -110,8 +110,8 @@ def train(cfg: DictConfig):
                 batch_size=cfg.batch_size,
                 device=cfg.device,
             )
-            wandb.log(train_metrics)
-            wandb.log(test_metrics)
+            wandb.log({"train": train_metrics})
+            wandb.log({"test": test_metrics})
             wandb.log({"epoch": epoch})
 
     logger.info("Finished training")

@@ -69,6 +69,7 @@ extras_require = {
         "hydra-core==1.3.2",
         "hydra-submitit-launcher==1.2.0",
         "jupyter==1.0.0",
+        "netcal==1.3.5",  # needed for computing ECE
         "mujoco==2.3.3",
         "dm_control==1.0.11",  # deepmind control suite
         "opencv-python==4.7.0.72",

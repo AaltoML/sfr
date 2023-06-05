@@ -7,7 +7,7 @@ mkdir  $SFR_CONTAINER_DIR
 module load LUMI/22.08
 module load lumi-container-wrapper
 conda-containerize new --mamba --prefix $SFR_CONTAINER_DIR sfr-env.yaml
-conda-containerize update $SFR_CONTAINER_DIR --post-install post_install.txt
+conda-containerize update $SFR_CONTAINER_DIR --post-install post-install.txt
 ```
 Add container to path
 ```sh

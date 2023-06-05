@@ -1,22 +1,23 @@
 import logging
-
-import wandb
-import numpy as np
-import torch
-from torch.nn.utils import parameters_to_vector
-from torch.utils.data import DataLoader
-from torch.optim import Adam
-from torch.optim.lr_scheduler import LambdaLR
-from torchvision.datasets import VisionDataset
-import torchvision.datasets as datasets_torch
-from torchvision.transforms import ToTensor
-from tqdm import tqdm
-from src import NTKSVGP, CategoricalLh
-import src as ntksvgp
 import os
 
-from preds.models import CIFAR10Net, MLPS, CIFAR100Net
-from preds.datasets import MNIST, FMNIST, CIFAR10
+import numpy as np
+
+# from src import CategoricalLh
+import src as ntksvgp
+import torch
+import torchvision.datasets as datasets_torch
+import wandb
+from experiments.sl.bnn_predictive.preds.datasets import CIFAR10, FMNIST, MNIST
+from experiments.sl.bnn_predictive.preds.models import CIFAR10Net, CIFAR100Net, MLPS
+from torch.nn.utils import parameters_to_vector
+from torch.optim import Adam
+from torch.optim.lr_scheduler import LambdaLR
+from torch.utils.data import DataLoader
+from torchvision.datasets import VisionDataset
+from torchvision.transforms import ToTensor
+from tqdm import tqdm
+
 
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False

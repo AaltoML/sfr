@@ -4,6 +4,7 @@ import torch
 import torch.nn.functional as F
 import torch.nn as nn
 from torch.utils.data import DataLoader
+from copy import deepcopy
 
 from typing import Any, Tuple
 import os
@@ -27,7 +28,8 @@ class MyCIFAR(VisionDataset):
                  train: bool = True,
                  download: bool = True, 
                  ) -> None:
-        super().__init__(root, transforms, transform, target_transform)
+        super().__init__(root, transform, target_transform)
+        self.train = train
         self.not_aug_transform = transforms.Compose([transforms.ToTensor()])
         cifar10 = CIFAR10(os.path.join(root, "CIFAR10"), 
                            train=train,
@@ -47,13 +49,16 @@ class MyCIFAR(VisionDataset):
         self.data = torch.vstack((cifar10_data, cifar100_data))
         self.targets = torch.concatenate((cifar10_targets, cifar100_targets))
     
-    def __getitem__(self, index: int) -> Tuple[torch.Tensor, int, torch.Tensor]:
+    def __getitem__(self, index: int):
         img, target = self.data[index], self.targets[index]
+
+        if not self.train:
+            return img, target
 
         if self.transform is not None:
             aug_img = self.transform(img)
         else:
-            aug_img = img.copy()
+            aug_img = img.clone()
         
         if self.target_transform is not None:
             target = self.target_transform(target)
@@ -61,7 +66,10 @@ class MyCIFAR(VisionDataset):
         # if hasattr(self, 'logits'):
         #     return aug_img, target, img, self.logits[index]
         
-        return aug_img, target, img 
+        return aug_img, target, img
+
+    def __len__(self):
+        return len(self.targets)
 
 
 class SequentialCIFAR(ContinualDataset):
@@ -96,8 +104,8 @@ class SequentialCIFAR(ContinualDataset):
                 self)
         else:
             train, test = store_masked_loaders(
-                self.train_dataset,
-                self.test_dataset,
+                deepcopy(self.train_dataset),
+                deepcopy(self.test_dataset),
                 self)
         return train, test
     
@@ -106,7 +114,7 @@ class SequentialCIFAR(ContinualDataset):
         return SequentialCIFAR.TRANSFORM
     
     def get_backbone(self):
-        return CifarNet()
+        return CifarNet(n_classes=self.N_CLASSES)
     
     @staticmethod
     def get_loss():

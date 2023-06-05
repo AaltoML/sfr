@@ -2,10 +2,10 @@ name: "la"
 model:
   _target_: laplace.Laplace
   likelihood: "classification"
-  subset_of_weights: "last_layer"
-  # subset_of_weights: "all"
-  # hessian_structure: "full"
-  hessian_structure: "diag"
+  # subset_of_weights: "last_layer"
+  subset_of_weights: "all"
+  hessian_structure: "full"
+  # hessian_structure: "diag"
   # prior_precision: ???
   backend:
     _target_: laplace.curvature.asdl.AsdlGGN

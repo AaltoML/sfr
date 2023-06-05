@@ -2,6 +2,7 @@ defaults:
   - submitit_slurm
 
 _target_: hydra_plugins.hydra_submitit_launcher.submitit_launcher.SlurmLauncher
+submitit_folder: ".submitit"
 # submitit_folder: ${hydra.sweep.dir}/.submitit/%j
 timeout_min: 60
 account: project_462000217

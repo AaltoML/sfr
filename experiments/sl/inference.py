@@ -2,7 +2,12 @@
 import logging
 import os
 import random
+import shutil
 from pprint import pprint
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 import hydra
 import laplace
@@ -14,12 +19,9 @@ from experiments.sl.bnn_predictive.experiments.scripts.imgclassification import 
     get_model,
 )
 from experiments.sl.utils import compute_metrics, set_seed_everywhere
+from hydra.utils import get_original_cwd
 from omegaconf import DictConfig, OmegaConf
 from torch.utils.data import DataLoader
-
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
 
 
 @hydra.main(version_base="1.3", config_path="./configs", config_name="inference")
@@ -30,8 +32,10 @@ def main(cfg: DictConfig):
         random_seed = random.randint(0, 10000)
         set_seed_everywhere(random_seed)
 
-    old_cfg = OmegaConf.load(os.path.join(cfg.checkpoint, "files/config.yaml"))
-    pprint("Loaded cfg from {}: {}".format(cfg.checkpoint, old_cfg))
+    ckpt_cfg = OmegaConf.load(
+        os.path.join(get_original_cwd(), cfg.checkpoint, "files/config.yaml")
+    )
+    pprint("Loaded cfg from {}: {}".format(cfg.checkpoint, ckpt_cfg))
 
     if cfg.double:
         torch.set_default_dtype(torch.double)
@@ -42,23 +46,23 @@ def main(cfg: DictConfig):
 
     cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
     print("Using device: {}".format(cfg.device))
-    cfg.output_dim = old_cfg.output_dim.value
+    cfg.output_dim = ckpt_cfg.output_dim.value
 
     ds_train, ds_test = get_dataset(
-        dataset=old_cfg.dataset.value,
+        dataset=ckpt_cfg.dataset.value,
         # double=True,
         double=False,
-        dir="./",
+        dir=get_original_cwd(),  # don't nest wandb inside hydra dir
         device=cfg.device,
-        debug=old_cfg.debug.value,
+        debug=ckpt_cfg.debug.value,
     )
 
     # Instantiate the model and update from checkpoint
-    ckpt_fname = os.path.join(cfg.checkpoint, "files/ckpt_dict.pt")
+    ckpt_fname = os.path.join(get_original_cwd(), cfg.checkpoint, "files/ckpt_dict.pt")
     checkpoint = torch.load(ckpt_fname)
-    network = get_model(model_name=old_cfg.model_name.value, ds_train=ds_train)
+    network = get_model(model_name=ckpt_cfg.model_name.value, ds_train=ds_train)
     network = network.to(cfg.device).to(torch.double)
-    sfr = hydra.utils.instantiate(old_cfg.sfr.value, model=network)
+    sfr = hydra.utils.instantiate(ckpt_cfg.sfr.value, model=network)
     sfr.load_state_dict(checkpoint["model"])
     sfr.eval()
 
@@ -69,7 +73,14 @@ def main(cfg: DictConfig):
             group=cfg.wandb.group,
             tags=cfg.wandb.tags,
             config=OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True),
+            dir=get_original_cwd(),  # don't nest wandb inside hydra dir
         )
+        # Save hydra configs with wandb (handles hydra's multirun dir)
+        shutil.copytree(
+            os.path.abspath(".hydra"),
+            os.path.join(os.path.join(get_original_cwd(), wandb.run.dir), "hydra"),
+        )
+        wandb.save("hydra")
 
     @torch.no_grad()
     def map_pred_fn(x):
@@ -338,7 +349,7 @@ def la_pred(
 #     os.makedirs(res_dir)
 # fname = (
 #     "./"
-#     + "_".join([old_cfg.dataset, cfg.model_name, str(cfg.random_seed)])
+#     + "_".join([ckpt_cfg.dataset, cfg.model_name, str(cfg.random_seed)])
 #     + f"_{cfg.prior.delta:.1e}.pt"
 # )
 # torch.save(checkpoint, os.path.join(res_dir, fname))

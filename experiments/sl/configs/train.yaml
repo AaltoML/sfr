@@ -1,13 +1,13 @@
 defaults:
   # Use slurm on cluster or local?
-  # - override hydra/launcher: submitit_local
+  - override hydra/launcher: submitit_local
   # - override hydra/launcher: local
   # - override hydra/launcher: slurm
-  - override hydra/launcher: lumi
+  # - override hydra/launcher: lumi
   # - override hydra/launcher: slurm_cpu
   # Disable logging by Hydra
-  # - override hydra/job_logging: none
-  - override hydra/hydra_logging: none
+  # - override hydra/job_logging: none # stop hydra creating .log file
+  # - override hydra/hydra_logging: none # saves .hydra/*.yaml files
   - _self_
 
 # Config dataset and NN from Immer et al 2021
@@ -45,19 +45,18 @@ wandb:
   project: "sfr-sl"
   use_wandb: True
   run_name: delta=${sfr.delta}-lr=${lr}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
-  # run_name: ${alg_name}-${online_update_freq}-${agent.horizon}-${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   tags:
     - "delta=${sfr.delta}"
-    - "m=${sfr.num_inducing}"
     - "dataset=${dataset}"
-  #   - "env=${env.env_name}-${env.task_name}"
-  #   - "alg=${alg_name}"
-  #   - "online_update_freq=${online_update_freq}"
 
 hydra:
-  job:
-    chdir: False
   run:
-    dir: ""
+    dir: hydra/${hydra.job.name}/${now:%Y-%m-%d_%H-%M-%S}
+  job:
+    chdir: true
   sweep:
-    dir: ""
+    dir: ${hydra.run.dir}
+    subdir: ${hydra.job.num}
+  job_logging:
+    root:
+      level: INFO # DEBUG

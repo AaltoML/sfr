@@ -3,17 +3,18 @@ defaults:
   - inference_strategy: sfr
   # - inference_strategy: laplace
   # - pred_strategy: laplace
-  # - override hydra/launcher: submitit_local
-  # - override hydra/launcher: local
+  - override hydra/launcher: submitit_local
   # - override hydra/launcher: slurm
-  - override hydra/launcher: lumi
+  # - override hydra/launcher: lumi
   # - override hydra/launcher: slurm_cpu
   # Disable logging by Hydra
-  # - override hydra/job_logging: none
-  - override hydra/hydra_logging: none
+  # - override hydra/job_logging: none # creates .log file
+  # - override hydra/hydra_logging: none # saves .hydra/*.yaml files
   - _self_
 
-checkpoint: "./wandb/run-20230605_122709-jkhh28j8"
+# checkpoint: "./wandb/run-20230605_122709-jkhh28j8"
+# checkpoint: "./wandb/run-20230602_175126-pruvico1"
+checkpoint: "wandb/run-20230605_160605-3b8gdq3l"
 
 device: ???
 output_dim: ???
@@ -26,25 +27,25 @@ batch_size: 128 # for predicting over test/val data
 wandb:
   # group: ${dataset}
   group: "inference"
-  entity: "" # dropped for anonymity, replace with your own
+  entity: ""
   project: "sfr-sl-inference"
   use_wandb: True
   run_name: seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   # run_name: delta=${prior.delta}-lr=${lr}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
-  # run_name: ${alg_name}-${online_update_freq}-${agent.horizon}-${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   tags:
     - "inference"
     # - "delta=${prior.delta}"
     # - "m=${sfr.num_inducing}"
     # - "dataset=${dataset}"
-  #   - "env=${env.env_name}-${env.task_name}"
-  #   - "alg=${alg_name}"
-  #   - "online_update_freq=${online_update_freq}"
 
 hydra:
-  job:
-    chdir: False
   run:
-    dir: ""
+    dir: hydra/${hydra.job.name}/${now:%Y-%m-%d_%H-%M-%S}
+  job:
+    chdir: true
   sweep:
-    dir: ""
+    dir: ${hydra.run.dir}
+    subdir: ${hydra.job.num}
+  job_logging:
+    root:
+      level: INFO # DEBUG

@@ -2,6 +2,7 @@
 import logging
 import os
 import random
+import shutil
 
 
 logging.basicConfig(level=logging.INFO)
@@ -15,7 +16,8 @@ from experiments.sl.bnn_predictive.experiments.scripts.imgclassification import 
     get_dataset,
     get_model,
 )
-from experiments.sl.utils import set_seed_everywhere, compute_metrics
+from experiments.sl.utils import compute_metrics, set_seed_everywhere
+from hydra.utils import get_original_cwd
 from omegaconf import DictConfig
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -56,7 +58,7 @@ def train(cfg: DictConfig):
     ds_train, ds_test = get_dataset(
         dataset=cfg.dataset,
         double=cfg.double,
-        dir="./",
+        dir=get_original_cwd(),  # don't nest wandb inside hydra dir
         device=cfg.device,
         debug=cfg.debug,
     )
@@ -78,7 +80,18 @@ def train(cfg: DictConfig):
             config=omegaconf.OmegaConf.to_container(
                 cfg, resolve=True, throw_on_missing=True
             ),
+            dir=get_original_cwd(),  # don't nest wandb inside hydra dir
         )
+        # print("path")
+        # print("get_original_cwd() {}".format(get_original_cwd()))
+        # print("os.path.abspath('.hydra') {}".format(os.path.abspath(".hydra")))
+        # print("os.getcwd() {}".format(os.getcwd()))
+        # Save hydra configs with wandb (handles hydra's multirun dir)
+        shutil.copytree(
+            os.path.abspath(".hydra"),
+            os.path.join(os.path.join(get_original_cwd(), wandb.run.dir), "hydra"),
+        )
+        wandb.save("hydra")
 
     train_loader = DataLoader(ds_train, batch_size=cfg.batch_size, shuffle=True)
     test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)

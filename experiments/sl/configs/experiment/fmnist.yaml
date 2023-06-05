@@ -1,6 +1,4 @@
 # @package _global_
-# defaults:
-#   - override /agent: ddpg
 
 dataset: "FMNIST"
 model_name: "CNN"

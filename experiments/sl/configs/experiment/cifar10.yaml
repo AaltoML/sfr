@@ -5,9 +5,7 @@ model_name: "AllCNN"
 lr: 1e-3
 n_epochs: 250
 
-prior:
-  _target_: src.priors.Gaussian
-  # params: ???
+sfr:
   delta: 0.0018
 
 hydra:

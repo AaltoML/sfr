@@ -2,7 +2,8 @@ defaults:
   # Use slurm on cluster or local?
   # - override hydra/launcher: submitit_local
   # - override hydra/launcher: local
-  - override hydra/launcher: slurm
+  # - override hydra/launcher: slurm
+  - override hydra/launcher: lumi
   # - override hydra/launcher: slurm_cpu
   # Disable logging by Hydra
   # - override hydra/job_logging: none
@@ -43,10 +44,10 @@ wandb:
   group: ${dataset}
   project: "sfr-sl"
   use_wandb: True
-  run_name: delta=${prior.delta}-lr=${lr}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
+  run_name: delta=${sfr.prior.delta}-lr=${lr}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   # run_name: ${alg_name}-${online_update_freq}-${agent.horizon}-${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   tags:
-    - "delta=${prior.delta}"
+    - "delta=${sfr.prior.delta}"
     - "m=${sfr.num_inducing}"
     - "dataset=${dataset}"
   #   - "env=${env.env_name}-${env.task_name}"

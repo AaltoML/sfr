@@ -5,6 +5,12 @@ from typing import Optional
 import numpy as np
 import src
 import torch
+import torch.distributions as dists
+from experiments.sl.bnn_predictive.experiments.scripts.imginference import (
+    get_quick_loader,
+)
+from netcal.metrics import ECE
+from torch.utils.data import DataLoader
 
 
 def set_seed_everywhere(random_seed):
@@ -38,3 +44,33 @@ def init_SFR_with_gaussian_prior(
         jitter=jitter,
         device=device,
     )
+
+
+def compute_metrics(pred_fn, ds_test, batch_size: int, device: str = "cpu") -> dict:
+    # Split the test data set into test and validation sets
+    # num_test = len(ds_test)
+    # perm_ixs = torch.randperm(num_test)
+    # val_ixs, test_ixs = perm_ixs[: int(num_test / 2)], perm_ixs[int(num_test / 2) :]
+    # ds_test = Subset(ds_test, test_ixs)
+    test_loader = get_quick_loader(
+        DataLoader(ds_test, batch_size=batch_size), device=device
+    )
+
+    targets = torch.cat([y for x, y in test_loader], dim=0).numpy()
+
+    py = []
+    for x, _ in test_loader:
+        py.append(pred_fn(x.to(device)))
+
+    probs = torch.cat(py).cpu().numpy()
+
+    acc = (probs.argmax(-1) == targets).mean()
+    ece = ECE(bins=15).measure(probs, targets)
+    nll = (
+        -dists.Categorical(torch.Tensor(probs))
+        .log_prob(torch.Tensor(targets))
+        .mean()
+        .numpy()
+    )
+    metrics = {"acc": acc, "nll": nll, "ece": ece}
+    return metrics

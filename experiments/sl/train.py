@@ -15,8 +15,7 @@ from experiments.sl.bnn_predictive.experiments.scripts.imgclassification import 
     get_dataset,
     get_model,
 )
-from experiments.sl.new_inference import compute_metrics, evaluate
-from experiments.sl.utils import set_seed_everywhere
+from experiments.sl.utils import set_seed_everywhere, compute_metrics
 from omegaconf import DictConfig
 from torch.utils.data import DataLoader
 from tqdm import tqdm

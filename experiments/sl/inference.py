@@ -2,50 +2,20 @@
 import logging
 import os
 import random
-from functools import partial
 from pprint import pprint
-from typing import Callable, Optional
 
 import hydra
 import laplace
 import src
 import torch
-import torch.distributions as dists
 import wandb
 from experiments.sl.bnn_predictive.experiments.scripts.imgclassification import (
     get_dataset,
     get_model,
 )
-from experiments.sl.bnn_predictive.experiments.scripts.imginference import (
-    get_quick_loader,
-)
-from experiments.sl.utils import set_seed_everywhere
-from netcal.metrics import ECE
+from experiments.sl.utils import compute_metrics, set_seed_everywhere
 from omegaconf import DictConfig, OmegaConf
-from torch.utils.data import DataLoader, TensorDataset
-from torch.utils.data.dataset import Subset
-
-
-# def evaluate(
-#     test_loader: DataLoader, predict_probs: Callable[[DataLoader], torch.Tensor]
-# ):
-#     targets = torch.cat([y for x, y in test_loader], dim=0).numpy()
-#     probs = predict_probs(test_loader)
-#     # print("probs {}".format(probs.shape))
-#     # print("probs.argmax(-1) {}".format(probs.argmax(-1).shape))
-#     # print("targets {}".format(targets.shape))
-#     # acc = (probs.argmax(-1) == targets)
-#     # acc = acc.mean()
-#     # print("acc {}".format(acc.shape))
-#     acc = (probs.argmax(-1) == targets).mean()
-#     ece = ECE(bins=15).measure(probs, targets)
-#     nll = (
-#         -dists.Categorical(torch.Tensor(probs))
-#         .log_prob(torch.Tensor(targets))
-#         .mean()
-#         .numpy()
-#     )
-#     return {"acc": acc, "nll": nll, "ece": ece}
+from torch.utils.data import DataLoader
 
 
 logging.basicConfig(level=logging.INFO)
@@ -209,199 +179,169 @@ def la_pred(
     return pred_fn
 
 
-def compute_metrics(pred_fn, ds_test, batch_size: int, device: str = "cpu") -> dict:
-    # Split the test data set into test and validation sets
-    # num_test = len(ds_test)
-    # perm_ixs = torch.randperm(num_test)
-    # val_ixs, test_ixs = perm_ixs[: int(num_test / 2)], perm_ixs[int(num_test / 2) :]
-    # ds_test = Subset(ds_test, test_ixs)
-    test_loader = get_quick_loader(
-        DataLoader(ds_test, batch_size=batch_size), device=device
-    )
+# def compute_metrics_(sfr, ds_train, ds_test, cfg):
+#     # def compute_metrics(sfr, ds_train, ds_test, cfg, checkpoint):
+#     # Split the test data set into test and validation sets
+#     num_test = len(ds_test)
+#     perm_ixs = torch.randperm(num_test)
+#     val_ixs, test_ixs = perm_ixs[: int(num_test / 2)], perm_ixs[int(num_test / 2) :]
+#     ds_val = Subset(ds_test, val_ixs)
+#     ds_test = Subset(ds_test, test_ixs)
+#     val_loader = get_quick_loader(
+#         DataLoader(ds_val, batch_size=cfg.batch_size), device=cfg.device
+#     )
+#     test_loader = get_quick_loader(
+#         DataLoader(ds_test, batch_size=cfg.batch_size), device=cfg.device
+#     )
+#     all_train = DataLoader(ds_train, batch_size=len(ds_train))
+#     (X_train, y_train) = next(iter(all_train))
+#     X_train = X_train.to(cfg.device)
+#     y_train = y_train.to(cfg.device)
+#     data = (X_train.to(torch.float64), y_train)
 
-    targets = torch.cat([y for x, y in test_loader], dim=0).numpy()
+#     model = sfr
 
-    py = []
-    for x, _ in test_loader:
-        py.append(pred_fn(x.to(device)))
+#     # MAP
+#     @torch.no_grad()
+#     def predict_probs(dataloader: DataLoader, map: bool = False):
+#         py = []
+#         for x, _ in dataloader:
+#             if map:
+#                 py.append(torch.softmax(sfr.network(x.to(cfg.device)), dim=-1))
+#             else:
+#                 py.append(model(x.to(cfg.device)))
 
-    probs = torch.cat(py).cpu().numpy()
+#         return torch.cat(py).cpu().numpy()
 
-    acc = (probs.argmax(-1) == targets).mean()
-    ece = ECE(bins=15).measure(probs, targets)
-    nll = (
-        -dists.Categorical(torch.Tensor(probs))
-        .log_prob(torch.Tensor(targets))
-        .mean()
-        .numpy()
-    )
-    metrics = {"acc": acc, "nll": nll, "ece": ece}
-    return metrics
+#     # logging.info("MAP performance")
+#     map_metrics = evaluate(
+#         test_loader=test_loader, predict_probs=partial(predict_probs, map=True)
+#     )
+#     print("map_metrics {}".format(map_metrics))
+#     wandb.log({"map": map_metrics})
 
+#     # conf_name = "map"
+#     # logging.info("MAP performance")
+#     # gstar_te, yte = get_map_predictive(test_loader, sfr.network)
+#     # gstar_va, yva = get_map_predictive(val_loader, sfr.network)
+#     # checkpoint["map"] = evaluate(sfr.likelihood, yte, gstar_te, yva, gstar_va)
+#     # logging.info(checkpoint["map"])
+#     # wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
+#     # print("checkpoint[map] {}".format(checkpoint["map"]))
 
-def compute_metrics_(sfr, ds_train, ds_test, cfg):
-    # def compute_metrics(sfr, ds_train, ds_test, cfg, checkpoint):
-    # Split the test data set into test and validation sets
-    num_test = len(ds_test)
-    perm_ixs = torch.randperm(num_test)
-    val_ixs, test_ixs = perm_ixs[: int(num_test / 2)], perm_ixs[int(num_test / 2) :]
-    ds_val = Subset(ds_test, val_ixs)
-    ds_test = Subset(ds_test, test_ixs)
-    val_loader = get_quick_loader(
-        DataLoader(ds_val, batch_size=cfg.batch_size), device=cfg.device
-    )
-    test_loader = get_quick_loader(
-        DataLoader(ds_test, batch_size=cfg.batch_size), device=cfg.device
-    )
-    all_train = DataLoader(ds_train, batch_size=len(ds_train))
-    (X_train, y_train) = next(iter(all_train))
-    X_train = X_train.to(cfg.device)
-    y_train = y_train.to(cfg.device)
-    data = (X_train.to(torch.float64), y_train)
+#     # logging.info("SFR performance")
 
-    model = sfr
+#     # model.fit(data)
+#     # # gp_subset.set_data(data)
+#     # # sfr.set_data(data)
+#     # # la.fit(data)
 
-    # MAP
-    @torch.no_grad()
-    def predict_probs(dataloader: DataLoader, map: bool = False):
-        py = []
-        for x, _ in dataloader:
-            if map:
-                py.append(torch.softmax(sfr.network(x.to(cfg.device)), dim=-1))
-            else:
-                py.append(model(x.to(cfg.device)))
+#     # conf_name = "predict"
+#     # # conf_name = f"{cfg.model_name.num_inducing}"
 
-        return torch.cat(py).cpu().numpy()
+#     # # logging.info(f"Computing {conf_name}")
+#     # gstar_te, yte = predict_fn(test_loader)
+#     # gstar_va, yva = predict_fn(val_loader)
+#     # checkpoint[conf_name] = evaluate(sfr.likelihood, yte, gstar_te, yva, gstar_va)
+#     # logging.info(checkpoint[conf_name])
+#     # wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
 
-    # logging.info("MAP performance")
-    map_metrics = evaluate(
-        test_loader=test_loader, predict_probs=partial(predict_probs, map=True)
-    )
-    print("map_metrics {}".format(map_metrics))
-    wandb.log({"map": map_metrics})
+#     model = hydra.utils.instantiate(
+#         cfg.inference_strategy, model=sfr.network, prior_precision=sfr.prior.delta
+#     )
+#     print("bnn {}".format(model))
+#     # la = laplace.Laplace(
+#     #     sfr.network,
+#     #     "classification",
+#     #     subset_of_weights=cfg.subset_of_weights,
+#     #     hessian_structure=cfg.hessian_structure,
+#     #     prior_precision=sfr.prior.delta,
+#     #     backend=laplace.curvature.asdl.AsdlGGN,
+#     # )
 
-    # conf_name = "map"
-    # logging.info("MAP performance")
-    # gstar_te, yte = get_map_predictive(test_loader, sfr.network)
-    # gstar_va, yva = get_map_predictive(val_loader, sfr.network)
-    # checkpoint["map"] = evaluate(sfr.likelihood, yte, gstar_te, yva, gstar_va)
-    # logging.info(checkpoint["map"])
-    # wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
-    # print("checkpoint[map] {}".format(checkpoint["map"]))
+#     # print("Making train_loader fo LA...")
+#     # # train_loader = DataLoader(ds_train, batch_size=cfg.inference_batch_size)
+#     train_loader_double = DataLoader(TensorDataset(*data), batch_size=cfg.batch_size)
+#     print("made train_loader {}".format(train_loader_double))
 
-    # logging.info("SFR performance")
+#     logger.info("Starting inference...")
+#     # la.fit(train_loader_double)
+#     model.fit(train_loader_double)
+#     logger.info("Finished inference")
 
-    # model.fit(data)
-    # # gp_subset.set_data(data)
-    # # sfr.set_data(data)
-    # # la.fit(data)
+#     # GLM predictive
+#     # conf_name = "glm"
+#     logging.info("GLM")
+#     glm_metrics = evaluate(test_loader=test_loader, predict_probs=predict_probs)
+#     print("glm_metrics {}".format(glm_metrics))
+#     wandb.log({"glm": glm_metrics})
+#     print("delta {}".format(model.prior_precision))
 
-    # conf_name = "predict"
-    # # conf_name = f"{cfg.model_name.num_inducing}"
+#     model.optimize_prior_precision(method="marglik")
+#     glm_with_prior_opt_metrics = evaluate(
+#         test_loader=test_loader, predict_probs=predict_probs
+#     )
+#     print("delta {}".format(model.prior_precision))
+#     print("glm_with_prior_opt_metrics {}".format(glm_with_prior_opt_metrics))
+#     wandb.log({"glm_posthoc_opt": glm_with_prior_opt_metrics})
 
-    # # logging.info(f"Computing {conf_name}")
-    # gstar_te, yte = predict_fn(test_loader)
-    # gstar_va, yva = predict_fn(val_loader)
-    # checkpoint[conf_name] = evaluate(sfr.likelihood, yte, gstar_te, yva, gstar_va)
-    # logging.info(checkpoint[conf_name])
-    # wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
+# def glm_predictive(x):
+#     def la_pred(x):
+#         return la.predictive_samples(x=x, pred_type="glm", n_samples=100)
 
-    model = hydra.utils.instantiate(
-        cfg.inference_strategy, model=sfr.network, prior_precision=sfr.prior.delta
-    )
-    print("bnn {}".format(model))
-    # la = laplace.Laplace(
-    #     sfr.network,
-    #     "classification",
-    #     subset_of_weights=cfg.subset_of_weights,
-    #     hessian_structure=cfg.hessian_structure,
-    #     prior_precision=sfr.prior.delta,
-    #     backend=laplace.curvature.asdl.AsdlGGN,
-    # )
+#     gstar_te, yte = get_lap_predictive(test_loader, la_pred, seeding=True)
 
-    # print("Making train_loader fo LA...")
-    # # train_loader = DataLoader(ds_train, batch_size=cfg.inference_batch_size)
-    train_loader_double = DataLoader(TensorDataset(*data), batch_size=cfg.batch_size)
-    print("made train_loader {}".format(train_loader_double))
+# gstar_te, yte = get_lap_predictive(test_loader, la_pred, seeding=True)
+# gstar_va, yva = get_lap_predictive(val_loader, la_pred, seeding=True)
+# checkpoint[conf_name] = evaluate(sfr.likelihood, yte, gstar_te, yva, gstar_va)
+# logging.info(checkpoint[conf_name])
+# wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
+# print("checkpoint[glm] {}".format(checkpoint["glm"]))
 
-    logger.info("Starting inference...")
-    # la.fit(train_loader_double)
-    model.fit(train_loader_double)
-    logger.info("Finished inference")
+# la = laplace.Laplace(
+#     sfr.network,
+#     "classification",
+#     subset_of_weights=cfg.subset_of_weights,
+#     hessian_structure=cfg.hessian_structure,
+#     prior_precision=sfr.prior.delta,
+#     backend=laplace.curvature.asdl.AsdlGGN,
+# )
 
-    # GLM predictive
-    # conf_name = "glm"
-    logging.info("GLM")
-    glm_metrics = evaluate(test_loader=test_loader, predict_probs=predict_probs)
-    print("glm_metrics {}".format(glm_metrics))
-    wandb.log({"glm": glm_metrics})
-    print("delta {}".format(model.prior_precision))
+# print("Making train_loader fo LA...")
+# train_loader_double = DataLoader(
+#     TensorDataset(*data), batch_size=cfg.inference_batch_size
+# )
 
-    model.optimize_prior_precision(method="marglik")
-    glm_with_prior_opt_metrics = evaluate(
-        test_loader=test_loader, predict_probs=predict_probs
-    )
-    print("delta {}".format(model.prior_precision))
-    print("glm_with_prior_opt_metrics {}".format(glm_with_prior_opt_metrics))
-    wandb.log({"glm_posthoc_opt": glm_with_prior_opt_metrics})
+# print("made train_loader {}".format(train_loader_double))
 
-    # def glm_predictive(x):
-    #     def la_pred(x):
-    #         return la.predictive_samples(x=x, pred_type="glm", n_samples=100)
+# logger.info("Fitting laplace...")
+# la.fit(train_loader_double)
+# logger.info("Finished fitting laplace")
 
-    #     gstar_te, yte = get_lap_predictive(test_loader, la_pred, seeding=True)
+# # BNN predictive
+# conf_name = "bnn"
+# logging.info("BNN predictive")
 
-    # gstar_te, yte = get_lap_predictive(test_loader, la_pred, seeding=True)
-    # gstar_va, yva = get_lap_predictive(val_loader, la_pred, seeding=True)
-    # checkpoint[conf_name] = evaluate(sfr.likelihood, yte, gstar_te, yva, gstar_va)
-    # logging.info(checkpoint[conf_name])
-    # wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
-    # print("checkpoint[glm] {}".format(checkpoint["glm"]))
+# def la_pred(x):
+#     return la.predictive_samples(x=x, pred_type="nn", n_samples=100)
 
-    # la = laplace.Laplace(
-    #     sfr.network,
-    #     "classification",
-    #     subset_of_weights=cfg.subset_of_weights,
-    #     hessian_structure=cfg.hessian_structure,
-    #     prior_precision=sfr.prior.delta,
-    #     backend=laplace.curvature.asdl.AsdlGGN,
-    # )
+# gstar_te, yte = get_la_predictive(test_loader, la_pred, seeding=True)
+# gstar_va, yva = get_la_predictive(val_loader, la_pred, seeding=True)
+# checkpoint[conf_name] = evaluate(gp_subset.likelihood, yte, gstar_te, yva, gstar_va)
+# logging.info(checkpoint[conf_name])
+# wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
 
-    # print("Making train_loader fo LA...")
-    # train_loader_double = DataLoader(
-    #     TensorDataset(*data), batch_size=cfg.inference_batch_size
-    # )
+#
 
-    # print("made train_loader {}".format(train_loader_double))
-
-    # logger.info("Fitting laplace...")
-    # la.fit(train_loader_double)
-    # logger.info("Finished fitting laplace")
-
-    # # BNN predictive
-    # conf_name = "bnn"
-    # logging.info("BNN predictive")
-
-    # def la_pred(x):
-    #     return la.predictive_samples(x=x, pred_type="nn", n_samples=100)
-
-    # gstar_te, yte = get_la_predictive(test_loader, la_pred, seeding=True)
-    # gstar_va, yva = get_la_predictive(val_loader, la_pred, seeding=True)
-    # checkpoint[conf_name] = evaluate(gp_subset.likelihood, yte, gstar_te, yva, gstar_va)
-    # logging.info(checkpoint[conf_name])
-    # wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
-
-    #
-
-    # res_dir = "./saved_inference_results"
-    # if not os.path.exists(res_dir):
-    #     os.makedirs(res_dir)
-    # fname = (
-    #     "./"
-    #     + "_".join([old_cfg.dataset, cfg.model_name, str(cfg.random_seed)])
-    #     + f"_{cfg.prior.delta:.1e}.pt"
-    # )
-    # torch.save(checkpoint, os.path.join(res_dir, fname))
+# res_dir = "./saved_inference_results"
+# if not os.path.exists(res_dir):
+#     os.makedirs(res_dir)
+# fname = (
+#     "./"
+#     + "_".join([old_cfg.dataset, cfg.model_name, str(cfg.random_seed)])
+#     + f"_{cfg.prior.delta:.1e}.pt"
+# )
+# torch.save(checkpoint, os.path.join(res_dir, fname))
 
 
 if __name__ == "__main__":

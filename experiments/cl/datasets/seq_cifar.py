@@ -17,9 +17,6 @@ from datasets.utils.continual_dataset import (ContinualDataset,
                                               store_masked_loaders)
 from datasets.utils.validation import get_train_val
 
-# def base_path():
-#     return "/tmp/datasets/"
-
 
 class MyCIFAR(VisionDataset):
     def __init__(self, root: str, 
@@ -81,7 +78,7 @@ class SequentialCIFAR(ContinualDataset):
     TRANSFORM = transforms.Compose([
         transforms.RandomCrop(32, padding=4),
         transforms.RandomHorizontalFlip(), 
-        transforms.ToTensor()
+        # transforms.ToTensor()
     ])
     
     def __init__(self, args: Namespace) -> None:

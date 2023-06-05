@@ -13,7 +13,7 @@ defaults:
   - override hydra/hydra_logging: none
   - _self_
 
-checkpoint: "./wandb/run-20230602_175126-pruvico1"
+checkpoint: "./wandb/run-20230605_122709-jkhh28j8"
 
 device: ???
 output_dim: ???

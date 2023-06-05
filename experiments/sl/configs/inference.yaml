@@ -13,8 +13,8 @@ defaults:
   - _self_
 
 # checkpoint: "./wandb/run-20230605_122709-jkhh28j8"
-# checkpoint: "./wandb/run-20230602_175126-pruvico1"
-checkpoint: "wandb/run-20230605_160605-3b8gdq3l"
+checkpoint: "./wandb/run-20230605_162902-q2tmpsy0"
+# checkpoint: "wandb/run-20230605_160605-3b8gdq3l"
 
 device: ???
 output_dim: ???
@@ -40,7 +40,7 @@ wandb:
 
 hydra:
   run:
-    dir: hydra/${hydra.job.name}/${now:%Y-%m-%d_%H-%M-%S}
+    dir: output/${hydra.job.name}/${now:%Y-%m-%d_%H-%M-%S}
   job:
     chdir: true
   sweep:

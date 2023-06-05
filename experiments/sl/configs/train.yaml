@@ -51,7 +51,7 @@ wandb:
 
 hydra:
   run:
-    dir: hydra/${hydra.job.name}/${now:%Y-%m-%d_%H-%M-%S}
+    dir: output/${hydra.job.name}/${now:%Y-%m-%d_%H-%M-%S}
   job:
     chdir: true
   sweep:

@@ -28,6 +28,7 @@ from src.custom_types import (  # Lambda_1,; Lambda_2,
     TestInput,
 )
 from src.likelihoods import Likelihood
+import src
 from src.priors import Prior
 from torch.func import functional_call, jacrev, jvp, vjp, vmap
 from torch.utils.data import DataLoader, TensorDataset
@@ -54,6 +55,33 @@ class SFR(nn.Module):
         self.dual_batch_size = dual_batch_size
         self.jitter = jitter
         self.device = device
+
+    def __call__(
+        self,
+        x: InputData,
+        pred_type: str = "gp",  # "gp" or "nn"
+        num_samples: int = 100,
+    ):
+        f_mean, f_var = self._predict_fn(x, full_cov=False)
+        if pred_type in "nn":
+            f_mean = self.network(x)
+        if isinstance(self.likelihood, src.likelihoods.CategoricalLh):
+            return self.likelihood(f_mean=f_mean, f_var=f_var, num_samples=num_samples)
+        else:
+            return self.likelihood(f_mean=f_mean, f_var=f_var)
+
+    def fit(self, train_loader: DataLoader):
+        all_train = DataLoader(
+            train_loader.dataset, batch_size=len(train_loader.dataset)
+        )
+        train_data = next(iter(all_train))
+        # train_data = train_loader.dataset
+        # print("train_data {}".format(train_data.D))
+        print("train_data {}".format(train_data[0].shape))
+        print("train_data {}".format(train_data[1].shape))
+        # print("train_data {}".format(train_data.D[0][1].shape))
+        # print("train_data {}".format(train_data.D[].shape))
+        self.set_data(train_data=train_data)
 
     @torch.no_grad()
     def set_data(self, train_data: Data):
@@ -436,7 +464,6 @@ def calc_sparse_dual_params(
     beta = torch.diag_embed(beta_diag.T)  # [output_dim, num_data, num_data]
     beta_u = torch.matmul(torch.matmul(Kzx, beta), torch.transpose(Kzx, -1, -2))
 
-
     Lambda_u = torch.matmul(Kzx, torch.transpose(Lambda, -1, -2)[..., None])[..., 0]
 
     alpha_u = calc_alpha_u_from_lambda(
@@ -495,4 +522,3 @@ def calc_lambda(
     beta_diag = torch.diagonal(beta, dim1=-2, dim2=-1)  # [num_data, output_dim]
     Lambda = alpha + F * beta_diag
     return Lambda
-

@@ -1,10 +1,7 @@
 defaults:
   # Use slurm on cluster or local?
   - override hydra/launcher: submitit_local
-  # - override hydra/launcher: local
-  # - override hydra/launcher: slurm
   # - override hydra/launcher: lumi
-  # - override hydra/launcher: slurm_cpu
   # Disable logging by Hydra
   # - override hydra/job_logging: none # stop hydra creating .log file
   # - override hydra/hydra_logging: none # saves .hydra/*.yaml files
@@ -16,7 +13,7 @@ model_name: "SmallMLP"
 # debug: True
 debug: False
 
-device: ???
+device: "gpu"
 output_dim: ???
 batch_size: 512
 lr: 1e-4

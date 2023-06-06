@@ -67,8 +67,7 @@ def train(cfg: DictConfig):
     print("n_classes {}".format(n_classes))
     cfg.output_dim = n_classes
 
-    network = get_model(model_name=cfg.model_name, ds_train=ds_train)
-    network = network.to(cfg.device)
+    network = get_model(model_name=cfg.model_name, ds_train=ds_train).to(cfg.device)
     sfr = hydra.utils.instantiate(cfg.sfr, model=network)
 
     if cfg.wandb.use_wandb:  # Initialise WandB
@@ -110,22 +109,22 @@ def train(cfg: DictConfig):
             loss.backward()
             optimizer.step()
             wandb.log({"loss": loss})
-        if epoch % cfg.logging_epoch_freq == 0:
-            train_metrics = compute_metrics(
-                pred_fn=map_pred_fn,
-                ds_test=ds_train,
-                batch_size=cfg.batch_size,
-                device=cfg.device,
-            )
-            test_metrics = compute_metrics(
-                pred_fn=map_pred_fn,
-                ds_test=ds_test,
-                batch_size=cfg.batch_size,
-                device=cfg.device,
-            )
-            wandb.log({"train": train_metrics})
-            wandb.log({"test": test_metrics})
-            wandb.log({"epoch": epoch})
+        # if epoch % cfg.logging_epoch_freq == 0:
+        #     train_metrics = compute_metrics(
+        #         pred_fn=map_pred_fn,
+        #         ds_test=ds_train,
+        #         batch_size=cfg.batch_size,
+        #         device=cfg.device,
+        #     )
+        #     test_metrics = compute_metrics(
+        #         pred_fn=map_pred_fn,
+        #         ds_test=ds_test,
+        #         batch_size=cfg.batch_size,
+        #         device=cfg.device,
+        #     )
+        #     wandb.log({"train": train_metrics})
+        #     wandb.log({"test": test_metrics})
+        #     wandb.log({"epoch": epoch})
 
     logger.info("Finished training")
 

@@ -16,9 +16,9 @@ from experiments.sl.bnn_predictive.experiments.scripts.imgclassification import 
     get_dataset,
     get_model,
 )
-from experiments.sl.utils import compute_metrics, set_seed_everywhere
+from experiments.sl.configs.schema import TrainConfig
+from experiments.sl.utils import compute_metrics, set_seed_everywhere, train_val_split
 from hydra.utils import get_original_cwd
-from omegaconf import DictConfig
 from torch.utils.data import DataLoader
 from tqdm import tqdm
 
@@ -35,14 +35,15 @@ def predict_probs(
 
 
 @hydra.main(version_base="1.3", config_path="./configs", config_name="train")
-def train(cfg: DictConfig):
+def train(cfg: TrainConfig):
     try:  # Make experiment reproducible
         set_seed_everywhere(cfg.random_seed)
     except:
         random_seed = random.randint(0, 10000)
         set_seed_everywhere(random_seed)
 
-    cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
+    if "gpu" in cfg.device:
+        cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     if cfg.double:
         logger.info("Using float64")
@@ -55,6 +56,7 @@ def train(cfg: DictConfig):
     cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
     print("Using device: {}".format(cfg.device))
 
+    # Load the data
     ds_train, ds_test = get_dataset(
         dataset=cfg.dataset,
         double=cfg.double,
@@ -62,15 +64,23 @@ def train(cfg: DictConfig):
         device=cfg.device,
         debug=cfg.debug,
     )
+    cfg.output_dim = ds_train.K
 
-    n_classes = ds_train.K
-    print("n_classes {}".format(n_classes))
-    cfg.output_dim = n_classes
-
+    # Instantiate SFR
     network = get_model(model_name=cfg.model_name, ds_train=ds_train).to(cfg.device)
     sfr = hydra.utils.instantiate(cfg.sfr, model=network)
 
-    if cfg.wandb.use_wandb:  # Initialise WandB
+    # Split train data set into train and validation
+    print("num train {}".format(len(ds_train)))
+    ds_train, ds_val = train_val_split(ds_train=ds_train, split=1 / 6)
+    train_loader = DataLoader(dataset=ds_train, shuffle=True, batch_size=cfg.batch_size)
+    val_loader = DataLoader(dataset=ds_val, shuffle=False, batch_size=cfg.batch_size)
+    print("train_loader {}".format(train_loader))
+    print("val_loader {}".format(val_loader))
+    test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)
+
+    # Initialise WandB
+    if cfg.wandb.use_wandb:
         run = wandb.init(
             project=cfg.wandb.project,
             name=cfg.wandb.run_name,
@@ -92,14 +102,22 @@ def train(cfg: DictConfig):
         )
         wandb.save("hydra")
 
-    train_loader = DataLoader(ds_train, batch_size=cfg.batch_size, shuffle=True)
-    test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)
-
     optimizer = torch.optim.Adam([{"params": sfr.parameters()}], lr=cfg.lr)
 
     @torch.no_grad()
     def map_pred_fn(x):
         return torch.softmax(sfr.network(x.to(cfg.device)), dim=-1)
+
+    def loss_fn(data_loader: DataLoader):
+        cum_loss = 0
+        for X, y in data_loader:
+            X, y = X.to(cfg.device), y.to(cfg.device)
+            loss = sfr.loss(X, y)
+            optimizer.zero_grad()
+            loss.backward()
+            optimizer.step()
+            cum_loss += loss
+        return cum_loss
 
     for epoch in tqdm(list(range(cfg.n_epochs))):
         for X, y in train_loader:
@@ -109,22 +127,31 @@ def train(cfg: DictConfig):
             loss.backward()
             optimizer.step()
             wandb.log({"loss": loss})
-        # if epoch % cfg.logging_epoch_freq == 0:
-        #     train_metrics = compute_metrics(
-        #         pred_fn=map_pred_fn,
-        #         ds_test=ds_train,
-        #         batch_size=cfg.batch_size,
-        #         device=cfg.device,
-        #     )
-        #     test_metrics = compute_metrics(
-        #         pred_fn=map_pred_fn,
-        #         ds_test=ds_test,
-        #         batch_size=cfg.batch_size,
-        #         device=cfg.device,
-        #     )
-        #     wandb.log({"train": train_metrics})
-        #     wandb.log({"test": test_metrics})
-        #     wandb.log({"epoch": epoch})
+        if epoch % cfg.logging_epoch_freq == 0:
+            val_loss = loss_fn(val_loader)
+            wandb.log({"val_loss": val_loss})
+            train_metrics = compute_metrics(
+                pred_fn=map_pred_fn,
+                ds_test=ds_train,
+                batch_size=cfg.batch_size,
+                device=cfg.device,
+            )
+            val_metrics = compute_metrics(
+                pred_fn=map_pred_fn,
+                ds_test=ds_val,
+                batch_size=cfg.batch_size,
+                device=cfg.device,
+            )
+            test_metrics = compute_metrics(
+                pred_fn=map_pred_fn,
+                ds_test=ds_test,
+                batch_size=cfg.batch_size,
+                device=cfg.device,
+            )
+            wandb.log({"train/": train_metrics})
+            wandb.log({"val/": val_metrics})
+            wandb.log({"test/": test_metrics})
+            wandb.log({"epoch": epoch})
 
     logger.info("Finished training")
 

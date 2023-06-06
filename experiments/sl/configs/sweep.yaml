@@ -1,0 +1,15 @@
+program: sl/cluster_train.py --multirun
+method: bayes
+metric:
+  name: val_loss
+  goal: minimize
+parameters:
+  lr:
+    min: !!float 1e-5
+    max: 0.1
+
+command:
+  - ${env}
+  - ${interpreter}
+  - ${program}
+  - ${args_no_hyphens}

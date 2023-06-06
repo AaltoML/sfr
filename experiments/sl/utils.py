@@ -11,6 +11,7 @@ from experiments.sl.bnn_predictive.experiments.scripts.imginference import (
 )
 from netcal.metrics import ECE
 from torch.utils.data import DataLoader
+from torch.utils.data.dataset import Subset
 
 
 def set_seed_everywhere(random_seed):
@@ -44,6 +45,20 @@ def init_SFR_with_gaussian_prior(
         jitter=jitter,
         device=device,
     )
+
+
+def train_val_split(ds_train, split: float = 1 / 6):
+    num_train = len(ds_train)
+    perm_ixs = torch.randperm(num_train)
+    val_ixs, train_ixs = (
+        perm_ixs[: int(num_train * split)],
+        perm_ixs[int(num_train * split) :],
+    )
+    print("val {}".format(len(val_ixs)))
+    print("train {}".format(len(train_ixs)))
+    ds_val = Subset(ds_train, val_ixs)
+    ds_train = Subset(ds_train, train_ixs)
+    return ds_train, ds_val
 
 
 def compute_metrics(pred_fn, ds_test, batch_size: int, device: str = "cpu") -> dict:

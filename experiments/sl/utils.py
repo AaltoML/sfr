@@ -80,22 +80,26 @@ def train_val_split(ds_train, split: float = 1 / 6):
 
 
 @torch.no_grad()
-def compute_metrics(pred_fn, ds_test, batch_size: int, device: str = "cpu") -> dict:
+def compute_metrics(pred_fn, data_loader, device: str = "cpu") -> dict:
+    # def compute_metrics(pred_fn, ds_test, batch_size: int, device: str = "cpu") -> dict:
     # Split the test data set into test and validation sets
     # num_test = len(ds_test)
     # perm_ixs = torch.randperm(num_test)
     # val_ixs, test_ixs = perm_ixs[: int(num_test / 2)], perm_ixs[int(num_test / 2) :]
     # ds_test = Subset(ds_test, test_ixs)
-    test_loader = get_quick_loader(
-        DataLoader(ds_test, batch_size=batch_size), device=device
-    )
+    # test_loader = get_quick_loader(
+    #     DataLoader(ds_test, batch_size=batch_size), device=device
+    # )
 
-    targets = torch.cat([y for x, y in test_loader], dim=0).numpy()
+    # targets = torch.cat([y for x, y in data_loader], dim=0).numpy()
+    # targets = data_loader.dataset.targets.numpy()
 
-    py = []
-    for x, _ in test_loader:
+    py, targets = [], []
+    for x, y in data_loader:
         py.append(pred_fn(x.to(device)))
+        targets.append(y.to(device))
 
+    targets = torch.cat(targets, dim=0).numpy()
     probs = torch.cat(py).cpu().numpy()
 
     acc = (probs.argmax(-1) == targets).mean()

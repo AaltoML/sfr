@@ -64,7 +64,6 @@ def train(cfg: TrainConfig):
     eval('setattr(torch.backends.cudnn, "benchmark", False)')
 
     cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
-    cfg.device = "cuda"
     print("Using device: {}".format(cfg.device))
 
     # Load the data
@@ -91,7 +90,7 @@ def train(cfg: TrainConfig):
     val_loader = DataLoader(dataset=ds_val, shuffle=False, batch_size=cfg.batch_size)
     print("train_loader {}".format(train_loader))
     print("val_loader {}".format(val_loader))
-    # test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)
+    test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)
 
     # Initialise WandB
     if cfg.wandb.use_wandb:
@@ -151,20 +150,23 @@ def train(cfg: TrainConfig):
             wandb.log({"val_loss": val_loss})
             train_metrics = compute_metrics(
                 pred_fn=map_pred_fn,
-                ds_test=ds_train,
-                batch_size=cfg.batch_size,
+                data_loader=train_loader,
+                # ds_test=ds_train,
+                # batch_size=cfg.batch_size,
                 device=cfg.device,
             )
             val_metrics = compute_metrics(
                 pred_fn=map_pred_fn,
-                ds_test=ds_val,
-                batch_size=cfg.batch_size,
+                data_loader=val_loader,
+                # ds_test=ds_val,
+                # batch_size=cfg.batch_size,
                 device=cfg.device,
             )
             test_metrics = compute_metrics(
                 pred_fn=map_pred_fn,
-                ds_test=ds_test,
-                batch_size=cfg.batch_size,
+                data_loader=test_loader,
+                # ds_test=ds_test,
+                # batch_size=cfg.batch_size,
                 device=cfg.device,
             )
             wandb.log({"train/": train_metrics})

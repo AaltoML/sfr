@@ -79,6 +79,7 @@ def train_val_split(ds_train, split: float = 1 / 6):
     return ds_train, ds_val
 
 
+@torch.no_grad()
 def compute_metrics(pred_fn, ds_test, batch_size: int, device: str = "cpu") -> dict:
     # Split the test data set into test and validation sets
     # num_test = len(ds_test)

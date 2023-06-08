@@ -92,7 +92,7 @@ def train(cfg: TrainConfig):
     val_loader = DataLoader(dataset=ds_val, shuffle=False, batch_size=cfg.batch_size)
     print("train_loader {}".format(train_loader))
     print("val_loader {}".format(val_loader))
-    test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)
+    # test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)
 
     # Initialise WandB
     if cfg.wandb.use_wandb:
@@ -123,6 +123,7 @@ def train(cfg: TrainConfig):
     def map_pred_fn(x):
         return torch.softmax(sfr.network(x.to(cfg.device)), dim=-1)
 
+    @torch.no_grad()
     def loss_fn(data_loader: DataLoader):
         cum_loss = 0
         for X, y in data_loader:
@@ -132,7 +133,7 @@ def train(cfg: TrainConfig):
         return cum_loss
 
     early_stopper = EarlyStopper(
-        patience=cfg.early_stop.patience, min_delta=cfg.early_stop.delta
+        patience=cfg.early_stop.patience, min_delta=cfg.early_stop.min_delta
     )
 
     best_accuracy = -1
@@ -174,7 +175,7 @@ def train(cfg: TrainConfig):
             if val_metrics["acc"] > best_accuracy:
                 checkpoint(epoch=epoch, sfr=sfr, optimizer=optimizer, save_dir=run.dir)
                 best_accuracy = val_metrics["acc"]
-            if early_stopper(val_metrics["loss"]):
+            if early_stopper(val_loss):
                 logger.info("Early stopping criteria met, stopping training...")
                 break
 

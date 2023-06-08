@@ -74,7 +74,8 @@ extras_require = {
         "dm_control==1.0.11",  # deepmind control suite
         "opencv-python==4.7.0.72",
         "moviepy==1.0.3",  # rendering
-        "tikzplotlib==0.10.1",
+        "tikzplotlib",
+        # "tikzplotlib==0.10.1",
         "gpytorch==1.9.1",  # for RL SVGP experiments
         "gym[classic_control]==0.26.2",
     ],

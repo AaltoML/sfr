@@ -174,6 +174,7 @@ def train(cfg: TrainConfig):
             if val_metrics["acc"] > best_accuracy:
                 checkpoint(sfr=sfr, optimizer=optimizer, save_dir=run.dir)
                 best_accuracy = val_metrics["acc"]
+                wandb.log({"best_test/": test_metrics})
             if early_stopper(val_loss):
                 logger.info("Early stopping criteria met, stopping training...")
                 break

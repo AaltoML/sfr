@@ -8,6 +8,7 @@ import shutil
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+from experiments.sl.utils import EarlyStopper
 import hydra
 import omegaconf
 import src
@@ -53,7 +54,7 @@ def train(cfg: TrainConfig):
         random_seed = random.randint(0, 10000)
         set_seed_everywhere(random_seed)
 
-    if "gpu" in cfg.device:
+    if "cuda" in cfg.device:
         cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     if cfg.double:
@@ -83,7 +84,10 @@ def train(cfg: TrainConfig):
 
     # Split train data set into train and validation
     print("num train {}".format(len(ds_train)))
+    print("num test {}".format(len(ds_test)))
     ds_train, ds_val = train_val_split(ds_train=ds_train, split=1 / 6)
+    print("num train {}".format(len(ds_train)))
+    print("num val {}".format(len(ds_val)))
     train_loader = DataLoader(dataset=ds_train, shuffle=True, batch_size=cfg.batch_size)
     val_loader = DataLoader(dataset=ds_val, shuffle=False, batch_size=cfg.batch_size)
     print("train_loader {}".format(train_loader))
@@ -124,11 +128,12 @@ def train(cfg: TrainConfig):
         for X, y in data_loader:
             X, y = X.to(cfg.device), y.to(cfg.device)
             loss = sfr.loss(X, y)
-            optimizer.zero_grad()
-            loss.backward()
-            optimizer.step()
             cum_loss += loss
         return cum_loss
+
+    early_stopper = EarlyStopper(
+        patience=cfg.early_stop.patience, min_delta=cfg.early_stop.delta
+    )
 
     best_accuracy = -1
     for epoch in tqdm(list(range(cfg.n_epochs))):
@@ -169,7 +174,7 @@ def train(cfg: TrainConfig):
             if val_metrics["acc"] > best_accuracy:
                 checkpoint(epoch=epoch, sfr=sfr, optimizer=optimizer, save_dir=run.dir)
                 best_accuracy = val_metrics["acc"]
-            else:
+            if early_stopper(val_metrics["loss"]):
                 logger.info("Early stopping criteria met, stopping training...")
                 break
 

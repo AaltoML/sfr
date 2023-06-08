@@ -13,15 +13,19 @@ model_name: "SmallMLP"
 # debug: True
 debug: False
 
-device: "gpu"
+device: "cuda"
 output_dim: ???
 batch_size: 512
 lr: 1e-4
 n_epochs: 500
 double: False
 
-logging_epoch_freq: 10
+logging_epoch_freq: 50
 random_seed: 117
+
+early_stop:
+  patience: 50
+  min_delta: 0
 
 sfr:
   _target_: experiments.sl.utils.init_SFR_with_gaussian_prior
@@ -45,6 +49,7 @@ wandb:
   tags:
     - "delta=${sfr.delta}"
     - "dataset=${dataset}"
+    - "model=${model_name}"
 
 hydra:
   run:

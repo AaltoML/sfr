@@ -99,7 +99,7 @@ def compute_metrics(pred_fn, data_loader, device: str = "cpu") -> dict:
         py.append(pred_fn(x.to(device)))
         targets.append(y.to(device))
 
-    targets = torch.cat(targets, dim=0).numpy()
+    targets = torch.cat(targets, dim=0).cpu().numpy()
     probs = torch.cat(py).cpu().numpy()
 
     acc = (probs.argmax(-1) == targets).mean()

@@ -10,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 import hydra
 import omegaconf
+import src
 import torch
 import wandb
 from experiments.sl.bnn_predictive.experiments.scripts.imgclassification import (

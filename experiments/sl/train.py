@@ -23,6 +23,16 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 
+def checkpoint(
+    epoch: int, sfr: src.SFR, optimizer: torch.optim.Optimizer, save_dir: str
+):
+    logger.info("Saving SFR and optimiser...")
+    state = {"model": sfr.state_dict(), "optimizer": optimizer.state_dict()}
+    fname = f"best_ckpt_dict_epoch{epoch}.pt"
+    torch.save(state, os.path.join(save_dir, fname))
+    logger.info("Finished saving model and optimiser etc")
+
+
 @torch.no_grad()
 def predict_probs(
     dataloader: DataLoader, network: torch.nn.Module, device: str = "cpu"
@@ -119,6 +129,7 @@ def train(cfg: TrainConfig):
             cum_loss += loss
         return cum_loss
 
+    best_accuracy = -1
     for epoch in tqdm(list(range(cfg.n_epochs))):
         for X, y in train_loader:
             X, y = X.to(cfg.device), y.to(cfg.device)
@@ -127,6 +138,7 @@ def train(cfg: TrainConfig):
             loss.backward()
             optimizer.step()
             wandb.log({"loss": loss})
+
         if epoch % cfg.logging_epoch_freq == 0:
             val_loss = loss_fn(val_loader)
             wandb.log({"val_loss": val_loss})
@@ -152,6 +164,13 @@ def train(cfg: TrainConfig):
             wandb.log({"val/": val_metrics})
             wandb.log({"test/": test_metrics})
             wandb.log({"epoch": epoch})
+
+            if val_metrics["acc"] > best_accuracy:
+                checkpoint(epoch=epoch, sfr=sfr, optimizer=optimizer, save_dir=run.dir)
+                best_accuracy = val_metrics["acc"]
+            else:
+                logger.info("Early stopping criteria met, stopping training...")
+                break
 
     logger.info("Finished training")
 

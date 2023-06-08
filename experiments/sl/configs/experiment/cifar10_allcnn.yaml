@@ -3,7 +3,7 @@
 dataset: "CIFAR10"
 model_name: "AllCNN"
 lr: 1e-3
-n_epochs: 250
+n_epochs: 500
 
 sfr:
   delta: 0.0018

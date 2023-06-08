@@ -1,9 +1,9 @@
 # @package _global_
 
 dataset: "FMNIST"
-model_name: "CNN"
+model_name: "MLP"
 lr: 1e-4
-n_epochs: 200
+n_epochs: 500
 
 sfr:
   delta: 0.0013

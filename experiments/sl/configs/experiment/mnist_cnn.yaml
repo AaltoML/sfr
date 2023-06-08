@@ -1,9 +1,9 @@
 # @package _global_
 
 dataset: "MNIST"
-model_name: "SmallMLP"
+model_name: "CNN"
 lr: 1e-4
-n_epochs: 200
+n_epochs: 500
 
 sfr:
   delta: 0.0008

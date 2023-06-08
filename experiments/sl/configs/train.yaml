@@ -41,7 +41,7 @@ wandb:
   group: ${dataset}
   project: "sfr-sl"
   use_wandb: True
-  run_name: delta=${sfr.delta}-lr=${lr}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
+  run_name: ${model_name}-delta=${sfr.delta}-lr=${lr}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   tags:
     - "delta=${sfr.delta}"
     - "dataset=${dataset}"

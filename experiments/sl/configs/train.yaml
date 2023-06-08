@@ -20,7 +20,7 @@ lr: 1e-4
 n_epochs: 500
 double: False
 
-logging_epoch_freq: 50
+logging_epoch_freq: 5
 random_seed: 117
 
 early_stop:

@@ -20,11 +20,11 @@ lr: 1e-4
 n_epochs: 500
 double: False
 
-logging_epoch_freq: 5
+logging_epoch_freq: 2
 random_seed: 117
 
 early_stop:
-  patience: 50
+  patience: 15
   min_delta: 0
 
 sfr:

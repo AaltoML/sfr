@@ -25,12 +25,10 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 
-def checkpoint(
-    epoch: int, sfr: src.SFR, optimizer: torch.optim.Optimizer, save_dir: str
-):
+def checkpoint(sfr: src.SFR, optimizer: torch.optim.Optimizer, save_dir: str):
     logger.info("Saving SFR and optimiser...")
     state = {"model": sfr.state_dict(), "optimizer": optimizer.state_dict()}
-    fname = f"best_ckpt_dict_epoch{epoch}.pt"
+    fname = "best_ckpt_dict.pt"
     torch.save(state, os.path.join(save_dir, fname))
     logger.info("Finished saving model and optimiser etc")
 
@@ -133,7 +131,8 @@ def train(cfg: TrainConfig):
         return cum_loss
 
     early_stopper = EarlyStopper(
-        patience=cfg.early_stop.patience, min_delta=cfg.early_stop.min_delta
+        patience=int(cfg.early_stop.patience / cfg.logging_epoch_freq),
+        min_delta=cfg.early_stop.min_delta,
     )
 
     best_accuracy = -1
@@ -173,7 +172,7 @@ def train(cfg: TrainConfig):
             wandb.log({"epoch": epoch})
 
             if val_metrics["acc"] > best_accuracy:
-                checkpoint(epoch=epoch, sfr=sfr, optimizer=optimizer, save_dir=run.dir)
+                checkpoint(sfr=sfr, optimizer=optimizer, save_dir=run.dir)
                 best_accuracy = val_metrics["acc"]
             if early_stopper(val_loss):
                 logger.info("Early stopping criteria met, stopping training...")

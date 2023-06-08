@@ -52,8 +52,8 @@ def train(cfg: TrainConfig):
         random_seed = random.randint(0, 10000)
         set_seed_everywhere(random_seed)
 
-    if "cuda" in cfg.device:
-        cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
+    # if "cuda" in cfg.device:
+    #     cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
 
     if cfg.double:
         logger.info("Using float64")
@@ -64,6 +64,7 @@ def train(cfg: TrainConfig):
     eval('setattr(torch.backends.cudnn, "benchmark", False)')
 
     cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
+    cfg.device = "cuda"
     print("Using device: {}".format(cfg.device))
 
     # Load the data

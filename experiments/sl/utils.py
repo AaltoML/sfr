@@ -51,7 +51,7 @@ def init_SFR_with_gaussian_prior(
     dual_batch_size: Optional[int] = None,
     jitter: float = 1e-6,
     device: str = "cpu",
-):
+) -> src.SFR:
     prior = src.priors.Gaussian(params=model.parameters, delta=delta)
     return src.SFR(
         network=model,
@@ -59,6 +59,29 @@ def init_SFR_with_gaussian_prior(
         likelihood=likelihood,
         output_dim=output_dim,
         num_inducing=num_inducing,
+        dual_batch_size=dual_batch_size,
+        jitter=jitter,
+        device=device,
+    )
+
+
+def init_NN2GPSubset_with_gaussian_prior(
+    model: torch.nn.Module,
+    delta: float,
+    likelihood: src.likelihoods.Likelihood,
+    output_dim: int,
+    subset_size: int = 30,
+    dual_batch_size: Optional[int] = None,
+    jitter: float = 1e-6,
+    device: str = "cpu",
+) -> src.NN2GPSubset:
+    prior = src.priors.Gaussian(params=model.parameters, delta=delta)
+    return src.NN2GPSubset(
+        network=model,
+        prior=prior,
+        likelihood=likelihood,
+        output_dim=output_dim,
+        subset_size=subset_size,
         dual_batch_size=dual_batch_size,
         jitter=jitter,
         device=device,
@@ -101,6 +124,8 @@ def compute_metrics(pred_fn, data_loader, device: str = "cpu") -> dict:
 
     targets = torch.cat(targets, dim=0).cpu().numpy()
     probs = torch.cat(py).cpu().numpy()
+    print(f"targets {targets.shape}")
+    print(f"probs {probs.shape}")
 
     acc = (probs.argmax(-1) == targets).mean()
     ece = ECE(bins=15).measure(probs, targets)

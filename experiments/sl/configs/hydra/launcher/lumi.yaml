@@ -22,7 +22,8 @@ additional_parameters: {}
 array_parallelism: 256
 setup: []
 # constraint: "volta"
-mem_gb: 50
+mem_gb: 100
+# mem_gb: 50
 gres: gpu:1
 # error: ".logs/error"
 # output: ".logs/output"

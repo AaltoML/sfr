@@ -77,10 +77,16 @@ class SFR(nn.Module):
         train_data = next(iter(all_train))
         # train_data = train_loader.dataset
         # print("train_data {}".format(train_data.D))
-        print("train_data {}".format(train_data[0].shape))
-        print("train_data {}".format(train_data[1].shape))
+        # print("train_data {}".format(train_data[0].shape))
+        # print("train_data {}".format(train_data[1].shape))
         # print("train_data {}".format(train_data.D[0][1].shape))
         # print("train_data {}".format(train_data.D[].shape))
+        # X = train_loader.dataset[0]
+        if train_data[0].dtype == torch.float32:
+            train_data[0].to(torch.float64)
+        if train_data[1].dtype == torch.float32:
+            train_data[1].to(torch.float64)
+            # data = (X_train.to(torch.float64), y_train)
         self.set_data(train_data=train_data)
 
     @torch.no_grad()

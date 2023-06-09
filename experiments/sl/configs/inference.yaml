@@ -24,7 +24,7 @@ random_seed: 117
 double: True
 
 # batch_size: 128 # for predicting over test/val data
-batch_size: 512 # for predicting over test/val data
+batch_size: 256 # for predicting over test/val data
 
 wandb:
   # group: ${dataset}

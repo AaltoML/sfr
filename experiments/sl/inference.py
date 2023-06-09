@@ -64,7 +64,7 @@ def main(cfg: DictConfig):
     # torch.set_default_dtype(torch.double)
     # network = network.to(cfg.device).to(torch.double)
     network = network.to(cfg.device)
-    network = network.double()
+    # network = network.double()
     sfr = hydra.utils.instantiate(ckpt_cfg.sfr.value, model=network)
     # print(f"old delta: {sfr.prior.delta}")
     # print(checkpoint["model"])
@@ -110,11 +110,21 @@ def main(cfg: DictConfig):
     )
     wandb.log({"map": map_metrics})
 
+    # model = laplace.Laplace(
+    #     likelihood="classification",
+    #     subset_of_weights="all",
+    #     hessian_structure="full",
+    #     backend=laplace.curvature.asdl.AsdlGGN,
+    # )
+    print("making inference model")
     model = hydra.utils.instantiate(cfg.inference_strategy.model, model=sfr.network)
+    print(f"model delta: {model.prior.delta}")
     if isinstance(model, laplace.BaseLaplace):
         model.prior_precision = sfr.prior.delta
     elif isinstance(model, src.SFR):
         model.prior.delta = sfr.prior.delta
+    print(f"sfr delta: {sfr.prior.delta}")
+    print(f"model delta: {model.prior.delta}")
     logger.info("Starting inference...")
     model.fit(train_loader)
     logger.info("Finished inference")

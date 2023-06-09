@@ -123,8 +123,6 @@ def main(cfg: DictConfig):
         model.prior_precision = sfr.prior.delta
     elif isinstance(model, src.SFR):
         model.prior.delta = sfr.prior.delta
-    print(f"sfr delta: {sfr.prior.delta}")
-    print(f"model delta: {model.prior.delta}")
     logger.info("Starting inference...")
     model.fit(train_loader)
     logger.info("Finished inference")

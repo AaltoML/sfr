@@ -18,7 +18,7 @@ from experiments.sl.bnn_predictive.experiments.scripts.imgclassification import 
     get_dataset,
     get_model,
 )
-from experiments.sl.utils import compute_metrics, set_seed_everywhere
+from experiments.sl.utils import compute_metrics, set_seed_everywhere, train_val_split
 from hydra.utils import get_original_cwd
 from omegaconf import DictConfig, OmegaConf
 from torch.utils.data import DataLoader
@@ -66,6 +66,18 @@ def main(cfg: DictConfig):
     sfr.load_state_dict(checkpoint["model"])
     sfr.eval()
 
+    ds_train, ds_val = train_val_split(ds_train=ds_train, split=1 / 6)
+    print("num train {}".format(len(ds_train)))
+    print("num val {}".format(len(ds_val)))
+    train_loader = DataLoader(dataset=ds_train, shuffle=True, batch_size=cfg.batch_size)
+    val_loader = DataLoader(dataset=ds_val, shuffle=False, batch_size=cfg.batch_size)
+    print("train_loader {}".format(train_loader))
+    print("val_loader {}".format(val_loader))
+    test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)
+    # train_loader = DataLoader(ds_train, batch_size=cfg.batch_size, shuffle=True)
+    # test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)
+    # print("made train_loader {}".format(train_loader_double))
+
     if cfg.wandb.use_wandb:  # Initialise WandB
         run = wandb.init(
             project=cfg.wandb.project,
@@ -87,18 +99,11 @@ def main(cfg: DictConfig):
         return torch.softmax(sfr.network(x.to(cfg.device)), dim=-1)
 
     map_metrics = compute_metrics(
-        pred_fn=map_pred_fn,
-        ds_test=ds_test,
-        batch_size=cfg.batch_size,
-        device=cfg.device,
+        pred_fn=map_pred_fn, data_loader=test_loader, device=cfg.device
     )
     wandb.log({"map": map_metrics})
 
-    train_loader = DataLoader(ds_train, batch_size=cfg.batch_size, shuffle=True)
-    # test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)
-    # print("made train_loader {}".format(train_loader_double))
-
-    model = hydra.utils.instantiate(cfg.inference_strategy.model, model=network)
+    model = hydra.utils.instantiate(cfg.inference_strategy.model, model=sfr.network)
     if isinstance(model, laplace.BaseLaplace):
         model.prior_precision = sfr.prior.delta
     elif isinstance(model, src.SFR):
@@ -113,10 +118,7 @@ def main(cfg: DictConfig):
         pred_fn = hydra.utils.instantiate(pred_cfg, model=model)
         print("Made pred fn")
         metrics = compute_metrics(
-            pred_fn=pred_fn,
-            ds_test=ds_test,
-            batch_size=cfg.batch_size,
-            device=cfg.device,
+            pred_fn=pred_fn, data_loader=test_loader, device=cfg.device
         )
         print("Computed metrics")
         if isinstance(model, laplace.BaseLaplace):
@@ -141,10 +143,7 @@ def main(cfg: DictConfig):
             pred_fn = hydra.utils.instantiate(pred_cfg, model=model)
             print("Made pred fn")
             metrics = compute_metrics(
-                pred_fn=pred_fn,
-                ds_test=ds_test,
-                batch_size=cfg.batch_size,
-                device=cfg.device,
+                pred_fn=pred_fn, data_loader=test_loader, device=cfg.device
             )
             print("Computed metrics")
             if isinstance(model, laplace.BaseLaplace):

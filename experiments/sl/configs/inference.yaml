@@ -1,11 +1,11 @@
 defaults:
   # Use slurm on cluster or local?
-  - inference_strategy: sfr
-  # - inference_strategy: laplace
+  # - inference_strategy: sfr
+  - inference_strategy: laplace
   # - pred_strategy: laplace
-  - override hydra/launcher: submitit_local
+  # - override hydra/launcher: submitit_local
   # - override hydra/launcher: slurm
-  # - override hydra/launcher: lumi
+  - override hydra/launcher: lumi
   # - override hydra/launcher: slurm_cpu
   # Disable logging by Hydra
   # - override hydra/job_logging: none # creates .log file
@@ -13,8 +13,9 @@ defaults:
   - _self_
 
 # checkpoint: "./wandb/run-20230605_122709-jkhh28j8"
-checkpoint: "./wandb/run-20230605_162902-q2tmpsy0"
+# checkpoint: "./wandb/run-20230605_162902-q2tmpsy0"
 # checkpoint: "wandb/run-20230605_160605-3b8gdq3l"
+checkpoint: "./wandb/run-20230609_094409-p7xhdnny"
 
 device: ???
 output_dim: ???

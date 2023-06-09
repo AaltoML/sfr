@@ -1,4 +1,4 @@
-name: "la"
+name: la-${inference_strategy.model.hessian_structure}-${inference_strategy.model.subset_of_weights}
 model:
   _target_: laplace.Laplace
   likelihood: "classification"

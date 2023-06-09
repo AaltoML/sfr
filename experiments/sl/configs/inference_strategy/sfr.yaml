@@ -1,4 +1,4 @@
-name: "sfr"
+name: sfr-${inference_strategy.model.num_inducing}
 model:
   _target_: experiments.sl.utils.init_SFR_with_gaussian_prior
   _convert_: all

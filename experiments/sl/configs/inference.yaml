@@ -32,7 +32,7 @@ wandb:
   entity: ""
   project: "sfr-sl-inference"
   use_wandb: True
-  run_name: seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
+  run_name: ${inference_strategy.name}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   # run_name: delta=${prior.delta}-lr=${lr}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   tags:
     - "inference"

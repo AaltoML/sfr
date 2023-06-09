@@ -1,4 +1,4 @@
-name: "gp"
+name: gp-${inference_strategy.model.subset_size}
 model:
   _target_: experiments.sl.utils.init_NN2GPSubset_with_gaussian_prior
   _convert_: all

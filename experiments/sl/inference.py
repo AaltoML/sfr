@@ -118,7 +118,6 @@ def main(cfg: DictConfig):
     # )
     print("making inference model")
     model = hydra.utils.instantiate(cfg.inference_strategy.model, model=sfr.network)
-    print(f"model delta: {model.prior.delta}")
     if isinstance(model, laplace.BaseLaplace):
         model.prior_precision = sfr.prior.delta
     elif isinstance(model, src.SFR):

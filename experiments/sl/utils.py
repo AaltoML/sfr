@@ -129,8 +129,6 @@ def compute_metrics(pred_fn, data_loader, device: str = "cpu") -> dict:
 
     targets = torch.cat(targets, dim=0).cpu().numpy()
     probs = torch.cat(py).cpu().numpy()
-    print(f"targets {targets.shape}")
-    print(f"probs {probs.shape}")
 
     acc = (probs.argmax(-1) == targets).mean()
     ece = ECE(bins=15).measure(probs, targets)

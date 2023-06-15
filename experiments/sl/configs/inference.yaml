@@ -20,9 +20,6 @@ checkpoint: "./wandb/run-20230615_145621-elo8osox/"
 device: ???
 output_dim: ???
 
-val_from_test: True
-val_split: 0.5
-
 random_seed: 117
 double: True
 

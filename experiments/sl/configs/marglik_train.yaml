@@ -21,6 +21,9 @@ lr: 1e-4
 n_epochs: 500
 double: False
 
+val_from_test: True
+val_split: 0.5
+
 num_epochs_burnin: 40
 marglik_frequency: 10
 num_hypersteps: 10

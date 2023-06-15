@@ -69,11 +69,14 @@ def main(cfg: DictConfig):
     # print(f"old delta: {sfr.prior.delta}")
     # print(checkpoint["model"])
     sfr.load_state_dict(checkpoint["model"])
-    sfr = sfr.double()
+    # sfr = sfr.double()
     # print(f"new delta: {sfr.prior.delta}")
     sfr.eval()
 
-    ds_train, ds_val = train_val_split(ds_train=ds_train, split=1 / 6)
+    ds_train, ds_val, ds_test = train_val_split(ds_train=ds_train, 
+                                                ds_test=ds_test,
+                                                val_from_test=cfg.val_from_test,
+                                                val_split=cfg.val_split)
     print("num train {}".format(len(ds_train)))
     print("num val {}".format(len(ds_val)))
     train_loader = DataLoader(dataset=ds_train, shuffle=True, batch_size=cfg.batch_size)
@@ -149,10 +152,13 @@ def main(cfg: DictConfig):
 
     if cfg.inference_strategy.optimize_prior_precision_kwargs is not None:
         model.optimize_prior_precision(
-            **cfg.inference_strategy.optimize_prior_precision_kwargs
+            **cfg.inference_strategy.optimize_prior_precision_kwargs,
+            val_loader=val_loader
         )
+        
 
         for pred_cfg in cfg.inference_strategy.pred:
+            torch.cuda.empty_cache()
             print("pred_cfg {}".format(pred_cfg))
             pred_fn = hydra.utils.instantiate(pred_cfg, model=model)
             print("Made pred fn")

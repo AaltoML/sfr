@@ -5,7 +5,7 @@ model:
   # subset_of_weights: "last_layer"
   # hessian_structure: "diag"
   subset_of_weights: "all"
-  hessian_structure: "full"
+  hessian_structure: "diag"
   sigma_noise: 1
   # prior_precision: ???
   backend:
@@ -21,4 +21,5 @@ pred:
     link_approx: "mc"
     num_samples: 100 # num_samples for link_approx="mc"
 optimize_prior_precision_kwargs:
-  method: "marglik"
+  method: 'CV' # "marglik"
+

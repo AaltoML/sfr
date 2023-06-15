@@ -365,7 +365,10 @@ def train(cfg: DictConfig):
 
     # Split train data set into train and validation
     print("num train {}".format(len(ds_train)))
-    ds_train, ds_val = train_val_split(ds_train=ds_train, split=1 / 6)
+    ds_train, ds_val, ds_test = train_val_split(ds_train=ds_train,  
+                                                ds_test=ds_test, 
+                                                val_from_test=cfg.val_from_test, 
+                                                val_split=cfg.val_split)
     train_loader = DataLoader(dataset=ds_train, shuffle=True, batch_size=cfg.batch_size)
     val_loader = DataLoader(dataset=ds_val, shuffle=False, batch_size=cfg.batch_size)
     print("train_loader {}".format(train_loader))

@@ -10,7 +10,7 @@ from experiments.sl.bnn_predictive.experiments.scripts.imginference import (
     get_quick_loader,
 )
 from netcal.metrics import ECE
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.dataset import Subset
 
 
@@ -88,18 +88,23 @@ def init_NN2GPSubset_with_gaussian_prior(
     )
 
 
-def train_val_split(ds_train, split: float = 1 / 6):
-    num_train = len(ds_train)
-    perm_ixs = torch.randperm(num_train)
-    val_ixs, train_ixs = (
-        perm_ixs[: int(num_train * split)],
-        perm_ixs[int(num_train * split) :],
+def train_val_split(ds_train: Dataset,
+                    ds_test: Dataset,
+                    val_from_test: bool = True, 
+                    val_split: float = 1/2):
+    dataset = ds_test if val_from_test else ds_train
+    len_ds = len(dataset)
+    perm_ixs = torch.randperm(len_ds)
+    val_ixs, ds_ixs = (
+        perm_ixs[: int(len_ds * val_split)],
+        perm_ixs[int(len_ds * val_split) :],
     )
-    print("val {}".format(len(val_ixs)))
-    print("train {}".format(len(train_ixs)))
-    ds_val = Subset(ds_train, val_ixs)
-    ds_train = Subset(ds_train, train_ixs)
-    return ds_train, ds_val
+    ds_val = Subset(dataset, val_ixs)
+    if val_from_test:
+        ds_test = Subset(dataset, ds_ixs)
+    else:
+        ds_train = Subset(dataset, ds_ixs)
+    return ds_train, ds_val, ds_test
 
 
 @torch.no_grad()

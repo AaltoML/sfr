@@ -6,14 +6,16 @@ _here = pathlib.Path(__file__).resolve().parent
 print(_here)
 
 name = "src"
-author = "Aidan Scannell"
-author_email = "scannell.aidan@gmail.com"
-description = "Neural sparse GPs for prediction and fast updates PyTorch."
+author = ""
+author_email = ""
+description = (
+    "Sparse function-space representation (SFR) of neural networks in PyTorch."
+)
 
 with open(_here / "README.md", "r") as f:
     readme = f.read()
 
-url = "https://github.com/aaltoml/bnn-to-dual-svgp"
+url = ""
 
 license = "Apache-2.0"
 
@@ -32,32 +34,26 @@ classifiers = [
 keywords = [
     "deep-learning",
     "machine-learning",
-    "bayesian-deep-learning",
-    "gaussian-processes",
-    "variational-inference",
-    "model-based-reinforcement-learning",
+    "probabilistic-modelling",
     "bayesian-inference",
+    "approximate-inference",
+    "variational-inference",
+    "bayesian-deep-learning",
+    "bayesian-neural-networks",
+    "gaussian-processes",
+    "model-based-reinforcement-learning",
     "planning",
 ]
 
 python_requires = ">=3.8"
 
 install_requires = [
-    "matplotlib==3.5.1",
-    "numpy==1.24.2",
     "torch==2.0.0",
     "torchvision==0.15.1",
-    "onedrivedownloader",  # from mammoth cl framework
-    "av",  #
-    # functorch  # needed for vmap
     "torchtyping==0.1.4",
-    # laplace-torch
-    "gpytorch==1.9.1",
-    # git+https://github.com/pytorch/rl
-    # "torchrl==0.1.0",  # using this on triton
-    # "./src/third_party/rl-0.1.0", # using this locally
-    f"torchrl @ file://{_here}/src/rl/third_party/rl-0.1.0",
-    "laplace-torch",
+    "matplotlib==3.5.1",
+    "numpy==1.24.2",
+    # "laplace-torch",
 ]
 extras_require = {
     "dev": [
@@ -70,16 +66,19 @@ extras_require = {
     ],
     "experiments": [
         "wandb",
-        # "wandb==0.14.1",
         "hydra-core==1.3.2",
         "hydra-submitit-launcher==1.2.0",
+        "jupyter==1.0.0",
         "mujoco==2.3.3",
         "dm_control==1.0.11",  # deepmind control suite
         "opencv-python==4.7.0.72",
         "moviepy==1.0.3",  # rendering
         "tikzplotlib==0.10.1",
-        "tabulate==0.9.0",
+        "gpytorch==1.9.1",  # for RL SVGP experiments
         "gym[classic_control]==0.26.2",
+    ],
+    "figures": [  # needed to get the HMC result for figure 1
+        "hamiltorch @ git+https://github.com/AdamCobb/hamiltorch",
     ],
 }
 
@@ -101,5 +100,6 @@ setuptools.setup(
     python_requires=python_requires,
     install_requires=install_requires,
     extras_require=extras_require,
-    packages=setuptools.find_namespace_packages(),
+    # packages=setuptools.find_namespace_packages(),
+    packages=setuptools.find_packages(exclude=["notebooks", "paper"]),
 )

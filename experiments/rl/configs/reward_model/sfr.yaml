@@ -1,0 +1,21 @@
+_target_: experiments.rl.models.rewards.SFRRewardModel
+_convert_: all
+network: ${reward_network}
+learning_rate: 1e-3
+num_iterations: 5000
+batch_size: 64
+# num_workers: 1 # TODO what should I set this to?
+num_inducing: 128
+dual_batch_size: 1000
+jitter: 1e-4
+# delta: 0.001
+delta: 0.0005
+sigma_noise: 1.0
+wandb_loss_name: "models/reward_loss"
+# early_stopper:
+#   _target_: experiments.rl.utils.EarlyStopper
+#   patience: 50
+#   min_delta: 0
+device: ${device} # TODO should this always be cpu??
+prediction_type: "SVGPMeanOnly"
+# prediction_type: "SVGP"

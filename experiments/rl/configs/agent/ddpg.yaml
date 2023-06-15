@@ -1,0 +1,14 @@
+_target_: experiments.rl.agents.DDPGAgent
+_convert_: all
+state_dim: ${state_dim}
+action_dim: ${action_dim}
+mlp_dims: [512, 512]
+learning_rate: 3e-4
+max_ddpg_iterations: 500
+# std_schedule: "linear(1.0, 0.1, 50)"
+std: 0.1
+std_clip: 0.3
+nstep: 1 # TODO always 1 to make it work with SVGP training?
+gamma: 0.99
+tau: 0.005
+device: ${device}

@@ -4,7 +4,8 @@ import numpy as np
 import torch
 import tqdm
 from torch.nn.utils import parameters_to_vector
-
+from torch.utils.data.dataset import Subset
+from torch.utils.data import TensorDataset
 from preds.optimizers import LaplaceGGN, get_diagonal_ggn
 from preds.models import SiMLP
 from src import BernoulliLh, CategoricalLh, NTKSVGP, NN2GPSubset
@@ -117,6 +118,7 @@ def inference(
     ds_train,
     ds_test,
     ds_valid,
+    ds_update,
     prior_prec,
     lr,
     n_epochs,
@@ -135,13 +137,14 @@ def inference(
     if sigma_noise is None, we have classification.
     """
     """Training"""
-    X_train, y_train = ds_train.data.to(device), ds_train.targets.to(device)
+    (X_train, y_train) = ds_train[:]
+    X_train, y_train = X_train.to(device), y_train.to(device)
     X_test, y_test = ds_test.data.to(device), ds_test.targets.to(device)
     X_valid, y_valid = ds_valid.data.to(device), ds_valid.targets.to(device)
     D = X_train.shape[1]
     res = dict()
     torch.manual_seed(seed)
-    if ds_train.C == 2:
+    if ds_test.C == 2:
         eps = 0.000000001
         eps = 0
         likelihood = BernoulliLh(EPS=eps)
@@ -150,7 +153,7 @@ def inference(
         eps = 0.0000000001
         eps = 0
         likelihood = CategoricalLh(EPS=eps)
-        K = ds_train.C
+        K = ds_test.C
 
     print(f'X_train shape: {X_train.shape[0]}')
     if X_train.shape[0] <= n_inducing:
@@ -213,8 +216,6 @@ def inference(
     res.update(evaluate(fs_valid, y_valid, lh, "svgp_ntk_nn", "valid"))
 
     # GP subset predictive
-
-    
     svgp_subset = create_ntksvgp(
         X_train,
         y_input,
@@ -241,28 +242,39 @@ def inference(
     res.update(evaluate(fs_test, y_test, lh, "gp_subset_nn", "test"))
     res.update(evaluate(fs_valid, y_valid, lh, "gp_subset_nn", "valid"))
 
+
+    # Update experiment
+    if ds_update is not None and len(ds_update) > 0:
+        X_update, y_update = ds_update[:]
+        X_update, y_update = X_update.to(device), y_update.to(device)
+        fs_update_pre = preds_svgp(X_update, svgp, likelihood_svgp, samples=n_samples, batch_size=batch_size, nn_mean=True,device=device)
+        svgp.update(x=X_update, y=y_update.squeeze())
+        fs_update_post = preds_svgp(X_update, svgp, likelihood_svgp, samples=n_samples, batch_size=batch_size, nn_mean=True,device=device)
+        res.update(evaluate(fs_update_pre, y_update, lh, "svgp_ntk", "update_pre"))
+        res.update(evaluate(fs_update_post, y_update, lh, "svgp_ntk", "update_post"))
+
     # BBB
     # baseline  (needs higher lr)
-    lrv, epochsv = lr * 10, int(n_epochs / 2)
-    res_bbb = run_bbb(
-        ds_train,
-        ds_test,
-        ds_valid,
-        prior_prec,
-        device,
-        likelihood,
-        epochsv,
-        lr=lrv,
-        n_samples_train=1,
-        n_samples_pred=100, # was n_samples
-        n_layers=n_layers,  
-        n_units=n_units,
-        activation=activation,
-    )
-    res["elbos_bbb"] = res_bbb["elbos"]
-    res.update(evaluate(res_bbb["preds_train"], y_train, lh, "bbb", "train"))
-    res.update(evaluate(res_bbb["preds_test"], y_test, lh, "bbb", "test"))
-    res.update(evaluate(res_bbb["preds_valid"], y_valid, lh, "bbb", "valid"))
+ #   lrv, epochsv = lr * 10, int(n_epochs / 2)
+  #  res_bbb = run_bbb(
+   #     ds_train,
+   #     ds_test,
+   #     ds_valid,
+   #     prior_prec,
+   #     device,
+   #     likelihood,
+   #     epochsv,
+   #     lr=lrv,
+   #     n_samples_train=1,
+   #     n_samples_pred=100, # was n_samples
+   #     n_layers=n_layers,  
+   #     n_units=n_units,
+   #     activation=activation,
+  #  )
+  #  res["elbos_bbb"] = res_bbb["elbos"]
+  #  res.update(evaluate(res_bbb["preds_train"], y_train, lh, "bbb", "train"))
+  #  res.update(evaluate(res_bbb["preds_test"], y_test, lh, "bbb", "test"))
+  #  res.update(evaluate(res_bbb["preds_valid"], y_valid, lh, "bbb", "valid"))
 
     # return res
 
@@ -387,7 +399,7 @@ def inference(
 
 
 def main(
-    ds_train, ds_test, ds_valid, deltas, device, dataset, name, seed, res_dir, **kwargs
+    ds_train, ds_test, ds_valid,  ds_update, deltas, device, dataset, name, seed, res_dir, **kwargs
 ):
     results = list()
     for i, delta in tqdm.tqdm(list(enumerate(deltas))):
@@ -395,6 +407,7 @@ def main(
             ds_train,
             ds_test,
             ds_valid,
+            ds_update,
             prior_prec=delta,
             device=device,
             seed=seed,
@@ -470,6 +483,12 @@ if __name__ == "__main__":
         default=64,
     )
     parser.add_argument(
+        "--update_ratio",
+        help="Part of the train set to be set aside for an update",
+        type=float,
+        default=0.0,
+    )
+    parser.add_argument(
         "--refine", help="on/off switch for posterior refinement", type=int
     )
     args = parser.parse_args()
@@ -539,15 +558,24 @@ if __name__ == "__main__":
         valid=True,
         double=double,
     )
+
     print(f'Dataset size: {len(ds_train) + len(ds_valid) + len(ds_test)}')
     print(f'N classes: {ds_train.C}')
     print(f'N inputs: {ds_train.data.shape}')
-    assert 1 == 0
+    # set update dataset
+    perm_ixs = torch.randperm(len(ds_train))
+    n_update = int(args.update_ratio*len(ds_train))
+    X_train, y_train = ds_train.data.to(device), ds_train.targets.to(device)
+    train_ixs, update_ixs = perm_ixs[:len(ds_train)-n_update], perm_ixs[len(ds_train)-n_update :]
+    ds_train = TensorDataset(X_train[train_ixs], y_train[train_ixs])
+    ds_update = TensorDataset(X_train[update_ixs], y_train[update_ixs])
+    print(f'Update size: {len(ds_update)}')
     deltas = np.logspace(logd_min, logd_max, n_deltas)
     main(
         ds_train,
         ds_test,
         ds_valid,
+        ds_update,
         deltas,
         device,
         dataset,

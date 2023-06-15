@@ -138,7 +138,7 @@ def train(cfg: TrainConfig):
         min_delta=cfg.early_stop.min_delta,
     )
 
-    best_accuracy = -1
+    best_nll = float('inf')
     for epoch in tqdm(list(range(cfg.n_epochs))):
         for X, y in train_loader:
             X, y = X.to(cfg.device), y.to(cfg.device)
@@ -177,22 +177,22 @@ def train(cfg: TrainConfig):
             wandb.log({"test/": test_metrics})
             wandb.log({"epoch": epoch})
 
-            if val_metrics["acc"] > best_accuracy:
+            if val_metrics["nll"] < best_nll:
                 checkpoint(sfr=sfr, optimizer=optimizer, save_dir=run.dir)
-                best_accuracy = val_metrics["acc"]
+                best_nll = val_metrics["nll"]
                 wandb.log({"best_test/": test_metrics})
-            if early_stopper(val_loss):
+            if early_stopper(val_metrics['nll']): # (val_loss):
                 logger.info("Early stopping criteria met, stopping training...")
                 break
 
     logger.info("Finished training")
 
-    state = {"model": sfr.state_dict(), "optimizer": optimizer.state_dict()}
+    # state = {"model": sfr.state_dict(), "optimizer": optimizer.state_dict()}
 
-    logger.info("Saving model and optimiser etc...")
-    fname = "ckpt_dict.pt"
-    torch.save(state, os.path.join(run.dir, fname))
-    logger.info("Finished saving model and optimiser etc")
+    # logger.info("Saving model and optimiser etc...")
+    # fname = "ckpt_dict.pt"
+    # torch.save(state, os.path.join(run.dir, fname))
+    # logger.info("Finished saving model and optimiser etc")
 
 
 if __name__ == "__main__":

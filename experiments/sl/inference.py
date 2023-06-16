@@ -230,26 +230,26 @@ def main(cfg: DictConfig):
     model.fit(train_loader)
     logger.info("Finished inference")
 
-    # print("building pred fn")
-    # for pred_cfg in cfg.inference_strategy.pred:
-    #     print("pred_cfg {}".format(pred_cfg))
-    #     pred_fn = hydra.utils.instantiate(pred_cfg, model=model)
-    #     print("Made pred fn")
-    #     metrics = compute_metrics(
-    #         pred_fn=pred_fn, data_loader=test_loader, device=cfg.device
-    #     )
-    #     print("Computed metrics")
-    #     if isinstance(model, laplace.BaseLaplace):
-    #         name = (
-    #             cfg.inference_strategy.name
-    #             + "."
-    #             + pred_cfg.pred_type
-    #             + "."
-    #             + pred_cfg.link_approx
-    #         )
-    #     else:
-    #         name = cfg.inference_strategy.name + "." + pred_cfg.pred_type
-    #     wandb.log({name: metrics})
+    print("building pred fn")
+    for pred_cfg in cfg.inference_strategy.pred:
+        print("pred_cfg {}".format(pred_cfg))
+        pred_fn = hydra.utils.instantiate(pred_cfg, model=model)
+        print("Made pred fn")
+        metrics = compute_metrics(
+            pred_fn=pred_fn, data_loader=test_loader, device=cfg.device
+        )
+        print("Computed metrics")
+        if isinstance(model, laplace.BaseLaplace):
+            name = (
+                cfg.inference_strategy.name
+                + "."
+                + pred_cfg.pred_type
+                + "."
+                + pred_cfg.link_approx
+            )
+        else:
+            name = cfg.inference_strategy.name + "." + pred_cfg.pred_type
+        wandb.log({name: metrics})
 
     if cfg.inference_strategy.optimize_prior_precision_kwargs is not None:
         # model.optimize_prior_precision(  

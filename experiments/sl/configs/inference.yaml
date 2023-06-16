@@ -5,7 +5,8 @@ defaults:
   # - pred_strategy: laplace
   # - override hydra/launcher: submitit_local
   # - override hydra/launcher: slurm
-  - override hydra/launcher: lumi
+  # - override hydra/launcher: lumi
+  - override hydra/launcher: puhti 
   # - override hydra/launcher: slurm_cpu
   # Disable logging by Hydra
   # - override hydra/job_logging: none # creates .log file
@@ -19,16 +20,16 @@ defaults:
 checkpoint: "./wandb/run-20230615_145621-elo8osox/" 
 device: ???
 output_dim: ???
+random_seed: ???
 
-random_seed: 117
 double: True
 
 batch_size: 64 # for predicting over test/val data
 # batch_size: 256 # for predicting over test/val data
 
 wandb:
-  # group: ${dataset}
-  group: "inference"
+  group: ${dataset}
+  # group: "inference"
   entity: ""
   project: "sfr-sl-inference"
   use_wandb: True

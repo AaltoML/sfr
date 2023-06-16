@@ -137,6 +137,7 @@ def main(cfg: DictConfig):
 
     try:  # Make experiment reproducible
         set_seed_everywhere(ckpt_cfg.random_seed.value)
+        cfg.random_seed = ckpt_cfg.random_seed.value
     except:
         random_seed = random.randint(0, 10000)
         set_seed_everywhere(random_seed)

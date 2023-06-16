@@ -181,6 +181,7 @@ def train(cfg: TrainConfig):
                 checkpoint(sfr=sfr, optimizer=optimizer, save_dir=run.dir)
                 best_nll = val_metrics["nll"]
                 wandb.log({"best_test/": test_metrics})
+                wandb.log({"best_val/": val_metrics})
             if early_stopper(val_metrics['nll']): # (val_loss):
                 logger.info("Early stopping criteria met, stopping training...")
                 break

@@ -22,4 +22,7 @@ pred:
     num_samples: 100 # num_samples for link_approx="mc"
 optimize_prior_precision_kwargs:
   method: 'CV' # "marglik"
+  log_prior_prec_min: 1
+  log_prior_prec_max: 5
+  grid_size: 50
 

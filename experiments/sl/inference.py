@@ -135,13 +135,16 @@ def main(cfg: DictConfig):
     )
     pprint("Loaded cfg from {}: {}".format(cfg.checkpoint, ckpt_cfg))
 
+    cfg.dataset = ckpt_cfg.dataset.value
+
     try:  # Make experiment reproducible
         set_seed_everywhere(ckpt_cfg.random_seed.value)
         cfg.random_seed = ckpt_cfg.random_seed.value
     except:
         random_seed = random.randint(0, 10000)
         set_seed_everywhere(random_seed)
-    
+        cfg.random_seed = random_seed
+        
     if cfg.double:
         torch.set_default_dtype(torch.double)
 

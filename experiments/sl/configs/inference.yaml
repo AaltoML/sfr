@@ -20,6 +20,9 @@ defaults:
 checkpoint: "./wandb/run-20230615_145621-elo8osox/" 
 device: ???
 output_dim: ???
+
+# dataset and seed will be set at run time based on the checkpoint information
+dataset: ???
 random_seed: ???
 
 double: True

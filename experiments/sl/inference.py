@@ -130,17 +130,17 @@ def _gridsearch(model, loss, interval, val_loader, pred_type,
 
 @hydra.main(version_base="1.3", config_path="./configs", config_name="inference")
 def main(cfg: DictConfig):
-    try:  # Make experiment reproducible
-        set_seed_everywhere(cfg.random_seed)
-    except:
-        random_seed = random.randint(0, 10000)
-        set_seed_everywhere(random_seed)
-
     ckpt_cfg = OmegaConf.load(
         os.path.join(get_original_cwd(), cfg.checkpoint, "files/config.yaml")
     )
     pprint("Loaded cfg from {}: {}".format(cfg.checkpoint, ckpt_cfg))
 
+    try:  # Make experiment reproducible
+        set_seed_everywhere(ckpt_cfg.random_seed.value)
+    except:
+        random_seed = random.randint(0, 10000)
+        set_seed_everywhere(random_seed)
+    
     if cfg.double:
         torch.set_default_dtype(torch.double)
 

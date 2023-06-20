@@ -177,6 +177,8 @@ class SFR(nn.Module):
             self.likelihood, src.likelihoods.BernoulliLh
         ):
             f = self.network(x)
+            if f.ndim == 1:
+                f = f.unsqueeze(-1)
             Lambda_new, beta_new = calc_lambdas(Y=y, F=f, likelihood=self.likelihood)
             beta_new = torch.diagonal(beta_new, dim1=-2, dim2=-1)  # [N, F]
             self.beta_u += torch.einsum("fmn, nf, fun -> fmu", Kzx, beta_new, Kzx)

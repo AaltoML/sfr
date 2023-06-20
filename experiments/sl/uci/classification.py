@@ -6,10 +6,12 @@ import tqdm
 from torch.nn.utils import parameters_to_vector
 from torch.utils.data.dataset import Subset
 from torch.utils.data import TensorDataset
-from preds.optimizers import LaplaceGGN, get_diagonal_ggn
-from preds.models import SiMLP
-from src import BernoulliLh, CategoricalLh, NTKSVGP, NN2GPSubset
-import src as ntksvgp
+from experiments.sl.bnn_predictive.preds.optimizers import LaplaceGGN, get_diagonal_ggn
+from experiments.sl.bnn_predictive.preds.models import SiMLP
+from src import SFR, NN2GPSubset
+from src.likelihoods import BernoulliLh, CategoricalLh
+from src.priors import Gaussian
+import src as sfr
 
 from experiments.sl.bnn_predictive.preds.predictives import (
     nn_sampling_predictive,
@@ -75,7 +77,7 @@ def create_ntksvgp(
 ):
     data = (X_train, y_train)
     n_classes = model(X_train).shape[-1]
-    prior = src.priors.Gaussian(params=model.parameters, delta=prior_prec)
+    prior = Gaussian(params=model.parameters, delta=prior_prec)
     if not subset:
         svgp = SFR(
             network=model,
@@ -131,7 +133,7 @@ def inference(
     if ds_test.C == 2:
         eps = 0.000000001
         eps = 0
-        likelihood = src.likelihoods.BernoulliLh(EPS=eps)
+        likelihood = BernoulliLh(EPS=eps)
         K = 1
     else:
         eps = 0
@@ -164,9 +166,9 @@ def inference(
     res.update(evaluate(fs_valid, y_valid, likelihood, "map", "valid"))
 
     # SVGP predictive
-    if isinstance(likelihood, src.likelihoods.CategoricalLh):
+    if isinstance(likelihood, CategoricalLh):
         eps_2 = eps
-        likelihood_svgp = src.likelihoods.CategoricalLh(EPS=eps_2)
+        likelihood_svgp = CategoricalLh(EPS=eps_2)
         y_input = y_train.squeeze()
     else:
         y_input = y_train.unsqueeze(-1)
@@ -228,8 +230,10 @@ def inference(
     if ds_update is not None and len(ds_update) > 0:
         X_update, y_update = ds_update[:]
         X_update, y_update = X_update.to(device), y_update.to(device)
+        if y_update.ndim == 1:
+            y_update = y_update.unsqueeze(-1)
         fs_update_pre = preds_svgp(X_update, svgp, likelihood_svgp, samples=n_samples, batch_size=batch_size, nn_mean=True,device=device)
-        svgp.update(x=X_update, y=y_update.squeeze())
+        svgp.update(x=X_update, y=y_update)
         fs_update_post = preds_svgp(X_update, svgp, likelihood_svgp, samples=n_samples, batch_size=batch_size, nn_mean=True,device=device)
         res.update(evaluate(fs_update_pre, y_update, lh, "svgp_ntk", "update_pre"))
         res.update(evaluate(fs_update_post, y_update, lh, "svgp_ntk", "update_post"))

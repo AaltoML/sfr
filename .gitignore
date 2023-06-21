@@ -2,6 +2,7 @@
 bnn-predictive/experiments/results/
 bnn-predictive/conda
 bnn-predictive/data/FMNIST
+experiments/sl/uci/results
 .idea
 *.log
 .direnv

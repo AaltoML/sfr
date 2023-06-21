@@ -230,7 +230,7 @@ def inference(
     if ds_update is not None and len(ds_update) > 0:
         X_update, y_update = ds_update[:]
         X_update, y_update = X_update.to(device), y_update.to(device)
-        if y_update.ndim == 1:
+        if y_update.ndim == 1 and isinstance(likelihood_svgp, BernoulliLh):
             y_update = y_update.unsqueeze(-1)
         fs_update_pre = preds_svgp(X_update, svgp, likelihood_svgp, samples=n_samples, batch_size=batch_size, nn_mean=True,device=device)
         svgp.update(x=X_update, y=y_update)
@@ -262,7 +262,7 @@ def main(
     resdict["deltas"] = deltas
     resdict["N_train"] = len(ds_train)
     resdict["N_test"] = len(ds_test)
-    resdict["K"] = ds_train.C
+    resdict["K"] = ds_test.C
 
     res_file = f"classification_{dataset}_{name}_{seed}.pkl"
     with open(os.path.join(res_dir, res_file), "wb") as f:

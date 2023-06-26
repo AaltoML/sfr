@@ -10,7 +10,7 @@ defaults:
 
 # Config dataset and NN from Immer et al 2021
 dataset: "MNIST"
-model_name: "SmallMLP"
+model_name: "MLP"
 # debug: True
 debug: False
 

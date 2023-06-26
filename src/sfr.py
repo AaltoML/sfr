@@ -447,7 +447,7 @@ def calc_sparse_dual_params_batch(
         alpha_u[output_c] = torch.linalg.solve(
             (Kzz_c + beta_u[output_c]), alpha_u[output_c]
         )
-
+    torch.cuda.empty_cache()
     return alpha_u.to(device), beta_u.to(device), Lambda_u.to(device)
 
 

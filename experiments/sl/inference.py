@@ -172,12 +172,12 @@ def main(cfg: DictConfig):
     # torch.set_default_dtype(torch.double)
     # network = network.to(cfg.device).to(torch.double)
     network = network.to(cfg.device)
-    # network = network.double()
+    network = network.double()
     sfr = hydra.utils.instantiate(ckpt_cfg.sfr.value, model=network)
     # print(f"old delta: {sfr.prior.delta}")
     # print(checkpoint["model"])
     sfr.load_state_dict(checkpoint["model"])
-    # sfr = sfr.double()
+    sfr = sfr.double()
     # print(f"new delta: {sfr.prior.delta}")
     sfr.eval()
 
@@ -230,6 +230,7 @@ def main(cfg: DictConfig):
         model.prior_precision = sfr.prior.delta
     elif isinstance(model, src.SFR):
         model.prior.delta = sfr.prior.delta
+        model = model.double()
     logger.info("Starting inference...")
     model.fit(train_loader)
     logger.info("Finished inference")

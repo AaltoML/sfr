@@ -119,7 +119,7 @@ class CategoricalLh(Likelihood):
             # dist = Normal(f_mean, torch.sqrt(f_var.clamp(10 ** (-32))))
             print("f_mean {}".format(f_mean.shape))
             print("f_var {}".format(f_var.shape))
-            dist = Normal(f_mean, torch.sqrt(f_var))
+            dist = Normal(f_mean, torch.sqrt(f_var.clamp(10 ** (-32))))
             print("made dist")
             logit_samples = dist.sample((num_samples,))
             print("logit samples")

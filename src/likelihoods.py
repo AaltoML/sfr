@@ -117,14 +117,14 @@ class CategoricalLh(Likelihood):
         else:
             # raise NotImplementedError
             # dist = Normal(f_mean, torch.sqrt(f_var.clamp(10 ** (-32))))
-            print("f_mean {}".format(f_mean.shape))
-            print("f_var {}".format(f_var.shape))
+            # print("f_mean {}".format(f_mean.shape))
+            # print("f_var {}".format(f_var.shape))
             dist = Normal(f_mean, torch.sqrt(f_var.clamp(10 ** (-32))))
-            print("made dist")
+            # print("made dist")
             logit_samples = dist.sample((num_samples,))
-            print("logit samples")
+            # print("logit samples")
             samples = self.inv_link(logit_samples)
-            print("samples {}".format(samples.shape))
+            # print("samples {}".format(samples.shape))
             # samples_flat = torch.flatten(samples, start_dim=0, end_dim=1)
             # print("samples_flat {}".format(samples_flat.shape))
             # ps_flat = self.prob(f=samples_flat)
@@ -132,10 +132,10 @@ class CategoricalLh(Likelihood):
             # ps = torch.reshape(ps_flat, samples.shape)
             # print("ps {}".format(ps.shape))
             p = torch.mean(samples, 0)
-            print("p {}".format(p.shape))
+            # print("p {}".format(p.shape))
 
         mean = p
-        print("mean {}".format(mean.shape))
+        # print("mean {}".format(mean.shape))
         var = p - torch.square(p)
         return mean, var
 

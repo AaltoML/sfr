@@ -193,9 +193,9 @@ class SFR(nn.Module):
     def update(self, x: InputData, y: OutputData):
         logger.info("Updating dual params...")
         if x.ndim > 2:
-            print("x before flatten {}".format(x.shape))
+            # print("x before flatten {}".format(x.shape))
             x = torch.flatten(x, 1, -1)
-            print("x AFTER flatten {}".format(x.shape))
+            # print("x AFTER flatten {}".format(x.shape))
         assert x.ndim == 2
         num_new_data, input_dim = x.shape
         Kzx = self.kernel(self.Z, x)

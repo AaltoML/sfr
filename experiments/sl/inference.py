@@ -243,7 +243,7 @@ def main(cfg: DictConfig):
         metrics = compute_metrics(
             pred_fn=pred_fn, data_loader=test_loader, device=cfg.device
         )
-        print("Computed metrics")
+        print(f"Computed metrics {metrics}")
         if isinstance(model, laplace.BaseLaplace):
             name = (
                 cfg.inference_strategy.name

@@ -7,8 +7,11 @@ import torch.nn as nn
 from src.custom_types import FuncData, FuncMean, FuncVar, OutputData
 from torch.distributions import Bernoulli, Categorical, Normal
 
+import logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-EPS = 0.01
+# EPS = 0.01
 
 
 class Likelihood:
@@ -119,6 +122,7 @@ class CategoricalLh(Likelihood):
             # dist = Normal(f_mean, torch.sqrt(f_var.clamp(10 ** (-32))))
             # print("f_mean {}".format(f_mean.shape))
             # print("f_var {}".format(f_var.shape))
+            logger.info(f"f_var: num_el {f_var.numel()} - zero el {(f_var < 0).sum().item()}")
             dist = Normal(f_mean, torch.sqrt(f_var.clamp(10 ** (-32))))
             # print("made dist")
             logit_samples = dist.sample((num_samples,))

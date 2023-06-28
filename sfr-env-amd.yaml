@@ -8,6 +8,6 @@ dependencies:
   - pip
   - pip:
       # - -e ".[experiments]"
-      #  - --extra-index-url https://download.pytorch.org/whl/rocm5.4.2
+      - --extra-index-url https://download.pytorch.org/whl/rocm5.4.2
       - torch==2.0.0
       - torchvision==0.15.1

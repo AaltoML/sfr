@@ -16,3 +16,10 @@ export PATH="$SFR_CONTAINER_DIR/bin:$PATH"
 ```
 
 
+``` sh 
+mkdir  venv
+module load LUMI/22.08
+module load lumi-container-wrapper
+conda-containerize new --mamba --prefix venv sfr-env-amd.yaml
+conda-containerize update venv --post-install post-install-amd.txt
+```

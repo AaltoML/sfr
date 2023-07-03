@@ -216,6 +216,7 @@ def main(cfg: DictConfig):
     map_metrics = compute_metrics(
         pred_fn=map_pred_fn, data_loader=test_loader, device=cfg.device
     )
+    logger.info(f"map_metrics {map_metrics}")
     wandb.log({"map": map_metrics})
 
     # model = laplace.Laplace(

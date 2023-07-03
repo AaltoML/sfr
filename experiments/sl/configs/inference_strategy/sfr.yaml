@@ -9,8 +9,8 @@ model:
   output_dim: ${output_dim}
   num_inducing: 1024
   # dual_batch_size: 5000
-  dual_batch_size: 150
-  jitter: 1e-4
+  dual_batch_size: 300
+  jitter: 1e-3
   device: ${device} # TODO should this always be cpu??
 pred:
   - _target_: experiments.sl.inference.sfr_pred

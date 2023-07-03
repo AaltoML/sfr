@@ -33,6 +33,9 @@ from src.priors import Prior
 from torch.func import functional_call, jacrev, jvp, vjp, vmap
 from torch.utils.data import DataLoader, TensorDataset
 
+from scipy.linalg import cho_factor, cho_solve
+import numpy as np
+
 
 class SFR(nn.Module):
     def __init__(
@@ -340,34 +343,44 @@ def predict_from_sparse_duals(
     KzzplusBeta = (Kzz + beta_u) + Iz * jitter
     assert beta_u.shape == Kzz.shape
 
-    Lm = torch.linalg.cholesky(Kzz, upper=True)
-    Lb = torch.linalg.cholesky(KzzplusBeta, upper=True)
+    K, M, _ = Kzz.shape
+    Kzznp = Kzz.detach().cpu().numpy()
+    KzzplusBetanp = KzzplusBeta.detach().cpu().numpy()
+    Lmnp = np.zeros_like(Kzznp)
+    Lbnp = np.zeros_like(KzzplusBetanp)
+
+
+    for k in range(K):
+        Lmnp[k], _ = cho_factor(Kzznp[k])
+        Lbnp[k], _ = cho_factor(KzzplusBetanp[k])
 
     @torch.no_grad()
     def predict(x, full_cov: bool = False) -> Tuple[OutputMean, OutputVar]:
         Kxx = kernel(x, x, full_cov=full_cov)
         Kxz = kernel(x, Z)
 
+        K, M, _ = Kzz.shape
         f_mean = (Kxz @ alpha_u[..., None])[..., 0].T
 
         if full_cov:
-            tmp = torch.linalg.solve(Kzz, Iz) - torch.linalg.solve(beta_u + Kzz, Iz)
-            f_cov = Kxx - torch.matmul(
-                torch.matmul(Kxz, tmp), torch.transpose(Kxz, -1, -2)
-            )
-            return f_mean, f_cov
+            raise NotImplementedError
         else:
-            Kzx = torch.transpose(Kxz, -1, -2)
-            Am = torch.linalg.solve_triangular(
-                torch.transpose(Lm, -1, -2), Kzx, upper=False
-            )
-            Ab = torch.linalg.solve_triangular(
-                torch.transpose(Lb, -1, -2), Kzx, upper=False
-            )
-            f_var = (
-                Kxx - torch.sum(torch.square(Am), -2) + torch.sum(torch.square(Ab), -2)
-            )
-            return f_mean, f_var.T
+            fvarnp = []
+            for k in range(K):
+                Kxxk = Kxx[k].detach().cpu().numpy()
+                Kxzk = Kxz[k].detach().cpu().numpy()
+                Kzxk = Kxzk.T
+                # Note the first argument is a tuple that takes the result 
+                # from the cho_factor (by default lower=False, then (A, False) 
+                # is fed to cho_solve)
+                Amk = cho_solve((Lmnp[k], False), Kzxk)
+                Abk = cho_solve((Lbnp[k], False), Kzxk)
+                fvark = Kxxk - (Amk ** 2).sum() + (Abk ** 2).sum()
+                fvarnp.append(fvark)
+            fvarnp = np.array(fvarnp)
+            fvar = torch.from_numpy(fvarnp.T).to(f_mean.device)
+
+        return f_mean, fvar
 
     return predict
 

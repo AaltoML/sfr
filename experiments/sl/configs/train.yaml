@@ -1,28 +1,24 @@
 defaults:
   # Use slurm on cluster or local?
   # - override hydra/launcher: submitit_local
-  #- override hydra/launcher: lumi
+  # - override hydra/launcher: lumi
+  # - network: si_mlp
+  - network: mlp
+  # - dataset: australian
+  - dataset: mnist
   - override hydra/launcher: puhti
   # Disable logging by Hydra
   # - override hydra/job_logging: none # stop hydra creating .log file
   # - override hydra/hydra_logging: none # saves .hydra/*.yaml files
   - _self_
 
-# Config dataset and NN from Immer et al 2021
-dataset: "MNIST"
-model_name: "MLP"
-# debug: True
-debug: False
-
-device: "cuda"
+# device: "cuda"
+device: "cpu"
 output_dim: ???
 batch_size: 512
 lr: 1e-4
 n_epochs: 500
 double: False
-
-val_from_test: False # True
-val_split: 0.1 # 0.5
 
 logging_epoch_freq: 2
 random_seed: 117
@@ -46,14 +42,14 @@ sfr:
   device: ${device} # TODO should this always be cpu??
 
 wandb:
-  group: ${dataset}
+  group: ${dataset.name}
   project: "sfr-sl"
   use_wandb: True
-  run_name: ${model_name}-delta=${sfr.delta}-lr=${lr}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
+  run_name: ${network.name}-delta=${sfr.delta}-lr=${lr}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   tags:
     - "delta=${sfr.delta}"
-    - "dataset=${dataset}"
-    - "model=${model_name}"
+    - "dataset=${dataset.name}"
+    - "model=${network.name}"
 
 hydra:
   run:

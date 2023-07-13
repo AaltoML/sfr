@@ -8,18 +8,18 @@ import shutil
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-from experiments.sl.utils import EarlyStopper
 import hydra
 import omegaconf
 import src
 import torch
 import wandb
-from experiments.sl.bnn_predictive.experiments.scripts.imgclassification import (
-    get_dataset,
-    get_model,
-)
 from experiments.sl.configs.schema import TrainConfig
-from experiments.sl.utils import compute_metrics, set_seed_everywhere, train_val_split
+from experiments.sl.utils import (
+    compute_metrics,
+    EarlyStopper,
+    set_seed_everywhere,
+    train_val_split,
+)
 from hydra.utils import get_original_cwd
 from torch.utils.data import DataLoader
 from tqdm import tqdm
@@ -66,34 +66,25 @@ def train(cfg: TrainConfig):
     cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
     print("Using device: {}".format(cfg.device))
 
-    # Load the data
-    ds_train, ds_test = get_dataset(
-        dataset=cfg.dataset,
-        double=cfg.double,
-        dir=get_original_cwd(),  # don't nest wandb inside hydra dir
-        device=cfg.device,
-        debug=cfg.debug,
+    # Load the data with train/val/test split
+    ds_train, ds_val, ds_test = hydra.utils.instantiate(
+        cfg.dataset, dir=os.path.join(get_original_cwd(), "data")
     )
-    cfg.output_dim = ds_train.K
+    cfg.output_dim = ds_train.output_dim
+    print(f"output_dim: {cfg.output_dim}")
+    print(cfg.dataset.name)
+    print(ds_train)
 
-    # Instantiate SFR
-    network = get_model(model_name=cfg.model_name, ds_train=ds_train).to(cfg.device)
-    sfr = hydra.utils.instantiate(cfg.sfr, model=network)
+    # Instantiate the neural network
+    network = hydra.utils.instantiate(cfg.network, ds_train=ds_train)
 
-    # Split train data set into train and validation
-    print("num train {}".format(len(ds_train)))
-    print("num test {}".format(len(ds_test)))
-    ds_train, ds_val, ds_test = train_val_split(ds_train=ds_train,
-                                                ds_test=ds_test,
-                                                val_from_test=cfg.val_from_test,
-                                                val_split=cfg.val_split)
-    print("num train {}".format(len(ds_train)))
-    print("num val {}".format(len(ds_val)))
+    # Create data loaders
     train_loader = DataLoader(dataset=ds_train, shuffle=True, batch_size=cfg.batch_size)
     val_loader = DataLoader(dataset=ds_val, shuffle=False, batch_size=cfg.batch_size)
-    print("train_loader {}".format(train_loader))
-    print("val_loader {}".format(val_loader))
     test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)
+
+    # Instantiate SFR
+    sfr = hydra.utils.instantiate(cfg.sfr, model=network)
 
     # Initialise WandB
     if cfg.wandb.use_wandb:
@@ -122,7 +113,9 @@ def train(cfg: TrainConfig):
 
     @torch.no_grad()
     def map_pred_fn(x):
-        return torch.softmax(sfr.network(x.to(cfg.device)), dim=-1)
+        f = sfr.network(x.to(cfg.device))
+        return sfr.likelihood.inv_link(f)
+        # return torch.softmax(sfr.network(x.to(cfg.device)), dim=-1)
 
     @torch.no_grad()
     def loss_fn(data_loader: DataLoader):
@@ -138,7 +131,7 @@ def train(cfg: TrainConfig):
         min_delta=cfg.early_stop.min_delta,
     )
 
-    best_nll = float('inf')
+    best_nll = float("inf")
     for epoch in tqdm(list(range(cfg.n_epochs))):
         for X, y in train_loader:
             X, y = X.to(cfg.device), y.to(cfg.device)
@@ -182,7 +175,7 @@ def train(cfg: TrainConfig):
                 best_nll = val_metrics["nll"]
                 wandb.log({"best_test/": test_metrics})
                 wandb.log({"best_val/": val_metrics})
-            if early_stopper(val_metrics['nll']): # (val_loss):
+            if early_stopper(val_metrics["nll"]):  # (val_loss):
                 logger.info("Early stopping criteria met, stopping training...")
                 break
 

@@ -27,11 +27,24 @@ from torch.utils.data import DataLoader
 from laplace.utils import validate, get_nll
 import numpy as np
 
-def optimize_prior_precision_base(model, pred_type, method='marglik', n_steps=100, lr=1e-1,
-                                    init_prior_prec=1., val_loader=None, loss=get_nll,
-                                    log_prior_prec_min=-4, log_prior_prec_max=4, grid_size=100,
-                                    link_approx='probit', n_samples=100, verbose=False,
-                                    cv_loss_with_var=False):
+
+def optimize_prior_precision_base(
+    model,
+    pred_type,
+    method="marglik",
+    n_steps=100,
+    lr=1e-1,
+    init_prior_prec=1.0,
+    val_loader=None,
+    loss=get_nll,
+    log_prior_prec_min=-4,
+    log_prior_prec_max=4,
+    grid_size=100,
+    link_approx="probit",
+    n_samples=100,
+    verbose=False,
+    cv_loss_with_var=False,
+):
     """Optimize the prior precision post-hoc using the `method`
     specified by the user.
 
@@ -71,7 +84,7 @@ def optimize_prior_precision_base(model, pred_type, method='marglik', n_steps=10
         if true, the optimized prior precision will be printed
         (can be a large tensor if the prior has a diagonal covariance).
     """
-    if method == 'marglik':
+    if method == "marglik":
         model.prior_precision = init_prior_prec
         log_prior_prec = model.prior_precision.log()
         log_prior_prec.requires_grad = True

@@ -6,7 +6,8 @@ defaults:
   - network: mlp
   # - dataset: australian
   - dataset: mnist
-  - override hydra/launcher: puhti
+  - override hydra/launcher: slurm
+  # - override hydra/launcher: puhti
   # Disable logging by Hydra
   # - override hydra/job_logging: none # stop hydra creating .log file
   # - override hydra/hydra_logging: none # saves .hydra/*.yaml files

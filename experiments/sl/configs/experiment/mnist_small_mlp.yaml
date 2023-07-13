@@ -1,7 +1,8 @@
 # @package _global_
+defaults:
+  - override /network: small_mlp
+  - override /dataset: mnist
 
-dataset: "MNIST"
-model_name: "SmallMLP"
 lr: 1e-4
 n_epochs: 500
 

@@ -1,7 +1,8 @@
 # @package _global_
+defaults:
+  - override /network: all_cnn
+  - override /dataset: cifar10
 
-dataset: "CIFAR10"
-model_name: "AllCNN"
 lr: 1e-3
 n_epochs: 500
 

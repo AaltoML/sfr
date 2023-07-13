@@ -96,24 +96,36 @@ def optimize_prior_precision_base(
             neg_log_marglik.backward()
             optimizer.step()
         model.prior_precision = log_prior_prec.detach().exp()
-    elif method == 'CV':
+    elif method == "CV":
         if val_loader is None:
-            raise ValueError('CV requires a validation set DataLoader')
-        interval = torch.logspace(
-            log_prior_prec_min, log_prior_prec_max, grid_size
-        )
+            raise ValueError("CV requires a validation set DataLoader")
+        interval = torch.logspace(log_prior_prec_min, log_prior_prec_max, grid_size)
         model.prior_precision = _gridsearch(
             model,
-            loss, interval, val_loader, pred_type=pred_type,
-            link_approx=link_approx, n_samples=n_samples, loss_with_var=cv_loss_with_var
+            loss,
+            interval,
+            val_loader,
+            pred_type=pred_type,
+            link_approx=link_approx,
+            n_samples=n_samples,
+            loss_with_var=cv_loss_with_var,
         )
     else:
-        raise ValueError('For now only marglik and CV is implemented.')
+        raise ValueError("For now only marglik and CV is implemented.")
     if verbose:
-        print(f'Optimized prior precision is {model.prior_precision}.')
+        print(f"Optimized prior precision is {model.prior_precision}.")
 
-def _gridsearch(model, loss, interval, val_loader, pred_type,
-                link_approx='probit', n_samples=100, loss_with_var=False):
+
+def _gridsearch(
+    model,
+    loss,
+    interval,
+    val_loader,
+    pred_type,
+    link_approx="probit",
+    n_samples=100,
+    loss_with_var=False,
+):
     results = list()
     prior_precs = list()
     for prior_prec in interval:
@@ -121,10 +133,13 @@ def _gridsearch(model, loss, interval, val_loader, pred_type,
         model.prior_precision = prior_prec
         try:
             out_dist, targets = validate(
-                model, val_loader, pred_type=pred_type,
-                link_approx=link_approx, n_samples=n_samples
+                model,
+                val_loader,
+                pred_type=pred_type,
+                link_approx=link_approx,
+                n_samples=n_samples,
             )
-            if model.likelihood == 'regression':
+            if model.likelihood == "regression":
                 out_mean, out_var = out_dist
                 if loss_with_var:
                     result = loss(out_mean, out_var, targets).item()
@@ -138,7 +153,6 @@ def _gridsearch(model, loss, interval, val_loader, pred_type,
         logger.info(f"result {result}\n")
         prior_precs.append(prior_prec)
     return prior_precs[np.argmin(results)]
-
 
 
 @hydra.main(version_base="1.3", config_path="./configs", config_name="inference")
@@ -157,7 +171,7 @@ def main(cfg: DictConfig):
         random_seed = random.randint(0, 10000)
         set_seed_everywhere(random_seed)
         cfg.random_seed = random_seed
-        
+
     if cfg.double:
         torch.set_default_dtype(torch.double)
 
@@ -179,7 +193,9 @@ def main(cfg: DictConfig):
     )
 
     # Instantiate the model and update from checkpoint
-    ckpt_fname = os.path.join(get_original_cwd(), cfg.checkpoint, "files/best_ckpt_dict.pt")
+    ckpt_fname = os.path.join(
+        get_original_cwd(), cfg.checkpoint, "files/best_ckpt_dict.pt"
+    )
     checkpoint = torch.load(ckpt_fname)
     network = get_model(model_name=ckpt_cfg.model_name.value, ds_train=ds_train)
     # torch.set_default_dtype(torch.double)
@@ -194,10 +210,12 @@ def main(cfg: DictConfig):
     # print(f"new delta: {sfr.prior.delta}")
     sfr.eval()
 
-    ds_train, ds_val, ds_test = train_val_split(ds_train=ds_train, 
-                                                ds_test=ds_test,
-                                                val_from_test=ckpt_cfg.val_from_test.value,
-                                                val_split=ckpt_cfg.val_split.value)
+    ds_train, ds_val, ds_test = train_val_split(
+        ds_train=ds_train,
+        ds_test=ds_test,
+        val_from_test=ckpt_cfg.val_from_test.value,
+        val_split=ckpt_cfg.val_split.value,
+    )
     print("num train {}".format(len(ds_train)))
     print("num val {}".format(len(ds_val)))
     train_loader = DataLoader(dataset=ds_train, shuffle=True, batch_size=cfg.batch_size)
@@ -273,24 +291,23 @@ def main(cfg: DictConfig):
         wandb.log({name: metrics})
 
     if cfg.inference_strategy.optimize_prior_precision_kwargs is not None:
-        # model.optimize_prior_precision(  
+        # model.optimize_prior_precision(
         # optimize_prior_precision_base(
         #     model=model,
-            
+
         #     **cfg.inference_strategy.optimize_prior_precision_kwargs,
         #     val_loader=val_loader
         # )
-        
 
         for pred_cfg in cfg.inference_strategy.pred:
             print(pred_cfg)
             print(cfg.inference_strategy.optimize_prior_precision_kwargs)
-            # model.optimize_prior_precision(  
+            # model.optimize_prior_precision(
             optimize_prior_precision_base(
                 model=model,
                 pred_type=pred_cfg.pred_type,
                 **cfg.inference_strategy.optimize_prior_precision_kwargs,
-                val_loader=val_loader
+                val_loader=val_loader,
             )
             torch.cuda.empty_cache()
             print("pred_cfg {}".format(pred_cfg))

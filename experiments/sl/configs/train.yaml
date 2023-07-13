@@ -13,8 +13,8 @@ defaults:
   # - override hydra/hydra_logging: none # saves .hydra/*.yaml files
   - _self_
 
-# device: "cuda"
-device: "cpu"
+device: "cuda"
+# device: "cpu"
 output_dim: ???
 batch_size: 512
 lr: 1e-4

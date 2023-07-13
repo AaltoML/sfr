@@ -1,0 +1,6 @@
+_target_: experiments.sl.utils.get_uci_dataset
+# _partial_: true
+name: "australian"
+random_seed: ${random_seed}
+# dir: ???
+double: ${double}

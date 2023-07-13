@@ -1,0 +1,11 @@
+# @package _global_
+defaults:
+  - override /network: si_mlp
+  - override /dataset: waveform
+
+lr: 1e-4
+n_epochs: 10000
+
+early_stop:
+  patience: 1000
+  min_delta: 0

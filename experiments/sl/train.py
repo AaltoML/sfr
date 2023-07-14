@@ -73,7 +73,7 @@ def train(cfg: TrainConfig):
     cfg.output_dim = ds_train.output_dim
     print(f"output_dim: {cfg.output_dim}")
     print(cfg.dataset.name)
-    print(ds_train)
+    # print(ds_train)
 
     # Instantiate the neural network
     network = hydra.utils.instantiate(cfg.network, ds_train=ds_train)

@@ -11,6 +11,7 @@ logger = logging.getLogger(__name__)
 
 import hydra
 import laplace
+import numpy as np
 import src
 import torch
 import wandb
@@ -20,12 +21,9 @@ from experiments.sl.bnn_predictive.experiments.scripts.imgclassification import 
 )
 from experiments.sl.utils import compute_metrics, set_seed_everywhere, train_val_split
 from hydra.utils import get_original_cwd
+from laplace.utils import get_nll, validate
 from omegaconf import DictConfig, OmegaConf
 from torch.utils.data import DataLoader
-
-
-from laplace.utils import validate, get_nll
-import numpy as np
 
 
 def optimize_prior_precision_base(
@@ -183,46 +181,48 @@ def main(cfg: DictConfig):
     print("Using device: {}".format(cfg.device))
     cfg.output_dim = ckpt_cfg.output_dim.value
 
-    ds_train, ds_test = get_dataset(
-        dataset=ckpt_cfg.dataset.value,
-        # double=True,
-        double=False,
-        dir=get_original_cwd(),  # don't nest wandb inside hydra dir
-        device=cfg.device,
-        debug=ckpt_cfg.debug.value,
-    )
+    # ds_train, ds_test = get_dataset(
+    #     dataset=ckpt_cfg.dataset.value,
+    #     # double=True,
+    #     double=False,
+    #     dir=get_original_cwd(),  # don't nest wandb inside hydra dir
+    #     device=cfg.device,
+    #     debug=ckpt_cfg.debug.value,
+    # )
 
-    # Instantiate the model and update from checkpoint
+    # Load the data with train/val/test split
+    ds_train, ds_val, ds_test = hydra.utils.instantiate(
+        ckpt_cfg.dataset.value, dir=os.path.join(get_original_cwd(), "data")
+    )
+    cfg.output_dim = ds_train.output_dim
+
+    # Create data loaders
+    ds_train.data = ds_train.data.to(torch.double)
+    ds_val.data = ds_val.data.to(torch.double)
+    ds_test.data = ds_test.data.to(torch.double)
+    train_loader = DataLoader(dataset=ds_train, shuffle=True, batch_size=cfg.batch_size)
+    val_loader = DataLoader(dataset=ds_val, shuffle=False, batch_size=cfg.batch_size)
+    test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)
+
+    # Instantiate the neural network
+    network = hydra.utils.instantiate(ckpt_cfg.network.value, ds_train=ds_train)
+    print("made network")
+    network = network.to(cfg.device)
+    network = network.double()
+    sfr = hydra.utils.instantiate(ckpt_cfg.sfr.value, model=network)
+    print("made SFR")
+
+    # Load checkpoint
     ckpt_fname = os.path.join(
         get_original_cwd(), cfg.checkpoint, "files/best_ckpt_dict.pt"
     )
     checkpoint = torch.load(ckpt_fname)
-    network = get_model(model_name=ckpt_cfg.model_name.value, ds_train=ds_train)
-    # torch.set_default_dtype(torch.double)
-    # network = network.to(cfg.device).to(torch.double)
-    network = network.to(cfg.device)
-    network = network.double()
-    sfr = hydra.utils.instantiate(ckpt_cfg.sfr.value, model=network)
-    # print(f"old delta: {sfr.prior.delta}")
-    # print(checkpoint["model"])
+    print("loaded ckpt")
     sfr.load_state_dict(checkpoint["model"])
+    print("loaded state dict")
     sfr = sfr.double()
     # print(f"new delta: {sfr.prior.delta}")
     sfr.eval()
-
-    ds_train, ds_val, ds_test = train_val_split(
-        ds_train=ds_train,
-        ds_test=ds_test,
-        val_from_test=ckpt_cfg.val_from_test.value,
-        val_split=ckpt_cfg.val_split.value,
-    )
-    print("num train {}".format(len(ds_train)))
-    print("num val {}".format(len(ds_val)))
-    train_loader = DataLoader(dataset=ds_train, shuffle=True, batch_size=cfg.batch_size)
-    val_loader = DataLoader(dataset=ds_val, shuffle=False, batch_size=cfg.batch_size)
-    print("train_loader {}".format(train_loader))
-    print("val_loader {}".format(val_loader))
-    test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)
 
     if cfg.wandb.use_wandb:  # Initialise WandB
         run = wandb.init(
@@ -242,7 +242,12 @@ def main(cfg: DictConfig):
 
     @torch.no_grad()
     def map_pred_fn(x):
-        f = sfr.network(x.to(cfg.device))
+        # x = x.to(torch.double).to(cfg.device)
+        print("here")
+        print(x)
+        print(type(x))
+        print(x.dtype)
+        f = sfr.network(x)
         return sfr.likelihood.inv_link(f)
         # return torch.softmax(sfr.network(x.to(cfg.device)), dim=-1)
 
@@ -261,9 +266,12 @@ def main(cfg: DictConfig):
     print("making inference model")
     model = hydra.utils.instantiate(cfg.inference_strategy.model, model=sfr.network)
     if isinstance(model, laplace.BaseLaplace):
-        model.prior_precision = sfr.prior.delta
+        # model.prior_precision = sfr.prior.delta
+        # TODO change this back maybe
+        model.prior_precision = cfg.delta_post_hoc
     elif isinstance(model, src.SFR):
-        model.prior.delta = sfr.prior.delta
+        # model.prior.delta = sfr.prior.delta
+        model.prior.delta = cfg.delta_post_hoc
         model = model.double()
     logger.info("Starting inference...")
     model.fit(train_loader)

@@ -339,17 +339,14 @@ class SFR(nn.Module):
         
 
         @torch.no_grad()
-        def predict(x, full_cov: bool = False) -> Tuple[OutputMean, OutputVar]:
-            """
-            x may be both the x tensor if we haven't stored the Kxx and Kxz
-            or the indec in Kxx_cached and Kxz_cached
-            """
+        def predict(x, index, full_cov: bool = False) -> Tuple[OutputMean, OutputVar]:
+
             if isinstance(x, torch.Tensor):
                 Kxx = kernel(x, x, full_cov=full_cov).detach().cpu().numpy()
                 Kxz = kernel(x, Z).detach().cpu().numpy()
             else:
-                Kxx = Kxx_cached[x].numpy()
-                Kxz = Kxz_cached[x].numpy()
+                Kxx = Kxx_cached[index].numpy()
+                Kxz = Kxz_cached[index].numpy()
 
             K, M, _ = Kzz.shape
             f_mean = (Kxz @ alpha_u[..., None])[..., 0].T

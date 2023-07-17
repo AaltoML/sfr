@@ -1,12 +1,12 @@
 defaults:
   # Use slurm on cluster or local?
-  - inference_strategy: sfr
-  # - inference_strategy: laplace
+  # - inference_strategy: sfr
+  - inference_strategy: laplace
   # - pred_strategy: laplace
-  # - override hydra/launcher: submitit_local
+  - override hydra/launcher: submitit_local
   # - override hydra/launcher: slurm
   # - override hydra/launcher: lumi
-  - override hydra/launcher: puhti 
+  # - override hydra/launcher: puhti
   # - override hydra/launcher: slurm_cpu
   # Disable logging by Hydra
   # - override hydra/job_logging: none # creates .log file
@@ -17,7 +17,13 @@ defaults:
 # checkpoint: "./wandb/run-20230605_162902-q2tmpsy0"
 # checkpoint: "wandb/run-20230605_160605-3b8gdq3l"
 # checkpoint: "./wandb/run-20230609_094409-p7xhdnny"
-checkpoint: "./wandb/run-20230628_173218-qc5ijob9" 
+# checkpoint: "./wandb/run-20230628_173218-qc5ijob9"
+# checkpoint: "wandb/run-20230605_160605-3b8gdq3l"
+# checkpoint: "./wandb/run-20230609_094409-p7xhdnny"
+checkpoint: "./wandb/run-20230713_182143-voioempg"
+
+delta_post_hoc: 1e-2
+
 device: ???
 output_dim: ???
 
@@ -31,7 +37,7 @@ batch_size: 64 # for predicting over test/val data
 # batch_size: 256 # for predicting over test/val data
 
 wandb:
-  group: ${dataset}
+  group: ${dataset.name}
   # group: "inference"
   entity: ""
   project: "sfr-sl-inference"

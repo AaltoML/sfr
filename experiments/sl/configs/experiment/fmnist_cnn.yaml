@@ -1,7 +1,8 @@
 # @package _global_
+defaults:
+  - override /network: cnn
+  - override /dataset: fmnist
 
-dataset: "FMNIST"
-model_name: "CNN"
 lr: 1e-4
 n_epochs: 500
 

@@ -1,15 +1,19 @@
-program: sl/cluster_train.py --multirun
+program: sl/cluster_train.py
 method: bayes
 metric:
   name: val_loss
   goal: minimize
 parameters:
-  lr:
-    min: !!float 1e-5
-    max: 0.1
+  sfr.delta:
+    min: !!float 1e-8
+    max: 1.0
+  # lr:
+  #   min: !!float 1e-5
+  #   max: 0.1
 
 command:
   - ${env}
   - ${interpreter}
   - ${program}
   - ${args_no_hyphens}
+  - "--multirun"

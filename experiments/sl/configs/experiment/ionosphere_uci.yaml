@@ -1,0 +1,16 @@
+# @package _global_
+defaults:
+  - override /network: si_mlp
+  - override /dataset: ionosphere
+
+lr: 1e-4
+n_epochs: 10000
+
+sfr:
+  likelihood:
+    _target_: src.likelihoods.BernoulliLh
+    EPS: 0.0 # TODO default is 0.01
+
+early_stop:
+  patience: 1000
+  min_delta: 0

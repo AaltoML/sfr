@@ -8,6 +8,7 @@ from src.custom_types import FuncData, FuncMean, FuncVar, OutputData
 from torch.distributions import Bernoulli, Categorical, Normal
 
 import logging
+
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -99,6 +100,8 @@ class BernoulliLh(Likelihood):
         return self.inv_link(f) - y
 
     def nn_loss(self, f: FuncData, y: OutputData):
+        if f.shape > y.shape:
+            f = f[..., 0]
         return torch.nn.functional.binary_cross_entropy(
             self.inv_link(f), y, reduction="mean"
         )
@@ -122,7 +125,9 @@ class CategoricalLh(Likelihood):
             # dist = Normal(f_mean, torch.sqrt(f_var.clamp(10 ** (-32))))
             # print("f_mean {}".format(f_mean.shape))
             # print("f_var {}".format(f_var.shape))
-            logger.info(f"f_var: num_el {f_var.numel()} - zero el {(f_var < 0).sum().item()}")
+            logger.info(
+                f"f_var: num_el {f_var.numel()} - zero el {(f_var < 0).sum().item()}"
+            )
             dist = Normal(f_mean, torch.sqrt(f_var.clamp(10 ** (-32))))
             # print("made dist")
             logit_samples = dist.sample((num_samples,))

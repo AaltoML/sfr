@@ -77,7 +77,7 @@ if __name__ == "__main__":
         ys = np.stack(ys, 0).reshape(-1, 1)
         y2s = np.stack(y2s, 0).reshape(-1, 1)
         y = np.concatenate([ys, y2s], -1)
-        return torch.Tensor(ys)
+        return torch.Tensor(ys)[..., 0]
 
     delta = 0.0002
     # delta = 0.000002
@@ -162,7 +162,7 @@ if __name__ == "__main__":
 
     X_new = torch.linspace(-0.5, -0.2, 20, dtype=torch.float64).reshape(-1, 1)
     Y_new = func(X_new, noise=True)
-    plt.scatter(X_train, Y_train[:, 0])
+    plt.scatter(X_train, Y_train)
     plt.savefig(os.path.join(save_dir, "classification_data.pdf"))
 
     # X_new_2 = torch.linspace(3.0, 4.0, 20, dtype=torch.float64).reshape(-1, 1)
@@ -227,12 +227,10 @@ if __name__ == "__main__":
 
     def plot_output(i):
         fig = plt.subplots(1, 1)
-        plt.scatter(
-            X_train, Y_train[:, i], color="k", marker="x", alpha=0.6, label="Data"
-        )
+        plt.scatter(X_train, Y_train, color="k", marker="x", alpha=0.6, label="Data")
         plt.plot(
             X_test[:, 0],
-            func(X_test, noise=False)[:, i],
+            func(X_test, noise=False),
             color="b",
             label=r"$f_{true}(\cdot)$",
         )

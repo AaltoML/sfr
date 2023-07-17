@@ -6,9 +6,15 @@ import numpy as np
 import src
 import torch
 import torch.distributions as dists
+from experiments.sl.bnn_predictive.experiments.scripts.imgclassification import (
+    get_dataset,
+    get_model,
+)
 from experiments.sl.bnn_predictive.experiments.scripts.imginference import (
     get_quick_loader,
 )
+from experiments.sl.bnn_predictive.preds.datasets import UCIClassificationDatasets
+from experiments.sl.bnn_predictive.preds.models import SiMLP
 from netcal.metrics import ECE
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.dataset import Subset
@@ -88,10 +94,12 @@ def init_NN2GPSubset_with_gaussian_prior(
     )
 
 
-def train_val_split(ds_train: Dataset,
-                    ds_test: Dataset,
-                    val_from_test: bool = True, 
-                    val_split: float = 1/2):
+def train_val_split(
+    ds_train: Dataset,
+    ds_test: Dataset,
+    val_from_test: bool = True,
+    val_split: float = 1 / 2,
+):
     dataset = ds_test if val_from_test else ds_train
     len_ds = len(dataset)
     perm_ixs = torch.randperm(len_ds)
@@ -109,34 +117,117 @@ def train_val_split(ds_train: Dataset,
 
 @torch.no_grad()
 def compute_metrics(pred_fn, data_loader, device: str = "cpu") -> dict:
-    # def compute_metrics(pred_fn, ds_test, batch_size: int, device: str = "cpu") -> dict:
-    # Split the test data set into test and validation sets
-    # num_test = len(ds_test)
-    # perm_ixs = torch.randperm(num_test)
-    # val_ixs, test_ixs = perm_ixs[: int(num_test / 2)], perm_ixs[int(num_test / 2) :]
-    # ds_test = Subset(ds_test, test_ixs)
-    # test_loader = get_quick_loader(
-    #     DataLoader(ds_test, batch_size=batch_size), device=device
-    # )
-
-    # targets = torch.cat([y for x, y in data_loader], dim=0).numpy()
-    # targets = data_loader.dataset.targets.numpy()
-
     py, targets = [], []
     for x, y in data_loader:
-        py.append(pred_fn(x.to(device)))
+        p = pred_fn(x.to(device))
+        py.append(p)
         targets.append(y.to(device))
 
     targets = torch.cat(targets, dim=0).cpu().numpy()
     probs = torch.cat(py).cpu().numpy()
 
-    acc = (probs.argmax(-1) == targets).mean()
-    ece = ECE(bins=15).measure(probs, targets)
-    nll = (
-        -dists.Categorical(torch.Tensor(probs))
-        .log_prob(torch.Tensor(targets))
-        .mean()
-        .numpy()
-    )
+    if probs.shape[-1] == 1:
+        bernoulli = True
+    else:
+        bernoulli = False
+
+    if bernoulli:
+        y_pred = probs >= 0.5
+        acc = np.sum((y_pred[:, 0] == targets)) / len(probs)
+    else:
+        acc = (probs.argmax(-1) == targets).mean()
+    ece = ECE(bins=15).measure(probs, targets)  # TODO does this work for bernoulli?
+
+    if bernoulli:
+        dist = dists.Bernoulli(torch.Tensor(probs[:, 0]))
+    else:
+        dist = dists.Categorical(torch.Tensor(probs))
+    nll = -dist.log_prob(torch.Tensor(targets)).mean().numpy()
     metrics = {"acc": acc, "nll": nll, "ece": ece}
     return metrics
+
+
+def get_image_dataset(
+    name: str,
+    double: bool,
+    dir: str,
+    device: str,
+    debug: bool,
+    val_from_test: bool,
+    val_split: float,
+):
+    ds_train, ds_test = get_dataset(
+        dataset=name, double=double, dir=dir, device=device, debug=debug
+    )
+    output_dim = ds_train.K  # set network output dim
+    pixels = ds_train.pixels
+    channels = ds_train.channels
+    # Split train data set into train and validation
+    print("Original num train {}".format(len(ds_train)))
+    print("Original num test {}".format(len(ds_test)))
+    ds_train, ds_val, ds_test = train_val_split(
+        ds_train=ds_train,
+        ds_test=ds_test,
+        val_from_test=val_from_test,
+        val_split=val_split,
+    )
+    ds_train.K = output_dim
+    ds_train.output_dim = output_dim
+    ds_train.pixels = pixels
+    ds_train.channels = channels
+    print("Final num train {}".format(len(ds_train)))
+    print("Final num val {}".format(len(ds_val)))
+    print("Final num test {}".format(len(ds_test)))
+    return ds_train, ds_val, ds_test
+
+
+def get_uci_dataset(name: str, random_seed: int, dir: str, double: bool, **kwargs):
+    ds_train = UCIClassificationDatasets(
+        name,
+        random_seed=random_seed,
+        root=dir,
+        stratify=True,
+        train=True,
+        double=double,
+    )
+    ds_test = UCIClassificationDatasets(
+        name,
+        random_seed=random_seed,
+        root=dir,
+        stratify=True,
+        train=False,
+        valid=False,
+        double=double,
+    )
+    ds_val = UCIClassificationDatasets(
+        name,
+        random_seed=random_seed,
+        root=dir,
+        stratify=True,
+        train=False,
+        valid=True,
+        double=double,
+    )
+    if ds_train.C > 2:  # set network output dim
+        output_dim = ds_train.C
+    else:
+        output_dim = 1
+    # ds_train.K = output_dim
+    ds_train.output_dim = output_dim
+    return ds_train, ds_val, ds_test
+
+
+def get_image_network(name: str, ds_train, device: str):
+    network = get_model(model_name=name, ds_train=ds_train).to(device)
+    return network
+
+
+def get_uci_network(name, output_dim, ds_train, device: str):
+    network = SiMLP(
+        input_size=ds_train.data.shape[1],
+        output_size=output_dim,
+        n_layers=2,
+        n_units=50,
+        activation="tanh",
+    ).to(device)
+    return network

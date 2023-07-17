@@ -100,8 +100,8 @@ class SFR(nn.Module):
         indices = torch.randperm(num_data)[: self.num_inducing]
         self.Z = X_train[indices.to(X_train.device)].to(self.device)
 
-        # self.build_sfr_d()
-        self.build_sfr()
+        self.build_sfr_d()
+        # self.build_sfr()
         
 
     @torch.no_grad()
@@ -145,7 +145,7 @@ class SFR(nn.Module):
                 jitter=self.jitter,
             )
         logger.info("Finished calculating dual params")
-        self._predict_fn_d = predict_from_sparse_duals_d(
+        self._predict_fn_d = self.predict_from_sparse_duals_d(
             alpha_u=self.alpha_u,
             beta_u=self.beta_u,
             kernel=self.kernel,

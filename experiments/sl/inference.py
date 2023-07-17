@@ -277,7 +277,8 @@ def main(cfg: DictConfig):
         pred_fn = hydra.utils.instantiate(pred_cfg, model=model)
         print("Made pred fn")
         metrics = compute_metrics(
-            pred_fn=pred_fn, data_loader=test_loader, device=cfg.device
+            pred_fn=pred_fn, data_loader=test_loader, device=cfg.device,
+            inference_strategy=cfg.inference_strategy
         )
         print(f"Computed metrics {metrics}")
         if isinstance(model, laplace.BaseLaplace):

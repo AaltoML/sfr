@@ -241,7 +241,7 @@ def main(cfg: DictConfig):
         wandb.save("hydra")
 
     @torch.no_grad()
-    def map_pred_fn(x):
+    def map_pred_fn(x, idx=None):
         f = sfr.network(x)
         return sfr.likelihood.inv_link(f)
         # return torch.softmax(sfr.network(x.to(cfg.device)), dim=-1)

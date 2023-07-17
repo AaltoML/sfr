@@ -112,7 +112,7 @@ def train(cfg: TrainConfig):
     optimizer = torch.optim.Adam([{"params": sfr.parameters()}], lr=cfg.lr)
 
     @torch.no_grad()
-    def map_pred_fn(x):
+    def map_pred_fn(x, idx=None):
         f = sfr.network(x.to(cfg.device))
         return sfr.likelihood.inv_link(f)
         # return torch.softmax(sfr.network(x.to(cfg.device)), dim=-1)

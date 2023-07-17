@@ -7,7 +7,7 @@ from omegaconf import DictConfig
 def train(cfg: DictConfig):
     from experiments.sl.train import train
 
-    train(cfg)
+    return train(cfg)
 
 
 if __name__ == "__main__":

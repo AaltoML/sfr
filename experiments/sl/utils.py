@@ -116,10 +116,13 @@ def train_val_split(
 
 
 @torch.no_grad()
-def compute_metrics(pred_fn, data_loader, device: str = "cpu") -> dict:
+def compute_metrics(pred_fn, data_loader, device: str = "cpu", inference_strategy: str = "sfr") -> dict:
     py, targets = [], []
-    for x, y in data_loader:
-        p = pred_fn(x.to(device))
+    for idx, (x, y) in enumerate(data_loader):
+        if inference_strategy == "sfr":
+            p = pred_fn(x.to(device), idx)
+        else:
+            p = pred_fn(x.to(device), idx)
         py.append(p)
         targets.append(y.to(device))
 

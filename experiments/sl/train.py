@@ -187,6 +187,7 @@ def train(cfg: TrainConfig):
     # fname = "ckpt_dict.pt"
     # torch.save(state, os.path.join(run.dir, fname))
     # logger.info("Finished saving model and optimiser etc")
+    return run.dir
 
 
 if __name__ == "__main__":

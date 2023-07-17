@@ -278,7 +278,7 @@ def main(cfg: DictConfig):
         print("Made pred fn")
         metrics = compute_metrics(
             pred_fn=pred_fn, data_loader=test_loader, device=cfg.device,
-            inference_strategy=cfg.inference_strategy
+            inference_strategy=cfg.inference_strategy.name
         )
         print(f"Computed metrics {metrics}")
         if isinstance(model, laplace.BaseLaplace):
@@ -342,8 +342,8 @@ def sfr_pred(
     num_samples: int = 100,
 ):
     @torch.no_grad()
-    def pred_fn(x):
-        return model(x, pred_type=pred_type, num_samples=num_samples)[0]
+    def pred_fn(x, idx=None):
+        return model(x, idx, pred_type=pred_type, num_samples=num_samples)[0]
 
     return pred_fn
 

@@ -63,10 +63,11 @@ class SFR(nn.Module):
     def __call__(
         self,
         x: InputData,
+        idx=None, 
         pred_type: str = "gp",  # "gp" or "nn"
         num_samples: int = 100,
     ):
-        f_mean, f_var = self._predict_fn(x, full_cov=False)
+        f_mean, f_var = self._predict_fn(x, idx, full_cov=False)
         if pred_type in "nn":
             f_mean = self.network(x)
         if isinstance(self.likelihood, src.likelihoods.CategoricalLh):
@@ -100,12 +101,11 @@ class SFR(nn.Module):
         indices = torch.randperm(num_data)[: self.num_inducing]
         self.Z = X_train[indices.to(X_train.device)].to(self.device)
 
-        self.build_sfr_d()
-        # self.build_sfr()
+        self.build_sfr()
         
 
     @torch.no_grad()
-    def build_sfr_d(self):
+    def build_sfr(self):
         logger.info("Calculating dual params and building prediction fn...")
         if isinstance(self.prior, src.priors.Gaussian):
             delta = self.prior.delta
@@ -145,73 +145,12 @@ class SFR(nn.Module):
                 jitter=self.jitter,
             )
         logger.info("Finished calculating dual params")
-        self._predict_fn_d = self.predict_from_sparse_duals_d(
+        self._predict_fn = self.predict_from_sparse_duals(
             alpha_u=self.alpha_u,
             beta_u=self.beta_u,
             kernel=self.kernel,
             delta=delta,
             num_data=self.num_data,
-            Z=self.Z,
-            jitter=self.jitter,
-        )
-        logger.info("Finished building predict fn")
-
-
-    @torch.no_grad()
-    def build_sfr(self):
-        logger.info("Calculating dual params and building prediction fn...")
-        if isinstance(self.prior, src.priors.Gaussian):
-            delta = self.prior.delta
-        else:
-            raise NotImplementedError(
-                "what should delta be if not using Gaussian prior???"
-            )
-        self.kernel, self.kernel_single = build_ntk(
-            network=self.network,
-            num_data=self.num_data,
-            output_dim=self.output_dim,
-            delta=delta,
-        )
-
-        if self.dual_batch_size:
-            self.alpha_u, self.beta_u, self.Lambda_u = calc_sparse_dual_params_batch(
-                network=self.network,
-                train_loader=DataLoader(
-                    TensorDataset(*(self.train_data)),
-                    batch_size=self.dual_batch_size,
-                    shuffle=False,
-                ),
-                Z=self.Z,
-                likelihood=self.likelihood,
-                kernel=self.kernel_single,
-                jitter=self.jitter,
-                out_dim=self.output_dim,
-                device=self.device,
-            )
-        else:
-            self.alpha_u, self.beta_u, self.Lambda_u = calc_sparse_dual_params(
-                network=self.network,
-                train_data=self.train_data,
-                Z=self.Z,
-                kernel=self.kernel,
-                likelihood=self.likelihood,
-                jitter=self.jitter,
-            )
-
-        logger.info("Finished calculating dual params")
-
-        assert self.alpha_u.ndim == 2
-        assert self.beta_u.ndim == 3
-        assert self.alpha_u.shape[0] == self.output_dim
-        assert self.alpha_u.shape[1] == self.num_inducing
-        assert self.beta_u.shape[0] == self.output_dim
-        assert self.beta_u.shape[1] == self.num_inducing
-        assert self.beta_u.shape[2] == self.num_inducing
-
-        self._predict_fn = predict_from_sparse_duals(
-            alpha_u=self.alpha_u,
-            beta_u=self.beta_u,
-            kernel=self.kernel,
             Z=self.Z,
             jitter=self.jitter,
         )
@@ -228,8 +167,8 @@ class SFR(nn.Module):
         return f_mean
 
     @torch.no_grad()
-    def predict(self, x: TestInput) -> Tuple[FuncMean, FuncVar]:
-        f_mean, f_var = self._predict_fn(x, full_cov=False)
+    def predict(self, x: TestInput, idx=None) -> Tuple[FuncMean, FuncVar]:
+        f_mean, f_var = self._predict_fn(x, idx, full_cov=False)
         return self.likelihood(f_mean=f_mean, f_var=f_var)
 
     @torch.no_grad()
@@ -279,7 +218,7 @@ class SFR(nn.Module):
         )
 
         logger.info("Building predict fn...")
-        self._predict_fn = predict_from_sparse_duals(
+        self._predict_fn = self.predict_from_sparse_duals(
             alpha_u=self.alpha_u,
             beta_u=self.beta_u,
             kernel=self.kernel,
@@ -293,7 +232,7 @@ class SFR(nn.Module):
         return self.train_data[0].shape[0]
     
     @torch.no_grad()
-    def predict_from_sparse_duals_d(
+    def predict_from_sparse_duals(
         self,
         alpha_u: AlphaInducing,
         beta_u: BetaInducing,
@@ -349,7 +288,8 @@ class SFR(nn.Module):
                 Kxz = Kxz_cached[index].numpy()
 
             K, M, _ = Kzz.shape
-            f_mean = (Kxz @ alpha_u[..., None])[..., 0].T
+            tmp_torch_Kxz = torch.from_numpy(np.array(Kxz)).to(alpha_u.device)
+            f_mean = (tmp_torch_Kxz @ alpha_u[..., None])[..., 0].T
 
             if full_cov:
                 raise NotImplementedError
@@ -367,7 +307,7 @@ class SFR(nn.Module):
                     fvark = (Kxxk - (Amk ** 2).sum()) / delta / num_data + (Abk ** 2).sum()
                     fvarnp.append(fvark)
                 fvarnp = np.array(fvarnp)
-                fvar = torch.from_numpy(fvarnp.T).to(f_mean.device)
+                fvar = torch.from_numpy(fvarnp.T).to(self.device)
 
             return f_mean, fvar
 
@@ -459,67 +399,6 @@ def build_ntk(
         return K
 
     return ntk, single_output_ntk_contraction
-
-
-@torch.no_grad()
-def predict_from_sparse_duals(
-    alpha_u: AlphaInducing,
-    beta_u: BetaInducing,
-    kernel: NTK,
-    Z: InducingPoints,
-    jitter: float = 1e-3,
-):
-    Kzz = kernel(Z, Z)
-    output_dim = Kzz.shape[0]
-    Iz = (
-        torch.eye(Kzz.shape[-1], dtype=torch.float64)
-        .to(Z.device)[None, ...]
-        .repeat(output_dim, 1, 1)
-    )
-    Kzz += Iz * jitter
-    KzzplusBeta = (Kzz + beta_u) + Iz * jitter
-    assert beta_u.shape == Kzz.shape
-
-    K, M, _ = Kzz.shape
-    Kzznp = Kzz.detach().cpu().numpy()
-    KzzplusBetanp = KzzplusBeta.detach().cpu().numpy()
-    Lmnp = np.zeros_like(Kzznp)
-    Lbnp = np.zeros_like(KzzplusBetanp)
-
-
-    for k in range(K):
-        Lmnp[k], _ = cho_factor(Kzznp[k])
-        Lbnp[k], _ = cho_factor(KzzplusBetanp[k])
-
-    @torch.no_grad()
-    def predict(x, full_cov: bool = False) -> Tuple[OutputMean, OutputVar]:
-        Kxx = kernel(x, x, full_cov=full_cov)
-        Kxz = kernel(x, Z)
-
-        K, M, _ = Kzz.shape
-        f_mean = (Kxz @ alpha_u[..., None])[..., 0].T
-
-        if full_cov:
-            raise NotImplementedError
-        else:
-            fvarnp = []
-            for k in range(K):
-                Kxxk = Kxx[k].detach().cpu().numpy()
-                Kxzk = Kxz[k].detach().cpu().numpy()
-                Kzxk = Kxzk.T
-                # Note the first argument is a tuple that takes the result 
-                # from the cho_factor (by default lower=False, then (A, False) 
-                # is fed to cho_solve)
-                Amk = cho_solve((Lmnp[k], False), Kzxk)
-                Abk = cho_solve((Lbnp[k], False), Kzxk)
-                fvark = Kxxk - (Amk ** 2).sum() + (Abk ** 2).sum()
-                fvarnp.append(fvark)
-            fvarnp = np.array(fvarnp)
-            fvar = torch.from_numpy(fvarnp.T).to(f_mean.device)
-
-        return f_mean, fvar
-
-    return predict
 
 
 @torch.no_grad()

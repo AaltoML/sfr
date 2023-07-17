@@ -119,10 +119,10 @@ def train_val_split(
 def compute_metrics(pred_fn, data_loader, device: str = "cpu", inference_strategy: str = "sfr") -> dict:
     py, targets = [], []
     for idx, (x, y) in enumerate(data_loader):
-        if inference_strategy == "sfr":
+        if inference_strategy.startswith("sfr"):
             p = pred_fn(x.to(device), idx)
         else:
-            p = pred_fn(x.to(device), idx)
+            p = pred_fn(x.to(device))
         py.append(p)
         targets.append(y.to(device))
 

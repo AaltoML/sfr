@@ -1,7 +1,7 @@
 defaults:
   # Use slurm on cluster or local?
   # - inference_strategy: sfr
-  - inference_strategy: laplace
+  - inference_strategy: sfr
   # - pred_strategy: laplace
   - override hydra/launcher: submitit_local
   # - override hydra/launcher: slurm
@@ -20,7 +20,8 @@ defaults:
 # checkpoint: "./wandb/run-20230628_173218-qc5ijob9"
 # checkpoint: "wandb/run-20230605_160605-3b8gdq3l"
 # checkpoint: "./wandb/run-20230609_094409-p7xhdnny"
-checkpoint: "./wandb/run-20230713_182143-voioempg"
+# checkpoint: "./wandb/run-20230713_182143-voioempg"
+checkpoint: "./wandb/run-20230717_141052-ndx8hrpi/"
 
 delta_post_hoc: 1e-2
 

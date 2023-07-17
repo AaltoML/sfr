@@ -26,6 +26,9 @@ paper/main.pdf
 *.out
 *.envrc
 *.egg-info
+*.pkl
+*.err
+*.out
 
 .dir-locals.el
 

@@ -233,12 +233,15 @@ def main(cfg: DictConfig):
             config=OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True),
             dir=get_original_cwd(),  # don't nest wandb inside hydra dir
         )
-        # Save hydra configs with wandb (handles hydra's multirun dir)
-        shutil.copytree(
-            os.path.abspath(".hydra"),
-            os.path.join(os.path.join(get_original_cwd(), wandb.run.dir), "hydra"),
-        )
-        wandb.save("hydra")
+        try:
+            # Save hydra configs with wandb (handles hydra's multirun dir)
+            shutil.copytree(
+                os.path.abspath(".hydra"),
+                os.path.join(os.path.join(get_original_cwd(), wandb.run.dir), "hydra"),
+            )
+            wandb.save("hydra")
+        except FileExistsError:
+            pass
 
     @torch.no_grad()
     def map_pred_fn(x, idx=None):

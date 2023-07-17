@@ -197,9 +197,9 @@ def main(cfg: DictConfig):
     cfg.output_dim = ds_train.output_dim
 
     # Create data loaders
-    ds_train.data = ds_train.data.to(torch.double)
-    ds_val.data = ds_val.data.to(torch.double)
-    ds_test.data = ds_test.data.to(torch.double)
+    # ds_train.data = ds_train.data.to(torch.double)
+    # ds_val.data = ds_val.data.to(torch.double)
+    # ds_test.data = ds_test.data.to(torch.double)
     train_loader = DataLoader(dataset=ds_train, shuffle=True, batch_size=cfg.batch_size)
     val_loader = DataLoader(dataset=ds_val, shuffle=False, batch_size=cfg.batch_size)
     test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)
@@ -242,15 +242,9 @@ def main(cfg: DictConfig):
 
     @torch.no_grad()
     def map_pred_fn(x):
-        # x = x.to(torch.double).to(cfg.device)
-        print("here")
-        print(x)
-        print(type(x))
-        print(x.dtype)
         f = sfr.network(x)
         return sfr.likelihood.inv_link(f)
         # return torch.softmax(sfr.network(x.to(cfg.device)), dim=-1)
-
     map_metrics = compute_metrics(
         pred_fn=map_pred_fn, data_loader=test_loader, device=cfg.device
     )

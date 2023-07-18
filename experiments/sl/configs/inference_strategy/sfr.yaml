@@ -19,4 +19,8 @@ pred:
   - _target_: experiments.sl.inference.sfr_pred
     pred_type: "gp"
     num_samples: 100
-optimize_prior_precision_kwargs: null
+optimize_prior_precision_kwargs: 
+  method: 'grid' 
+  log_prior_prec_min: -10
+  log_prior_prec_max: 5
+  grid_size: 50

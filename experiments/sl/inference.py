@@ -21,11 +21,11 @@ from experiments.sl.bnn_predictive.experiments.scripts.imgclassification import 
 )
 from experiments.sl.utils import compute_metrics, set_seed_everywhere, train_val_split
 from hydra.utils import get_original_cwd
-from laplace.utils import get_nll, validate
+# from laplace.utils import get_nll, validate
 from omegaconf import DictConfig, OmegaConf
 from torch.utils.data import DataLoader
 
-
+'''
 def optimize_prior_precision_base(
     model,
     pred_type,
@@ -151,7 +151,7 @@ def _gridsearch(
         logger.info(f"result {result}\n")
         prior_precs.append(prior_prec)
     return prior_precs[np.argmin(results)]
-
+'''
 
 @hydra.main(version_base="1.3", config_path="./configs", config_name="inference")
 def main(cfg: DictConfig):
@@ -301,13 +301,12 @@ def main(cfg: DictConfig):
         #     **cfg.inference_strategy.optimize_prior_precision_kwargs,
         #     val_loader=val_loader
         # )
-
+        logger.info("Start post-hoc prior precision optimizaiton")
         for pred_cfg in cfg.inference_strategy.pred:
-            print(pred_cfg)
-            print(cfg.inference_strategy.optimize_prior_precision_kwargs)
-            # model.optimize_prior_precision(
-            optimize_prior_precision_base(
-                model=model,
+            logger.info(f"Post-hoc optimization for {pred_cfg}")
+            logger.debug(cfg.inference_strategy.optimize_prior_precision_kwargs)
+            model.optimize_prior_precision(
+                # model=model,
                 pred_type=pred_cfg.pred_type,
                 **cfg.inference_strategy.optimize_prior_precision_kwargs,
                 val_loader=val_loader,

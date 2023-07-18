@@ -379,7 +379,7 @@ class SFR(nn.Module):
                     logger.info(f"Prior prec {prior_prec} nll:{result}")
                 except RuntimeError:
                     result = np.inf 
-            results.append(result)
+                results.append(result)
             
             prior_precs.append(prior_prec)
         else:

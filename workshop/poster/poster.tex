@@ -27,7 +27,9 @@
 \usepackage{chronosys}
 \newcommand{\blue}[1]{\textcolor{aaltoblue}{#1}}
 \newcommand{\black}[1]{\textcolor{black}{#1}}
-\usepackage{color}
+%\usepackage{color}
+\usepackage{xcolor}         % colors
+
 
 % Array/table packages
 \usepackage{tabularx}
@@ -43,11 +45,118 @@
 % Custom error formatting
 %\newcommand{\val}[2]{ $#1$\textcolor{gray}{\tiny ${\pm}#2$}} 
 
+
+
+% Packages for bold math
 \usepackage{bm}
 \newcommand{\mathbold}[1]{\bm{#1}}
 \newcommand{\mbf}[1]{\mathbf{#1}}
 \renewcommand{\mid}{\,|\,}
-	
+
+
+% Variables
+\newcommand{\state}{\ensuremath{\mathbf{s}}}
+\newcommand{\noise}{\ensuremath{\bm\epsilon}}
+\newcommand{\discount}{\ensuremath{\gamma}}
+\newcommand{\inducingInput}{\ensuremath{\mathbf{Z}}}
+\newcommand{\inducingVariable}{\ensuremath{\mathbf{u}}}
+\newcommand{\dataset}{\ensuremath{\mathcal{D}}}
+\newcommand{\dualParam}[1]{\ensuremath{\bm{\lambda}_{#1}}}
+\newcommand{\meanParam}[1]{\ensuremath{\bm{\mu}_{#1}}}
+
+% Indexes
+\newcommand{\horizon}{\ensuremath{h}}
+\newcommand{\Horizon}{\ensuremath{H}}
+\newcommand{\numDataNew}{\ensuremath{N^{\text{new}}}}
+\newcommand{\numDataOld}{\ensuremath{N^{\text{old}}}}
+\newcommand{\numInducing}{\ensuremath{M}}
+
+% Domains
+\newcommand{\stateDomain}{\ensuremath{\mathcal{S}}}
+\newcommand{\actionDomain}{\ensuremath{\mathcal{A}}}
+\newcommand{\inputDomain}{\ensuremath{\mathbb{R}^{D}}}
+\newcommand{\outputDomain}{\ensuremath{\mathbb{R}^{C}}}
+\newcommand{\policyDomain}{\ensuremath{\Pi}}
+
+
+% Functions
+\newcommand{\rewardFn}{\ensuremath{r}}
+\newcommand{\transitionFn}{\ensuremath{f}}
+\newcommand{\latentFn}{\ensuremath{f}}
+
+\newcommand{\optimisticTransition}{\ensuremath{\hat{f}}}
+\newcommand{\optimisticTransitionMean}{\ensuremath{\mu_{\optimisticTransition}}}
+\newcommand{\optimisticTransitionCov}{\ensuremath{\mu_{\optimisticTransition}}}
+\newcommand{\optimisticTransitionSet}{\ensuremath{\mathcal{M}}}
+
+
+% Parameters
+% \newcommand{\weights}{\ensuremath{\bm\phi}}
+\newcommand{\weights}{\ensuremath{\mathbf{w}}}
+\newcommand{\valueFnParams}{\ensuremath{\psi}}
+\newcommand{\policyParams}{\ensuremath{\theta}}
+
+% Networks
+\newcommand{\transitionFnWithParams}{\ensuremath{\transitionFn_{\weights}}}
+\newcommand{\valueFn}{\ensuremath{\mathbf{Q}}}
+\newcommand{\stateValueFn}{\ensuremath{\mathbf{V}}}
+% \newcommand{\valueFn}{\ensuremath{\mathbf{Q}_{\valueFnParams}}}
+\newcommand{\policy}{\ensuremath{\pi}}
+\newcommand{\pPolicy}{\ensuremath{\pi_{\policyParams}}}
+
+% Math Macros
+\newcommand{\MB}{\mbf{B}}
+\newcommand{\MC}{\mbf{C}}
+\newcommand{\MZ}{\mbf{Z}}
+\newcommand{\MV}{\mbf{V}}
+\newcommand{\MX}{\mbf{X}}
+\newcommand{\MA}{\mbf{A}}
+\newcommand{\MK}{\mbf{K}}
+\newcommand{\MI}{\mbf{I}}
+\newcommand{\MH}{\mbf{H}}
+\newcommand{\T}{\top}
+\newcommand{\vzeros}{\mbf{0}}
+\newcommand{\vtheta}[0]{\mathbold{\theta}}
+\newcommand{\valpha}[0]{\mathbold{\alpha}}
+\newcommand{\vkappa}[0]{\mathbold{\kappa}}
+\newcommand{\vbeta}[0]{\mathbold{\beta}}
+\newcommand{\MBeta}[0]{\mathbold{B}}
+\newcommand{\vlambda}[0]{\mathbold{\lambda}}
+\newcommand{\diag}{\text{{diag}}}
+
+\newcommand{\vm}{\mbf{m}}
+\newcommand{\vz}{\mbf{z}}
+\newcommand{\vf}{\mbf{f}}
+\newcommand{\vu}{\mbf{u}}
+\newcommand{\vx}{\mbf{x}}
+\newcommand{\vy}{\mbf{y}}
+\newcommand{\vw}{\mbf{w}}
+\newcommand{\va}{\mbf{a}}
+
+\newcommand{\Jac}[2]{\mathcal{J}_{#1}(#2)}
+\newcommand{\JacT}[2]{\mathcal{J}_{#1}^\top(#2)}
+
+
+\newcommand{\GP}{\mathcal{GP}}
+\newcommand{\KL}[2]{\mathrm{D}_\textrm{KL} \dbar*{#1}{#2}}
+\newcommand{\MKzz}{\mbf{K}_{\mbf{z}\mbf{z}}}
+\newcommand{\MKzzc}{\mbf{K}_{\mbf{z}\mbf{z}, c}}
+\newcommand{\MKxx}{\mbf{K}_{\mbf{x}\mbf{x}}}
+\newcommand{\MKzx}{\mbf{K}_{\mbf{z}\mbf{x}}}
+\newcommand{\MKxz}{\mbf{K}_{\mbf{x}\mbf{z}}}
+\newcommand{\vkzi}{\mbf{k}_{\mbf{z}i}}
+\newcommand{\vkzic}{\mbf{k}_{\mbf{z}i,c}}
+\newcommand{\vkzs}{\mbf{k}_{\mbf{z}i}}
+\newcommand{\vk}{\mbf{k}}
+\newcommand{\MLambda}[0]{\mathbold{\Lambda}}
+\newcommand{\MSigma}[0]{\mathbold{\Sigma}}
+\newcommand{\N}{\mathrm{N}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\myexpect}{\mathbb{E}}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\newcommand{\Norm}{\mathcal{N}}
 
 % ====================
 % Lengths
@@ -103,22 +212,15 @@
 % ====================
 
 \begin{document}
-
 \begin{frame}[t]
 \begin{columns}[t]
 \begin{column}{2.05\colwidth}
 \begin{alertblock}{TL;DR}
-{\bf \alert{TODO: Rewrite}}
-  Deep neural networks are known to lack uncertainty estimates, struggle to incorporate new data, and suffer from catastrophic forgetting. We present a method that mitigates these issues by converting neural networks from weight-space to a low-rank function-space representation, via the so-called dual parameters. In contrast to previous work, our sparse representation captures the joint distribution over the entire data set, rather than only over a subset. This offers a compact and principled way of capturing uncertainty and enables us to incorporate new data without retraining whilst retaining predictive performance. We provide proof-of-concept demonstrations with the proposed approach for quantifying uncertainty in supervised learning on UCI benchmark tasks.
-
-%   \begin{itemize}
-%     \item We present \alert{our awesome method}, a novel and beautiful approach for something
-%     \item Other bullet
-%     \item Keep it short
-%   \end{itemize}
+Deep neural networks have limitations in \textit{estimating uncertainty}, \textit{incorporating new data}, and \textit{avoiding catastrophic forgetting}. To overcome these issues, we introduce a method that converts neural networks from weight-space to a \alert{\bf low-rank function-space} representation using \alert{\bf dual parameters}. Unlike previous methods, our approach, named \alert{\bf Sparse Function Representation (SFR)}, captures the \alert{\bf full joint distribution} of the entire dataset, not just a subset. This allows for a concise and reliable way of capturing uncertainty and facilitates the inclusion of new data without the need for retraining. We provide a proof-of-concept quantifying uncertainty for supervised learning tasks on UCI benchmark datasets.
+%{\bf \alert{TODO: Rewrite}}
+%  Deep neural networks are known to lack uncertainty estimates, struggle to incorporate new data, and suffer from catastrophic forgetting. We present a method that mitigates these issues by converting neural networks from weight-space to a low-rank function-space representation, via the so-called dual parameters. In contrast to previous work, our sparse representation captures the joint distribution over the entire data set, rather than only over a subset. This offers a compact and principled way of capturing uncertainty and enables us to incorporate new data without retraining whilst retaining predictive performance. We provide proof-of-concept demonstrations with the proposed approach for quantifying uncertainty in supervised learning on UCI benchmark tasks.
   \end{alertblock}\end{column}
 \end{columns}
-
 \begin{columns}[t]
 
 
@@ -174,23 +276,19 @@
     \node[font=\scriptsize\sc,color=white] at (p1-arr) {new data};   
   \end{tikzpicture}
   \end{figure}
-    \alert{\bf Regression w/ 2-layers MLP.} Left:~Predictions from the trained neural network. Middle:~Our approach summarizes all the training data with the help of a set of inducing points. The model captures the predictive mean and uncertainty, and (right) makes it possible to incorporate new data without retraining the model.
+    \alert{\bf Regression w/ 2-layers MLP.} 
+    Prediction from a trained neural network's predictions {\it (left)}, our approach using inducing points to summarize the training data {\it (middle)}. SFR captures the predictive mean and uncertainty, and can incorporate new data without retraining the model {\it (right)}.
    \end{minipage}\\[2cm]
 
-    
-  \begin{block}{Model \& Methods}
+  \begin{block}{Background: Function-space Representation of NN}
 
-  \heading{Sub-heading}
-  
   \begin{itemize}
-     \item Item here
-     \item Another item
-  \end{itemize}
-  
-  \heading{Another sub-heading}
-  
-  \begin{itemize}
-     \item Item here
+    \item In supervised learning, given a data set $\dataset = \{(\vx_{i} , \vy_{i})\}_{i=1}^{N}$, with input $\vx_i \in \inputDomain$ and output $\vy_i \in \outputDomain$ pairs, the weights $\weights \in \R^{P}$ of a neural network, $f_\mathbf{w}: \inputDomain \to \outputDomain$ (yet, to simplify the notation we restrict presentation to scalar output), are usually trained to minimize the (regularized) empirical risk,
+\begin{align} 
+  \weights^{*} =  \arg \min_{\weights} \mathcal{L}(\dataset,\weights) \nonumber
+     = \arg \min_{\weights} \textstyle\sum_{i=1}^{N} \ell(f_\weights(\mathbf{x}_{i}), y_i) + \delta \mathcal{R}(\weights).
+ \end{align}
+
      \item Another item
   \end{itemize}
 
@@ -201,18 +299,17 @@
 
 \begin{column}{\colwidth}
 \begin{minipage}{\textwidth}
+  % Colours
+  \definecolor{C0}{HTML}{DF6679}
+  \definecolor{C1}{HTML}{69A9CE}
 \begin{figure}[t]
   \centering
   % Set figure size
   \setlength{\figurewidth}{.31\textwidth}
   \setlength{\figureheight}{\figurewidth}
   %
-  % Colours
-  \definecolor{C0}{HTML}{DF6679}
-  \definecolor{C1}{HTML}{69A9CE}
-  %
   \begin{tikzpicture}[outer sep=0,inner sep=0]
-
+% This command wasn't working 
 %    \newcommand{\addfig}[2]{
 %    \begin{scope}
 %      \clip[rounded corners=3pt] ($(#1)+(-.5\figurewidth,-.5\figureheight)$) rectangle ++(\figurewidth,\figureheight);
@@ -253,26 +350,38 @@
     \node[font=\scriptsize,color=white] at (second-arr) {\normalsize$\bm\approx$};
          
     % Labels
-    \node[anchor=north, font=\tiny] at ($(banana-nn) + (0,-.55\figureheight)$) {Neural network prediction};
-    \node[anchor=north, font=\tiny] at ($(banana-nn2svgp) + (0,-.55\figureheight)$) {Sparse function-space representation};
-    \node[anchor=north, font=\tiny] at ($(banana-hmc) + (0,-.55\figureheight)$) {HMC result as baseline};      
+    \node[anchor=north, font=\footnotesize] at ($(banana-nn) + (0,-.55\figureheight)$) {Neural network prediction};
+    \node[anchor=north, font=\footnotesize] at ($(banana-nn2svgp) + (0,-.55\figureheight)$) {Sparse function-space representation};
+    \node[anchor=north, font=\footnotesize] at ($(banana-hmc) + (0,-.55\figureheight)$) {HMC result as baseline};      
     
   \end{tikzpicture}
-  \newcommand{\mycircle}{\protect\tikz[baseline=-.6ex]\protect\node[circle,inner sep=2pt,draw=black,fill=C0,opacity=.5]{};}
-  \newcommand{\mysquare}{\protect\tikz[baseline=-.6ex]\protect\node[inner sep=2.5pt,draw=black,fill=C1,opacity=.5]{};}
-  \newcommand{\myinducing}{\protect\tikz[baseline=-.7ex]\protect\node[circle,inner sep=1.5pt,draw=black,fill=black]{};}
-\end{figure}
-\alert{\textbf{Uncertainty quantification for classification}}  (\mysquare~vs.~\mycircle). %We convert the trained neural network (left) to a sparse GP model that summarizes all data onto a sparse set of inducing points~\myinducing (middle). This gives similar behaviour as running full Hamiltonian Monte Carlo (HMC) on the original neural network model weights (right). Marginal uncertainty depicted by colour intensity.
-\end{minipage}\\[2cm]
-  
-  \begin{block}{Background}
 
+\end{figure}
+  \newcommand{\mycircle}{\protect\tikz[baseline=-.6ex]\protect\node[circle,inner sep=5pt,draw=black,fill=C0,opacity=.5]{};}
+  \newcommand{\mysquare}{\protect\tikz[baseline=-.6ex]\protect\node[inner sep=8pt,draw=black,fill=C1,opacity=.5]{};}
+  \newcommand{\myinducing}{\protect\tikz[baseline=-.7ex]\protect\node[circle,inner sep=5pt,draw=black,fill=black]{};}
+\alert{\bf Uncertainty quantification for classification (\,\mysquare~vs.~\mycircle).} We convert the trained neural network {\it (left)} to a sparse GP model with a set of inducing points~\myinducing\ {\it(middle)}. Results show a similar behaviour as running full Hamiltonian Monte Carlo (HMC) on the original NN model weights {\it (right)}. Marginal uncertainty depicted by colour intensity.
+\end{minipage}\\[1.5cm]
+
+ \begin{block}{SFR: Sparse Function Representation}
+
+  \heading{Dual parameterization}
+  
+  \begin{itemize}
+     \item Item here
+     \item Another item
+  \end{itemize}
+  
+  \heading{Sparse Neural Network GP}
+  
   \begin{itemize}
      \item Item here
      \item Another item
   \end{itemize}
 
   \end{block}
+
+
 
 \end{column}
 

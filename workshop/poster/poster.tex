@@ -186,17 +186,17 @@
 \title{Sparse Function-space Representation \\ of Neural Networks}
 
 \author{%
-  Aidan Scannell\textsuperscript{\star}\,\inst{1}\,\inst{2} \;
-  Riccardo Mereu\textsuperscript{\star}\,\inst{1} \;
+  Aidan Scannell\textsuperscript{\star}\,\inst{1}\,\inst{2} \quad
+  Riccardo Mereu\textsuperscript{\star}\,\inst{1} \quad
   Paul Chang\,\inst{1} \\
-  Ella Tamir\,\inst{1}\;
-  Joni Pajarinen\,\inst{1}\;
+  Ella Tamir\,\inst{1}\quad
+  Joni Pajarinen\,\inst{1}\quad
   Arno Solin\,\inst{1}
 }
 
 %\author{Your Name\inst{1} ~~ Collaborator Name\inst{2} ~~ Arno Solin\inst{1}}
 
-\institute[shortinst]{ \inst{1}Aalto University \qquad \inst{2} Finnish Center for Artificial Intelligence}
+\institute[shortinst]{ \inst{1}Aalto University \qquad \inst{2}Finnish Center for Artificial Intelligence}
 
 
 % ====================
@@ -215,8 +215,8 @@
 \begin{frame}[t]
 \begin{columns}[t]
 \begin{column}{2.05\colwidth}
-\begin{alertblock}{TL;DR}
-Deep neural networks have limitations in \textit{estimating uncertainty}, \textit{incorporating new data}, and \textit{avoiding catastrophic forgetting}. To overcome these issues, we introduce a method that converts neural networks from weight-space to a \alert{\bf low-rank function-space} representation using \alert{\bf dual parameters}. Unlike previous methods, our approach, named \alert{\bf Sparse Function Representation (SFR)}, captures the \alert{\bf full joint distribution} of the entire dataset, not just a subset. This allows for a concise and reliable way of capturing uncertainty and facilitates the inclusion of new data without the need for retraining. We provide a proof-of-concept quantifying uncertainty for supervised learning tasks on UCI benchmark datasets.
+\begin{alertblock}{Summary}
+Deep neural networks have limitations in \textit{estimating uncertainty}, \textit{incorporating new data}, and \textit{avoiding catastrophic forgetting}. To overcome these issues, we introduce a method that converts neural networks from weight-space to a \alert{\bf low-rank function-space} representation using \alert{\bf dual parameters}. Unlike previous methods, our approach, named \alert{\bf Sparse Function Representation (SFR)}, captures the \alert{\bf full joint distribution} of the entire data set, not just a subset. This allows for a concise and reliable way of capturing uncertainty and facilitates the inclusion of new data without the need for retraining. We provide a proof-of-concept quantifying uncertainty for supervised learning tasks on UCI benchmark data sets.
 %{\bf \alert{TODO: Rewrite}}
 %  Deep neural networks are known to lack uncertainty estimates, struggle to incorporate new data, and suffer from catastrophic forgetting. We present a method that mitigates these issues by converting neural networks from weight-space to a low-rank function-space representation, via the so-called dual parameters. In contrast to previous work, our sparse representation captures the joint distribution over the entire data set, rather than only over a subset. This offers a compact and principled way of capturing uncertainty and enables us to incorporate new data without retraining whilst retaining predictive performance. We provide proof-of-concept demonstrations with the proposed approach for quantifying uncertainty in supervised learning on UCI benchmark tasks.
   \end{alertblock}\end{column}
@@ -228,54 +228,55 @@ Deep neural networks have limitations in \textit{estimating uncertainty}, \texti
 
 \begin{column}{\colwidth}
   \begin{minipage}{\textwidth}
-  	\begin{figure}[t]
-    \pgfplotsset{axis on top,scale only axis,width=\figurewidth,height=\figureheight, ylabel near ticks,ylabel style={yshift=-2pt},y tick label style={rotate=90},legend style={nodes={scale=1., transform shape}},tick label style={font=\tiny,scale=1}}
+    \vspace*{-26pt}
+  	%\begin{figure}[t]
+    \pgfplotsset{axis on top,scale only axis,width=\figurewidth,height=\figureheight, ylabel near ticks,ylabel style={yshift=0pt},xlabel style={yshift=-4pt},y tick label style={rotate=90},legend style={nodes={scale=.8, transform shape}},tick label style={font=\footnotesize},xtick={0,.4,.8,1.2,1.6,2.}}
   \pgfplotsset{xlabel={Input, $x$},axis line style={rounded corners=2pt}}
   % Set figure 
-  \setlength{\figurewidth}{.28\textwidth}
-  \setlength{\figureheight}{\figurewidth}
+  \setlength{\figurewidth}{.4\textwidth}
+  \setlength{\figureheight}{.31\textwidth}
   %
   \def\inducing{\large Sparse inducing points}
   %
-  \begin{subfigure}[c]{.34\textwidth}
+  \begin{minipage}[c]{.45\textwidth}
     \raggedleft
     \pgfplotsset{ylabel={Output, $y$}}
     \input{./fig/regression-nn.tex}%
-  \end{subfigure}
+  \end{minipage}
   \hfill  
-  \begin{subfigure}[c]{.01\textwidth}
+  \begin{minipage}[c]{.03\textwidth}
     \centering
     \tikz[overlay,remember picture]\node(p0){};
-  \end{subfigure}  
+  \end{minipage}  
   \hfill
-  \begin{subfigure}[c]{.28\textwidth}
+  \begin{minipage}[c]{.45\textwidth}
     \raggedleft
     \pgfplotsset{yticklabels={,,},ytick={\empty}}
     \input{./fig/regression-nn2svgp.tex}%
-  \end{subfigure}
-  \hfill  
-  \begin{subfigure}[c]{.01\textwidth}
-    \centering
-    \tikz[overlay,remember picture]\node(p1){};
-  \end{subfigure}  
-  \hfill
-  \begin{subfigure}[c]{.28\textwidth}
-    \raggedleft
-    \pgfplotsset{yticklabels={,,},ytick={\empty}}        
-    \input{./fig/regression-update.tex}%
-  \end{subfigure}
+  \end{minipage}
+%  \hfill  
+%  \begin{subfigure}[c]{.01\textwidth}
+%    \centering
+%    \tikz[overlay,remember picture]\node(p1){};
+%  \end{subfigure}  
+%  \hfill
+%  \begin{subfigure}[c]{.28\textwidth}
+%    \raggedleft
+%    \pgfplotsset{yticklabels={,,},ytick={\empty}}        
+%    \input{./fig/regression-update.tex}%
+%  \end{subfigure}
   % 
   \begin{tikzpicture}[remember picture,overlay]
       % Arrow style
-    \tikzstyle{myarrow} = [draw=black!80, single arrow, minimum height=14mm, minimum width=2pt, single arrow head extend=4pt, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
+    \tikzstyle{myarrow} = [draw=black!80, single arrow, minimum height=3em, minimum width=3pt, single arrow head extend=6pt, fill=black!80, anchor=center, rotate=0, inner sep=10pt, rounded corners=1pt]
     % Arrows
-    \node[myarrow] (p0-arr) at ($(p0) + (1em,1.5em)$) {};
-    \node[myarrow] (p1-arr) at ($(p1) + (1em,1.5em)$) {};
+    \node[myarrow] (p0-arr) at ($(p0) + (1.2em,1.5em)$) {};
+    %\node[myarrow] (p1-arr) at ($(p1) + (1em,1.5em)$) {};
     % Arrow labels
-    \node[font=\scriptsize\sc,color=white] at (p0-arr) {\our};
-    \node[font=\scriptsize\sc,color=white] at (p1-arr) {new data};   
+    \node[font=\scriptsize\sc,color=white,scale=.8] at (p0-arr) {\our};
+    %\node[font=\scriptsize\sc,color=white] at (p1-arr) {new data};   
   \end{tikzpicture}
-  \end{figure}
+  %\end{figure}
     \alert{\bf Regression w/ 2-layers MLP.} 
     Prediction from a trained neural network's predictions {\it (left)}, our approach using inducing points to summarize the training data {\it (middle)}. SFR captures the predictive mean and uncertainty, and can incorporate new data without retraining the model {\it (right)}.
    \end{minipage}\\[2cm]
@@ -409,8 +410,8 @@ Deep neural networks have limitations in \textit{estimating uncertainty}, \texti
 \resizebox{0.9\textwidth}{!}{
 \begin{tabular}{llllllll}
 \toprule
-model & BNN & GLM & GP Subset (GP) & GP Subset (NN) & NN MAP & SFR (GP) & SFR (NN) \\
-dataset &  &  &  &  &  &  &  \\
+Model & BNN & GLM & GP Subset (GP) & GP Subset (NN) & NN MAP & SFR (GP) & SFR (NN) \\
+Data set &  &  &  &  &  &  &  \\
 \midrule
 Glass & 0.9562 $\pm$ 0.2649 & 0.8966 $\pm$ 0.1424 & 1.5108 $\pm$ 0.0367 & 1.1420 $\pm$ 0.0738 & 1.8350 $\pm$ 0.6147 & 1.3709 $\pm$ 0.0375 & 1.0922 $\pm$ 0.1363 \\
 Waveform & 0.2693 $\pm$ 0.0310 & 0.2676 $\pm$ 0.0227 & 0.2702 $\pm$ 0.0192 & 0.2670 $\pm$ 0.0162 & 0.2670 $\pm$ 0.0162 & 0.2657 $\pm$ 0.0163 & 0.2670 $\pm$ 0.0162 \\

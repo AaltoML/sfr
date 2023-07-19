@@ -357,7 +357,7 @@ def la_pred(
     num_samples: int = 100,  # num_samples for link_approx="mc"
 ):
     @torch.no_grad()
-    def pred_fn(x):
+    def pred_fn(x, idx=None):
         return model(
             x, pred_type=pred_type, link_approx=link_approx, n_samples=num_samples
         )

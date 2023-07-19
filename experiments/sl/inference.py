@@ -197,9 +197,9 @@ def main(cfg: DictConfig):
     cfg.output_dim = ds_train.output_dim
 
     # Create data loaders
-    # ds_train.data = ds_train.data.to(torch.double)
-    # ds_val.data = ds_val.data.to(torch.double)
-    # ds_test.data = ds_test.data.to(torch.double)
+    ds_train.data = ds_train.data.to(torch.double)
+    ds_val.data = ds_val.data.to(torch.double)
+    ds_test.data = ds_test.data.to(torch.double)
     train_loader = DataLoader(dataset=ds_train, shuffle=True, batch_size=cfg.batch_size)
     val_loader = DataLoader(dataset=ds_val, shuffle=False, batch_size=cfg.batch_size)
     test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)

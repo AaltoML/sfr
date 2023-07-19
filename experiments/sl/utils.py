@@ -215,6 +215,19 @@ def get_uci_dataset(name: str, random_seed: int, dir: str, double: bool, **kwarg
         output_dim = ds_train.C
     else:
         output_dim = 1
+
+    # always use Softmax instead of Bernoulli
+    output_dim = ds_train.C
+    if name in ["australian", "breast_cancer", "ionosphere"]:
+        # ds_train.targets = ds_train.targets.to(torch.double)
+        # ds_val.targets = ds_val.targets.to(torch.double)
+        # ds_test.targets = ds_test.targets.to(torch.double)
+        ds_train.targets = ds_train.targets.long()
+        ds_val.targets = ds_val.targets.long()
+        ds_test.targets = ds_test.targets.long()
+
+    print(f"output_dim={output_dim}")
+    print(f"ds_train.C={ds_train.C}")
     # ds_train.K = output_dim
     ds_train.output_dim = output_dim
     return ds_train, ds_val, ds_test

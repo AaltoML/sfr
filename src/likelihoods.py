@@ -124,12 +124,12 @@ class CategoricalLh(Likelihood):
             # raise NotImplementedError
             # dist = Normal(f_mean, torch.sqrt(f_var.clamp(10 ** (-32))))
             # print("f_mean {}".format(f_mean.shape))
-            
+
             # print("f_var {}".format(f_var.shape))
             # logger.info(
             #     f"f_var: num_el {f_var.numel()} - zero el {(f_var < 0).sum().item()}"
             # )
-            
+
             dist = Normal(f_mean, torch.sqrt(f_var.clamp(10 ** (-32))))
             # print("made dist")
             logit_samples = dist.sample((num_samples,))
@@ -176,4 +176,7 @@ class CategoricalLh(Likelihood):
         return torch.nn.functional.softmax(f, dim=-1)
 
     def nn_loss(self, f: FuncData, y: OutputData):
+        # print("here")
+        # print(f.dtype)
+        # print(y.dtype)
         return torch.nn.CrossEntropyLoss(reduction="mean")(f, y)

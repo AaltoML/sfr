@@ -10,6 +10,9 @@
 \usepackage[T1]{fontenc}
 \usepackage{lmodern}
 \usepackage[size=a1,orientation=portrait,scale=1.4]{beamerposter}
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{amsmath}
+\usepackage{mathtools}
 \usetheme{aalto}
 \usecolortheme{aalto}
 \usepackage{graphicx}
@@ -213,6 +216,8 @@
 
 \begin{document}
 \begin{frame}[t]
+
+
 \begin{columns}[t]
 \begin{column}{2.05\colwidth}
 \begin{alertblock}{Summary}
@@ -285,19 +290,38 @@ Deep neural networks have limitations in \textit{estimating uncertainty}, \texti
     Prediction from a trained neural network's predictions {\it (left)}, our approach using inducing points to summarize the training data {\it (middle)}. SFR captures the predictive mean and uncertainty, and can incorporate new data without retraining the model {\it (right)}.
    \end{minipage}\\[2cm]
 
-  \begin{block}{Background: Function-space Representation of NN}
-
+  \begin{block}{Background: NN's Function-space Representation}
+  \alert{Inputs} in a supervised setting for NNs $f_\mathbf{w}: \inputDomain \to \outputDomain$:\
   \begin{itemize}
-    \item In supervised learning, given a data set $\dataset = \{(\vx_{i} , \vy_{i})\}_{i=1}^{N}$, with input $\vx_i \in \inputDomain$ and output $\vy_i \in \outputDomain$ pairs, the weights $\weights \in \R^{P}$ of a neural network, $f_\mathbf{w}: \inputDomain \to \outputDomain$ (yet, to simplify the notation we restrict presentation to scalar output), are usually trained to minimize the (regularized) empirical risk,
+  \item $\dataset = \{(\vx_{i} , \vy_{i})\}_{i=1}^{N}$, a data set w/ input $\vx_i \in \inputDomain$ and output $\vy_i \in \outputDomain$;
+  \item $\weights \in \R^{P}$, the initial weights of the neural network.
+  \end{itemize}
+\alert{Goal: }
+  minimize the empirical (regularized) risk loss function:
 \begin{align} 
   \weights^{*} =  \arg \min_{\weights} \mathcal{L}(\dataset,\weights) \nonumber
      = \arg \min_{\weights} \textstyle\sum_{i=1}^{N} \ell(f_\weights(\mathbf{x}_{i}), y_i) + \delta \mathcal{R}(\weights).
  \end{align}
+\alert{Output:} $\weights^*$, the Maximum A-Posteriori (MAP) weights of the NN.\\[0.5cm]
 
-     \item Another item
-  \end{itemize}
-
-  \end{block}
+\alert{How to capture distribution over NN model functions?}	\\
+Use their first two moments, obtaining a Gaussian process with a \alert{mean function $\mu(\cdot)$} and a \alert{covariance function $\kappa(\cdot,\cdot)$} (or kernel). \\
+{\it For GPs}, linear approximations in weight space lead to function-space equivalent approximations:
+\begin{equation*}
+	f_\weights(\vx) \approx 
+\phi^\top\!(\vx) \, \vw \quad\implies\quad \mu(\vx) = 0 \quad \text{and} \quad \kappa(\vx, \vx') = \frac{1}{\delta} \, \phi^\T\!(\vx) \, \phi(\vx')
+\end{equation*}\\
+{\it For NNs}, we can use the Laplace-GGN approximation to get a linear model of the neural network at the MAP as:
+\begin{equation*}
+	f_{\weights^*}(\vx) \approx \Jac{\weights_*}{\vx} \, \weights \implies   \mu(\vx) =  0 \quad \text{and} \quad
+  \kappa(\vx, \vx')
+  = \frac{1}{\delta} \, \Jac{\weights^*}{\vx} \, \JacT{\weights^*}{\vx'}, 
+\end{equation*}
+where $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{C \times P}$ is the Jacobian at $\weights^*$.
+%\begin{itemize}
+%	\item Maximum a-posteriori 
+%\end{itemize}
+%  \end{block}
 \end{column}
 
 \separatorcolumn

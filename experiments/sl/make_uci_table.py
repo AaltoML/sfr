@@ -25,12 +25,21 @@ from hydra.utils import get_original_cwd
 from omegaconf import DictConfig, OmegaConf
 from torch.utils.data import DataLoader
 
+COLUMNS_TITLES = [
+    "NN MAP",
+    "BNN",
+    "GLM",
+    "GP Subset (GP)",
+    "GP Subset (NN)",
+    "SFR (GP)",
+    "SFR (NN)",
+]
 
 NUM_SAMPLES = 100
 num_inducing = 64
 
 posthoc_prior_opt = False
-# posthoc_prior_opt = True
+posthoc_prior_opt = True
 
 
 # global initialization
@@ -70,11 +79,11 @@ def make_uci_table(cfg: DictConfig):
         "breast_cancer_uci",
         "ionosphere_uci",
         # MULTI CLASS
-        "satellite_uci",
-        "vehicle_uci",
-        "digits_uci",
-        "waveform_uci",
         "glass_uci",
+        "vehicle_uci",
+        "waveform_uci",
+        "digits_uci",
+        "satellite_uci",
     ]:
         cfg = compose(config_name="train", overrides=[f"+experiment={dataset_name}"])
         for experiment, random_seed in enumerate([42, 100]):
@@ -166,7 +175,7 @@ def make_uci_table(cfg: DictConfig):
 
             # wandb.log({"NLL": tbl})
             df = pd.DataFrame(data)
-            wandb.log({"NLL": wandb.Table(data=df)})
+            wandb.log({"NLPD raw": wandb.Table(data=df)})
             print(df)
 
             # Calculate mean and 95% confidence interval for each combination of dataset and model
@@ -191,117 +200,26 @@ def make_uci_table(cfg: DictConfig):
 
             # Function to determine if an element should be bolded based on the paired t-test
             def bold_if_significant(row):
-                return f"{row['mean']:.4f} $\\pm$ {((row['upper_bound'] - row['lower_bound']) / 2):.4f}"
+                return f"${row['mean']:.4f} \\pm {(row['std']):.4f}$"
+                # return f"{row['mean']:.4f} $\\pm$ {((row['upper_bound'] - row['lower_bound']) / 2):.4f}"
 
             # Apply the function to the DataFrame to create the final LaTeX table
             table_df["mean_conf_interval"] = table_df.apply(bold_if_significant, axis=1)
-            wandb.log({"NLL-interval": wandb.Table(data=table_df)})
+            wandb.log({"NLPD with confidence intervals": wandb.Table(data=table_df)})
 
             # Pivot the DataFrame to obtain the desired table format
             latex_table = table_df.pivot(
                 index="dataset", columns="model", values="mean_conf_interval"
             )
-            wandb.log({"NLL-latex": wandb.Table(data=latex_table)})
+            latex_table = latex_table.reindex(columns=COLUMNS_TITLES)
+            wandb.log({"NLPD paper": wandb.Table(data=latex_table)})
+
+            with open("uci_table.tex", "w") as file:
+                file.write(latex_table.to_latex(escape=False))
+                wandb.save("uci_table.tex")
 
             # Print the LaTeX table
             print(latex_table.to_latex(escape=False))
-
-        # df_new = pd.DataFrame(
-        #     {
-        #         "dataset": [dataset_name.split("_")[0]],
-        #         "NN MAP": [map_nll],
-        #         "BNN": [la_nlls["bnn"]],
-        #         "GLM": [la_nlls["glm"]],
-        #         # "SFR (GP)": [1],
-        #         # "SFR (NN)": [1],
-        #         "SFR (GP)": [sfr_nlls["gp"]],
-        #         "SFR (NN)": [sfr_nlls["nn"]],
-        #         "GP Subset (GP)": [gp_nlls["gp"]],
-        #         "GP Subset (NN)": [gp_nlls["nn"]],
-        #     },
-        #     columns=[
-        #         "dataset",
-        #         "NN-MAP",
-        #         "BNN",
-        #         "GLM",
-        #         "SFR (GP)",
-        #         "SFR (NN)",
-        #         "GP Subset (GP)",
-        #         "GP Subset (NN)",
-        #     ],
-        # )
-        # print(df_new)
-        # try:
-        #     df = pd.concat([df, df_new])
-        # except:
-        #     df = df_new
-        # print(df)
-
-        # stats = df.groupby(["dataset"]).apply(
-        #     lambda x: "${0:.4f} \pm {0:.4f}$".format(np.mean(x), np.std(x))
-        # )
-        # print("stats")
-        # print(stats)
-        # print(stats.to_latex())
-        # dfs.append(
-        # pd.DataFrame(
-        #     {
-        #         "dataset": [dataset_name.split("_")[0]],
-        #         "NN MAP": [map_nll],
-        #         "BNN": [la_nlls["bnn"]],
-        #         "GLM": [la_nlls["glm"]],
-        #         # "SFR (GP)": [1],
-        #         # "SFR (NN)": [1],
-        #         "SFR (GP)": [sfr_nlls["gp"]],
-        #         "SFR (NN)": [sfr_nlls["nn"]],
-        #         "GP Subset (GP)": [gp_nlls["gp"]],
-        #         "GP Subset (NN)": [gp_nlls["nn"]],
-        #     },
-        #     columns=[
-        #         "dataset",
-        #         "NN-MAP",
-        #         "BNN",
-        #         "GLM",
-        #         "SFR (GP)",
-        #         "SFR (NN)",
-        #         "GP Subset (GP)",
-        #         "GP Subset (NN)",
-        #     ],
-        # )
-        # )
-
-        # for inference_name in [
-        #     # "laplace",
-        #     "sfr",
-        #     # "gp",
-        #     # "gp-subset",
-        #     # "gp-subset-nn",
-        #     # "sfr-gp",
-        #     # "sfr-nn",
-        # ]:
-        # print(run_dir)
-        # run_dir = os.path.split(run_dir)[0]
-        # # print(run_dir)
-        # inf_cfg = compose(
-        #     config_name="inference",
-        #     overrides=[
-        #         # f"+experiment={dataset_name}",
-        #         f"inference_strategy={inference_name}",
-        #         f"inference_strategy.model.num_inducing=512",
-        #         f"++checkpoint='{run_dir}'",
-        #     ],
-        #     # return_hydra_config=True,
-        # )
-        # print(OmegaConf.to_yaml(inf_cfg))
-        # print("inf_cfg.checkpoint")
-        # print(inf_cfg.checkpoint)
-        # results = inference(inf_cfg)
-        # print("FINISHED laplace")
-    # my_table = wandb.Table(
-    # columns=["a", "b"],
-    # data=[["a1", "b1"], ["a2", "b2"]]
-    # )
-    # run.log({"Table Name": my_table})
 
 
 def calc_map_nll(sfr, test_loader, device):

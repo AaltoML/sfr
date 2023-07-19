@@ -5,10 +5,12 @@ import experiments
 import hydra
 import laplace
 import numpy as np
+import omegaconf
 import pandas as pd
 import scipy as sp
 import src
 import torch
+import wandb
 from experiments.sl.cluster_train import train
 from experiments.sl.inference import main as inference
 from experiments.sl.inference import sfr_pred
@@ -28,36 +30,51 @@ NUM_SAMPLES = 100
 num_inducing = 64
 
 posthoc_prior_opt = False
-posthoc_prior_opt = True
-
-data = {
-    "dataset": [],
-    "model": [],
-    "experiment": [],
-    "result": [],
-}  # used to make pd.DataFrame
+# posthoc_prior_opt = True
 
 
 # global initialization
 # initialize(version_base=None, config_path="./configs", job_name="make_uci_table")
 @hydra.main(version_base="1.3", config_path="./configs", config_name="train")
 def make_uci_table(cfg: DictConfig):
+    # Data dictionary used to make pd.DataFrame
+    data = {"dataset": [], "model": [], "experiment": [], "result": []}
+    # tbl = wandb.Table(data=df)
+    tbl = wandb.Table(columns=["dataset", "model", "experiment", "result"])
+
     def add_data(model_name, nll):
-        data["dataset"].append(dataset_name.replace("_uci", "").title())
+        "Add NLL to data dict and wandb table"
+        dataset = dataset_name.replace("_uci", "").title()
+        data["dataset"].append(dataset)
         data["model"].append(model_name)
         data["experiment"].append(experiment)
         data["result"].append(nll)
+        tbl.add_data(dataset, model_name, experiment, nll)
         return data
 
+    # Init Weight and Biases
+    run = wandb.init(
+        project="uci-table",
+        name=cfg.wandb.run_name,
+        # group=cfg.wandb.group,
+        # tags=cfg.wandb.tags,
+        # config=omegaconf.OmegaConf.to_container(
+        #     cfg, resolve=True, throw_on_missing=True
+        # ),
+        dir=get_original_cwd(),  # don't nest wandb inside hydra dir
+    )
+
     for dataset_name in [
+        # BINARY
+        "australian_uci",
+        "breast_cancer_uci",
+        "ionosphere_uci",
+        # MULTI CLASS
+        "satellite_uci",
+        "vehicle_uci",
+        "digits_uci",
         "waveform_uci",
-        # "australian_uci",
-        # "breast_cancer_uci",
-        # "digits_uci",
         "glass_uci",
-        # "ionosphere_uci",
-        # "satellite_uci",
-        # "vehicle_uci",
     ]:
         cfg = compose(config_name="train", overrides=[f"+experiment={dataset_name}"])
         for experiment, random_seed in enumerate([42, 100]):
@@ -74,6 +91,18 @@ def make_uci_table(cfg: DictConfig):
             ds_train.data = ds_train.data.to(torch.double)
             ds_val.data = ds_val.data.to(torch.double)
             ds_test.data = ds_test.data.to(torch.double)
+            ds_train.targets = ds_train.targets.long()
+            ds_val.targets = ds_val.targets.long()
+            ds_test.targets = ds_test.targets.long()
+            # if dataset_name in [
+            #     "australian_uci",
+            #     "breast_cancer_uci",
+            #     "ionosphere_uci",
+            # ]:
+            #     ds_train.targets = ds_train.targets.to(torch.double)
+            #     ds_val.targets = ds_val.targets.to(torch.double)
+            #     ds_test.targets = ds_test.targets.to(torch.double)
+
             cfg.output_dim = ds_train.output_dim
             sfr = train(cfg)  # Train the NN
 
@@ -111,6 +140,7 @@ def make_uci_table(cfg: DictConfig):
                 output_dim=ds_train.output_dim,
                 delta=sfr.prior.delta,  # TODO how to set this?
                 train_loader=train_loader,
+                val_loader=val_loader,
                 test_loader=test_loader,
                 num_inducing=num_inducing,
                 device=cfg.device,
@@ -134,7 +164,9 @@ def make_uci_table(cfg: DictConfig):
             data = add_data(model_name="GLM", nll=la_nlls["glm"])
             print(f"la_nlls {la_nlls}")
 
+            # wandb.log({"NLL": tbl})
             df = pd.DataFrame(data)
+            wandb.log({"NLL": wandb.Table(data=df)})
             print(df)
 
             # Calculate mean and 95% confidence interval for each combination of dataset and model
@@ -163,11 +195,13 @@ def make_uci_table(cfg: DictConfig):
 
             # Apply the function to the DataFrame to create the final LaTeX table
             table_df["mean_conf_interval"] = table_df.apply(bold_if_significant, axis=1)
+            wandb.log({"NLL-interval": wandb.Table(data=table_df)})
 
             # Pivot the DataFrame to obtain the desired table format
             latex_table = table_df.pivot(
                 index="dataset", columns="model", values="mean_conf_interval"
             )
+            wandb.log({"NLL-latex": wandb.Table(data=latex_table)})
 
             # Print the LaTeX table
             print(latex_table.to_latex(escape=False))
@@ -293,11 +327,13 @@ def calc_sfr_nll(
     device="cpu",
     posthoc_prior_opt: bool = True,
 ):
-    if output_dim <= 2:
-        # likelihood = src.likelihoods.BernoulliLh()
-        likelihood = src.likelihoods.BernoulliLh(EPS=0.0)
-    else:
-        likelihood = src.likelihoods.CategoricalLh(EPS=0.0)
+    # if output_dim <= 2:
+    #     # likelihood = src.likelihoods.BernoulliLh()
+    #     likelihood = src.likelihoods.BernoulliLh(EPS=0.0)
+    #     # likelihood = src.likelihoods.BernoulliLh(EPS=0.0004)
+    # else:
+    #     likelihood = src.likelihoods.CategoricalLh(EPS=0.0)
+    likelihood = src.likelihoods.CategoricalLh(EPS=0.0)
     sfr = init_SFR_with_gaussian_prior(
         model=network,
         delta=delta,  # TODO what should this be
@@ -357,10 +393,11 @@ def calc_gp_nll(
     device="cpu",
     posthoc_prior_opt: bool = True,
 ):
-    if output_dim <= 2:
-        likelihood = src.likelihoods.BernoulliLh(EPS=0.0)
-    else:
-        likelihood = src.likelihoods.CategoricalLh(EPS=0.0)
+    # if output_dim <= 2:
+    #     likelihood = src.likelihoods.BernoulliLh(EPS=0.0)
+    # else:
+    #     likelihood = src.likelihoods.CategoricalLh(EPS=0.0)
+    likelihood = src.likelihoods.CategoricalLh(EPS=0.0)
     gp = init_NN2GPSubset_with_gaussian_prior(
         model=network,
         delta=delta,  # TODO what should this be

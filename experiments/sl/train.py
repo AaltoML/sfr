@@ -103,11 +103,14 @@ def train(cfg: TrainConfig):
         # print("os.path.abspath('.hydra') {}".format(os.path.abspath(".hydra")))
         # print("os.getcwd() {}".format(os.getcwd()))
         # Save hydra configs with wandb (handles hydra's multirun dir)
-        shutil.copytree(
-            os.path.abspath(".hydra"),
-            os.path.join(os.path.join(get_original_cwd(), wandb.run.dir), "hydra"),
-        )
-        wandb.save("hydra")
+        try:
+            shutil.copytree(
+                os.path.abspath(".hydra"),
+                os.path.join(os.path.join(get_original_cwd(), wandb.run.dir), "hydra"),
+            )
+            wandb.save("hydra")
+        except FileExistsError:
+            pass
 
     optimizer = torch.optim.Adam([{"params": sfr.parameters()}], lr=cfg.lr)
 

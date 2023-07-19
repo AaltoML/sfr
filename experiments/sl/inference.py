@@ -248,6 +248,7 @@ def main(cfg: DictConfig):
         f = sfr.network(x)
         return sfr.likelihood.inv_link(f)
         # return torch.softmax(sfr.network(x.to(cfg.device)), dim=-1)
+
     map_metrics = compute_metrics(
         pred_fn=map_pred_fn, data_loader=test_loader, device=cfg.device
     )
@@ -280,8 +281,10 @@ def main(cfg: DictConfig):
         pred_fn = hydra.utils.instantiate(pred_cfg, model=model)
         print("Made pred fn")
         metrics = compute_metrics(
-            pred_fn=pred_fn, data_loader=test_loader, device=cfg.device,
-            inference_strategy=cfg.inference_strategy.name
+            pred_fn=pred_fn,
+            data_loader=test_loader,
+            device=cfg.device,
+            inference_strategy=cfg.inference_strategy.name,
         )
         print(f"Computed metrics {metrics}")
         if isinstance(model, laplace.BaseLaplace):

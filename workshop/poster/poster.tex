@@ -341,13 +341,13 @@ Deep neural networks have limitations in \textit{estimating uncertainty}, \texti
       \node (banana-hmc) at (2.2\figurewidth,0) {\includegraphics[width=1.05\figurewidth]{./fig/banana-hmc}};
     \end{scope}
 	% The arrow
-    \tikzstyle{myarrow} = [draw=black!80, single arrow, minimum height=24mm, minimum width=2pt, single arrow head extend=4pt, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
+    \tikzstyle{myarrow} = [draw=black!80, single arrow, minimum height=3em, minimum width=3pt, single arrow head extend=6pt, fill=black!80, anchor=center, rotate=0, inner sep=10pt, rounded corners=1pt]
     \tikzstyle{myblock} = [draw=black!80, minimum height=8mm, minimum width=7mm, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
     \node[myarrow] (first-arr) at ($(banana-nn)!0.5!(banana-nn2svgp)$) {};
     \node[myblock] (second-arr) at ($(banana-nn2svgp)!0.5!(banana-hmc)$) {};
 
     % Arrow labels
-    \node[font=\scriptsize,color=white] at (first-arr) {\our};
+    \node[font=\scriptsize\sc,color=white,scale=.8] at (first-arr) {\our};
     \node[font=\scriptsize,color=white] at (second-arr) {\normalsize$\bm\approx$};
          
     % Labels

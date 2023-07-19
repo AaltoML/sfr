@@ -232,6 +232,10 @@ Deep neural networks have limitations in \textit{estimating uncertainty}, \texti
   	%\begin{figure}[t]
     \pgfplotsset{axis on top,scale only axis,width=\figurewidth,height=\figureheight, ylabel near ticks,ylabel style={yshift=0pt},xlabel style={yshift=-4pt},y tick label style={rotate=90},legend style={nodes={scale=.8, transform shape}},tick label style={font=\footnotesize},xtick={0,.4,.8,1.2,1.6,2.}}
   \pgfplotsset{xlabel={Input, $x$},axis line style={rounded corners=2pt}}
+  %
+  % Hack pgfplots addplot options
+  \pgfplotsset{every axis plot/.append style={mark size=5,line width=1.2pt}}
+  %
   % Set figure 
   \setlength{\figurewidth}{.4\textwidth}
   \setlength{\figureheight}{.31\textwidth}

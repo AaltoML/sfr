@@ -216,8 +216,6 @@
 
 \begin{document}
 \begin{frame}[t]
-
-
 \begin{columns}[t]
 \begin{column}{2.05\colwidth}
 \begin{alertblock}{Summary}
@@ -291,27 +289,27 @@ Deep neural networks have limitations in \textit{estimating uncertainty}, \texti
    \end{minipage}\\[2cm]
 
   \begin{block}{Background: NN's Function-space Representation}
-  \alert{Inputs} in a supervised setting for NNs $f_\mathbf{w}: \inputDomain \to \outputDomain$:\
+  \alert{\bf Inputs} in a {\it supervised setting} for NNs $f_\mathbf{w}: \inputDomain \to \outputDomain$:\
   \begin{itemize}
   \item $\dataset = \{(\vx_{i} , \vy_{i})\}_{i=1}^{N}$, a data set w/ input $\vx_i \in \inputDomain$ and output $\vy_i \in \outputDomain$;
   \item $\weights \in \R^{P}$, the initial weights of the neural network.
   \end{itemize}
-\alert{Goal: }
+\alert{\bf Goal: }
   minimize the empirical (regularized) risk loss function:
 \begin{align} 
   \weights^{*} =  \arg \min_{\weights} \mathcal{L}(\dataset,\weights) \nonumber
      = \arg \min_{\weights} \textstyle\sum_{i=1}^{N} \ell(f_\weights(\mathbf{x}_{i}), y_i) + \delta \mathcal{R}(\weights).
  \end{align}
-\alert{Output:} $\weights^*$, the Maximum A-Posteriori (MAP) weights of the NN.\\[0.5cm]
+\alert{\bf Output:} $\weights^*$, the Maximum A-Posteriori (MAP) weights of the NN.\\[0.5cm]
 
-\alert{How to capture distribution over NN model functions?}	\\
+\alert{\bf How to capture distribution over NN model functions?}	\\
 Use their first two moments, obtaining a Gaussian process with a \alert{mean function $\mu(\cdot)$} and a \alert{covariance function $\kappa(\cdot,\cdot)$} (or kernel). \\
 {\it For GPs}, linear approximations in weight space lead to function-space equivalent approximations:
 \begin{equation*}
 	f_\weights(\vx) \approx 
 \phi^\top\!(\vx) \, \vw \quad\implies\quad \mu(\vx) = 0 \quad \text{and} \quad \kappa(\vx, \vx') = \frac{1}{\delta} \, \phi^\T\!(\vx) \, \phi(\vx')
 \end{equation*}\\
-{\it For NNs}, we can use the Laplace-GGN approximation to get a linear model of the neural network at the MAP as:
+{\it For NNs}, we can use the \alert{Laplace-GGN approximation} to get a linear model of the neural network at the MAP as:
 \begin{equation*}
 	f_{\weights^*}(\vx) \approx \Jac{\weights_*}{\vx} \, \weights \implies   \mu(\vx) =  0 \quad \text{and} \quad
   \kappa(\vx, \vx')
@@ -393,25 +391,38 @@ where $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\righ
 \end{minipage}\\[1.5cm]
 
  \begin{block}{SFR: Sparse Function Representation}
+\alert{TODO: Leave or remove these???}
+  \begin{align*}
+  \alpha_i &\coloneqq \myexpect_{p(\vw \mid \vy)}[\nabla_{f}\log p(y_i \mid f) |_{f=f_i}]
+  \quad \text{and} \\
+  \beta_i &\coloneqq - \myexpect_{p(\vw \mid \vy)}[\nabla^2_{f f}\log p(y_i \mid f_i) |_{f=f_i}]
+\end{align*}
 
-  \heading{Dual parameterization}
-  
-  \begin{itemize}
-     \item Item here
-     \item Another item
-  \end{itemize}
-  
-  \heading{Sparse Neural Network GP}
-  
-  \begin{itemize}
-     \item Item here
-     \item Another item
-  \end{itemize}
+%\heading{Dual parameterization}
+\alert{\bf Dual parameterization.} The first two moments of the resultant posterior process using the Laplace can be approximated via the dual parameters $\hat{\valpha}, \hat{\vbeta} \in \R^{N}$: 
+\begin{equation*}
+  \hat{\alpha}_i \coloneqq \nabla_{f}\log p(y_i \mid f) |_{f=f_i}
+  \quad \text{and} \quad
+  \hat{\beta}_i \coloneqq - \nabla^2_{ff}\log p(y_i \mid f) |_{f=f_i}.
+\end{equation*}
+But it scales w/ $\mathcal{O}(N^3)$ $\rightarrow$ Sparsify the resulting GP model to get $\mathcal{O}(M^3)$
+%\heading{Sparse Neural Network GP}
+\alert{\bf Sparsifying the NN's GP.}
+\begin{equation*}
+\valpha_{\vu}  =  \sum_{i=1}^N  \vkzi \, \hat{\alpha}_{i} \in \R^M
+\; \text{and} \;
+  \MBeta_{\vu} =  \sum_{i=1}^N \vkzi \,\hat{\beta}_{i} \, \vkzi^{\T} \in \R^{M \times M}
+\end{equation*}
+Using this sparse definition of the dual variables, our sparse GP posterior takes the following form:
+\begin{align*}   
+\myexpect_{q_{\vu}(\vf)}[f_i] &= \vkzs^{\T} \MKzz^{-1} \valpha_{\vu}
+   \quad \text{and} \\ 
+\textrm{Var}_{q_{\vu}(\vf)}[f_i] &= k_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \MBeta_{\vu})^{-1} ]\vkzs
+\end{align*}
 
-  \end{block}
 
 
-
+\end{block}
 \end{column}
 
 \separatorcolumn

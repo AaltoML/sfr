@@ -42,7 +42,11 @@
 	
 % Custom error formatting
 %\newcommand{\val}[2]{ $#1$\textcolor{gray}{\tiny ${\pm}#2$}} 
-	
+
+\usepackage{bm}
+\newcommand{\mathbold}[1]{\bm{#1}}
+\newcommand{\mbf}[1]{\mathbf{#1}}
+\renewcommand{\mid}{\,|\,}
 	
 
 % ====================
@@ -102,7 +106,7 @@
 
 \begin{frame}[t]
 \begin{columns}[t]
-\begin{column}{2.0\colwidth}
+\begin{column}{2.05\colwidth}
 \begin{alertblock}{TL;DR}
 {\bf \alert{TODO: Rewrite}}
   Deep neural networks are known to lack uncertainty estimates, struggle to incorporate new data, and suffer from catastrophic forgetting. We present a method that mitigates these issues by converting neural networks from weight-space to a low-rank function-space representation, via the so-called dual parameters. In contrast to previous work, our sparse representation captures the joint distribution over the entire data set, rather than only over a subset. This offers a compact and principled way of capturing uncertainty and enables us to incorporate new data without retraining whilst retaining predictive performance. We provide proof-of-concept demonstrations with the proposed approach for quantifying uncertainty in supervised learning on UCI benchmark tasks.
@@ -196,57 +200,70 @@
 \separatorcolumn
 
 \begin{column}{\colwidth}
-  \begin{minipage}{\textwidth}
-  	\begin{figure}[t]
-    \pgfplotsset{axis on top,scale only axis,width=\figurewidth,height=\figureheight, ylabel near ticks,ylabel style={yshift=-2pt},y tick label style={rotate=90},legend style={nodes={scale=1., transform shape}},tick label style={font=\tiny,scale=1}}
-  \pgfplotsset{xlabel={Input, $x$},axis line style={rounded corners=2pt}}
-  % Set figure 
-  \setlength{\figurewidth}{.28\textwidth}
+\begin{minipage}{\textwidth}
+\begin{figure}[t]
+  \centering
+  % Set figure size
+  \setlength{\figurewidth}{.31\textwidth}
   \setlength{\figureheight}{\figurewidth}
   %
-  \def\inducing{\large Sparse inducing points}
+  % Colours
+  \definecolor{C0}{HTML}{DF6679}
+  \definecolor{C1}{HTML}{69A9CE}
   %
-  \begin{subfigure}[c]{.34\textwidth}
-    \raggedleft
-    \pgfplotsset{ylabel={Output, $y$}}
-    \input{./fig/regression-nn.tex}%
-  \end{subfigure}
-  \hfill  
-  \begin{subfigure}[c]{.01\textwidth}
-    \centering
-    \tikz[overlay,remember picture]\node(p0){};
-  \end{subfigure}  
-  \hfill
-  \begin{subfigure}[c]{.28\textwidth}
-    \raggedleft
-    \pgfplotsset{yticklabels={,,},ytick={\empty}}
-    \input{./fig/regression-nn2svgp.tex}%
-  \end{subfigure}
-  \hfill  
-  \begin{subfigure}[c]{.01\textwidth}
-    \centering
-    \tikz[overlay,remember picture]\node(p1){};
-  \end{subfigure}  
-  \hfill
-  \begin{subfigure}[c]{.28\textwidth}
-    \raggedleft
-    \pgfplotsset{yticklabels={,,},ytick={\empty}}        
-    \input{./fig/regression-update.tex}%
-  \end{subfigure}
-  % 
-  \begin{tikzpicture}[remember picture,overlay]
-      % Arrow style
-    \tikzstyle{myarrow} = [draw=black!80, single arrow, minimum height=14mm, minimum width=2pt, single arrow head extend=4pt, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
-    % Arrows
-    \node[myarrow] (p0-arr) at ($(p0) + (1em,1.5em)$) {};
-    \node[myarrow] (p1-arr) at ($(p1) + (1em,1.5em)$) {};
+  \begin{tikzpicture}[outer sep=0,inner sep=0]
+
+%    \newcommand{\addfig}[2]{
+%    \begin{scope}
+%      \clip[rounded corners=3pt] ($(#1)+(-.5\figurewidth,-.5\figureheight)$) rectangle ++(\figurewidth,\figureheight);
+%      \node (#2) at (#1) {\includegraphics[width=1.05\figurewidth]{./fig/#2}};
+%    \end{scope}
+%    %\draw[rounded corners=3pt,line width=1.2pt,black!60] ($(#1)+(-.5\figurewidth,-.5\figureheight)$) rectangle ++(\figurewidth,\figureheight);
+%    }
+%
+%    % The neural network
+%    \addfig{0,0}{banana-nn}
+    \begin{scope}
+      \clip[rounded corners=3pt] ($(0,0)+(-.5\figurewidth,-.5\figureheight)$) rectangle ++(\figurewidth,\figureheight);
+      \node (banana-nn) at (0,0) {\includegraphics[width=1.05\figurewidth]{./fig/banana-nn}};
+    \end{scope}
+    
+    % The nn2svgp
+    %\addfig{1.1\figurewidth,0}{banana-nn2svgp}
+    \begin{scope}
+      \clip[rounded corners=3pt] ($(1.1\figurewidth,0)+(-.5\figurewidth,-.5\figureheight)$) rectangle ++(\figurewidth,\figureheight);
+      \node (banana-nn2svgp) at (1.1\figurewidth,0) {\includegraphics[width=1.05\figurewidth]{./fig/banana-nn2svgp}};
+    \end{scope}
+    
+
+    % The update
+    %\addfig{2.2\figurewidth,0}{banana-hmc}
+    \begin{scope}
+      \clip[rounded corners=3pt] ($(2.2\figurewidth,0)+(-.5\figurewidth,-.5\figureheight)$) rectangle ++(\figurewidth,\figureheight);
+      \node (banana-hmc) at (2.2\figurewidth,0) {\includegraphics[width=1.05\figurewidth]{./fig/banana-hmc}};
+    \end{scope}
+	% The arrow
+    \tikzstyle{myarrow} = [draw=black!80, single arrow, minimum height=24mm, minimum width=2pt, single arrow head extend=4pt, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
+    \tikzstyle{myblock} = [draw=black!80, minimum height=8mm, minimum width=7mm, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
+    \node[myarrow] (first-arr) at ($(banana-nn)!0.5!(banana-nn2svgp)$) {};
+    \node[myblock] (second-arr) at ($(banana-nn2svgp)!0.5!(banana-hmc)$) {};
+
     % Arrow labels
-    \node[font=\scriptsize\sc,color=white] at (p0-arr) {\our};
-    \node[font=\scriptsize\sc,color=white] at (p1-arr) {new data};   
+    \node[font=\scriptsize,color=white] at (first-arr) {\our};
+    \node[font=\scriptsize,color=white] at (second-arr) {\normalsize$\bm\approx$};
+         
+    % Labels
+    \node[anchor=north, font=\tiny] at ($(banana-nn) + (0,-.55\figureheight)$) {Neural network prediction};
+    \node[anchor=north, font=\tiny] at ($(banana-nn2svgp) + (0,-.55\figureheight)$) {Sparse function-space representation};
+    \node[anchor=north, font=\tiny] at ($(banana-hmc) + (0,-.55\figureheight)$) {HMC result as baseline};      
+    
   \end{tikzpicture}
-  \end{figure}
-    \alert{\bf Regression w/ 2-layers MLP.} Left:~Predictions from the trained neural network. Middle:~Our approach summarizes all the training data with the help of a set of inducing points. The model captures the predictive mean and uncertainty, and (right) makes it possible to incorporate new data without retraining the model. 
-  \end{minipage}\\[2cm]
+  \newcommand{\mycircle}{\protect\tikz[baseline=-.6ex]\protect\node[circle,inner sep=2pt,draw=black,fill=C0,opacity=.5]{};}
+  \newcommand{\mysquare}{\protect\tikz[baseline=-.6ex]\protect\node[inner sep=2.5pt,draw=black,fill=C1,opacity=.5]{};}
+  \newcommand{\myinducing}{\protect\tikz[baseline=-.7ex]\protect\node[circle,inner sep=1.5pt,draw=black,fill=black]{};}
+\end{figure}
+\alert{\textbf{Uncertainty quantification for classification}}  (\mysquare~vs.~\mycircle). %We convert the trained neural network (left) to a sparse GP model that summarizes all data onto a sparse set of inducing points~\myinducing (middle). This gives similar behaviour as running full Hamiltonian Monte Carlo (HMC) on the original neural network model weights (right). Marginal uncertainty depicted by colour intensity.
+\end{minipage}\\[2cm]
   
   \begin{block}{Background}
 
@@ -264,7 +281,7 @@
 
 \begin{columns}
 	\begin{column}{2.05\colwidth}
-		  \begin{block}{Results}
+		  \begin{block}{Results and Discussion}
 
 %\begin{minipage}{\textwidth}
 %\begin{table}
@@ -280,6 +297,7 @@
 %	\input{tables/uci.tex}
 %\end{table}
 \begin{table}[t!]
+\resizebox{0.9\textwidth}{!}{
 \begin{tabular}{llllllll}
 \toprule
 model & BNN & GLM & GP Subset (GP) & GP Subset (NN) & NN MAP & SFR (GP) & SFR (NN) \\
@@ -289,8 +307,9 @@ Glass & 0.9562 $\pm$ 0.2649 & 0.8966 $\pm$ 0.1424 & 1.5108 $\pm$ 0.0367 & 1.1420
 Waveform & 0.2693 $\pm$ 0.0310 & 0.2676 $\pm$ 0.0227 & 0.2702 $\pm$ 0.0192 & 0.2670 $\pm$ 0.0162 & 0.2670 $\pm$ 0.0162 & 0.2657 $\pm$ 0.0163 & 0.2670 $\pm$ 0.0162 \\
 \bottomrule
 \end{tabular}
+}
 \end{table}
-\alert{\bf UCI Results.} Comparisons and ablations on UCI data with negative log predictive density %(NLPD\textcolor{gray}{\footnotesize$\pm$std}, lower better). Our sparse our ($M=256$) is on par with full models (left) and outperforms the GP subset approach of \citet{immer2021improving} (right). Results for methods marked with * as reported in the original benchmark~\citep{immer2021improving}. 
+\alert{\bf UCI Results.} For now a nice placeholder table that should contain the comparisons and ablations on UCI data with negative log predictive density. %(NLPD\textcolor{gray}{\footnotesize$\pm$std}, lower better). Our sparse our ($M=256$) is on par with full models (left) and outperforms the GP subset approach of \citet{immer2021improving} (right). Results for methods marked with * as reported in the original benchmark~\citep{immer2021improving}. 
 %\end{minipage}
   \begin{itemize}
      \item Item here
@@ -300,14 +319,14 @@ Waveform & 0.2693 $\pm$ 0.0310 & 0.2676 $\pm$ 0.0227 & 0.2702 $\pm$ 0.0192 & 0.2
   \end{block}
 
 
-  \begin{block}{Discussion}
-
-  \begin{itemize}
-     \item Item here
-     \item Another item
-  \end{itemize}
-
-  \end{block}
+%  \begin{block}{Discussion}
+%
+%  \begin{itemize}
+%     \item Item here
+%     \item Another item
+%  \end{itemize}
+%
+%  \end{block}
 
   \vspace*{1em}
 

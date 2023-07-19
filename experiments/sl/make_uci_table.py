@@ -37,6 +37,7 @@ COLUMNS_TITLES = [
 
 NUM_SAMPLES = 100
 num_inducing = 64
+num_inducing = 256
 
 posthoc_prior_opt = False
 posthoc_prior_opt = True

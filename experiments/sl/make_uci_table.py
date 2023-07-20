@@ -5,24 +5,17 @@ import hydra
 import laplace
 import numpy as np
 import pandas as pd
-import src
 import torch
 import wandb
-from experiments.sl.inference import sfr_pred
-from experiments.sl.utils import (
-    compute_metrics,
-    get_uci_dataset,
-    init_NN2GPSubset_with_gaussian_prior,
-    init_SFR_with_gaussian_prior,
-)
-from hydra.utils import get_original_cwd
 from omegaconf import DictConfig, OmegaConf
-from torch.utils.data import DataLoader
 
 
 @hydra.main(version_base="1.3", config_path="./configs", config_name="train")
 def make_uci_table(cfg: DictConfig):
     from experiments.sl.cluster_train import train
+    from hydra.utils import get_original_cwd
+    from torch.utils.data import DataLoader
+    from experiments.sl.utils import get_uci_dataset
 
     COLUMNS_TITLES = [
         "NN MAP",
@@ -242,6 +235,10 @@ def calc_sfr_nll(
     posthoc_prior_opt: bool = True,
     num_samples=100,
 ):
+    import src
+    from experiments.sl.inference import sfr_pred
+    from experiments.sl.utils import compute_metrics, init_SFR_with_gaussian_prior
+
     # if output_dim <= 2:
     #     # likelihood = src.likelihoods.BernoulliLh()
     #     likelihood = src.likelihoods.BernoulliLh(EPS=0.0)
@@ -309,6 +306,13 @@ def calc_gp_nll(
     posthoc_prior_opt: bool = True,
     num_samples=100,
 ):
+    import src
+    from experiments.sl.inference import sfr_pred
+    from experiments.sl.utils import (
+        compute_metrics,
+        init_NN2GPSubset_with_gaussian_prior,
+    )
+
     # if output_dim <= 2:
     #     likelihood = src.likelihoods.BernoulliLh(EPS=0.0)
     # else:
@@ -370,6 +374,7 @@ def calc_la_metrics(
     num_samples=100,
 ):
     from experiments.sl.inference import la_pred
+    from experiments.sl.utils import compute_metrics
 
     la = laplace.Laplace(
         likelihood="classification",

@@ -116,7 +116,9 @@ def train_val_split(
 
 
 @torch.no_grad()
-def compute_metrics(pred_fn, data_loader, device: str = "cpu", inference_strategy: str = "sfr") -> dict:
+def compute_metrics(
+    pred_fn, data_loader, device: str = "cpu", inference_strategy: str = "sfr"
+) -> dict:
     py, targets = [], []
     for idx, (x, y) in enumerate(data_loader):
         if inference_strategy.startswith("sfr"):
@@ -211,6 +213,7 @@ def get_uci_dataset(name: str, random_seed: int, dir: str, double: bool, **kwarg
         valid=True,
         double=double,
     )
+    print(f"dataset={name}")
     if ds_train.C > 2:  # set network output dim
         output_dim = ds_train.C
     else:

@@ -77,7 +77,9 @@ def make_uci_table(cfg: DictConfig):
     ]:
         cfg = compose(config_name="train", overrides=[f"+experiment={dataset_name}"])
         # for experiment, random_seed in enumerate([42, 100]):
-        for experiment, random_seed in enumerate([42, 100, 50, 1024, 55]):
+        for experiment, random_seed in enumerate(
+            [42, 100, 50, 1024, 55, 328, 623, 8319, 613, 32980]
+        ):
             torch.set_default_dtype(torch.float)
             cfg.random_seed = random_seed
             print(OmegaConf.to_yaml(cfg))

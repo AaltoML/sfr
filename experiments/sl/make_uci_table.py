@@ -8,7 +8,6 @@ import pandas as pd
 import src
 import torch
 import wandb
-from experiments.sl.cluster_train import train
 from experiments.sl.inference import sfr_pred
 from experiments.sl.utils import (
     compute_metrics,
@@ -23,6 +22,8 @@ from torch.utils.data import DataLoader
 
 @hydra.main(version_base="1.3", config_path="./configs", config_name="train")
 def make_uci_table(cfg: DictConfig):
+    from experiments.sl.cluster_train import train
+
     COLUMNS_TITLES = [
         "NN MAP",
         "BNN",

@@ -3,7 +3,6 @@ import logging
 from typing import List, Optional, Tuple
 
 
-
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
@@ -67,7 +66,7 @@ class SFR(nn.Module):
     def __call__(
         self,
         x: InputData,
-        idx=None, 
+        idx=None,
         pred_type: str = "gp",  # "gp" or "nn"
         num_samples: int = 100,
     ):
@@ -110,7 +109,6 @@ class SFR(nn.Module):
         self.Z = X_train[indices.to(X_train.device)].to(self.device)
 
         self.build_sfr()
-        
 
     @torch.no_grad()
     def build_sfr(self):
@@ -126,7 +124,7 @@ class SFR(nn.Module):
             num_data=self.num_data,
             output_dim=self.output_dim,
             delta=delta,
-            scaled=False
+            scaled=False,
         )
         if self.dual_batch_size:
             self.alpha_u, self.beta_u, self.Lambda_u = calc_sparse_dual_params_batch(
@@ -238,18 +236,18 @@ class SFR(nn.Module):
     @property
     def num_data(self):
         return self.train_data[0].shape[0]
-    
-    def update_pred_fn(self,  delta:float):
+
+    def update_pred_fn(self, delta: float):
         self._predict_fn = self.predict_from_sparse_duals(
-                    alpha_u=self.alpha_u,
-                    beta_u=self.beta_u,
-                    kernel=self.kernel,
-                    delta=delta,
-                    num_data=self.num_data,
-                    Z=self.Z,
-                    jitter=self.jitter,
-                )
-    
+            alpha_u=self.alpha_u,
+            beta_u=self.beta_u,
+            kernel=self.kernel,
+            delta=delta,
+            num_data=self.num_data,
+            Z=self.Z,
+            jitter=self.jitter,
+        )
+
     @torch.no_grad()
     def predict_from_sparse_duals(
         self,
@@ -271,8 +269,8 @@ class SFR(nn.Module):
             .repeat(output_dim, 1, 1)
         )
         Kzz += Iz * jitter
-        KzzplusBeta = ( Kzz / (delta * num_data) + beta_u) + Iz * jitter
-        
+        KzzplusBeta = (Kzz / (delta * num_data) + beta_u) + Iz * jitter
+
         if test_loader and self.computed_Kss_Ksz == False:
             Kxx_cached = []
             Kxz_cached = []
@@ -294,12 +292,11 @@ class SFR(nn.Module):
         for k in range(K):
             L_Kzz[k], _ = cho_factor(Kzznp[k])
             L_Bu[k], _ = cho_factor(KzzplusBetanp[k])
-        
+
         logger.info(f"Created predict function with delta {delta}")
 
         @torch.no_grad()
         def predict(x, index, full_cov: bool = False) -> Tuple[OutputMean, OutputVar]:
-            
             if isinstance(x, torch.Tensor):
                 Kxx = kernel(x, x, full_cov=full_cov).detach().cpu().numpy()
                 Kxz = kernel(x, Z).detach().cpu().numpy()
@@ -319,38 +316,40 @@ class SFR(nn.Module):
                     Kxxk = Kxx[k]
                     Kxzk = Kxz[k]
                     Kzxk = Kxzk.T
-                    # Note the first argument is a tuple that takes the result 
-                    # from the cho_factor (by default lower=False, then (A, False) 
+                    # Note the first argument is a tuple that takes the result
+                    # from the cho_factor (by default lower=False, then (A, False)
                     # is fed to cho_solve)
                     Amk = cho_solve((L_Kzz[k], False), Kzxk)
                     Abk = cho_solve((L_Bu[k], False), Kzxk)
                     # logger.debug(f"pred_fn delta: {delta} num_data: {num_data}")
-                    fvark = (Kxxk - (Amk ** 2).sum()) / delta / num_data + (Abk ** 2).sum()
-                    fvarnp.append(fvark) 
+                    fvark = (Kxxk - (Amk**2).sum()) / delta / num_data + (
+                        Abk**2
+                    ).sum()
+                    fvarnp.append(fvark)
                 fvarnp = np.array(fvarnp)
                 fvar = torch.from_numpy(fvarnp.T).to(self.device)
 
             return f_mean, fvar
 
         return predict
-    
+
     def optimize_prior_precision(
-            self,
-            pred_type,
-            method="grid",
-            # n_steps=100,
-            # lr=1e-1,
-            # init_prior_prec=1.0,
-            val_loader=None,
-            # loss=get_nll,
-            log_prior_prec_min=-8,
-            log_prior_prec_max=4,
-            grid_size=100,
-            # link_approx="probit",
-            n_samples=100,
-            # verbose=False,
-            # cv_loss_with_var=False,
-            ):
+        self,
+        pred_type,
+        method="grid",
+        # n_steps=100,
+        # lr=1e-1,
+        # init_prior_prec=1.0,
+        val_loader=None,
+        # loss=get_nll,
+        log_prior_prec_min=-8,
+        log_prior_prec_max=4,
+        grid_size=100,
+        # link_approx="probit",
+        n_samples=100,
+        # verbose=False,
+        # cv_loss_with_var=False,
+    ):
         if method == "grid":
             interval = torch.logspace(log_prior_prec_min, log_prior_prec_max, grid_size)
             results = list()
@@ -362,10 +361,12 @@ class SFR(nn.Module):
                 try:
                     py, targets = [], []
                     for idx, (x, y) in enumerate(tqdm(val_loader, ncols=100)):
-                        p = self(x = x.to(self.device),
-                                idx=idx,
-                                pred_type=pred_type, 
-                                num_samples=n_samples)[0]
+                        p = self(
+                            x=x.to(self.device),
+                            idx=idx,
+                            pred_type=pred_type,
+                            num_samples=n_samples,
+                        )[0]
                         py.append(p)
                         targets.append(y.to(self.device))
                     targets = torch.cat(targets, dim=0).cpu().numpy()
@@ -382,21 +383,26 @@ class SFR(nn.Module):
                     result = -dist.log_prob(torch.Tensor(targets)).mean().numpy()
                     logger.info(f"Prior prec {prior_prec} nll:{result}")
                 except RuntimeError:
-                    result = np.inf 
+                    result = np.inf
                 results.append(result)
-            
-            prior_precs.append(prior_prec)
+                prior_precs.append(prior_prec)
+
+            # prior_precs.append(prior_prec)
         else:
             raise NotImplementedError
-        
+
         best_prior_prec = prior_precs[np.argmin(results)]
         logger.info(f"Best prior prec {best_prior_prec} with nll: {np.min(results)}")
         self.update_pred_fn(best_prior_prec)
 
+
 @torch.no_grad()
 def build_ntk(
-    network: nn.Module, num_data: int, output_dim: int, delta: float = 1.0,
-    scaled: bool = True
+    network: nn.Module,
+    num_data: int,
+    output_dim: int,
+    delta: float = 1.0,
+    scaled: bool = True,
 ) -> Tuple[NTK, NTK_single]:
     network = network.eval()
     params = {k: v.detach() for k, v in network.named_parameters()}

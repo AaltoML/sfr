@@ -6,7 +6,7 @@ import torch
 from omegaconf import DictConfig, OmegaConf
 
 
-@hydra.main(version_base="1.3", config_path="./configs", config_name="train")
+@hydra.main(version_base="1.3", config_path="./configs", config_name="train_uci")
 def make_uci_table(cfg: DictConfig):
     import numpy as np
     import pandas as pd
@@ -47,13 +47,13 @@ def make_uci_table(cfg: DictConfig):
 
     # Init Weight and Biases
     run = wandb.init(
-        project="uci-table",
+        project=cfg.wandb.project,
         name=cfg.wandb.run_name,
-        # group=cfg.wandb.group,
-        # tags=cfg.wandb.tags,
-        # config=omegaconf.OmegaConf.to_container(
-        #     cfg, resolve=True, throw_on_missing=True
-        # ),
+        group=cfg.wandb.group,
+        tags=cfg.wandb.tags,
+        config=omegaconf.OmegaConf.to_container(
+            cfg, resolve=True, throw_on_missing=True
+        ),
         dir=get_original_cwd(),  # don't nest wandb inside hydra dir
     )
 

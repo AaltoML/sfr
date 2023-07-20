@@ -1,52 +1,41 @@
 #!/usr/bin/env python3
-import os
-
-import experiments
 import hydra
-import laplace
-import numpy as np
-import omegaconf
-import pandas as pd
-import scipy as sp
-import src
-import torch
-import wandb
-from experiments.sl.cluster_train import train
-from experiments.sl.inference import main as inference
-from experiments.sl.inference import sfr_pred
-from experiments.sl.utils import (
-    compute_metrics,
-    get_uci_dataset,
-    init_NN2GPSubset_with_gaussian_prior,
-    init_SFR_with_gaussian_prior,
-)
-from hydra import compose, initialize
-from hydra.utils import get_original_cwd
 from omegaconf import DictConfig, OmegaConf
-from torch.utils.data import DataLoader
-
-COLUMNS_TITLES = [
-    "NN MAP",
-    "BNN",
-    "GLM",
-    "GP Subset (GP)",
-    "GP Subset (NN)",
-    "SFR (GP)",
-    "SFR (NN)",
-]
-
-NUM_SAMPLES = 100
-num_inducing = 64
-num_inducing = 256
-
-posthoc_prior_opt = False
-posthoc_prior_opt = True
 
 
 # global initialization
 # initialize(version_base=None, config_path="./configs", job_name="make_uci_table")
 @hydra.main(version_base="1.3", config_path="./configs", config_name="train")
 def make_uci_table(cfg: DictConfig):
+    import os
+
+    import numpy as np
+    import pandas as pd
+    import torch
+    import wandb
+    from experiments.sl.cluster_train import train
+    from experiments.sl.utils import get_uci_dataset
+    from hydra import compose
+    from hydra.utils import get_original_cwd
+    from torch.utils.data import DataLoader
+
+    COLUMNS_TITLES = [
+        "NN MAP",
+        "BNN",
+        "GLM",
+        "GP Subset (GP)",
+        "GP Subset (NN)",
+        "SFR (GP)",
+        "SFR (NN)",
+    ]
+
+    NUM_SAMPLES = 100
+    num_inducing = 64
+    num_inducing = 256
+
+    posthoc_prior_opt = False
+    posthoc_prior_opt = True
+
     # Data dictionary used to make pd.DataFrame
     data = {"dataset": [], "model": [], "experiment": [], "result": []}
     # tbl = wandb.Table(data=df)
@@ -87,9 +76,9 @@ def make_uci_table(cfg: DictConfig):
         "satellite_uci",
     ]:
         cfg = compose(config_name="train", overrides=[f"+experiment={dataset_name}"])
-        for experiment, random_seed in enumerate([42, 100]):
+        # for experiment, random_seed in enumerate([42, 100]):
+        for experiment, random_seed in enumerate([42, 100, 50, 1024, 55]):
             torch.set_default_dtype(torch.float)
-            # for random_seed in [42, 100, 50, 1024, 55]:
             cfg.random_seed = random_seed
             print(OmegaConf.to_yaml(cfg))
             ds_train, ds_val, ds_test = get_uci_dataset(

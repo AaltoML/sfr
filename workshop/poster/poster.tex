@@ -288,7 +288,7 @@ Deep neural networks have limitations in \textit{estimating uncertainty}, \texti
     Prediction from a trained neural network's predictions {\it (left)}, our approach using inducing points to summarize the training data {\it (middle)}. SFR captures the predictive mean and uncertainty, and can incorporate new data without retraining the model {\it (right)}.
    \end{minipage}\\[2cm]
 
-  \begin{block}{Background: NN's Function-space Representation}
+  \begin{block}{NN Function-space Representation}
   \alert{\bf Inputs} in a {\it supervised setting} for NNs $f_\mathbf{w}: \inputDomain \to \outputDomain$:\
   \begin{itemize}
   \item $\dataset = \{(\vx_{i} , \vy_{i})\}_{i=1}^{N}$, a data set w/ input $\vx_i \in \inputDomain$ and output $\vy_i \in \outputDomain$;
@@ -391,42 +391,51 @@ where $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\righ
 \end{minipage}\\[1.5cm]
 
  \begin{block}{SFR: Sparse Function Representation}
-\alert{\bf Full GP.} The predictive equations for a GP model are 
+\alert{\bf GP} predictive posterior:
  \begin{align}  \label{eq:gp_pred}
   \myexpect_{p(f_i \mid\vy)}[f_i] &= \vk_{\vx i}^\top \valpha \quad \text{and} \\
-  \mathrm{Var}_{p(f_i \mid \vy)}[f_i] &= k_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i}, \nonumber
+  \mathrm{Var}_{p(f_i \mid \vy)}[f_i] &= k_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i} 
 \end{align}
-But it  requires access to all the data $\rightarrow \color{red}{\mathcal{O}(N^3)}$
+{\color{red}{Cons:}} requires access to all data $\rightarrow \color{red}{\mathcal{O}(N^3)}$
 %  $\rightarrow$ Sparsify the resulting GP model to get $\mathcal{O}(M^3)$
 
-\alert{\bf Sparse GP.}
-We can build a sparse GP posterior with the following form:
-\begin{align*}   
+\alert{\bf Sparse GP (SFR)} predictive posterior:
+%We can build a sparse GP posterior with the following form:
+\begin{align}   
 \myexpect_{p(f_i \mid\vy)}[f_i] \approx \myexpect_{q_{\vu}(\vf)}[f_i] &= \vkzs^{\T} \MKzz^{-1} \valpha_{\vu}
    \quad \text{and} \\ 
 \mathrm{Var}_{p(f_i \mid \vy)}[f_i] \approx \textrm{Var}_{q_{\vu}(\vf)}[f_i] &= k_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \MBeta_{\vu})^{-1} ]\vkzs
-\end{align*}
-using a subset of inducing points $\{\vz_j\}_{j=1}^M$ $\rightarrow \color{cgreen}{\mathcal{O}(M^3) \text{ w/ } (M\ll N)}$
+\end{align}
+where $q_\vu(f) = \int p(f|\vu) q(\vu) \textrm{d}\vu$ given inducing points $\vu_j = f_\vw(\vz_j)$ with  
+$\{\vz_j\}_{j=1}^M$ 
+$\rightarrow \color{cgreen}{\mathcal{O}(M^3) \text{ with } (M\ll N)}$
 
 %\heading{Dual parameterization}
-\alert{\bf Dual parameterization} for the full posterior GP from Eq.~\ref{eq:gp_pred}:
-\begin{align*}
-  \alpha_i &\coloneqq {\color{red}{\myexpect_{p(\vw \mid \vy)}}}[\nabla_{f}\log p(y_i \mid f) |_{f=f_i}]
+\alert{\bf Dual parameters} of the GP posterior $\valpha, \vbeta \in \R^{N}$:
+\begin{align}
+  \alpha_i &\coloneqq {\color{red}{\myexpect_{p(\vw \mid \vy)}}}[\nabla_{f}\log p(y_i \mid f) |_{f=f_i}] 
   \quad \text{and} \\
   \beta_i &\coloneqq - {\color{red}{\myexpect_{p(\vw \mid \vy)}}}[\nabla^2_{f f}\log p(y_i \mid f_i) |_{f=f_i}]
-\end{align*}
-We can approximate the posterior $ {\color{red}{p(\vw \mid \vy)}} \approx \color{cgreen}{q(\weights)} $, and get the dual parameters $\hat{\valpha}, \hat{\vbeta} \in \R^{N}$: 
-\begin{align*}
-  \alpha_i \approx \hat{\alpha}_i &\coloneqq {\color{cgreen}{\myexpect_{q(\vw)}}} [\nabla_{f}\log p(y_i \mid f) |_{f=f_i}]
+\end{align}
+We consider the MAP of ${\color{red}{p(\vw \mid \vy)}}$,
+%\approx \color{cgreen}{q(\weights)} $, 
+and get $\hat{\valpha}, \hat{\vbeta} \in \R^{N}$: 
+\begin{align}
+  \alpha_i \approx \hat{\alpha}_i &\coloneqq %{\color{cgreen}{\myexpect_{q(\vw)}}} [
+  \nabla_{f}\log p(y_i \mid f) |_{f=f_i}
+%  ]
   \quad \text{and} \\
-  \beta_i \approx \hat{\beta}_i &\coloneqq - {\color{cgreen}{\myexpect_{q(\vw)}}} [ \nabla^2_{ff}\log p(y_i \mid f) |_{f=f_i}]
-\end{align*}
-Finally, \alert{\it Approximate Posterior} + \alert{\it Sparse GP} $\rightarrow$ \alert{\bf SFR dual parameters}: 
-\begin{equation*}
-\valpha_{\vu}  =  \sum_{i=1}^N  \vkzi \, \hat{\alpha}_{i} \in \R^M
-\; \text{and} \;
-  \MBeta_{\vu} =  \sum_{i=1}^N \vkzi \,\hat{\beta}_{i} \, \vkzi^{\T} \in \R^{M \times M}
-\end{equation*}
+  \beta_i \approx \hat{\beta}_i &\coloneqq - 
+%  {\color{cgreen}{\myexpect_{q(\vw)}}} [ 
+  \nabla^2_{ff}\log p(y_i \mid f) |_{f=f_i}
+%  ]
+\end{align}
+\alert{\bf SFR dual parameters} $\valpha_{\vu} \in \R^M, \MBeta_{\vu} \in \R^{M \times M}$: 
+\begin{equation}
+\valpha_{\vu}  =  \sum_{i=1}^N  \vkzi \, \hat{\alpha}_{i} %\in \R^M
+\quad \text{and} \quad
+  \MBeta_{\vu} =  \sum_{i=1}^N \vkzi \,\hat{\beta}_{i} \, \vkzi^{\T} %\in \R^{M \times M}
+\end{equation}
 %\heading{Sparse Neural Network GP}
 
 \end{block}
@@ -434,13 +443,13 @@ Finally, \alert{\it Approximate Posterior} + \alert{\it Sparse GP} $\rightarrow$
 
 \separatorcolumn
 \end{columns}
-
+\vspace{-1cm}
 \begin{columns}
 \begin{column}{2.05\colwidth}
 \begin{block}{Results on UCI datasets}
 
 \begin{table}[t!]
-\resizebox{0.9\textwidth}{!}{
+\resizebox{0.7\textwidth}{!}{
 \begin{tabular}{llllllll}
 \toprule
 Model & BNN & GLM & GP Subset (GP) & GP Subset (NN) & NN MAP & SFR (GP) & SFR (NN) \\
@@ -448,19 +457,23 @@ Data set &  &  &  &  &  &  &  \\
 \midrule
 Glass & 0.9562 $\pm$ 0.2649 & 0.8966 $\pm$ 0.1424 & 1.5108 $\pm$ 0.0367 & 1.1420 $\pm$ 0.0738 & 1.8350 $\pm$ 0.6147 & 1.3709 $\pm$ 0.0375 & 1.0922 $\pm$ 0.1363 \\
 Waveform & 0.2693 $\pm$ 0.0310 & 0.2676 $\pm$ 0.0227 & 0.2702 $\pm$ 0.0192 & 0.2670 $\pm$ 0.0162 & 0.2670 $\pm$ 0.0162 & 0.2657 $\pm$ 0.0163 & 0.2670 $\pm$ 0.0162 \\
+Glass & 0.9562 $\pm$ 0.2649 & 0.8966 $\pm$ 0.1424 & 1.5108 $\pm$ 0.0367 & 1.1420 $\pm$ 0.0738 & 1.8350 $\pm$ 0.6147 & 1.3709 $\pm$ 0.0375 & 1.0922 $\pm$ 0.1363 \\
+Glass & 0.9562 $\pm$ 0.2649 & 0.8966 $\pm$ 0.1424 & 1.5108 $\pm$ 0.0367 & 1.1420 $\pm$ 0.0738 & 1.8350 $\pm$ 0.6147 & 1.3709 $\pm$ 0.0375 & 1.0922 $\pm$ 0.1363 \\
+Glass & 0.9562 $\pm$ 0.2649 & 0.8966 $\pm$ 0.1424 & 1.5108 $\pm$ 0.0367 & 1.1420 $\pm$ 0.0738 & 1.8350 $\pm$ 0.6147 & 1.3709 $\pm$ 0.0375 & 1.0922 $\pm$ 0.1363 \\
+Glass & 0.9562 $\pm$ 0.2649 & 0.8966 $\pm$ 0.1424 & 1.5108 $\pm$ 0.0367 & 1.1420 $\pm$ 0.0738 & 1.8350 $\pm$ 0.6147 & 1.3709 $\pm$ 0.0375 & 1.0922 $\pm$ 0.1363 \\
 \bottomrule
 \end{tabular}
 }
 \end{table}
-\alert{\bf UCI Results.} For now a nice placeholder table that should contain the comparisons and ablations on UCI data with negative log predictive density. %(NLPD\textcolor{gray}{\footnotesize$\pm$std}, lower better). Our sparse our ($M=256$) is on par with full models (left) and outperforms the GP subset approach of \citet{immer2021improving} (right). Results for methods marked with * as reported in the original benchmark~\citep{immer2021improving}. 
+%\alert{\bf UCI Results.} For now a nice placeholder table that should contain the comparisons and ablations on UCI data with negative log predictive density. %(NLPD\textcolor{gray}{\footnotesize$\pm$std}, lower better). Our sparse our ($M=256$) is on par with full models (left) and outperforms the GP subset approach of \citet{immer2021improving} (right). Results for methods marked with * as reported in the original benchmark~\citep{immer2021improving}. 
 %\end{minipage}
 %  \begin{itemize}
 %     \item Item here
 %     \item Another item
 %  \end{itemize}
   \end{block}
-
-  \vspace*{1em}
+\vspace{-0.5cm}
+%  \vspace*{1em}
 
   \nocite{*} % <-- This lists all references that are in the bib file
   \begin{block}{References}

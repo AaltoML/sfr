@@ -2,20 +2,19 @@
 import os
 
 import hydra
-import laplace
-import numpy as np
-import pandas as pd
 import torch
-import wandb
 from omegaconf import DictConfig, OmegaConf
 
 
 @hydra.main(version_base="1.3", config_path="./configs", config_name="train")
 def make_uci_table(cfg: DictConfig):
+    import numpy as np
+    import pandas as pd
+    import wandb
     from experiments.sl.cluster_train import train
+    from experiments.sl.utils import get_uci_dataset
     from hydra.utils import get_original_cwd
     from torch.utils.data import DataLoader
-    from experiments.sl.utils import get_uci_dataset
 
     COLUMNS_TITLES = [
         "NN MAP",
@@ -375,6 +374,7 @@ def calc_la_metrics(
     posthoc_prior_opt: bool = True,
     num_samples=100,
 ):
+    import laplace
     from experiments.sl.inference import la_pred
     from experiments.sl.utils import compute_metrics
 

@@ -20,8 +20,8 @@ defaults:
 # checkpoint: "./wandb/run-20230628_173218-qc5ijob9"
 # checkpoint: "wandb/run-20230605_160605-3b8gdq3l"
 # checkpoint: "./wandb/run-20230609_094409-p7xhdnny"
-# checkpoint: "./wandb/run-20230713_182143-voioempg"
-checkpoint: "./wandb/run-20230717_141052-ndx8hrpi/"
+checkpoint: "./wandb/run-20230713_182143-voioempg"
+# checkpoint: "./wandb/run-20230717_141052-ndx8hrpi/"
 
 delta_post_hoc: 1e-2
 

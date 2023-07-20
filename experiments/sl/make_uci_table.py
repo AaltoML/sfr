@@ -1,24 +1,28 @@
 #!/usr/bin/env python3
+import os
+
 import hydra
+import laplace
+import numpy as np
+import pandas as pd
+import src
+import torch
+import wandb
+from experiments.sl.cluster_train import train
+from experiments.sl.inference import sfr_pred
+from experiments.sl.utils import (
+    compute_metrics,
+    get_uci_dataset,
+    init_NN2GPSubset_with_gaussian_prior,
+    init_SFR_with_gaussian_prior,
+)
+from hydra.utils import get_original_cwd
 from omegaconf import DictConfig, OmegaConf
+from torch.utils.data import DataLoader
 
 
-# global initialization
-# initialize(version_base=None, config_path="./configs", job_name="make_uci_table")
 @hydra.main(version_base="1.3", config_path="./configs", config_name="train")
 def make_uci_table(cfg: DictConfig):
-    import os
-
-    import numpy as np
-    import pandas as pd
-    import torch
-    import wandb
-    from experiments.sl.cluster_train import train
-    from experiments.sl.utils import get_uci_dataset
-    from hydra import compose
-    from hydra.utils import get_original_cwd
-    from torch.utils.data import DataLoader
-
     COLUMNS_TITLES = [
         "NN MAP",
         "BNN",
@@ -28,11 +32,9 @@ def make_uci_table(cfg: DictConfig):
         "SFR (GP)",
         "SFR (NN)",
     ]
-
     NUM_SAMPLES = 100
     num_inducing = 64
     num_inducing = 256
-
     posthoc_prior_opt = False
     posthoc_prior_opt = True
 
@@ -75,11 +77,11 @@ def make_uci_table(cfg: DictConfig):
         "digits_uci",
         "satellite_uci",
     ]:
-        cfg = compose(config_name="train", overrides=[f"+experiment={dataset_name}"])
+        cfg = hydra.compose(
+            config_name="train", overrides=[f"+experiment={dataset_name}"]
+        )
         # for experiment, random_seed in enumerate([42, 100]):
-        for experiment, random_seed in enumerate(
-            [42, 100, 50, 1024, 55, 328, 623, 8319, 613, 32980]
-        ):
+        for experiment, random_seed in enumerate([42, 100, 50, 1024, 55]):
             torch.set_default_dtype(torch.float)
             cfg.random_seed = random_seed
             print(OmegaConf.to_yaml(cfg))

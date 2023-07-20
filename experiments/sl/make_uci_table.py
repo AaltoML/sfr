@@ -212,6 +212,8 @@ def make_uci_table(cfg: DictConfig):
 
 
 def calc_map_nll(sfr, test_loader, device):
+    from experiments.sl.utils import compute_metrics
+
     @torch.no_grad()
     def map_pred_fn(x, idx=None):
         f = sfr.network(x.to(device))

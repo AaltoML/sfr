@@ -78,6 +78,9 @@ extras_require = {
         # "tikzplotlib==0.10.1",
         "gpytorch==1.9.1",  # for RL SVGP experiments
         "gym[classic_control]==0.26.2",
+        "pandas",  # for making UCI table
+        "seaborn",
+        "plotly==5.1.0",
     ],
     "figures": [  # needed to get the HMC result for figure 1
         "hamiltorch @ git+https://github.com/AdamCobb/hamiltorch",

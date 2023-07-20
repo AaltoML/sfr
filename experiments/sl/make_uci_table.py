@@ -32,7 +32,6 @@ def make_uci_table(cfg: DictConfig):
         "SFR (GP)",
         "SFR (NN)",
     ]
-    NUM_SAMPLES = 100
     num_inducing = 64
     num_inducing = 256
     posthoc_prior_opt = False
@@ -240,6 +239,7 @@ def calc_sfr_nll(
     num_inducing=128,
     device="cpu",
     posthoc_prior_opt: bool = True,
+    num_samples=100,
 ):
     # if output_dim <= 2:
     #     # likelihood = src.likelihoods.BernoulliLh()
@@ -273,7 +273,7 @@ def calc_sfr_nll(
             grid_size=50,
         )
     nn_nll = compute_metrics(
-        pred_fn=sfr_pred(model=sfr, pred_type="nn", num_samples=NUM_SAMPLES),
+        pred_fn=sfr_pred(model=sfr, pred_type="nn", num_samples=num_samples),
         data_loader=test_loader,
         device=device,
     )["nll"]
@@ -289,7 +289,7 @@ def calc_sfr_nll(
             grid_size=50,
         )
     gp_nll = compute_metrics(
-        pred_fn=sfr_pred(model=sfr, pred_type="gp", num_samples=NUM_SAMPLES),
+        pred_fn=sfr_pred(model=sfr, pred_type="gp", num_samples=num_samples),
         data_loader=test_loader,
         device=device,
     )["nll"]
@@ -306,6 +306,7 @@ def calc_gp_nll(
     num_inducing=128,
     device="cpu",
     posthoc_prior_opt: bool = True,
+    num_samples=100,
 ):
     # if output_dim <= 2:
     #     likelihood = src.likelihoods.BernoulliLh(EPS=0.0)
@@ -336,7 +337,7 @@ def calc_gp_nll(
             grid_size=50,
         )
     nn_nll = compute_metrics(
-        pred_fn=sfr_pred(model=gp, pred_type="nn", num_samples=NUM_SAMPLES),
+        pred_fn=sfr_pred(model=gp, pred_type="nn", num_samples=num_samples),
         data_loader=test_loader,
         device=device,
     )["nll"]
@@ -350,7 +351,7 @@ def calc_gp_nll(
             grid_size=50,
         )
     gp_nll = compute_metrics(
-        pred_fn=sfr_pred(model=gp, pred_type="gp", num_samples=NUM_SAMPLES),
+        pred_fn=sfr_pred(model=gp, pred_type="gp", num_samples=num_samples),
         data_loader=test_loader,
         device=device,
     )["nll"]
@@ -365,6 +366,7 @@ def calc_la_metrics(
     test_loader,
     device,
     posthoc_prior_opt: bool = True,
+    num_samples=100,
 ):
     from experiments.sl.inference import la_pred
 
@@ -392,7 +394,9 @@ def calc_la_metrics(
             log_prior_prec_max=5,
             grid_size=50,
         )
-    bnn_pred_fn = la_pred(model=la, pred_type="nn", link_approx="mc", num_samples=100)
+    bnn_pred_fn = la_pred(
+        model=la, pred_type="nn", link_approx="mc", num_samples=num_samples
+    )
     bnn_metrics = compute_metrics(
         pred_fn=bnn_pred_fn, data_loader=test_loader, device=device
     )
@@ -407,7 +411,9 @@ def calc_la_metrics(
             log_prior_prec_max=5,
             grid_size=50,
         )
-    glm_pred_fn = la_pred(model=la, pred_type="glm", link_approx="mc", num_samples=100)
+    glm_pred_fn = la_pred(
+        model=la, pred_type="glm", link_approx="mc", num_samples=num_samples
+    )
     glm_metrics = compute_metrics(
         pred_fn=glm_pred_fn, data_loader=test_loader, device=device
     )

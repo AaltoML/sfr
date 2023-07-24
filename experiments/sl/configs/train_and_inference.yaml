@@ -3,9 +3,9 @@ defaults:
   - dataset: australian
   # Use slurm on cluster or local?
   # - override hydra/launcher: submitit_local
-  # - override hydra/launcher: lumi
+  - override hydra/launcher: lumi
   # - override hydra/launcher: puhti
-  - override hydra/launcher: slurm
+  # - override hydra/launcher: slurm
   # Disable logging by Hydra
   # - override hydra/job_logging: none # stop hydra creating .log file
   # - override hydra/hydra_logging: none # saves .hydra/*.yaml files

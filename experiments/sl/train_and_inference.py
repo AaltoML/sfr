@@ -191,7 +191,7 @@ def calc_sfr_nll(
         output_dim=output_dim,
         num_inducing=num_inducing,
         dual_batch_size=2000,
-        jitter=1e-4,
+        jitter=1e-8,
         device=device,
     )
     sfr = sfr.double()
@@ -265,7 +265,8 @@ def calc_gp_nll(
         output_dim=output_dim,
         subset_size=num_inducing,
         dual_batch_size=2000,
-        jitter=1e-4,
+        jitter=1e-8,
+        # jitter=1e-4,
         device=device,
     )
     gp = gp.double()

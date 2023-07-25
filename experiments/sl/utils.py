@@ -9,6 +9,7 @@ import torch.distributions as dists
 from experiments.sl.bnn_predictive.experiments.scripts.imgclassification import (
     get_dataset,
     get_model,
+    QuickDS,
 )
 from experiments.sl.bnn_predictive.experiments.scripts.imginference import (
     get_quick_loader,
@@ -186,6 +187,9 @@ def get_image_dataset(
         val_from_test=val_from_test,
         val_split=val_split,
     )
+    ds_train = QuickDS(ds_train, device)
+    ds_val = QuickDS(ds_val, device)
+    ds_test = QuickDS(ds_test, device)
     ds_train.K = output_dim
     ds_train.output_dim = output_dim
     ds_train.pixels = pixels

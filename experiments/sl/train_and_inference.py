@@ -202,9 +202,9 @@ def calc_sfr_nll(
             pred_type="nn",
             val_loader=val_loader,
             method="grid",
-            log_prior_prec_min=-10,
-            log_prior_prec_max=5,
-            grid_size=50,
+            log_prior_prec_min=-8,
+            log_prior_prec_max=-1,
+            grid_size=100,
         )
     nn_nll = compute_metrics(
         pred_fn=sfr_pred(model=sfr, pred_type="nn", num_samples=num_samples),
@@ -218,9 +218,9 @@ def calc_sfr_nll(
             pred_type="gp",
             val_loader=val_loader,
             method="grid",
-            log_prior_prec_min=-10,
-            log_prior_prec_max=5,
-            grid_size=50,
+            log_prior_prec_min=-8,
+            log_prior_prec_max=-1,
+            grid_size=100,
         )
     gp_nll = compute_metrics(
         pred_fn=sfr_pred(model=sfr, pred_type="gp", num_samples=num_samples),
@@ -273,9 +273,12 @@ def calc_gp_nll(
             pred_type="nn",
             val_loader=val_loader,
             method="grid",
-            log_prior_prec_min=-10,
-            log_prior_prec_max=5,
-            grid_size=50,
+            # log_prior_prec_min=-10,
+            # log_prior_prec_max=5,
+            # grid_size=50,
+            log_prior_prec_min=-8,
+            log_prior_prec_max=-1,
+            grid_size=100,
         )
     nn_nll = compute_metrics(
         pred_fn=sfr_pred(model=gp, pred_type="nn", num_samples=num_samples),
@@ -287,9 +290,12 @@ def calc_gp_nll(
             pred_type="gp",
             val_loader=val_loader,
             method="grid",
-            log_prior_prec_min=-10,
-            log_prior_prec_max=5,
-            grid_size=50,
+            # log_prior_prec_min=-10,
+            # log_prior_prec_max=5,
+            # grid_size=50,
+            log_prior_prec_min=-8,
+            log_prior_prec_max=-1,
+            grid_size=100,
         )
     gp_nll = compute_metrics(
         pred_fn=sfr_pred(model=gp, pred_type="gp", num_samples=num_samples),
@@ -334,8 +340,9 @@ def calc_la_metrics(
             val_loader=val_loader,
             method="CV",  # "marglik"
             log_prior_prec_min=1,
-            log_prior_prec_max=5,
-            grid_size=50,
+            log_prior_prec_max=10,
+            # log_prior_prec_max=5,
+            grid_size=40,
         )
     bnn_pred_fn = la_pred(
         model=la, pred_type="nn", link_approx="mc", num_samples=num_samples
@@ -351,8 +358,8 @@ def calc_la_metrics(
             val_loader=val_loader,
             method="CV",  # "marglik"
             log_prior_prec_min=1,
-            log_prior_prec_max=5,
-            grid_size=50,
+            log_prior_prec_max=10,
+            grid_size=40,
         )
     glm_pred_fn = la_pred(
         model=la, pred_type="glm", link_approx="mc", num_samples=num_samples

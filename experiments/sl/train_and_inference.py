@@ -76,19 +76,26 @@ def train_and_inference(cfg: DictConfig):
     )
 
     # Train
+    cfg.n_epochs = 1
     sfr = train(cfg)  # Train the NN
 
     torch.set_default_dtype(torch.double)
 
+    ds_train, ds_val, ds_test = hydra.utils.instantiate(
+        cfg.dataset, dir=os.path.join(get_original_cwd(), "data"), double=True
+    )
     train_loader = DataLoader(ds_train, batch_size=cfg.batch_size, shuffle=True)
     val_loader = DataLoader(ds_val, batch_size=cfg.batch_size, shuffle=False)
     test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)
+    print("ds_test")
+    print(ds_test[0])
 
     # sfr.network = sfr.network.double()
     sfr = sfr.double()
     sfr.eval()
 
     # Log MAP NLPD
+    torch.cuda.empty_cache()
     map_metrics = calc_map_metrics(sfr, test_loader, device=cfg.device)
     data = add_data(
         model_name="NN MAP",
@@ -101,6 +108,7 @@ def train_and_inference(cfg: DictConfig):
 
     # Log Laplace BNN/GLM NLPD
     # print("starting laplace")
+    torch.cuda.empty_cache()
     la_metrics = calc_la_metrics(
         network=sfr.network,
         delta=sfr.prior.delta,
@@ -127,6 +135,7 @@ def train_and_inference(cfg: DictConfig):
     print(f"la_metrics {la_metrics}")
 
     for num_inducing in cfg.num_inducings:
+        torch.cuda.empty_cache()
         # Log SFR GP/NN NLPD
         sfr_metrics = calc_sfr_metrics(
             network=sfr.network,
@@ -200,6 +209,8 @@ def calc_map_metrics(sfr, test_loader, device):
 
     @torch.no_grad()
     def map_pred_fn(x, idx=None):
+        print("x.dtype")
+        print(x.dtype)
         f = sfr.network(x.to(device))
         return sfr.likelihood.inv_link(f)
 

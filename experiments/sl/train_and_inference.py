@@ -170,6 +170,8 @@ def calc_sfr_nll(
     device="cpu",
     posthoc_prior_opt: bool = True,
     num_samples=100,
+    EPS=0.01,
+    # EPS=0.0,
 ):
     import src
     from experiments.sl.inference import sfr_pred
@@ -181,7 +183,7 @@ def calc_sfr_nll(
     #     # likelihood = src.likelihoods.BernoulliLh(EPS=0.0004)
     # else:
     #     likelihood = src.likelihoods.CategoricalLh(EPS=0.0)
-    likelihood = src.likelihoods.CategoricalLh(EPS=0.0)
+    likelihood = src.likelihoods.CategoricalLh(EPS=EPS)
     sfr = init_SFR_with_gaussian_prior(
         model=network,
         delta=delta,  # TODO what should this be

@@ -9,28 +9,41 @@ from omegaconf import DictConfig, OmegaConf
 @hydra.main(
     version_base="1.3", config_path="./configs", config_name="train_and_inference"
 )
-def make_uci_table(cfg: DictConfig):
+def train_and_inference(cfg: DictConfig):
     import numpy as np
     import pandas as pd
     import wandb
     from experiments.sl.cluster_train import train
-    from experiments.sl.utils import get_uci_dataset
     from hydra.utils import get_original_cwd
     from torch.utils.data import DataLoader
 
     # Data dictionary used to make pd.DataFrame
-    data = {"dataset": [], "model": [], "seed": [], "num_inducing": [], "result": []}
-    tbl = wandb.Table(columns=["dataset", "model", "seed", "num_inducing", "result"])
+    data = {
+        "dataset": [],
+        "model": [],
+        "seed": [],
+        "num_inducing": [],
+        "acc": [],
+        "nlpd": [],
+        "ece": [],
+    }
+    tbl = wandb.Table(
+        columns=["dataset", "model", "seed", "num_inducing", "acc", "nlpd", "ece"]
+    )
 
-    def add_data(model_name, nll, num_inducing):
+    def add_data(model_name, acc, nll, ece, num_inducing):
         "Add NLL to data dict and wandb table"
         # dataset = dataset_name.replace("_uci", "").title()
         data["dataset"].append(cfg.dataset.name)
         data["model"].append(model_name)
         data["seed"].append(cfg.random_seed)
         data["num_inducing"].append(num_inducing)
-        data["result"].append(nll)
-        tbl.add_data(cfg.dataset.name, model_name, cfg.random_seed, num_inducing, nll)
+        data["acc"].append(acc)
+        data["nlpd"].append(nll)
+        data["ece"].append(ece)
+        tbl.add_data(
+            cfg.dataset.name, model_name, cfg.random_seed, num_inducing, acc, nll, ece
+        )
         wandb.log({"NLPD": wandb.Table(data=pd.DataFrame(data))})
         return data
 
@@ -376,4 +389,4 @@ def calc_la_metrics(
 
 
 if __name__ == "__main__":
-    make_uci_table()  # pyright: ignore
+    train_and_inference()  # pyright: ignore

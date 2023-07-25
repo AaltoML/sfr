@@ -28,7 +28,7 @@ output_dim: ???
 batch_size: 512
 lr: 1e-4
 n_epochs: 500
-double: False
+double: true
 
 logging_epoch_freq: 2
 random_seed: 117

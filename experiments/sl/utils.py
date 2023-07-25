@@ -164,6 +164,11 @@ def get_image_dataset(
     ds_train, ds_test = get_dataset(
         dataset=name, double=double, dir=dir, device=device, debug=debug
     )
+    if double:
+        ds_train.data = ds_train.data.to(torch.double)
+        ds_test.data = ds_test.data.to(torch.double)
+        ds_train.targets = ds_train.targets.long()
+        ds_test.targets = ds_test.targets.long()
     output_dim = ds_train.K  # set network output dim
     pixels = ds_train.pixels
     channels = ds_train.channels

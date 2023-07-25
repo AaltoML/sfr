@@ -53,12 +53,12 @@ def train_and_inference(cfg: DictConfig):
     ds_train, ds_val, ds_test = hydra.utils.instantiate(
         cfg.dataset, dir=os.path.join(get_original_cwd(), "data")
     )
-    ds_train.data = ds_train.data.to(torch.double)
-    ds_val.data = ds_val.data.to(torch.double)
-    ds_test.data = ds_test.data.to(torch.double)
-    ds_train.targets = ds_train.targets.long()
-    ds_val.targets = ds_val.targets.long()
-    ds_test.targets = ds_test.targets.long()
+    # ds_train.data = ds_train.data.to(torch.double)
+    # ds_val.data = ds_val.data.to(torch.double)
+    # ds_test.data = ds_test.data.to(torch.double)
+    # ds_train.targets = ds_train.targets.long()
+    # ds_val.targets = ds_val.targets.long()
+    # ds_test.targets = ds_test.targets.long()
 
     # Init Weight and Biases
     cfg.output_dim = ds_train.output_dim

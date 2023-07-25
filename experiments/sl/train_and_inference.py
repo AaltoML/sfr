@@ -243,6 +243,7 @@ def calc_gp_nll(
     device="cpu",
     posthoc_prior_opt: bool = True,
     num_samples=100,
+    EPS=0.01,
 ):
     import src
     from experiments.sl.inference import sfr_pred
@@ -255,7 +256,8 @@ def calc_gp_nll(
     #     likelihood = src.likelihoods.BernoulliLh(EPS=0.0)
     # else:
     #     likelihood = src.likelihoods.CategoricalLh(EPS=0.0)
-    likelihood = src.likelihoods.CategoricalLh(EPS=0.0)
+    # likelihood = src.likelihoods.CategoricalLh(EPS=0.0)
+    likelihood = src.likelihoods.CategoricalLh(EPS=EPS)
     gp = init_NN2GPSubset_with_gaussian_prior(
         model=network,
         delta=delta,  # TODO what should this be

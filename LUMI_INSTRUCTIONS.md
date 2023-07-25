@@ -6,8 +6,8 @@ SFR_CONTAINER_DIR=/scratch/project_462000217/sfr
 mkdir  $SFR_CONTAINER_DIR
 module load LUMI/22.08
 module load lumi-container-wrapper
-conda-containerize new --mamba --prefix $SFR_CONTAINER_DIR sfr-env.yaml
-conda-containerize update $SFR_CONTAINER_DIR --post-install post-install.txt
+conda-containerize new --mamba --prefix $SFR_CONTAINER_DIR sfr-env-amd.yaml
+conda-containerize update $SFR_CONTAINER_DIR --post-install post-install-amd.txt
 ```
 Add container to path
 ```sh

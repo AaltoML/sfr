@@ -178,6 +178,9 @@ def get_image_dataset(
     output_dim = ds_train.K  # set network output dim
     pixels = ds_train.pixels
     channels = ds_train.channels
+    ds_train = QuickDS(ds_train, device)
+    # ds_val = QuickDS(ds_val, device)
+    ds_test = QuickDS(ds_test, device)
     # Split train data set into train and validation
     print("Original num train {}".format(len(ds_train)))
     print("Original num test {}".format(len(ds_test)))
@@ -187,9 +190,6 @@ def get_image_dataset(
         val_from_test=val_from_test,
         val_split=val_split,
     )
-    ds_train = QuickDS(ds_train, device)
-    ds_val = QuickDS(ds_val, device)
-    ds_test = QuickDS(ds_test, device)
     ds_train.K = output_dim
     ds_train.output_dim = output_dim
     ds_train.pixels = pixels

@@ -169,11 +169,11 @@ def get_image_dataset(
         ds_test.data = ds_test.data.to(torch.double)
         ds_train.targets = ds_train.targets.long()
         ds_test.targets = ds_test.targets.long()
-    if device is not None:
-        ds_train.data = ds_train.data.to(device)
-        ds_test.data = ds_test.data.to(device)
-        ds_train.targets = ds_train.targets.to(device)
-        ds_test.targets = ds_test.targets.to(device)
+    # if device is not None:
+    #     ds_train.data = ds_train.data.to(device)
+    #     ds_test.data = ds_test.data.to(device)
+    #     ds_train.targets = ds_train.targets.to(device)
+    #     ds_test.targets = ds_test.targets.to(device)
     output_dim = ds_train.K  # set network output dim
     pixels = ds_train.pixels
     channels = ds_train.channels

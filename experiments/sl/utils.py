@@ -223,6 +223,13 @@ def get_uci_dataset(name: str, random_seed: int, dir: str, double: bool, **kwarg
         output_dim = ds_train.C
     else:
         output_dim = 1
+    if double:
+        ds_train.data = ds_train.data.to(torch.double)
+        ds_val.data = ds_val.data.to(torch.double)
+        ds_test.data = ds_test.data.to(torch.double)
+        ds_train.targets = ds_train.targets.long()
+        ds_val.targets = ds_val.targets.long()
+        ds_test.targets = ds_test.targets.long()
 
     # always use Softmax instead of Bernoulli
     output_dim = ds_train.C

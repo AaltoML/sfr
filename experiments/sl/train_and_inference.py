@@ -87,8 +87,6 @@ def train_and_inference(cfg: DictConfig):
     train_loader = DataLoader(ds_train, batch_size=cfg.batch_size, shuffle=True)
     val_loader = DataLoader(ds_val, batch_size=cfg.batch_size, shuffle=False)
     test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)
-    print("ds_test")
-    print(ds_test[0])
 
     # sfr.network = sfr.network.double()
     sfr = sfr.double()
@@ -398,6 +396,7 @@ def calc_la_metrics(
     )
     la.prior_precision = delta
     la.fit(train_loader)
+    print("Finished fitting Laplace approximation")
 
     # Get NLL for BNN predict
     if posthoc_prior_opt:
@@ -416,6 +415,7 @@ def calc_la_metrics(
     bnn_metrics = compute_metrics(
         pred_fn=bnn_pred_fn, data_loader=test_loader, device=device
     )
+    print(f"bnn_metrics: {bnn_metrics}")
 
     # Get NLL for GLM predict
     if posthoc_prior_opt:
@@ -433,6 +433,7 @@ def calc_la_metrics(
     glm_metrics = compute_metrics(
         pred_fn=glm_pred_fn, data_loader=test_loader, device=device
     )
+    print(f"glm_metrics: {glm_metrics}")
     return {"glm": glm_metrics, "bnn": bnn_metrics}
 
 

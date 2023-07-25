@@ -86,13 +86,19 @@ def train_and_inference(cfg: DictConfig):
     sfr.eval()
 
     # Log MAP NLPD
-    map_nll = calc_map_nll(sfr, test_loader, device=cfg.device)
-    data = add_data(model_name="NN MAP", nll=map_nll, num_inducing=None)
-    print(f"map_nll: {map_nll}")
+    map_metrics = calc_map_metrics(sfr, test_loader, device=cfg.device)
+    data = add_data(
+        model_name="NN MAP",
+        acc=map_metrics["acc"],
+        nll=map_metrics["nll"],
+        ece=map_metrics["ece"],
+        num_inducing=None,
+    )
+    print(f"map_metrics: {map_metrics}")
 
     # Log Laplace BNN/GLM NLPD
     # print("starting laplace")
-    la_nlls = calc_la_metrics(
+    la_metrics = calc_la_metrics(
         network=sfr.network,
         delta=sfr.prior.delta,
         train_loader=train_loader,
@@ -101,13 +107,25 @@ def train_and_inference(cfg: DictConfig):
         device=cfg.device,
         posthoc_prior_opt=cfg.posthoc_prior_opt,
     )
-    data = add_data(model_name="BNN", nll=la_nlls["bnn"], num_inducing=None)
-    data = add_data(model_name="GLM", nll=la_nlls["glm"], num_inducing=None)
-    print(f"la_nlls {la_nlls}")
+    data = add_data(
+        model_name="BNN",
+        acc=la_metrics["bnn"]["acc"],
+        nll=la_metrics["bnn"]["nll"],
+        ece=la_metrics["bnn"]["ece"],
+        num_inducing=None,
+    )
+    data = add_data(
+        model_name="GLM",
+        acc=la_metrics["glm"]["acc"],
+        nll=la_metrics["glm"]["nll"],
+        ece=la_metrics["glm"]["ece"],
+        num_inducing=None,
+    )
+    print(f"la_metrics {la_metrics}")
 
     for num_inducing in cfg.num_inducings:
         # Log SFR GP/NN NLPD
-        sfr_nlls = calc_sfr_nll(
+        sfr_metrics = calc_sfr_metrics(
             network=sfr.network,
             output_dim=ds_train.output_dim,
             delta=sfr.prior.delta,  # TODO how to set this?
@@ -119,15 +137,23 @@ def train_and_inference(cfg: DictConfig):
             posthoc_prior_opt=cfg.posthoc_prior_opt,
         )
         data = add_data(
-            model_name="SFR (NN)", nll=sfr_nlls["nn"], num_inducing=num_inducing
+            model_name="SFR (NN)",
+            acc=sfr_metrics["nn"]["acc"],
+            nll=sfr_metrics["nn"]["nll"],
+            ece=sfr_metrics["nn"]["ece"],
+            num_inducing=num_inducing,
         )
         data = add_data(
-            model_name="SFR (GP)", nll=sfr_nlls["gp"], num_inducing=num_inducing
+            model_name="SFR (GP)",
+            acc=sfr_metrics["gp"]["acc"],
+            nll=sfr_metrics["gp"]["nll"],
+            ece=sfr_metrics["gp"]["ece"],
+            num_inducing=num_inducing,
         )
-        print(f"sfr_nlls: {sfr_nlls}")
+        print(f"sfr_metrics: {sfr_metrics}")
 
         # Log GP GP/NN NLPD
-        gp_nlls = calc_gp_nll(
+        gp_metrics = calc_gp_metrics(
             network=sfr.network,
             output_dim=ds_train.output_dim,
             delta=sfr.prior.delta,  # TODO how to set this?
@@ -139,12 +165,20 @@ def train_and_inference(cfg: DictConfig):
             posthoc_prior_opt=cfg.posthoc_prior_opt,
         )
         data = add_data(
-            model_name="GP Subset (NN)", nll=gp_nlls["nn"], num_inducing=num_inducing
+            model_name="GP Subset (NN)",
+            acc=gp_metrics["nn"]["acc"],
+            nll=gp_metrics["nn"]["nll"],
+            ece=gp_metrics["nn"]["ece"],
+            num_inducing=num_inducing,
         )
         data = add_data(
-            model_name="GP Subset (GP)", nll=gp_nlls["gp"], num_inducing=num_inducing
+            model_name="GP Subset (GP)",
+            acc=gp_metrics["gp"]["acc"],
+            nll=gp_metrics["gp"]["nll"],
+            ece=gp_metrics["gp"]["ece"],
+            num_inducing=num_inducing,
         )
-        print(f"gp_nlls: {gp_nlls}")
+        print(f"gp_metrics: {gp_metrics}")
 
     df = pd.DataFrame(data)
     wandb.log({"NLPD raw": wandb.Table(data=df)})
@@ -158,7 +192,7 @@ def train_and_inference(cfg: DictConfig):
     print(df.to_latex(escape=False))
 
 
-def calc_map_nll(sfr, test_loader, device):
+def calc_map_metrics(sfr, test_loader, device):
     from experiments.sl.utils import compute_metrics
 
     @torch.no_grad()
@@ -166,13 +200,13 @@ def calc_map_nll(sfr, test_loader, device):
         f = sfr.network(x.to(device))
         return sfr.likelihood.inv_link(f)
 
-    map_nll = compute_metrics(
+    map_metrics = compute_metrics(
         pred_fn=map_pred_fn, data_loader=test_loader, device=device
-    )["nll"]
-    return map_nll
+    )
+    return map_metrics
 
 
-def calc_sfr_nll(
+def calc_sfr_metrics(
     network,
     output_dim,
     delta,
@@ -221,11 +255,11 @@ def calc_sfr_nll(
             log_prior_prec_max=-1,
             grid_size=100,
         )
-    nn_nll = compute_metrics(
+    nn_metrics = compute_metrics(
         pred_fn=sfr_pred(model=sfr, pred_type="nn", num_samples=num_samples),
         data_loader=test_loader,
         device=device,
-    )["nll"]
+    )
 
     # Get NLL for GP predict
     if posthoc_prior_opt:
@@ -237,15 +271,15 @@ def calc_sfr_nll(
             log_prior_prec_max=-1,
             grid_size=100,
         )
-    gp_nll = compute_metrics(
+    gp_metrics = compute_metrics(
         pred_fn=sfr_pred(model=sfr, pred_type="gp", num_samples=num_samples),
         data_loader=test_loader,
         device=device,
-    )["nll"]
-    return {"nn": nn_nll, "gp": gp_nll}
+    )
+    return {"nn": nn_metrics, "gp": gp_metrics}
 
 
-def calc_gp_nll(
+def calc_gp_metrics(
     network,
     output_dim,
     delta,
@@ -298,11 +332,11 @@ def calc_gp_nll(
             log_prior_prec_max=-1,
             grid_size=100,
         )
-    nn_nll = compute_metrics(
+    nn_metrics = compute_metrics(
         pred_fn=sfr_pred(model=gp, pred_type="nn", num_samples=num_samples),
         data_loader=test_loader,
         device=device,
-    )["nll"]
+    )
     if posthoc_prior_opt:
         gp.optimize_prior_precision(
             pred_type="gp",
@@ -315,12 +349,12 @@ def calc_gp_nll(
             log_prior_prec_max=-1,
             grid_size=100,
         )
-    gp_nll = compute_metrics(
+    gp_metrics = compute_metrics(
         pred_fn=sfr_pred(model=gp, pred_type="gp", num_samples=num_samples),
         data_loader=test_loader,
         device=device,
-    )["nll"]
-    return {"nn": nn_nll, "gp": gp_nll}
+    )
+    return {"nn": nn_metrics, "gp": gp_metrics}
 
 
 def calc_la_metrics(
@@ -385,7 +419,7 @@ def calc_la_metrics(
     glm_metrics = compute_metrics(
         pred_fn=glm_pred_fn, data_loader=test_loader, device=device
     )
-    return {"glm": glm_metrics["nll"], "bnn": bnn_metrics["nll"]}
+    return {"glm": glm_metrics, "bnn": bnn_metrics}
 
 
 if __name__ == "__main__":

@@ -17,6 +17,9 @@ def train_and_inference(cfg: DictConfig):
     from hydra.utils import get_original_cwd
     from torch.utils.data import DataLoader
 
+    cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
+    print("Using device: {}".format(cfg.device))
+
     # Data dictionary used to make pd.DataFrame
     data = {
         "dataset": [],

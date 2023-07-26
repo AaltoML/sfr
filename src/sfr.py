@@ -293,8 +293,11 @@ class SFR(nn.Module):
         L_Bu = np.zeros_like(Kzznp)
 
         for k in range(K):
+            print(f"k: {k}")
             L_Kzz[k], _ = cho_factor(Kzznp[k])
+            print(f"L_Kzz[k]: {L_Kzz[k]}")
             L_Bu[k], _ = cho_factor(KzzplusBetanp[k])
+            print(f"L_Bu[k]: {L_Bu[k]}")
 
         logger.info(f"Created predict function with delta {delta}")
 

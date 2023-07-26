@@ -301,7 +301,7 @@ class SFR(nn.Module):
                 return L
             except:
                 logger.info("Cholesky failed so adding more jitter")
-                x += Iz * jitter
+                x += Iz[0, ...] * jitter
                 return cho_factor_jitter(x)
 
         for k in range(K):

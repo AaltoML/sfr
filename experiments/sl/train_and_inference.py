@@ -286,7 +286,7 @@ def calc_sfr_metrics(
         jitter=1e-8,
         device=device,
     )
-    sfr = sfr.double()
+    sfr.double()
     sfr.eval()
     logger.info("Fitting SFR...")
     sfr.fit(train_loader=train_loader)

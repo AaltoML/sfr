@@ -347,10 +347,11 @@ def sfr_pred(
     model: src.SFR,
     pred_type: str = "gp",  # "gp" or "nn"
     num_samples: int = 100,
+    device: str = "cuda",
 ):
     @torch.no_grad()
     def pred_fn(x, idx=None):
-        return model(x, idx, pred_type=pred_type, num_samples=num_samples)[0]
+        return model(x.to(device), idx, pred_type=pred_type, num_samples=num_samples)[0]
 
     return pred_fn
 
@@ -360,11 +361,15 @@ def la_pred(
     pred_type: str = "glm",  # "glm" or "nn"
     link_approx: str = "probit",  # 'mc', 'probit', 'bridge', 'bridge_norm'
     num_samples: int = 100,  # num_samples for link_approx="mc"
+    device: str = "cuda",
 ):
     @torch.no_grad()
     def pred_fn(x, idx=None):
         return model(
-            x, pred_type=pred_type, link_approx=link_approx, n_samples=num_samples
+            x.to(device),
+            pred_type=pred_type,
+            link_approx=link_approx,
+            n_samples=num_samples,
         )
 
     return pred_fn

@@ -101,7 +101,7 @@ def train_and_inference(cfg: DictConfig):
 
     torch.set_default_dtype(torch.double)
 
-    cfg.device = "cpu"
+    # cfg.device = "cpu"
     print("Using device: {}".format(cfg.device))
     # sfr.to(cfg.device)
     # sfr.network.to(cfg.device)
@@ -177,10 +177,10 @@ def train_and_inference(cfg: DictConfig):
             test_loader=test_loader,
             num_inducing=num_inducing,
             dual_batch_size=cfg.dual_batch_size,
-            device="cuda",
-            # device=cfg.device,
+            device=cfg.device,
             posthoc_prior_opt=cfg.posthoc_prior_opt,
         )
+        logger.info(f"sfr_metrics: {sfr_metrics}")
         data = add_data(
             model_name="SFR (NN)",
             acc=sfr_metrics["nn"]["acc"],
@@ -195,7 +195,6 @@ def train_and_inference(cfg: DictConfig):
             ece=sfr_metrics["gp"]["ece"],
             num_inducing=num_inducing,
         )
-        logger.info(f"sfr_metrics: {sfr_metrics}")
 
         # Log GP GP/NN NLPD
         gp_metrics = calc_gp_metrics(
@@ -207,8 +206,7 @@ def train_and_inference(cfg: DictConfig):
             test_loader=test_loader,
             num_inducing=num_inducing,
             dual_batch_size=cfg.dual_batch_size,
-            # device=cfg.device,
-            device="cuda",
+            device=cfg.device,
             posthoc_prior_opt=cfg.posthoc_prior_opt,
         )
         data = add_data(
@@ -307,7 +305,9 @@ def calc_sfr_metrics(
             grid_size=100,
         )
     nn_metrics = compute_metrics(
-        pred_fn=sfr_pred(model=sfr, pred_type="nn", num_samples=num_samples),
+        pred_fn=sfr_pred(
+            model=sfr, pred_type="nn", num_samples=num_samples, device=device
+        ),
         data_loader=test_loader,
         device=device,
     )
@@ -323,7 +323,9 @@ def calc_sfr_metrics(
             grid_size=100,
         )
     gp_metrics = compute_metrics(
-        pred_fn=sfr_pred(model=sfr, pred_type="gp", num_samples=num_samples),
+        pred_fn=sfr_pred(
+            model=sfr, pred_type="gp", num_samples=num_samples, device=device
+        ),
         data_loader=test_loader,
         device=device,
     )
@@ -388,7 +390,9 @@ def calc_gp_metrics(
             grid_size=100,
         )
     nn_metrics = compute_metrics(
-        pred_fn=sfr_pred(model=gp, pred_type="nn", num_samples=num_samples),
+        pred_fn=sfr_pred(
+            model=gp, pred_type="nn", num_samples=num_samples, device=device
+        ),
         data_loader=test_loader,
         device=device,
     )
@@ -405,7 +409,9 @@ def calc_gp_metrics(
             grid_size=100,
         )
     gp_metrics = compute_metrics(
-        pred_fn=sfr_pred(model=gp, pred_type="gp", num_samples=num_samples),
+        pred_fn=sfr_pred(
+            model=gp, pred_type="gp", num_samples=num_samples, device=device
+        ),
         data_loader=test_loader,
         device=device,
     )
@@ -454,7 +460,11 @@ def calc_la_metrics(
             grid_size=40,
         )
     bnn_pred_fn = la_pred(
-        model=la, pred_type="nn", link_approx="mc", num_samples=num_samples
+        model=la,
+        pred_type="nn",
+        link_approx="mc",
+        num_samples=num_samples,
+        device=device,
     )
     bnn_metrics = compute_metrics(
         pred_fn=bnn_pred_fn, data_loader=test_loader, device=device
@@ -472,7 +482,11 @@ def calc_la_metrics(
             grid_size=40,
         )
     glm_pred_fn = la_pred(
-        model=la, pred_type="glm", link_approx="mc", num_samples=num_samples
+        model=la,
+        pred_type="glm",
+        link_approx="mc",
+        num_samples=num_samples,
+        device=device,
     )
     glm_metrics = compute_metrics(
         pred_fn=glm_pred_fn, data_loader=test_loader, device=device

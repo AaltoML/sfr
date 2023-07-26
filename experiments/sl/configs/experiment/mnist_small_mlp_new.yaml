@@ -1,0 +1,22 @@
+# @package _global_
+defaults:
+  - override /network: small_mlp
+  - override /dataset: mnist
+
+lr: 1e-4
+n_epochs: 500
+
+sfr:
+  delta: 0.0008
+
+# batch_size: 512 # for training/val/test data
+# batch_size: 64 # for training/val/test data
+batch_size: 128 # for training/val/test data
+
+num_inducings:
+  - 128
+  - 256
+  - 512
+  - 1024
+  - 2048
+  - 3200

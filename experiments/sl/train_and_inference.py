@@ -76,15 +76,17 @@ def train_and_inference(cfg: DictConfig):
     )
 
     # Train
-    cfg.n_epochs = 1
+    # cfg.n_epochs = 1
     sfr = train(cfg)  # Train the NN
 
     torch.set_default_dtype(torch.double)
 
     cfg.device = "cpu"
     print("Using device: {}".format(cfg.device))
-    sfr.to(cfg.device)
-    sfr.network.to(cfg.device)
+    # sfr.to(cfg.device)
+    # sfr.network.to(cfg.device)
+    sfr.cpu()
+    sfr.network.cpu()
 
     ds_train, ds_val, ds_test = hydra.utils.instantiate(
         cfg.dataset, dir=os.path.join(get_original_cwd(), "data"), double=True

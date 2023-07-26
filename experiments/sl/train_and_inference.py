@@ -240,8 +240,6 @@ def calc_map_metrics(sfr, test_loader, device):
 
     @torch.no_grad()
     def map_pred_fn(x, idx=None):
-        print("x.dtype")
-        print(x.dtype)
         f = sfr.network(x.to(device))
         return sfr.likelihood.inv_link(f)
 

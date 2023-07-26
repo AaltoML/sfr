@@ -13,6 +13,7 @@ defaults:
 
 # posthoc_prior_opt: False
 posthoc_prior_opt: True
+dual_batch_size: 5000
 
 num_inducings:
   - 16

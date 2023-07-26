@@ -165,7 +165,13 @@ def get_image_dataset(
     ds_train, ds_test = get_dataset(
         dataset=name, double=double, dir=dir, device=None, debug=debug
     )
+    if debug:
+        ds_train.data = ds_train.data[:500]
+        ds_train.targets = ds_train.targets[:500]
+        ds_test.data = ds_test.data[:500]
+        ds_test.targets = ds_test.targets[:500]
     if double:
+        print("MAKING DATASET DOUBLE")
         ds_train.data = ds_train.data.to(torch.double)
         ds_test.data = ds_test.data.to(torch.double)
         ds_train.targets = ds_train.targets.long()

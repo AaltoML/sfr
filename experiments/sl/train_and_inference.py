@@ -108,7 +108,7 @@ def train_and_inference(cfg: DictConfig):
     # sfr.network = sfr.network.double()
     sfr.double()
     sfr.eval()
-    # sfr.cpu()
+    sfr.cpu()
     # sfr.network.cpu()
 
     # ds_train, ds_val, ds_test = hydra.utils.instantiate(

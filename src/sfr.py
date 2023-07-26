@@ -270,6 +270,9 @@ class SFR(nn.Module):
         )
         Kzz += Iz * jitter
         KzzplusBeta = (Kzz / (delta * num_data) + beta_u) + Iz * jitter
+        print(f"Kzz: {Kzz}")
+        print(f"beta_u: {beta_u}")
+        print(f"KzzplusBeta: {KzzplusBeta}")
 
         if test_loader and self.computed_Kss_Ksz == False:
             Kxx_cached = []
@@ -319,8 +322,12 @@ class SFR(nn.Module):
                     # Note the first argument is a tuple that takes the result
                     # from the cho_factor (by default lower=False, then (A, False)
                     # is fed to cho_solve)
+                    print(f"before Amk")
                     Amk = cho_solve((L_Kzz[k], False), Kzxk)
+                    print(f"Amk: {Amk}")
+                    print(f"before Abk")
                     Abk = cho_solve((L_Bu[k], False), Kzxk)
+                    print(f"Abk: {Abk}")
                     # logger.debug(f"pred_fn delta: {delta} num_data: {num_data}")
                     fvark = (Kxxk - (Amk**2).sum()) / delta / num_data + (
                         Abk**2

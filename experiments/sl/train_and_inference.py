@@ -109,33 +109,33 @@ def train_and_inference(cfg: DictConfig):
     )
     print(f"map_metrics: {map_metrics}")
 
-    # Log Laplace BNN/GLM NLPD
-    # print("starting laplace")
-    torch.cuda.empty_cache()
-    la_metrics = calc_la_metrics(
-        network=sfr.network,
-        delta=sfr.prior.delta,
-        train_loader=train_loader,
-        val_loader=val_loader,
-        test_loader=test_loader,
-        device=cfg.device,
-        posthoc_prior_opt=cfg.posthoc_prior_opt,
-    )
-    data = add_data(
-        model_name="BNN",
-        acc=la_metrics["bnn"]["acc"],
-        nll=la_metrics["bnn"]["nll"],
-        ece=la_metrics["bnn"]["ece"],
-        num_inducing=None,
-    )
-    data = add_data(
-        model_name="GLM",
-        acc=la_metrics["glm"]["acc"],
-        nll=la_metrics["glm"]["nll"],
-        ece=la_metrics["glm"]["ece"],
-        num_inducing=None,
-    )
-    print(f"la_metrics {la_metrics}")
+    # # Log Laplace BNN/GLM NLPD
+    # # print("starting laplace")
+    # torch.cuda.empty_cache()
+    # la_metrics = calc_la_metrics(
+    #     network=sfr.network,
+    #     delta=sfr.prior.delta,
+    #     train_loader=train_loader,
+    #     val_loader=val_loader,
+    #     test_loader=test_loader,
+    #     device=cfg.device,
+    #     posthoc_prior_opt=cfg.posthoc_prior_opt,
+    # )
+    # data = add_data(
+    #     model_name="BNN",
+    #     acc=la_metrics["bnn"]["acc"],
+    #     nll=la_metrics["bnn"]["nll"],
+    #     ece=la_metrics["bnn"]["ece"],
+    #     num_inducing=None,
+    # )
+    # data = add_data(
+    #     model_name="GLM",
+    #     acc=la_metrics["glm"]["acc"],
+    #     nll=la_metrics["glm"]["nll"],
+    #     ece=la_metrics["glm"]["ece"],
+    #     num_inducing=None,
+    # )
+    # print(f"la_metrics {la_metrics}")
 
     for num_inducing in cfg.num_inducings:
         torch.cuda.empty_cache()

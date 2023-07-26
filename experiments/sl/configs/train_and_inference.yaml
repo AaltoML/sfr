@@ -15,6 +15,7 @@ defaults:
 posthoc_prior_opt: True
 dual_batch_size: 5000
 EPS: 0.0
+jitter: 1e-6
 
 num_inducings:
   - 16

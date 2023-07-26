@@ -164,6 +164,7 @@ def train_and_inference(cfg: DictConfig):
             device=cfg.device,
             posthoc_prior_opt=cfg.posthoc_prior_opt,
             EPS=cfg.EPS,
+            jitter=cfg.jitter,
         )
         logger.info(f"sfr_metrics: {sfr_metrics}")
         data = add_data(
@@ -194,6 +195,7 @@ def train_and_inference(cfg: DictConfig):
             device=cfg.device,
             posthoc_prior_opt=cfg.posthoc_prior_opt,
             EPS=cfg.EPS,
+            jitter=cfg.jitter,
         )
         data = add_data(
             model_name="GP Subset (NN)",
@@ -252,6 +254,7 @@ def calc_sfr_metrics(
     num_samples=100,
     EPS=0.01,
     # EPS=0.0,
+    jitter: float = 1e-6,
 ):
     import src
     from experiments.sl.inference import sfr_pred
@@ -271,7 +274,7 @@ def calc_sfr_metrics(
         output_dim=output_dim,
         num_inducing=num_inducing,
         dual_batch_size=dual_batch_size,
-        jitter=1e-8,
+        jitter=jitter,
         device=device,
     )
     sfr.double()
@@ -332,6 +335,7 @@ def calc_gp_metrics(
     posthoc_prior_opt: bool = True,
     num_samples=100,
     EPS=0.01,
+    jitter: float = 1e-6,
 ):
     import src
     from experiments.sl.inference import sfr_pred
@@ -353,7 +357,7 @@ def calc_gp_metrics(
         output_dim=output_dim,
         subset_size=num_inducing,
         dual_batch_size=dual_batch_size,
-        jitter=1e-8,
+        jitter=jitter,
         # jitter=1e-4,
         device=device,
     )

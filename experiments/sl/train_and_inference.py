@@ -108,7 +108,7 @@ def train_and_inference(cfg: DictConfig):
     # sfr.network = sfr.network.double()
     sfr.double()
     sfr.eval()
-    sfr.cpu()
+    # sfr.cpu()
     # sfr.network.cpu()
 
     # ds_train, ds_val, ds_test = hydra.utils.instantiate(
@@ -177,7 +177,8 @@ def train_and_inference(cfg: DictConfig):
             test_loader=test_loader,
             num_inducing=num_inducing,
             dual_batch_size=cfg.dual_batch_size,
-            device=cfg.device,
+            device="gpu",
+            # device=cfg.device,
             posthoc_prior_opt=cfg.posthoc_prior_opt,
         )
         data = add_data(
@@ -206,7 +207,8 @@ def train_and_inference(cfg: DictConfig):
             test_loader=test_loader,
             num_inducing=num_inducing,
             dual_batch_size=cfg.dual_batch_size,
-            device=cfg.device,
+            # device=cfg.device,
+            device="gpu",
             posthoc_prior_opt=cfg.posthoc_prior_opt,
         )
         data = add_data(
@@ -260,7 +262,8 @@ def calc_sfr_metrics(
     test_loader,
     num_inducing: int = 128,
     dual_batch_size: int = 1000,
-    device="cpu",
+    # device="cpu",
+    device="gpu",
     posthoc_prior_opt: bool = True,
     num_samples=100,
     EPS=0.01,
@@ -336,7 +339,8 @@ def calc_gp_metrics(
     test_loader,
     num_inducing: int = 128,
     dual_batch_size: int = 1000,
-    device="cpu",
+    # device="cpu",
+    device="gpu",
     posthoc_prior_opt: bool = True,
     num_samples=100,
     EPS=0.01,

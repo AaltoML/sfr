@@ -14,9 +14,9 @@ sfr:
 batch_size: 128 # for training/val/test data
 
 num_inducings:
-  - 128
-  - 256
-  - 512
-  - 1024
-  - 2048
   - 3200
+  - 2048
+  - 1024
+  - 512
+  - 256
+  - 128

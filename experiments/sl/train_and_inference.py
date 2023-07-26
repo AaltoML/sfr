@@ -58,17 +58,9 @@ def train_and_inference(cfg: DictConfig):
     torch.set_default_dtype(torch.float)
 
     # Load train/val/test data sets
-    ds_train, ds_val, ds_test = hydra.utils.instantiate(
-        # cfg.dataset, dir=os.path.join(get_original_cwd(), "data"), double=True
-        cfg.dataset,
-        dir=os.path.join(get_original_cwd(), "data"),
+    ds_train, _, ds_test = hydra.utils.instantiate(
+        cfg.dataset, dir=os.path.join(get_original_cwd(), "data")
     )
-    # ds_train.data = ds_train.data.to(torch.double)
-    # ds_val.data = ds_val.data.to(torch.double)
-    # ds_test.data = ds_test.data.to(torch.double)
-    # ds_train.targets = ds_train.targets.long()
-    # ds_val.targets = ds_val.targets.long()
-    # ds_test.targets = ds_test.targets.long()
 
     # Init Weight and Biases
     cfg.output_dim = ds_train.output_dim
@@ -86,30 +78,22 @@ def train_and_inference(cfg: DictConfig):
     cfg.n_epochs = 1
     sfr = train(cfg)  # Train the NN
 
-    # # Log MAP NLPD
-    # # torch.cuda.empty_cache()
-    # test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)
-    # map_metrics = calc_map_metrics(sfr, test_loader, device=cfg.device)
-    # data = add_data(
-    #     model_name="NN MAP",
-    #     acc=map_metrics["acc"],
-    #     nll=map_metrics["nll"],
-    #     ece=map_metrics["ece"],
-    #     num_inducing=None,
-    # )
-    # logger.info(f"map_metrics: {map_metrics}")
+    # Log MAP NLPD
+    test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)
+    map_metrics = calc_map_metrics(sfr, test_loader, device=cfg.device)
+    data = add_data(
+        model_name="NN MAP",
+        acc=map_metrics["acc"],
+        nll=map_metrics["nll"],
+        ece=map_metrics["ece"],
+        num_inducing=None,
+    )
+    logger.info(f"map_metrics: {map_metrics}")
 
+    # Make everything double for inference
     torch.set_default_dtype(torch.double)
-
-    # cfg.device = "cpu"
-    print("Using device: {}".format(cfg.device))
-    # sfr.to(cfg.device)
-    # sfr.network.to(cfg.device)
-    # sfr.network = sfr.network.double()
     sfr.double()
     sfr.eval()
-    # sfr.cpu()
-    # sfr.network.cpu()
 
     ds_train, ds_val, ds_test = hydra.utils.instantiate(
         cfg.dataset, dir=os.path.join(get_original_cwd(), "data"), double=True
@@ -121,17 +105,17 @@ def train_and_inference(cfg: DictConfig):
     val_loader = DataLoader(ds_val, batch_size=cfg.batch_size, shuffle=False)
     test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)
 
-    # Log MAP NLPD
-    # torch.cuda.empty_cache()
-    map_metrics = calc_map_metrics(sfr, test_loader, device=cfg.device)
-    data = add_data(
-        model_name="NN MAP",
-        acc=map_metrics["acc"],
-        nll=map_metrics["nll"],
-        ece=map_metrics["ece"],
-        num_inducing=None,
-    )
-    logger.info(f"map_metrics: {map_metrics}")
+    # # Log MAP NLPD
+    # # torch.cuda.empty_cache()
+    # map_metrics = calc_map_metrics(sfr, test_loader, device=cfg.device)
+    # data = add_data(
+    #     model_name="NN MAP",
+    #     acc=map_metrics["acc"],
+    #     nll=map_metrics["nll"],
+    #     ece=map_metrics["ece"],
+    #     num_inducing=None,
+    # )
+    # logger.info(f"map_metrics: {map_metrics}")
 
     # # Log Laplace BNN/GLM NLPD
     # # print("starting laplace")

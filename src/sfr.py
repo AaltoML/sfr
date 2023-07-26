@@ -338,12 +338,12 @@ class SFR(nn.Module):
                     # Note the first argument is a tuple that takes the result
                     # from the cho_factor (by default lower=False, then (A, False)
                     # is fed to cho_solve)
-                    print(f"before Amk")
+                    # print(f"before Amk")
                     Amk = cho_solve((L_Kzz[k], False), Kzxk)
-                    print(f"Amk: {Amk}")
-                    print(f"before Abk")
+                    # print(f"Amk: {Amk}")
+                    # print(f"before Abk")
                     Abk = cho_solve((L_Bu[k], False), Kzxk)
-                    print(f"Abk: {Abk}")
+                    # print(f"Abk: {Abk}")
                     # logger.debug(f"pred_fn delta: {delta} num_data: {num_data}")
                     fvark = (Kxxk - (Amk**2).sum()) / delta / num_data + (
                         Abk**2

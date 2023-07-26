@@ -268,7 +268,7 @@ class SFR(nn.Module):
             .to(Z.device)[None, ...]
             .repeat(output_dim, 1, 1)
         )
-        Kzz += Iz * jitter
+        # Kzz += Iz * jitter
         KzzplusBeta = (Kzz / (delta * num_data) + beta_u) + Iz * jitter
         print(f"Kzz: {Kzz}")
         print(f"beta_u: {beta_u}")

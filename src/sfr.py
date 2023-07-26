@@ -287,6 +287,7 @@ class SFR(nn.Module):
         assert beta_u.shape == Kzz.shape
 
         K, M, _ = Kzz.shape
+        Kzz += Iz * jitter
         Kzznp = Kzz.detach().cpu().numpy()
         KzzplusBetanp = KzzplusBeta.detach().cpu().numpy()
         L_Kzz = np.zeros_like(Kzznp)

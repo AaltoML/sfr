@@ -59,7 +59,9 @@ def train_and_inference(cfg: DictConfig):
 
     # Load train/val/test data sets
     ds_train, ds_val, ds_test = hydra.utils.instantiate(
-        cfg.dataset, dir=os.path.join(get_original_cwd(), "data"), double=True
+        # cfg.dataset, dir=os.path.join(get_original_cwd(), "data"), double=True
+        cfg.dataset,
+        dir=os.path.join(get_original_cwd(), "data"),
     )
     # ds_train.data = ds_train.data.to(torch.double)
     # ds_val.data = ds_val.data.to(torch.double)

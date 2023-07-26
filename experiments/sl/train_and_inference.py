@@ -75,7 +75,7 @@ def train_and_inference(cfg: DictConfig):
     )
 
     # Train
-    cfg.n_epochs = 1
+    # cfg.n_epochs = 1
     sfr = train(cfg)  # Train the NN
 
     # Log MAP NLPD

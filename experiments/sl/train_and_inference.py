@@ -163,6 +163,7 @@ def train_and_inference(cfg: DictConfig):
             dual_batch_size=cfg.dual_batch_size,
             device=cfg.device,
             posthoc_prior_opt=cfg.posthoc_prior_opt,
+            EPS=cfg.EPS,
         )
         logger.info(f"sfr_metrics: {sfr_metrics}")
         data = add_data(
@@ -192,6 +193,7 @@ def train_and_inference(cfg: DictConfig):
             dual_batch_size=cfg.dual_batch_size,
             device=cfg.device,
             posthoc_prior_opt=cfg.posthoc_prior_opt,
+            EPS=cfg.EPS,
         )
         data = add_data(
             model_name="GP Subset (NN)",

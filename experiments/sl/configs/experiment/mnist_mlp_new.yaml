@@ -9,8 +9,8 @@ n_epochs: 500
 sfr:
   delta: 0.00045
 
-# batch_size: 512 # for training/val/test data
-batch_size: 64 # for training/val/test data
+batch_size: 512 # for training/val/test data
+# batch_size: 64 # for training/val/test data
 
 num_inducings:
   - 128

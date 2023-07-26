@@ -295,11 +295,21 @@ class SFR(nn.Module):
         L_Kzz = np.zeros_like(Kzznp)
         L_Bu = np.zeros_like(Kzznp)
 
+        def cho_factor_jitter(x):
+            try:
+                L, _ = cho_factor(x)
+                return L
+            except:
+                logger.info("Cholesky failed so adding more jitter")
+                x += Iz * jitter
+                return cho_factor_jitter(x)
+
         for k in range(K):
             print(f"k: {k}")
             L_Kzz[k], _ = cho_factor(Kzznp[k])
             print(f"L_Kzz[k]: {L_Kzz[k]}")
-            L_Bu[k], _ = cho_factor(KzzplusBetanp[k])
+            L_Bu[k] = cho_factor_jitter(KzzplusBetanp[k])
+            # L_Bu[k], _ = cho_factor(KzzplusBetanp[k])
             print(f"L_Bu[k]: {L_Bu[k]}")
 
         logger.info(f"Created predict function with delta {delta}")

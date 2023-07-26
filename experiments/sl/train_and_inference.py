@@ -1,5 +1,10 @@
 #!/usr/bin/env python3
+import logging
 import os
+
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 import hydra
 import torch
@@ -78,6 +83,8 @@ def train_and_inference(cfg: DictConfig):
     # Train
     # cfg.n_epochs = 1
     sfr = train(cfg)  # Train the NN
+
+    logger.info(f"map_metrics: {map_metrics}")
 
     torch.set_default_dtype(torch.double)
 
@@ -262,7 +269,9 @@ def calc_sfr_metrics(
     )
     sfr = sfr.double()
     sfr.eval()
+    logger.info("Fitting SFR...")
     sfr.fit(train_loader=train_loader)
+    logger.info("Finished fitting SFR")
 
     # Get NLL for NN predict
     if posthoc_prior_opt:
@@ -337,7 +346,9 @@ def calc_gp_metrics(
     )
     gp = gp.double()
     gp.eval()
+    logger.info("Fitting GP...")
     gp.fit(train_loader=train_loader)
+    logger.info("Finished fitting GP")
 
     if posthoc_prior_opt:
         gp.optimize_prior_precision(
@@ -402,8 +413,9 @@ def calc_la_metrics(
         model=network,
     )
     la.prior_precision = delta
+    logger.info("Fitting Laplace...")
     la.fit(train_loader)
-    print("Finished fitting Laplace approximation")
+    logger.info("Finished fitting Laplace")
 
     # Get NLL for BNN predict
     if posthoc_prior_opt:

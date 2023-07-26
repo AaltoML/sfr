@@ -189,7 +189,7 @@ def train_and_inference(cfg: DictConfig):
             ece=sfr_metrics["gp"]["ece"],
             num_inducing=num_inducing,
         )
-        print(f"sfr_metrics: {sfr_metrics}")
+        logger.info(f"sfr_metrics: {sfr_metrics}")
 
         # Log GP GP/NN NLPD
         gp_metrics = calc_gp_metrics(

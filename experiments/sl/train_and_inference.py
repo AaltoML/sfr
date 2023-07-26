@@ -211,7 +211,7 @@ def train_and_inference(cfg: DictConfig):
             ece=gp_metrics["gp"]["ece"],
             num_inducing=num_inducing,
         )
-        print(f"gp_metrics: {gp_metrics}")
+        logger.info(f"gp_metrics: {gp_metrics}")
 
     df = pd.DataFrame(data)
     wandb.log({"NLPD raw": wandb.Table(data=df)})

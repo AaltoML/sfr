@@ -83,6 +83,8 @@ def train_and_inference(cfg: DictConfig):
 
     cfg.device = "cpu"
     print("Using device: {}".format(cfg.device))
+    sfr.to(cfg.device)
+    sfr.network.to(cfg.device)
 
     ds_train, ds_val, ds_test = hydra.utils.instantiate(
         cfg.dataset, dir=os.path.join(get_original_cwd(), "data"), double=True

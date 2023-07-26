@@ -177,7 +177,7 @@ def train_and_inference(cfg: DictConfig):
             test_loader=test_loader,
             num_inducing=num_inducing,
             dual_batch_size=cfg.dual_batch_size,
-            device="gpu",
+            device="cuda",
             # device=cfg.device,
             posthoc_prior_opt=cfg.posthoc_prior_opt,
         )
@@ -208,7 +208,7 @@ def train_and_inference(cfg: DictConfig):
             num_inducing=num_inducing,
             dual_batch_size=cfg.dual_batch_size,
             # device=cfg.device,
-            device="gpu",
+            device="cuda",
             posthoc_prior_opt=cfg.posthoc_prior_opt,
         )
         data = add_data(
@@ -263,7 +263,7 @@ def calc_sfr_metrics(
     num_inducing: int = 128,
     dual_batch_size: int = 1000,
     # device="cpu",
-    device="gpu",
+    device="cuda",
     posthoc_prior_opt: bool = True,
     num_samples=100,
     EPS=0.01,
@@ -340,7 +340,7 @@ def calc_gp_metrics(
     num_inducing: int = 128,
     dual_batch_size: int = 1000,
     # device="cpu",
-    device="gpu",
+    device="cuda",
     posthoc_prior_opt: bool = True,
     num_samples=100,
     EPS=0.01,

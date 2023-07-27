@@ -305,10 +305,14 @@ class SFR(nn.Module):
                 print("Failed cho_factor")
                 logger.info("Cholesky failed so adding more jitter")
                 print(f"x: {x.shape}")
-                print(f"Iz[0,...]: {Iz[0,...]*jitter}")
-                print(f"Iz[0,...]: {Iz[0,...].shape}")
+                Iz = np.eye(x.shape[-1])
+                print(f"Iz[0,...]: {Iz*jitter}")
+                print(f"Iz[0,...]: {Iz.shape}")
                 print(f"jiiter: {jitter}")
-                x += Iz[0, ...].numpy() * jitter
+                x += Iz * jitter
+                # x += Iz[0, ...].numpy() * jitter
+                print(f"x new: {x}")
+                print(f"x new: {x.shape}")
                 return cho_factor_jitter(x)
 
         for k in range(K):

@@ -385,6 +385,7 @@ class SFR(nn.Module):
         jitter: float = 1e-3,
     ):
         Kzz = kernel(Z, Z)
+        print(f"Kzz {Kzz}")
         output_dim = Kzz.shape[0]
         Iz = (
             torch.eye(Kzz.shape[-1], dtype=torch.float64)
@@ -394,20 +395,25 @@ class SFR(nn.Module):
         Kzz += Iz * jitter
         # KzzplusBeta = (Kzz + beta_u) + Iz * jitter
         KzzplusBeta = (Kzz + beta_u / (delta * num_data)) + Iz * jitter
+        print(f"KzzplusBeta {KzzplusBeta}")
         assert beta_u.shape == Kzz.shape
 
         # beta_u += Iz * jitter
         Lm = torch.linalg.cholesky(Kzz, upper=True)
+        print(f"Lm {Lm}")
         # L = torch.linalg.cholesky(beta_u, upper=True)
         # Lb = torch.linalg.cholesky(Kzz, upper=True)
         Lb = torch.linalg.cholesky(KzzplusBeta, upper=True)
+        print(f"Lb {Lb}")
         # Lb = Iz
 
         KzX = kernel(Z, self.train_data[0])
-        # print(f"KzX {KzX.shape}")
+        print(f"KzX {KzX}")
         F = self.network(self.train_data[0])
         Lambda, _ = calc_lambdas(Y=self.train_data[1], F=F, likelihood=self.likelihood)
+        print(f"Lambda {Lambda}")
         Lambda_u = torch.matmul(KzX, torch.transpose(Lambda, -1, -2)[..., None])[..., 0]
+        print(f"Lambda_u {Lambda_u}")
         # Kzz += Iz * jittbeta er
         # KzzplusBeta = (Kzz + beta_u) + Iz * jitter
         alpha_u = torch.linalg.solve(KzzplusBeta, Lambda_u[..., None])[..., 0]
@@ -417,9 +423,12 @@ class SFR(nn.Module):
             x, index=None, full_cov: bool = False
         ) -> Tuple[OutputMean, OutputVar]:
             Kxx = kernel(x, x, full_cov=full_cov)
+            print(f"Kxx {Kxx}")
             Kxz = kernel(x, Z)
+            print(f"Kxz {Kxz}")
 
             f_mean = (Kxz @ alpha_u[..., None])[..., 0].T / (delta * num_data)
+            print(f"f_mean {f_mean}")
 
             if full_cov:
                 # TODO tmp could be computed before

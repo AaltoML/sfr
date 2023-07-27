@@ -406,7 +406,7 @@ class SFR(nn.Module):
         KzX = kernel(Z, self.train_data[0])
         # print(f"KzX {KzX.shape}")
         F = self.network(self.train_data[0])
-        Lambda, _ = calc_lambdas(Y=self.train_data[0], F=F, likelihood=self.likelihood)
+        Lambda, _ = calc_lambdas(Y=self.train_data[1], F=F, likelihood=self.likelihood)
         Lambda_u = torch.matmul(KzX, torch.transpose(Lambda, -1, -2)[..., None])[..., 0]
         # Kzz += Iz * jittbeta er
         # KzzplusBeta = (Kzz + beta_u) + Iz * jitter

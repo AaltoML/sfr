@@ -308,7 +308,7 @@ class SFR(nn.Module):
                 print(f"Iz[0,...]: {Iz[0,...]*jitter}")
                 print(f"Iz[0,...]: {Iz[0,...].shape}")
                 print(f"jiiter: {jitter}")
-                x += Iz[0, ...] * jitter
+                x += Iz[0, ...].numpy() * jitter
                 return cho_factor_jitter(x)
 
         for k in range(K):

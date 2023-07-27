@@ -297,16 +297,23 @@ class SFR(nn.Module):
 
         def cho_factor_jitter(x):
             try:
+                print("trying cho_factor")
                 L, _ = cho_factor(x)
+                print("completed cho_factor")
                 return L
             except:
+                print("Failed cho_factor")
                 logger.info("Cholesky failed so adding more jitter")
+                print(f"x: {x.shape}")
                 x += Iz[0, ...] * jitter
+                print(f"Iz[0,...]: {Iz[0,...]*jitter}")
+                print(f"Iz[0,...]: {Iz[0,...].shape}")
                 return cho_factor_jitter(x)
 
         for k in range(K):
             print(f"k: {k}")
-            L_Kzz[k], _ = cho_factor(Kzznp[k])
+            # L_Kzz[k], _ = cho_factor(Kzznp[k])
+            L_Kzz[k] = cho_factor_jitter(Kzznp[k])
             print(f"L_Kzz[k]: {L_Kzz[k]}")
             L_Bu[k] = cho_factor_jitter(KzzplusBetanp[k])
             # L_Bu[k], _ = cho_factor(KzzplusBetanp[k])

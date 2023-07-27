@@ -407,10 +407,12 @@ class SFR(nn.Module):
         print(f"Lb {Lb}")
         # Lb = Iz
 
-        KzX = kernel(Z, self.train_data[0])
+        X = self.train_data[0].to(Z.device)
+        Y = self.train_data[1].to(Z.device)
+        KzX = kernel(Z, X)
         print(f"KzX {KzX}")
-        F = self.network(self.train_data[0])
-        Lambda, _ = calc_lambdas(Y=self.train_data[1], F=F, likelihood=self.likelihood)
+        F = self.network(X)
+        Lambda, _ = calc_lambdas(Y=Y, F=F, likelihood=self.likelihood)
         print(f"Lambda {Lambda}")
         Lambda_u = torch.matmul(KzX, torch.transpose(Lambda, -1, -2)[..., None])[..., 0]
         print(f"Lambda_u {Lambda_u}")

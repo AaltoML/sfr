@@ -305,9 +305,10 @@ class SFR(nn.Module):
                 print("Failed cho_factor")
                 logger.info("Cholesky failed so adding more jitter")
                 print(f"x: {x.shape}")
-                x += Iz[0, ...] * jitter
                 print(f"Iz[0,...]: {Iz[0,...]*jitter}")
                 print(f"Iz[0,...]: {Iz[0,...].shape}")
+                print(f"jiiter: {jitter}")
+                x += Iz[0, ...] * jitter
                 return cho_factor_jitter(x)
 
         for k in range(K):

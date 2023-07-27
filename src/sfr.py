@@ -248,6 +248,129 @@ class SFR(nn.Module):
             jitter=self.jitter,
         )
 
+    # @torch.no_grad()
+    # def predict_from_sparse_duals(
+    #     self,
+    #     alpha_u: AlphaInducing,
+    #     beta_u: BetaInducing,
+    #     kernel: NTK,
+    #     delta: float,
+    #     num_data: int,
+    #     Z: InducingPoints,
+    #     test_loader: DataLoader = None,
+    #     full_cov: bool = False,
+    #     jitter: float = 1e-3,
+    # ):
+    #     Kzz = kernel(Z, Z)
+    #     output_dim = Kzz.shape[0]
+    #     Iz = (
+    #         torch.eye(Kzz.shape[-1], dtype=torch.float64)
+    #         .to(Z.device)[None, ...]
+    #         .repeat(output_dim, 1, 1)
+    #     )
+    #     # Kzz += Iz * jitter
+    #     # KzzplusBeta = (Kzz / (delta * num_data) + beta_u) + Iz * jitter
+    #     KzzplusBeta = (Kzz + beta_u / (delta * num_data)) + Iz * jitter
+    #     print(f"Kzz: {Kzz}")
+    #     print(f"beta_u: {beta_u}")
+    #     print(f"KzzplusBeta: {KzzplusBeta}")
+
+    #     if test_loader and self.computed_Kss_Ksz == False:
+    #         Kxx_cached = []
+    #         Kxz_cached = []
+    #         for x in test_loader:
+    #             Kxx = kernel(x, x, full_cov).detach().cpu()
+    #             Kxz = kernel(x, Z).detach().cpu()
+    #             Kxx_cached.append(Kxx)
+    #             Kxz_cached.append(Kxz)
+    #         self.computed_Kss_Ksz = True
+
+    #     assert beta_u.shape == Kzz.shape
+
+    #     K, M, _ = Kzz.shape
+    #     print(f"Kzz: {Kzz.shape}")
+    #     print(f"Iz: {Iz.shape}")
+    #     Kzz += Iz * jitter
+    #     Kzznp = Kzz.detach().cpu().numpy()
+    #     KzzplusBetanp = KzzplusBeta.detach().cpu().numpy()
+    #     L_Kzz = np.zeros_like(Kzznp)
+    #     L_Bu = np.zeros_like(Kzznp)
+
+    #     def cho_factor_jitter(x):
+    #         try:
+    #             print("trying cho_factor")
+    #             L, _ = cho_factor(x)
+    #             print("completed cho_factor")
+    #             return L
+    #         except:
+    #             print("Failed cho_factor")
+    #             logger.info("Cholesky failed so adding more jitter")
+    #             print(f"x: {x.shape}")
+    #             Iz = np.eye(x.shape[-1])
+    #             print(f"Iz[0,...]: {Iz*jitter}")
+    #             print(f"Iz[0,...]: {Iz.shape}")
+    #             print(f"jiiter: {jitter}")
+    #             x += Iz * jitter
+    #             # x += Iz[0, ...].numpy() * jitter
+    #             print(f"x new: {x}")
+    #             print(f"x new: {x.shape}")
+    #             return cho_factor_jitter(x)
+
+    #     for k in range(K):
+    #         print(f"k: {k}")
+    #         # L_Kzz[k], _ = cho_factor(Kzznp[k])
+    #         L_Kzz[k] = cho_factor_jitter(Kzznp[k])
+    #         print(f"L_Kzz[k]: {L_Kzz[k]}")
+    #         L_Bu[k] = cho_factor_jitter(KzzplusBetanp[k])
+    #         # L_Bu[k], _ = cho_factor(KzzplusBetanp[k])
+    #         print(f"L_Bu[k]: {L_Bu[k]}")
+
+    #     logger.info(f"Created predict function with delta {delta}")
+
+    #     @torch.no_grad()
+    #     def predict(x, index, full_cov: bool = False) -> Tuple[OutputMean, OutputVar]:
+    #         if isinstance(x, torch.Tensor):
+    #             Kxx = kernel(x, x, full_cov=full_cov).detach().cpu().numpy()
+    #             Kxz = kernel(x, Z).detach().cpu().numpy()
+    #         else:
+    #             Kxx = Kxx_cached[index].numpy()
+    #             Kxz = Kxz_cached[index].numpy()
+
+    #         K, M, _ = Kzz.shape
+    #         num_data = 50
+    #         tmp_torch_Kxz = torch.from_numpy(np.array(Kxz)).to(alpha_u.device)
+    #         f_mean = (tmp_torch_Kxz @ alpha_u[..., None])[..., 0].T
+
+    #         if full_cov:
+    #             raise NotImplementedError
+    #         else:
+    #             fvarnp = []
+    #             for k in range(K):
+    #                 Kxxk = Kxx[k]
+    #                 Kxzk = Kxz[k]
+    #                 Kzxk = Kxzk.T
+    #                 # Note the first argument is a tuple that takes the result
+    #                 # from the cho_factor (by default lower=False, then (A, False)
+    #                 # is fed to cho_solve)
+    #                 # print(f"before Amk")
+    #                 Amk = cho_solve((L_Kzz[k], False), Kzxk)
+    #                 # print(f"Amk: {Amk}")
+    #                 # print(f"before Abk")
+    #                 Abk = cho_solve((L_Bu[k], False), Kzxk)
+    #                 # print(f"Abk: {Abk}")
+    #                 # logger.debug(f"pred_fn delta: {delta} num_data: {num_data}")
+    #                 # fvark = (Kxxk - (Amk**2).sum()) / delta / num_data + (
+    #                 fvark = (1 / delta / num_data) * (Kxxk - (Amk**2).sum()) + (
+    #                     Abk**2
+    #                 ).sum()
+    #                 fvarnp.append(fvark)
+    #             fvarnp = np.array(fvarnp)
+    #             fvar = torch.from_numpy(fvarnp.T).to(self.device)
+
+    #         return f_mean, fvar
+
+    #     return predict
+
     @torch.no_grad()
     def predict_from_sparse_duals(
         self,
@@ -268,103 +391,57 @@ class SFR(nn.Module):
             .to(Z.device)[None, ...]
             .repeat(output_dim, 1, 1)
         )
-        # Kzz += Iz * jitter
-        KzzplusBeta = (Kzz / (delta * num_data) + beta_u) + Iz * jitter
-        print(f"Kzz: {Kzz}")
-        print(f"beta_u: {beta_u}")
-        print(f"KzzplusBeta: {KzzplusBeta}")
-
-        if test_loader and self.computed_Kss_Ksz == False:
-            Kxx_cached = []
-            Kxz_cached = []
-            for x in test_loader:
-                Kxx = kernel(x, x, full_cov).detach().cpu()
-                Kxz = kernel(x, Z).detach().cpu()
-                Kxx_cached.append(Kxx)
-                Kxz_cached.append(Kxz)
-            self.computed_Kss_Ksz = True
-
+        Kzz += Iz * jitter
+        # KzzplusBeta = (Kzz + beta_u) + Iz * jitter
+        KzzplusBeta = (Kzz + beta_u / (delta * num_data)) + Iz * jitter
         assert beta_u.shape == Kzz.shape
 
-        K, M, _ = Kzz.shape
-        print(f"Kzz: {Kzz.shape}")
-        print(f"Iz: {Iz.shape}")
-        Kzz += Iz * jitter
-        Kzznp = Kzz.detach().cpu().numpy()
-        KzzplusBetanp = KzzplusBeta.detach().cpu().numpy()
-        L_Kzz = np.zeros_like(Kzznp)
-        L_Bu = np.zeros_like(Kzznp)
+        # beta_u += Iz * jitter
+        Lm = torch.linalg.cholesky(Kzz, upper=True)
+        # L = torch.linalg.cholesky(beta_u, upper=True)
+        # Lb = torch.linalg.cholesky(Kzz, upper=True)
+        Lb = torch.linalg.cholesky(KzzplusBeta, upper=True)
+        # Lb = Iz
 
-        def cho_factor_jitter(x):
-            try:
-                print("trying cho_factor")
-                L, _ = cho_factor(x)
-                print("completed cho_factor")
-                return L
-            except:
-                print("Failed cho_factor")
-                logger.info("Cholesky failed so adding more jitter")
-                print(f"x: {x.shape}")
-                Iz = np.eye(x.shape[-1])
-                print(f"Iz[0,...]: {Iz*jitter}")
-                print(f"Iz[0,...]: {Iz.shape}")
-                print(f"jiiter: {jitter}")
-                x += Iz * jitter
-                # x += Iz[0, ...].numpy() * jitter
-                print(f"x new: {x}")
-                print(f"x new: {x.shape}")
-                return cho_factor_jitter(x)
-
-        for k in range(K):
-            print(f"k: {k}")
-            # L_Kzz[k], _ = cho_factor(Kzznp[k])
-            L_Kzz[k] = cho_factor_jitter(Kzznp[k])
-            print(f"L_Kzz[k]: {L_Kzz[k]}")
-            L_Bu[k] = cho_factor_jitter(KzzplusBetanp[k])
-            # L_Bu[k], _ = cho_factor(KzzplusBetanp[k])
-            print(f"L_Bu[k]: {L_Bu[k]}")
-
-        logger.info(f"Created predict function with delta {delta}")
+        KzX = kernel(Z, self.train_data[0])
+        # print(f"KzX {KzX.shape}")
+        F = self.network(self.train_data[0])
+        Lambda, _ = calc_lambdas(Y=self.train_data[0], F=F, likelihood=self.likelihood)
+        Lambda_u = torch.matmul(KzX, torch.transpose(Lambda, -1, -2)[..., None])[..., 0]
+        # Kzz += Iz * jittbeta er
+        # KzzplusBeta = (Kzz + beta_u) + Iz * jitter
+        alpha_u = torch.linalg.solve(KzzplusBeta, Lambda_u[..., None])[..., 0]
 
         @torch.no_grad()
-        def predict(x, index, full_cov: bool = False) -> Tuple[OutputMean, OutputVar]:
-            if isinstance(x, torch.Tensor):
-                Kxx = kernel(x, x, full_cov=full_cov).detach().cpu().numpy()
-                Kxz = kernel(x, Z).detach().cpu().numpy()
-            else:
-                Kxx = Kxx_cached[index].numpy()
-                Kxz = Kxz_cached[index].numpy()
+        def predict(
+            x, index=None, full_cov: bool = False
+        ) -> Tuple[OutputMean, OutputVar]:
+            Kxx = kernel(x, x, full_cov=full_cov)
+            Kxz = kernel(x, Z)
 
-            K, M, _ = Kzz.shape
-            tmp_torch_Kxz = torch.from_numpy(np.array(Kxz)).to(alpha_u.device)
-            f_mean = (tmp_torch_Kxz @ alpha_u[..., None])[..., 0].T
+            f_mean = (Kxz @ alpha_u[..., None])[..., 0].T / (delta * num_data)
 
             if full_cov:
-                raise NotImplementedError
+                # TODO tmp could be computed before
+                tmp = torch.linalg.solve(Kzz, Iz) - torch.linalg.solve(beta_u + Kzz, Iz)
+                f_cov = Kxx - torch.matmul(
+                    torch.matmul(Kxz, tmp), torch.transpose(Kxz, -1, -2)
+                )
+                return f_mean, f_cov
             else:
-                fvarnp = []
-                for k in range(K):
-                    Kxxk = Kxx[k]
-                    Kxzk = Kxz[k]
-                    Kzxk = Kxzk.T
-                    # Note the first argument is a tuple that takes the result
-                    # from the cho_factor (by default lower=False, then (A, False)
-                    # is fed to cho_solve)
-                    # print(f"before Amk")
-                    Amk = cho_solve((L_Kzz[k], False), Kzxk)
-                    # print(f"Amk: {Amk}")
-                    # print(f"before Abk")
-                    Abk = cho_solve((L_Bu[k], False), Kzxk)
-                    # print(f"Abk: {Abk}")
-                    # logger.debug(f"pred_fn delta: {delta} num_data: {num_data}")
-                    fvark = (Kxxk - (Amk**2).sum()) / delta / num_data + (
-                        Abk**2
-                    ).sum()
-                    fvarnp.append(fvark)
-                fvarnp = np.array(fvarnp)
-                fvar = torch.from_numpy(fvarnp.T).to(self.device)
-
-            return f_mean, fvar
+                Kzx = torch.transpose(Kxz, -1, -2)
+                Am = torch.linalg.solve_triangular(
+                    torch.transpose(Lm, -1, -2), Kzx, upper=False
+                )
+                Ab = torch.linalg.solve_triangular(
+                    torch.transpose(Lb, -1, -2), Kzx, upper=False
+                )
+                f_var = (
+                    Kxx
+                    - torch.sum(torch.square(Am), -2)
+                    + torch.sum(torch.square(Ab), -2)
+                ) / (delta * num_data)
+                return f_mean, f_var.T
 
         return predict
 

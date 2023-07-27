@@ -557,6 +557,14 @@ def calc_sparse_dual_params_batch(
         Lambda[start_idx:end_idx] = Lambda_i
         beta_diag[start_idx:end_idx] = beta_i
         start_idx = end_idx
+        try:
+            print(f"beta_diag: {beta_diag}")
+            print(f"beta_diag: {beta_diag.shape}")
+            print("trying cho_factor BETA_DIAG")
+            L, _ = cho_factor(beta_diag)
+            print("completed cho_factor")
+        except:
+            print("Failed cho_factor BETA_DIAG")
 
     alpha_u = torch.zeros((out_dim, Z.shape[0])).cpu()
     Lambda_u = torch.zeros((out_dim, Z.shape[0])).cpu()
@@ -582,6 +590,14 @@ def calc_sparse_dual_params_batch(
             beta_batch = beta_diag[start_idx:end_idx, output_c]
             alpha_batch = torch.einsum("mb, b -> m", Kui_c, Lambda_batch)
             beta_batch = torch.einsum("mb, b, nb -> mn", Kui_c, beta_batch, Kui_c)
+            print(f"beta_batch: {beta_batch}")
+            print(f"Kui_c: {Kui_c}")
+            try:
+                print("trying cho_factor beta_batch")
+                L, _ = cho_factor(beta_batch)
+                print("completed cho_factor")
+            except:
+                print("Failed cho_factor beta_batch")
 
             alpha_u[output_c] += alpha_batch.cpu()
             beta_u[output_c] += beta_batch.cpu()

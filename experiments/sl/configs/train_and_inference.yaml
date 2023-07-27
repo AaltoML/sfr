@@ -18,6 +18,7 @@ EPS: 0.0
 jitter: 1e-6
 
 num_inducings:
+  - 8
   - 16
   - 32
   - 64

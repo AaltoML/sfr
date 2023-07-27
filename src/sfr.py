@@ -178,8 +178,8 @@ class SFR(nn.Module):
         return self.likelihood(f_mean=f_mean, f_var=f_var)
 
     @torch.no_grad()
-    def predict_f(self, x: TestInput) -> Tuple[FuncMean, FuncVar]:
-        f_mean, f_var = self._predict_fn(x, full_cov=False)
+    def predict_f(self, x: TestInput, idx=None) -> Tuple[FuncMean, FuncVar]:
+        f_mean, f_var = self._predict_fn(x, idx, full_cov=False)
         return f_mean, f_var
 
     def loss(self, x: InputData, y: OutputData):

@@ -674,7 +674,7 @@ def calc_lambdas(
 
 
 @torch.no_grad()
-def calc_beta(F: FuncData, likelihood: Likelihood) -> Tuple[Lambda, Beta]:
+def calc_beta(F: FuncData, likelihood: Likelihood) -> Beta:
     assert F.ndim == 2
     beta = likelihood.Hessian(f=F)
     return beta
@@ -683,7 +683,7 @@ def calc_beta(F: FuncData, likelihood: Likelihood) -> Tuple[Lambda, Beta]:
 @torch.no_grad()
 def calc_lambda(
     Y: OutputData, F: FuncData, likelihood: Likelihood, beta: Beta
-) -> Tuple[Lambda, Beta]:
+) -> Lambda:
     assert F.ndim == 2
     assert Y.shape[0] == F.shape[0]
     assert beta.ndim == 3

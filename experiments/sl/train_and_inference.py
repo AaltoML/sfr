@@ -214,7 +214,7 @@ def train_and_inference(cfg: DictConfig):
         logger.info(f"gp_metrics: {gp_metrics}")
 
     df = pd.DataFrame(data)
-    wandb.log({"NLPD raw": wandb.Table(data=df)})
+    wandb.log({"NLPD": wandb.Table(data=df)})
     print(df)
 
     with open("uci_table.tex", "w") as file:

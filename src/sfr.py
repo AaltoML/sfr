@@ -393,9 +393,9 @@ class SFR(nn.Module):
             .repeat(output_dim, 1, 1)
         )
         Kzz += Iz * jitter
-        # Kzz = Kzz.detach().cpu()
+        Kzz = Kzz.detach().cpu()
         print(f"Kzz {Kzz}")
-        # beta_u = beta_u.detach().cpu()
+        beta_u = beta_u.detach().cpu()
         print(f"beta_u {beta_u}")
         # KzzplusBeta = (Kzz + beta_u) + Iz * jitter
         KzzplusBeta = (Kzz + beta_u / (delta * num_data)) + Iz * jitter
@@ -473,6 +473,7 @@ class SFR(nn.Module):
         # print(f"Lambda_u {Lambda_u}")
         # # Kzz += Iz * jittbeta er
         # # KzzplusBeta = (Kzz + beta_u) + Iz * jitter
+        self.Lambda_u = self.Lambda_u.detach().cpu()
         alpha_u = torch.linalg.solve(
             KzzplusBeta, self.Lambda_u[..., None]  # .detach().cpu()
         )[..., 0]
@@ -497,13 +498,15 @@ class SFR(nn.Module):
             # # f_mean = (tmp_torch_Kxz @ alpha_u[..., None])[..., 0].T
             # f_mean = (tmp_torch_Kxz @ alpha_u[..., None])[..., 0].T / (delta * num_data)
 
-            Kxx = kernel(x, x, full_cov=full_cov)
-            Kxz = kernel(x, Z)
+            # Kxx = kernel(x, x, full_cov=full_cov)
+            # Kxz = kernel(x, Z)
             # Kxx = kernel(x, x, full_cov=full_cov).detach().cpu().numpy()
             # Kxz = kernel(x, Z).detach().cpu().numpy()
+            Kxx = kernel(x, x, full_cov=full_cov).detach().cpu()
+            Kxz = kernel(x, Z).detach().cpu()
             print(f"Kxx {Kxx}")
             print(f"Kxz {Kxz}")
-
+            alpha_u = alpha_u.detach().cpu()
             f_mean = (Kxz @ alpha_u[..., None])[..., 0].T / (delta * num_data)
             print(f"f_mean {f_mean}")
 

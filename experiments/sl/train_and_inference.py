@@ -146,10 +146,10 @@ def train_and_inference(cfg: DictConfig):
     print(f"la_metrics {la_metrics}")
 
     num_data = len(ds_train)
-    print(f"num_data: {num_data}")
+    logger.info(f"num_data: {num_data}")
     for num_inducing in cfg.num_inducings:
-        if num_inducing >= num_data:
-            break
+        # if num_inducing >= num_data:
+        #     break
         torch.cuda.empty_cache()
         # Log SFR GP/NN NLPD
         sfr_metrics = calc_sfr_metrics(

@@ -413,12 +413,36 @@ class SFR(nn.Module):
 
         assert beta_u.shape == Kzz.shape
 
+        def cho_factor_jitter(x):
+            try:
+                print("trying cho_factor")
+                # L, _ = cho_factor(x)
+                L = torch.linalg.cholesky(x, upper=True)
+                print("completed cho_factor")
+                return L
+            except:
+                print("Failed cho_factor")
+                logger.info("Cholesky failed so adding more jitter")
+                print(f"x: {x.shape}")
+                # Iz = np.eye(x.shape[-1])
+                Iz = torch.eye(x.shape[-1]).to(x.device)
+                print(f"Iz[0,...]: {Iz*jitter}")
+                print(f"Iz[0,...]: {Iz.shape}")
+                print(f"jiiter: {jitter}")
+                x += Iz * jitter
+                # x += Iz[0, ...].numpy() * jitter
+                print(f"x new: {x}")
+                print(f"x new: {x.shape}")
+                return cho_factor_jitter(x)
+
         # beta_u += Iz * jitter
-        Lm = torch.linalg.cholesky(Kzz, upper=True)
+        # Lm = torch.linalg.cholesky(Kzz, upper=True)
+        Lm = cho_factor_jitter(Kzz)
         print(f"Lm {Lm}")
         # L = torch.linalg.cholesky(beta_u, upper=True)
         # Lb = torch.linalg.cholesky(Kzz, upper=True)
-        Lb = torch.linalg.cholesky(KzzplusBeta, upper=True)
+        # Lb = torch.linalg.cholesky(KzzplusBeta, upper=True)
+        Lb = cho_factor_jitter(KzzplusBeta)
         print(f"Lb {Lb}")
         # K, M, _ = Kzz.shape
         # print(f"Kzz: {Kzz.shape}")

@@ -17,7 +17,7 @@ dual_batch_size: 5000
 EPS: 0.01 # Good for UCI
 jitter: 1e-6
 
-run_laplace_flag: true
+run_laplace_flag: True
 
 num_inducings:
   - 8

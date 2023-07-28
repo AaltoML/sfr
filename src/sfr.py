@@ -394,6 +394,8 @@ class SFR(nn.Module):
         )
         Kzz += Iz * jitter
         Kzz = Kzz.detach().cpu()
+        Iz = Iz.detach().cpu()
+        print(f"Iz {Iz}")
         print(f"Kzz {Kzz}")
         beta_u = beta_u.detach().cpu()
         print(f"beta_u {beta_u}")

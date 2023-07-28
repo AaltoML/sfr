@@ -385,7 +385,7 @@ class SFR(nn.Module):
         jitter: float = 1e-3,
     ):
         Kzz = kernel(Z, Z)
-        print(f"Kzz {Kzz}")
+        # print(f"Kzz {Kzz}")
         output_dim = Kzz.shape[0]
         Iz = (
             torch.eye(Kzz.shape[-1], dtype=torch.float64)
@@ -395,42 +395,69 @@ class SFR(nn.Module):
         Kzz += Iz * jitter
         # KzzplusBeta = (Kzz + beta_u) + Iz * jitter
         KzzplusBeta = (Kzz + beta_u / (delta * num_data)) + Iz * jitter
-        print(f"KzzplusBeta {KzzplusBeta}")
+        # print(f"KzzplusBeta {KzzplusBeta}")
+
+        # if test_loader and self.computed_Kss_Ksz == False:
+        #     Kxx_cached = []
+        #     Kxz_cached = []
+        #     for x in test_loader:
+        #         Kxx = kernel(x, x, full_cov).detach().cpu()
+        #         Kxz = kernel(x, Z).detach().cpu()
+        #         Kxx_cached.append(Kxx)
+        #         Kxz_cached.append(Kxz)
+        #     self.computed_Kss_Ksz = True
+
         assert beta_u.shape == Kzz.shape
 
         # beta_u += Iz * jitter
         Lm = torch.linalg.cholesky(Kzz, upper=True)
-        print(f"Lm {Lm}")
+        # print(f"Lm {Lm}")
         # L = torch.linalg.cholesky(beta_u, upper=True)
         # Lb = torch.linalg.cholesky(Kzz, upper=True)
         Lb = torch.linalg.cholesky(KzzplusBeta, upper=True)
-        print(f"Lb {Lb}")
-        # Lb = Iz
+        # print(f"Lb {Lb}")
+        # K, M, _ = Kzz.shape
+        # print(f"Kzz: {Kzz.shape}")
+        # print(f"Iz: {Iz.shape}")
+        # Kzz += Iz * jitter
+        # Kzznp = Kzz.detach().cpu().numpy()
+        # KzzplusBetanp = KzzplusBeta.detach().cpu().numpy()
+        # L_Kzz = np.zeros_like(Kzznp)
+        # L_Bu = np.zeros_like(Kzznp)
 
-        X = self.train_data[0].to(Z.device)
-        Y = self.train_data[1].to(Z.device)
-        KzX = kernel(Z, X)
-        print(f"KzX {KzX}")
-        F = self.network(X)
-        Lambda, _ = calc_lambdas(Y=Y, F=F, likelihood=self.likelihood)
-        print(f"Lambda {Lambda}")
-        Lambda_u = torch.matmul(KzX, torch.transpose(Lambda, -1, -2)[..., None])[..., 0]
-        print(f"Lambda_u {Lambda_u}")
-        # Kzz += Iz * jittbeta er
-        # KzzplusBeta = (Kzz + beta_u) + Iz * jitter
-        alpha_u = torch.linalg.solve(KzzplusBeta, Lambda_u[..., None])[..., 0]
+        # for k in range(K):
+        #     print(f"k: {k}")
+        #     L_Kzz[k], _ = cho_factor(Kzznp[k])
+        #     # L_Kzz[k] = cho_factor_jitter(Kzznp[k])
+        #     print(f"L_Kzz[k]: {L_Kzz[k]}")
+        #     # L_Bu[k] = cho_factor_jitter(KzzplusBetanp[k])
+        #     L_Bu[k], _ = cho_factor(KzzplusBetanp[k])
+        #     print(f"L_Bu[k]: {L_Bu[k]}")
+
+        # X = self.train_data[0].to(Z.device)
+        # Y = self.train_data[1].to(Z.device)
+        # KzX = kernel(Z, X)
+        # print(f"KzX {KzX}")
+        # F = self.network(X)
+        # Lambda, _ = calc_lambdas(Y=Y, F=F, likelihood=self.likelihood)
+        # print(f"Lambda {Lambda}")
+        # Lambda_u = torch.matmul(KzX, torch.transpose(Lambda, -1, -2)[..., None])[..., 0]
+        # print(f"Lambda_u {Lambda_u}")
+        # # Kzz += Iz * jittbeta er
+        # # KzzplusBeta = (Kzz + beta_u) + Iz * jitter
+        alpha_u = torch.linalg.solve(KzzplusBeta, self.Lambda_u[..., None])[..., 0]
 
         @torch.no_grad()
         def predict(
             x, index=None, full_cov: bool = False
         ) -> Tuple[OutputMean, OutputVar]:
             Kxx = kernel(x, x, full_cov=full_cov)
-            print(f"Kxx {Kxx}")
+            # print(f"Kxx {Kxx}")
             Kxz = kernel(x, Z)
-            print(f"Kxz {Kxz}")
+            # print(f"Kxz {Kxz}")
 
             f_mean = (Kxz @ alpha_u[..., None])[..., 0].T / (delta * num_data)
-            print(f"f_mean {f_mean}")
+            # print(f"f_mean {f_mean}")
 
             if full_cov:
                 # TODO tmp could be computed before
@@ -441,6 +468,34 @@ class SFR(nn.Module):
                 return f_mean, f_cov
             else:
                 Kzx = torch.transpose(Kxz, -1, -2)
+                # fvarnp = []
+                # for k in range(K):
+                #     Kxxk = Kxx[k]
+                #     Kxzk = Kxz[k]
+                #     Kzxk = Kxzk.T
+                #     # Note the first argument is a tuple that takes the result
+                #     # from the cho_factor (by default lower=False, then (A, False)
+                #     # is fed to cho_solve)
+                #     # print(f"before Amk")
+                #     Amk = cho_solve((L_Kzz[k], False), Kzxk)
+                #     # print(f"Amk: {Amk}")
+                #     # print(f"before Abk")
+                #     Abk = cho_solve((L_Bu[k], False), KzzplusBetanp)
+                #     # print(f"Abk: {Abk}")
+                #     # logger.debug(f"pred_fn delta: {delta} num_data: {num_data}")
+                #     # fvark = (Kxxk - (Amk**2).sum()) / delta / num_data + (
+                #     # fvark = (1 / delta / num_data) * (Kxxk - (Amk**2).sum()) + (
+                #     #     Abk**2
+                #     # ).sum()
+                #     fvark = (
+                #         Kxx
+                #         - torch.sum(torch.square(Amk), -2)
+                #         + torch.sum(torch.square(Abk), -2)
+                #     ) / (delta * num_data)
+                #     fvarnp.append(fvark)
+                # fvarnp = np.array(fvarnp)
+                # fvar = torch.from_numpy(fvarnp.T).to(self.device)
+
                 Am = torch.linalg.solve_triangular(
                     torch.transpose(Lm, -1, -2), Kzx, upper=False
                 )
@@ -645,14 +700,14 @@ def calc_sparse_dual_params_batch(
         Lambda[start_idx:end_idx] = Lambda_i
         beta_diag[start_idx:end_idx] = beta_i
         start_idx = end_idx
-        try:
-            print(f"beta_diag: {beta_diag}")
-            print(f"beta_diag: {beta_diag.shape}")
-            print("trying cho_factor BETA_DIAG")
-            L, _ = cho_factor(beta_diag)
-            print("completed cho_factor")
-        except:
-            print("Failed cho_factor BETA_DIAG")
+        # try:
+        #     print(f"beta_diag: {beta_diag}")
+        #     print(f"beta_diag: {beta_diag.shape}")
+        #     print("trying cho_factor BETA_DIAG")
+        #     L, _ = cho_factor(beta_diag)
+        #     print("completed cho_factor")
+        # except:
+        #     print("Failed cho_factor BETA_DIAG")
 
     alpha_u = torch.zeros((out_dim, Z.shape[0])).cpu()
     Lambda_u = torch.zeros((out_dim, Z.shape[0])).cpu()
@@ -678,14 +733,14 @@ def calc_sparse_dual_params_batch(
             beta_batch = beta_diag[start_idx:end_idx, output_c]
             alpha_batch = torch.einsum("mb, b -> m", Kui_c, Lambda_batch)
             beta_batch = torch.einsum("mb, b, nb -> mn", Kui_c, beta_batch, Kui_c)
-            print(f"beta_batch: {beta_batch}")
-            print(f"Kui_c: {Kui_c}")
-            try:
-                print("trying cho_factor beta_batch")
-                L, _ = cho_factor(beta_batch)
-                print("completed cho_factor")
-            except:
-                print("Failed cho_factor beta_batch")
+            # print(f"beta_batch: {beta_batch}")
+            # print(f"Kui_c: {Kui_c}")
+            # try:
+            #     print("trying cho_factor beta_batch")
+            #     L, _ = cho_factor(beta_batch)
+            #     print("completed cho_factor")
+            # except:
+            #     print("Failed cho_factor beta_batch")
 
             alpha_u[output_c] += alpha_batch.cpu()
             beta_u[output_c] += beta_batch.cpu()

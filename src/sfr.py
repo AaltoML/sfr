@@ -387,14 +387,14 @@ class SFR(nn.Module):
         Kzz = kernel(Z, Z)
         # print(f"Kzz {Kzz}")
         output_dim = Kzz.shape[0]
-        Kzz += Iz * jitter
-        Kzz = Kzz.detach().cpu()
-        print(f"Kzz {Kzz}")
         Iz = (
             torch.eye(Kzz.shape[-1], dtype=torch.float64)
             .to(Kzz.device)[None, ...]
             .repeat(output_dim, 1, 1)
         )
+        Kzz += Iz * jitter
+        Kzz = Kzz.detach().cpu()
+        print(f"Kzz {Kzz}")
         beta_u = beta_u.detach().cpu()
         print(f"beta_u {beta_u}")
         # KzzplusBeta = (Kzz + beta_u) + Iz * jitter

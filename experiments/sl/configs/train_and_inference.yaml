@@ -15,18 +15,26 @@ defaults:
 posthoc_prior_opt: True
 dual_batch_size: 5000
 EPS: 0.01 # Good for UCI
-jitter: 1e-6
+jitter: 1e-5
 
 run_laplace_flag: True
 
 num_inducings:
-  - 8
-  - 16
-  - 32
-  - 64
-  - 128
-  - 256
   - 512
+  - 256
+  - 128
+  - 64
+  - 32
+  - 16
+  - 8
+# num_inducings:
+#   - 8
+#   - 16
+#   - 32
+#   - 64
+#   - 128
+#   - 256
+#   - 512
 
 device: "cuda"
 # device: "cpu"

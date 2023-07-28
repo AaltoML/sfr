@@ -52,7 +52,7 @@ def train_and_inference(cfg: DictConfig):
         tbl.add_data(
             cfg.dataset.name, model_name, cfg.random_seed, num_inducing, acc, nll, ece
         )
-        wandb.log({"NLPD": wandb.Table(data=pd.DataFrame(data))})
+        wandb.log({"Metrics": wandb.Table(data=pd.DataFrame(data))})
         return data
 
     torch.set_default_dtype(torch.float)
@@ -214,7 +214,7 @@ def train_and_inference(cfg: DictConfig):
         logger.info(f"gp_metrics: {gp_metrics}")
 
     df = pd.DataFrame(data)
-    wandb.log({"NLPD": wandb.Table(data=df)})
+    wandb.log({"Metrics": wandb.Table(data=df)})
     print(df)
 
     with open("uci_table.tex", "w") as file:

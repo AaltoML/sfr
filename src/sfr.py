@@ -508,7 +508,7 @@ class SFR(nn.Module):
             Kxz = kernel(x, Z).detach().cpu()
             print(f"Kxx {Kxx}")
             print(f"Kxz {Kxz}")
-            alpha_u = alpha_u.detach().cpu()
+            # alpha_u = alpha_u.detach().cpu()
             f_mean = (Kxz @ alpha_u[..., None])[..., 0].T / (delta * num_data)
             print(f"f_mean {f_mean}")
 

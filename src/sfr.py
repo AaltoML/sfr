@@ -387,15 +387,19 @@ class SFR(nn.Module):
         Kzz = kernel(Z, Z)
         # print(f"Kzz {Kzz}")
         output_dim = Kzz.shape[0]
+        Kzz += Iz * jitter
+        Kzz = Kzz.detach().cpu()
+        print(f"Kzz {Kzz}")
         Iz = (
             torch.eye(Kzz.shape[-1], dtype=torch.float64)
-            .to(Z.device)[None, ...]
+            .to(Kzz.device)[None, ...]
             .repeat(output_dim, 1, 1)
         )
-        Kzz += Iz * jitter
+        beta_u = beta_u.detach().cpu()
+        print(f"beta_u {beta_u}")
         # KzzplusBeta = (Kzz + beta_u) + Iz * jitter
         KzzplusBeta = (Kzz + beta_u / (delta * num_data)) + Iz * jitter
-        # print(f"KzzplusBeta {KzzplusBeta}")
+        print(f"KzzplusBeta {KzzplusBeta}")
 
         # if test_loader and self.computed_Kss_Ksz == False:
         #     Kxx_cached = []
@@ -411,11 +415,11 @@ class SFR(nn.Module):
 
         # beta_u += Iz * jitter
         Lm = torch.linalg.cholesky(Kzz, upper=True)
-        # print(f"Lm {Lm}")
+        print(f"Lm {Lm}")
         # L = torch.linalg.cholesky(beta_u, upper=True)
         # Lb = torch.linalg.cholesky(Kzz, upper=True)
         Lb = torch.linalg.cholesky(KzzplusBeta, upper=True)
-        # print(f"Lb {Lb}")
+        print(f"Lb {Lb}")
         # K, M, _ = Kzz.shape
         # print(f"Kzz: {Kzz.shape}")
         # print(f"Iz: {Iz.shape}")
@@ -445,19 +449,39 @@ class SFR(nn.Module):
         # print(f"Lambda_u {Lambda_u}")
         # # Kzz += Iz * jittbeta er
         # # KzzplusBeta = (Kzz + beta_u) + Iz * jitter
-        alpha_u = torch.linalg.solve(KzzplusBeta, self.Lambda_u[..., None])[..., 0]
+        alpha_u = torch.linalg.solve(
+            KzzplusBeta, self.Lambda_u[..., None].detach().cpu()
+        )[..., 0]
+        print(f"alpha_u {alpha_u}")
 
         @torch.no_grad()
         def predict(
             x, index=None, full_cov: bool = False
         ) -> Tuple[OutputMean, OutputVar]:
-            Kxx = kernel(x, x, full_cov=full_cov)
-            # print(f"Kxx {Kxx}")
-            Kxz = kernel(x, Z)
-            # print(f"Kxz {Kxz}")
+            # if isinstance(x, torch.Tensor):
+            #     Kxx = kernel(x, x, full_cov=full_cov).detach().cpu().numpy()
+            #     Kxz = kernel(x, Z).detach().cpu().numpy()
+            # else:
+            #     Kxx = Kxx_cached[index].numpy()
+            #     Kxz = Kxz_cached[index].numpy()
+            # print(f"Kxx {Kxx.shape}")
+            # print(f"Kxz {Kxz.shape}")
+
+            # K, M, _ = Kzz.shape
+            # # num_data = 50
+            # tmp_torch_Kxz = torch.from_numpy(np.array(Kxz)).to(alpha_u.device)
+            # # f_mean = (tmp_torch_Kxz @ alpha_u[..., None])[..., 0].T
+            # f_mean = (tmp_torch_Kxz @ alpha_u[..., None])[..., 0].T / (delta * num_data)
+
+            # Kxx = kernel(x, x, full_cov=full_cov)
+            # Kxz = kernel(x, Z)
+            Kxx = kernel(x, x, full_cov=full_cov).detach().cpu().numpy()
+            Kxz = kernel(x, Z).detach().cpu().numpy()
+            print(f"Kxx {Kxx}")
+            print(f"Kxz {Kxz}")
 
             f_mean = (Kxz @ alpha_u[..., None])[..., 0].T / (delta * num_data)
-            # print(f"f_mean {f_mean}")
+            print(f"f_mean {f_mean}")
 
             if full_cov:
                 # TODO tmp could be computed before
@@ -467,7 +491,6 @@ class SFR(nn.Module):
                 )
                 return f_mean, f_cov
             else:
-                Kzx = torch.transpose(Kxz, -1, -2)
                 # fvarnp = []
                 # for k in range(K):
                 #     Kxxk = Kxx[k]
@@ -478,35 +501,38 @@ class SFR(nn.Module):
                 #     # is fed to cho_solve)
                 #     # print(f"before Amk")
                 #     Amk = cho_solve((L_Kzz[k], False), Kzxk)
-                #     # print(f"Amk: {Amk}")
+                #     print(f"Amk: {Amk.shape}")
                 #     # print(f"before Abk")
-                #     Abk = cho_solve((L_Bu[k], False), KzzplusBetanp)
-                #     # print(f"Abk: {Abk}")
+                #     Abk = cho_solve((L_Bu[k], False), Kzxk)
+                #     print(f"Abk: {Abk.shape}")
                 #     # logger.debug(f"pred_fn delta: {delta} num_data: {num_data}")
                 #     # fvark = (Kxxk - (Amk**2).sum()) / delta / num_data + (
                 #     # fvark = (1 / delta / num_data) * (Kxxk - (Amk**2).sum()) + (
                 #     #     Abk**2
                 #     # ).sum()
-                #     fvark = (
-                #         Kxx
-                #         - torch.sum(torch.square(Amk), -2)
-                #         + torch.sum(torch.square(Abk), -2)
-                #     ) / (delta * num_data)
+                #     fvark = Kxxk - np.sum(np.square(Amk), 0) + np.sum(np.square(Abk), 0)
+                #     print(f"fvark {fvark.shape}")
                 #     fvarnp.append(fvark)
-                # fvarnp = np.array(fvarnp)
-                # fvar = torch.from_numpy(fvarnp.T).to(self.device)
+                # fvarnp = np.stack(fvarnp, -1)
+                # print(f"fvarnp {fvarnp.shape}")
+                # f_var = torch.from_numpy(fvarnp.T).to(self.device) / (delta * num_data)
 
+                Kzx = torch.transpose(Kxz, -1, -2)
+                print(f"Kzx {Kzx}")
                 Am = torch.linalg.solve_triangular(
                     torch.transpose(Lm, -1, -2), Kzx, upper=False
                 )
+                print(f"Am {Am}")
                 Ab = torch.linalg.solve_triangular(
                     torch.transpose(Lb, -1, -2), Kzx, upper=False
                 )
+                print(f"Ab {Ab}")
                 f_var = (
                     Kxx
                     - torch.sum(torch.square(Am), -2)
                     + torch.sum(torch.square(Ab), -2)
                 ) / (delta * num_data)
+                print(f"f_var {f_var}")
                 return f_mean, f_var.T
 
         return predict

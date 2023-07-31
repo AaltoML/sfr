@@ -86,10 +86,14 @@ def train_and_inference(cfg: DictConfig):
     sfr.double()
     sfr.eval()
 
+    if cfg.dataset.name in ["MNIST", "FMNIST", "CIFAR10"]:
+        double = False
+    else:
+        double = True
     ds_train, ds_val, ds_test = hydra.utils.instantiate(
         cfg.dataset,
         dir=os.path.join(get_original_cwd(), "data"),
-        double=False
+        double=double,
         # cfg.dataset, dir=os.path.join(get_original_cwd(), "data"), double=True
     )
     # # ds_train.data = ds_train.data.to(torch.double)

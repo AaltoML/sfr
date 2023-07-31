@@ -444,7 +444,7 @@ class SFR(nn.Module):
         # L = torch.linalg.cholesky(beta_u, upper=True)
         # Lb = torch.linalg.cholesky(Kzz, upper=True)
         # Lb = torch.linalg.cholesky(KzzplusBeta, upper=True)
-        Lb = cho_factor_jitter(KzzplusBeta)
+        Lb = cho_factor_jitter(KzzplusBeta / 1000)
         print(f"Lb {Lb}")
         # K, M, _ = Kzz.shape
         # print(f"Kzz: {Kzz.shape}")

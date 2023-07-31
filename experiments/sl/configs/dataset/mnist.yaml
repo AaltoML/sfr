@@ -4,5 +4,6 @@ double: ${double}
 # dir: ???
 device: ${device}
 debug: False
-val_from_test: False # True
+val_from_test: True # True
+# val_from_test: False # True
 val_split: 0.1 # 0.5

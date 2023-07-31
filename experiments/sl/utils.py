@@ -122,8 +122,10 @@ def compute_metrics(
 ) -> dict:
     py, targets = [], []
     for idx, (x, y) in enumerate(data_loader):
+        idx = None
         if inference_strategy.startswith("sfr"):
-            p = pred_fn(x.to(device), idx)
+            p = pred_fn(x.to(device))
+            # p = pred_fn(x.to(device), idx)
         else:
             p = pred_fn(x.to(device))
         py.append(p)

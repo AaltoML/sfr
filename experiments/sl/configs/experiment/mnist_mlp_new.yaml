@@ -7,6 +7,8 @@ lr: 1e-4
 n_epochs: 500
 double_inference: False
 
+hessian_structures: ["diag", "kron"]
+
 sfr:
   delta: 0.00045
 

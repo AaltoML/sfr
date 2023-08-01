@@ -11,13 +11,14 @@ defaults:
   # - override hydra/hydra_logging: none # saves .hydra/*.yaml files
   - _self_
 
-posthoc_prior_opt: False
+posthoc_prior_opt_grid: False
 # posthoc_prior_opt: True
 posthoc_prior_opt_bo: True
 dual_batch_size: 5000
 EPS: 0.01 # Good for UCI
 jitter: 1e-5
 
+posthoc_prior_opt_laplace: True
 run_laplace_flag: True
 hessian_structures: ["diag", "kron", "full"]
 

@@ -121,7 +121,7 @@ def train_and_inference(cfg: DictConfig):
                 test_loader=test_loader,
                 table_logger=table_logger,
                 device=cfg.device,
-                posthoc_prior_opt=cfg.posthoc_prior_opt,
+                posthoc_prior_opt=cfg.posthoc_prior_opt_laplace,
                 hessian_structure=hessian_structure,
             )
 
@@ -141,7 +141,7 @@ def train_and_inference(cfg: DictConfig):
             num_inducing=num_inducing,
             dual_batch_size=cfg.dual_batch_size,
             device=cfg.device,
-            posthoc_prior_opt=cfg.posthoc_prior_opt,
+            posthoc_prior_opt_grid=cfg.posthoc_prior_opt_grid,
             posthoc_prior_opt_bo=cfg.posthoc_prior_opt_bo,
             EPS=cfg.EPS,
             jitter=cfg.jitter,
@@ -159,7 +159,7 @@ def train_and_inference(cfg: DictConfig):
             num_inducing=num_inducing,
             dual_batch_size=cfg.dual_batch_size,
             device=cfg.device,
-            posthoc_prior_opt=cfg.posthoc_prior_opt,
+            posthoc_prior_opt_grid=cfg.posthoc_prior_opt_grid,
             posthoc_prior_opt_bo=cfg.posthoc_prior_opt_bo,
             EPS=cfg.EPS,
             jitter=cfg.jitter,
@@ -205,7 +205,7 @@ def log_sfr_metrics(
     dual_batch_size: int = 1000,
     # device="cpu",
     device="cuda",
-    posthoc_prior_opt: bool = True,
+    posthoc_prior_opt_grid: bool = True,
     posthoc_prior_opt_bo: bool = True,
     num_samples=100,
     EPS=0.01,
@@ -272,7 +272,7 @@ def log_sfr_metrics(
             "SFR (NN) BO", metrics=nn_metrics_bo, num_inducing=num_inducing
         )
 
-    if posthoc_prior_opt:
+    if posthoc_prior_opt_grid:
         sfr.optimize_prior_precision(
             pred_type="nn",
             val_loader=val_loader,
@@ -314,7 +314,7 @@ def log_sfr_metrics(
             "SFR (GP) BO", metrics=gp_metrics_bo, num_inducing=num_inducing
         )
 
-    if posthoc_prior_opt:
+    if posthoc_prior_opt_grid:
         sfr.optimize_prior_precision(
             pred_type="gp",
             val_loader=val_loader,
@@ -347,7 +347,7 @@ def log_gp_metrics(
     dual_batch_size: int = 1000,
     # device="cpu",
     device="cuda",
-    posthoc_prior_opt: bool = True,
+    posthoc_prior_opt_grid: bool = True,
     posthoc_prior_opt_bo: bool = True,
     num_samples=100,
     EPS=0.01,
@@ -425,7 +425,7 @@ def log_gp_metrics(
             "GP Subest (NN) BO", metrics=nn_metrics_bo, num_inducing=num_inducing
         )
 
-    if posthoc_prior_opt:
+    if posthoc_prior_opt_grid:
         gp.optimize_prior_precision(
             pred_type="nn",
             val_loader=val_loader,
@@ -465,7 +465,7 @@ def log_gp_metrics(
             "GP Subest (GP) BO", metrics=gp_metrics_bo, num_inducing=num_inducing
         )
 
-    if posthoc_prior_opt:
+    if posthoc_prior_opt_grid:
         gp.optimize_prior_precision(
             pred_type="gp",
             val_loader=val_loader,

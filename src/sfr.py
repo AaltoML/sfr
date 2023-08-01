@@ -6,13 +6,13 @@ from typing import List, Optional, Tuple
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+import numpy as np
 import src
 import torch
-import torch.nn as nn
 import torch.distributions as dists
-from tqdm import tqdm
-
-from src.custom_types import (  # Lambda_1,; Lambda_2,
+import torch.nn as nn
+from scipy.linalg import cho_factor, cho_solve
+from src.custom_types import (
     AlphaInducing,
     Beta,
     BetaInducing,
@@ -30,14 +30,10 @@ from src.custom_types import (  # Lambda_1,; Lambda_2,
     OutputVar,
     TestInput,
 )
-from src.likelihoods import Likelihood
-import src
+from src.likelihoods import BernoulliLh, CategoricalLh, Likelihood
 from src.priors import Prior
 from torch.func import functional_call, jacrev, jvp, vjp, vmap
 from torch.utils.data import DataLoader, TensorDataset
-
-from scipy.linalg import cho_factor, cho_solve
-import numpy as np
 
 
 class SFR(nn.Module):

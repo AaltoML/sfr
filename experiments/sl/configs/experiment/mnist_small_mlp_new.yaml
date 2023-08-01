@@ -5,6 +5,7 @@ defaults:
 
 lr: 1e-4
 n_epochs: 500
+double_inference: False
 
 sfr:
   delta: 0.0008
@@ -20,3 +21,6 @@ num_inducings:
   - 512
   - 256
   - 128
+
+wandb:
+  run_name: SmallMLP-delta=${sfr.delta}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}

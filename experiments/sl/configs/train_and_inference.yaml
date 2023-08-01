@@ -11,13 +11,15 @@ defaults:
   # - override hydra/hydra_logging: none # saves .hydra/*.yaml files
   - _self_
 
-# posthoc_prior_opt: False
-posthoc_prior_opt: True
+posthoc_prior_opt: False
+# posthoc_prior_opt: True
+posthoc_prior_opt_bo: True
 dual_batch_size: 5000
 EPS: 0.01 # Good for UCI
 jitter: 1e-5
 
 run_laplace_flag: True
+hessian_structures: ["diag", "kron", "full"]
 
 num_inducings:
   - 512
@@ -27,14 +29,6 @@ num_inducings:
   - 32
   - 16
   - 8
-# num_inducings:
-#   - 8
-#   - 16
-#   - 32
-#   - 64
-#   - 128
-#   - 256
-#   - 512
 
 device: "cuda"
 # device: "cpu"

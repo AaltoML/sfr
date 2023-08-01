@@ -1,59 +1,72 @@
 #!/usr/bin/env python3
 import logging
 import os
+from typing import Optional
 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 import hydra
+import numpy as np
+import pandas as pd
 import torch
+import wandb
 from omegaconf import DictConfig, OmegaConf
+from torch.utils.data import DataLoader
+
+
+class TableLogger:
+    def __init__(self, cfg) -> None:
+        self.cfg = cfg
+        # Data dictionary used to make pd.DataFrame
+        self.data = {
+            "dataset": [],
+            "model": [],
+            "seed": [],
+            "num_inducing": [],
+            "acc": [],
+            "nlpd": [],
+            "ece": [],
+        }
+        self.tbl = wandb.Table(
+            columns=["dataset", "model", "seed", "num_inducing", "acc", "nlpd", "ece"]
+        )
+
+    def add_data(
+        self, model_name: str, metrics: dict, num_inducing: Optional[int] = None
+    ):
+        "Add NLL to data dict and wandb table"
+        self.data["dataset"].append(self.cfg.dataset.name)
+        self.data["model"].append(model_name)
+        self.data["seed"].append(self.cfg.random_seed)
+        self.data["num_inducing"].append(num_inducing)
+        self.data["acc"].append(metrics["acc"])
+        self.data["nlpd"].append(metrics["nll"])
+        self.data["ece"].append(metrics["ece"])
+        self.tbl.add_data(
+            self.cfg.dataset.name,
+            model_name,
+            self.cfg.random_seed,
+            num_inducing,
+            metrics["acc"],
+            metrics["nll"],
+            metrics["ece"],
+        )
+        wandb.log({"Metrics": wandb.Table(data=pd.DataFrame(self.data))})
 
 
 @hydra.main(
     version_base="1.3", config_path="./configs", config_name="train_and_inference"
 )
 def train_and_inference(cfg: DictConfig):
-    import numpy as np
-    import pandas as pd
-    import wandb
     from experiments.sl.cluster_train import train
     from hydra.utils import get_original_cwd
-    from torch.utils.data import DataLoader
 
     cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
     print("Using device: {}".format(cfg.device))
 
-    # Data dictionary used to make pd.DataFrame
-    data = {
-        "dataset": [],
-        "model": [],
-        "seed": [],
-        "num_inducing": [],
-        "acc": [],
-        "nlpd": [],
-        "ece": [],
-    }
-    tbl = wandb.Table(
-        columns=["dataset", "model", "seed", "num_inducing", "acc", "nlpd", "ece"]
-    )
-
-    def add_data(model_name, acc, nll, ece, num_inducing):
-        "Add NLL to data dict and wandb table"
-        # dataset = dataset_name.replace("_uci", "").title()
-        data["dataset"].append(cfg.dataset.name)
-        data["model"].append(model_name)
-        data["seed"].append(cfg.random_seed)
-        data["num_inducing"].append(num_inducing)
-        data["acc"].append(acc)
-        data["nlpd"].append(nll)
-        data["ece"].append(ece)
-        tbl.add_data(
-            cfg.dataset.name, model_name, cfg.random_seed, num_inducing, acc, nll, ece
-        )
-        wandb.log({"Metrics": wandb.Table(data=pd.DataFrame(data))})
-        return data
+    table_logger = TableLogger(cfg)
 
     torch.set_default_dtype(torch.float)
 
@@ -75,11 +88,7 @@ def train_and_inference(cfg: DictConfig):
     )
 
     # Train
-    # cfg.n_epochs = 1
     sfr = train(cfg)  # Train the NN
-
-    # Log MAP NLPD
-    # test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)
 
     # Make everything double for inference
     torch.set_default_dtype(torch.double)
@@ -97,126 +106,79 @@ def train_and_inference(cfg: DictConfig):
 
     # Log MAP NLPD
     # torch.cuda.empty_cache()
-    map_metrics = calc_map_metrics(sfr, test_loader, device=cfg.device)
-    data = add_data(
-        model_name="NN MAP",
-        acc=map_metrics["acc"],
-        nll=map_metrics["nll"],
-        ece=map_metrics["ece"],
-        num_inducing=None,
-    )
-    logger.info(f"map_metrics: {map_metrics}")
+    log_map_metrics(sfr, test_loader, table_logger=table_logger, device=cfg.device)
 
-    # Log Laplace BNN/GLM NLPD
+    # Log Laplace BNN/GLM NLPD/ACC/ECE
     if cfg.run_laplace_flag:
         print("starting laplace")
         torch.cuda.empty_cache()
-        la_metrics = calc_la_metrics(
-            network=sfr.network,
-            delta=sfr.prior.delta,
-            train_loader=train_loader,
-            val_loader=val_loader,
-            test_loader=test_loader,
-            device=cfg.device,
-            posthoc_prior_opt=cfg.posthoc_prior_opt,
-        )
-        data = add_data(
-            model_name="BNN",
-            acc=la_metrics["bnn"]["acc"],
-            nll=la_metrics["bnn"]["nll"],
-            ece=la_metrics["bnn"]["ece"],
-            num_inducing=None,
-        )
-        data = add_data(
-            model_name="GLM",
-            acc=la_metrics["glm"]["acc"],
-            nll=la_metrics["glm"]["nll"],
-            ece=la_metrics["glm"]["ece"],
-            num_inducing=None,
-        )
-        print(f"la_metrics {la_metrics}")
+        for hessian_structure in cfg.hessian_structures:
+            log_la_metrics(
+                network=sfr.network,
+                delta=sfr.prior.delta,
+                train_loader=train_loader,
+                val_loader=val_loader,
+                test_loader=test_loader,
+                table_logger=table_logger,
+                device=cfg.device,
+                posthoc_prior_opt=cfg.posthoc_prior_opt,
+                hessian_structure=hessian_structure,
+            )
 
     num_data = len(ds_train)
     logger.info(f"num_data: {num_data}")
     for num_inducing in cfg.num_inducings:
-        # if num_inducing >= num_data:
-        #     break
         torch.cuda.empty_cache()
-        # Log SFR GP/NN NLPD
-        sfr_metrics = calc_sfr_metrics(
+        # Log SFR GP/NN NLPD/ACC/ECE
+        log_sfr_metrics(
             network=sfr.network,
             output_dim=ds_train.output_dim,
             delta=sfr.prior.delta,  # TODO how to set this?
             train_loader=train_loader,
             val_loader=val_loader,
             test_loader=test_loader,
+            table_logger=table_logger,
             num_inducing=num_inducing,
             dual_batch_size=cfg.dual_batch_size,
             device=cfg.device,
             posthoc_prior_opt=cfg.posthoc_prior_opt,
+            posthoc_prior_opt_bo=cfg.posthoc_prior_opt_bo,
             EPS=cfg.EPS,
             jitter=cfg.jitter,
         )
-        logger.info(f"sfr_metrics: {sfr_metrics}")
-        data = add_data(
-            model_name="SFR (NN)",
-            acc=sfr_metrics["nn"]["acc"],
-            nll=sfr_metrics["nn"]["nll"],
-            ece=sfr_metrics["nn"]["ece"],
-            num_inducing=num_inducing,
-        )
-        data = add_data(
-            model_name="SFR (GP)",
-            acc=sfr_metrics["gp"]["acc"],
-            nll=sfr_metrics["gp"]["nll"],
-            ece=sfr_metrics["gp"]["ece"],
-            num_inducing=num_inducing,
-        )
 
-        # Log GP GP/NN NLPD
-        gp_metrics = calc_gp_metrics(
+        # Log GP GP/NN NLPD/ACC/ECE
+        log_gp_metrics(
             network=sfr.network,
             output_dim=ds_train.output_dim,
             delta=sfr.prior.delta,  # TODO how to set this?
             train_loader=train_loader,
             val_loader=val_loader,
             test_loader=test_loader,
+            table_logger=table_logger,
             num_inducing=num_inducing,
             dual_batch_size=cfg.dual_batch_size,
             device=cfg.device,
             posthoc_prior_opt=cfg.posthoc_prior_opt,
+            posthoc_prior_opt_bo=cfg.posthoc_prior_opt_bo,
             EPS=cfg.EPS,
             jitter=cfg.jitter,
         )
-        data = add_data(
-            model_name="GP Subset (NN)",
-            acc=gp_metrics["nn"]["acc"],
-            nll=gp_metrics["nn"]["nll"],
-            ece=gp_metrics["nn"]["ece"],
-            num_inducing=num_inducing,
-        )
-        data = add_data(
-            model_name="GP Subset (GP)",
-            acc=gp_metrics["gp"]["acc"],
-            nll=gp_metrics["gp"]["nll"],
-            ece=gp_metrics["gp"]["ece"],
-            num_inducing=num_inducing,
-        )
-        logger.info(f"gp_metrics: {gp_metrics}")
 
-    df = pd.DataFrame(data)
-    wandb.log({"Metrics": wandb.Table(data=df)})
+    # Log table on W&B and save latex table as .tex
+    df = pd.DataFrame(table_logger.data)
     print(df)
+    wandb.log({"Metrics": wandb.Table(data=df)})
+
+    df_latex = df.to_latex(escape=False)
+    print(df_latex)
 
     with open("uci_table.tex", "w") as file:
-        file.write(df.to_latex(escape=False))
+        file.write(df_latex)
         wandb.save("uci_table.tex")
 
-    # Print the LaTeX table
-    print(df.to_latex(escape=False))
 
-
-def calc_map_metrics(sfr, test_loader, device):
+def log_map_metrics(sfr, test_loader, table_logger, device):
     from experiments.sl.utils import compute_metrics
 
     @torch.no_grad()
@@ -227,21 +189,24 @@ def calc_map_metrics(sfr, test_loader, device):
     map_metrics = compute_metrics(
         pred_fn=map_pred_fn, data_loader=test_loader, device=device
     )
-    return map_metrics
+    table_logger.add_data("NN MAP", metrics=map_metrics, num_inducing=None)
+    logger.info(f"map_metrics: {map_metrics}")
 
 
-def calc_sfr_metrics(
+def log_sfr_metrics(
     network,
     output_dim,
     delta,
     train_loader,
     val_loader,
     test_loader,
+    table_logger: TableLogger,
     num_inducing: int = 128,
     dual_batch_size: int = 1000,
     # device="cpu",
     device="cuda",
     posthoc_prior_opt: bool = True,
+    posthoc_prior_opt_bo: bool = True,
     num_samples=100,
     EPS=0.01,
     # EPS=0.0,
@@ -251,12 +216,6 @@ def calc_sfr_metrics(
     from experiments.sl.inference import sfr_pred
     from experiments.sl.utils import compute_metrics, init_SFR_with_gaussian_prior
 
-    # if output_dim <= 2:
-    #     # likelihood = src.likelihoods.BernoulliLh()
-    #     likelihood = src.likelihoods.BernoulliLh(EPS=0.0)
-    #     # likelihood = src.likelihoods.BernoulliLh(EPS=0.0004)
-    # else:
-    #     likelihood = src.likelihoods.CategoricalLh(EPS=0.0)
     likelihood = src.likelihoods.CategoricalLh(EPS=EPS)
     sfr = init_SFR_with_gaussian_prior(
         model=network,
@@ -275,14 +234,34 @@ def calc_sfr_metrics(
     logger.info("Finished fitting SFR")
 
     # Get NLL for NN predict
+    if posthoc_prior_opt_bo:
+        sfr.optimize_prior_precision(
+            pred_type="nn",
+            val_loader=val_loader,
+            method="bo",
+            prior_prec_min=1e-8,
+            prior_prec_max=1.0,
+            num_trials=20,
+        )
+        nn_metrics_bo = compute_metrics(
+            pred_fn=sfr_pred(
+                model=sfr, pred_type="nn", num_samples=num_samples, device=device
+            ),
+            data_loader=test_loader,
+            device=device,
+        )
+        table_logger.add_data(
+            "SFR (NN) BO", metrics=nn_metrics_bo, num_inducing=num_inducing
+        )
+
     if posthoc_prior_opt:
         sfr.optimize_prior_precision(
             pred_type="nn",
             val_loader=val_loader,
             method="grid",
-            log_prior_prec_min=-8,
-            log_prior_prec_max=-1,
-            grid_size=100,
+            prior_prec_min=1e-8,
+            prior_prec_max=1.0,
+            num_trials=50,
         )
     nn_metrics = compute_metrics(
         pred_fn=sfr_pred(
@@ -291,16 +270,37 @@ def calc_sfr_metrics(
         data_loader=test_loader,
         device=device,
     )
+    table_logger.add_data("SFR (NN)", metrics=nn_metrics, num_inducing=num_inducing)
+    # logger.info(f"map_metrics: {map_metrics}")
 
     # Get NLL for GP predict
-    if posthoc_prior_opt:
+    if posthoc_prior_opt_bo:
+        sfr.optimize_prior_precision(
+            pred_type="gp",
+            val_loader=val_loader,
+            method="bo",
+            prior_prec_min=1e-8,
+            prior_prec_max=1.0,
+            num_trials=20,
+        )
+        gp_metrics_bo = compute_metrics(
+            pred_fn=sfr_pred(
+                model=sfr, pred_type="gp", num_samples=num_samples, device=device
+            ),
+            data_loader=test_loader,
+            device=device,
+        )
+        table_logger.add_data(
+            "SFR (GP) BO", metrics=gp_metrics_bo, num_inducing=num_inducing
+        )
+
         sfr.optimize_prior_precision(
             pred_type="gp",
             val_loader=val_loader,
             method="grid",
-            log_prior_prec_min=-8,
-            log_prior_prec_max=-1,
-            grid_size=100,
+            prior_prec_min=1e-8,
+            prior_prec_max=1.0,
+            num_trials=50,
         )
     gp_metrics = compute_metrics(
         pred_fn=sfr_pred(
@@ -309,21 +309,23 @@ def calc_sfr_metrics(
         data_loader=test_loader,
         device=device,
     )
-    return {"nn": nn_metrics, "gp": gp_metrics}
+    table_logger.add_data("SFR (GP)", metrics=gp_metrics, num_inducing=num_inducing)
 
 
-def calc_gp_metrics(
+def log_gp_metrics(
     network,
     output_dim,
     delta,
     train_loader,
     val_loader,
     test_loader,
+    table_logger: TableLogger,
     num_inducing: int = 128,
     dual_batch_size: int = 1000,
     # device="cpu",
     device="cuda",
     posthoc_prior_opt: bool = True,
+    posthoc_prior_opt_bo: bool = True,
     num_samples=100,
     EPS=0.01,
     jitter: float = 1e-6,
@@ -358,17 +360,34 @@ def calc_gp_metrics(
     gp.fit(train_loader=train_loader)
     logger.info("Finished fitting GP")
 
+    if posthoc_prior_opt_bo:
+        gp.optimize_prior_precision(
+            pred_type="nn",
+            val_loader=val_loader,
+            method="bo",
+            prior_prec_min=1e-8,
+            prior_prec_max=1.0,
+            num_trials=20,
+        )
+        nn_metrics_bo = compute_metrics(
+            pred_fn=sfr_pred(
+                model=gp, pred_type="nn", num_samples=num_samples, device=device
+            ),
+            data_loader=test_loader,
+            device=device,
+        )
+        table_logger.add_data(
+            "GP Subest (NN) BO", metrics=nn_metrics_bo, num_inducing=num_inducing
+        )
+
     if posthoc_prior_opt:
         gp.optimize_prior_precision(
             pred_type="nn",
             val_loader=val_loader,
             method="grid",
-            # log_prior_prec_min=-10,
-            # log_prior_prec_max=5,
-            # grid_size=50,
-            log_prior_prec_min=-8,
-            log_prior_prec_max=-1,
-            grid_size=100,
+            prior_prec_min=1e-8,
+            prior_prec_max=1.0,
+            num_trials=50,
         )
     nn_metrics = compute_metrics(
         pred_fn=sfr_pred(
@@ -377,17 +396,38 @@ def calc_gp_metrics(
         data_loader=test_loader,
         device=device,
     )
+    table_logger.add_data(
+        "GP Subest (NN)", metrics=nn_metrics, num_inducing=num_inducing
+    )
+
+    if posthoc_prior_opt_bo:
+        gp.optimize_prior_precision(
+            pred_type="gp",
+            val_loader=val_loader,
+            method="bo",
+            prior_prec_min=1e-8,
+            prior_prec_max=1.0,
+            num_trials=20,
+        )
+        gp_metrics_bo = compute_metrics(
+            pred_fn=sfr_pred(
+                model=gp, pred_type="gp", num_samples=num_samples, device=device
+            ),
+            data_loader=test_loader,
+            device=device,
+        )
+        table_logger.add_data(
+            "GP Subest (GP) BO", metrics=gp_metrics_bo, num_inducing=num_inducing
+        )
+
     if posthoc_prior_opt:
         gp.optimize_prior_precision(
             pred_type="gp",
             val_loader=val_loader,
             method="grid",
-            # log_prior_prec_min=-10,
-            # log_prior_prec_max=5,
-            # grid_size=50,
-            log_prior_prec_min=-8,
-            log_prior_prec_max=-1,
-            grid_size=100,
+            prior_prec_min=1e-8,
+            prior_prec_max=1.0,
+            num_trials=40,
         )
     gp_metrics = compute_metrics(
         pred_fn=sfr_pred(
@@ -396,18 +436,22 @@ def calc_gp_metrics(
         data_loader=test_loader,
         device=device,
     )
-    return {"nn": nn_metrics, "gp": gp_metrics}
+    table_logger.add_data(
+        "GP Subest (GP)", metrics=gp_metrics, num_inducing=num_inducing
+    )
 
 
-def calc_la_metrics(
+def log_la_metrics(
     network,
-    delta,
-    train_loader,
-    val_loader,
-    test_loader,
-    device,
+    delta: float,
+    train_loader: DataLoader,
+    val_loader: DataLoader,
+    test_loader: DataLoader,
+    table_logger: TableLogger,
+    device: str,
     posthoc_prior_opt: bool = True,
-    num_samples=100,
+    num_samples: int = 100,
+    hessian_structure: str = "kron",
 ):
     import laplace
     from experiments.sl.inference import la_pred
@@ -416,14 +460,13 @@ def calc_la_metrics(
     la = laplace.Laplace(
         likelihood="classification",
         subset_of_weights="all",
-        hessian_structure="full",
-        # hessian_structure="diag",
+        hessian_structure=hessian_structure,
         sigma_noise=1,
         # prior_precision: ???
-        # backend=laplace.curvature.backpack.BackPackGGN,
         backend=laplace.curvature.asdl.AsdlGGN,
         model=network,
     )
+    print(f"la {la}")
     la.prior_precision = delta
     logger.info("Fitting Laplace...")
     la.fit(train_loader)
@@ -450,7 +493,7 @@ def calc_la_metrics(
     bnn_metrics = compute_metrics(
         pred_fn=bnn_pred_fn, data_loader=test_loader, device=device
     )
-    print(f"bnn_metrics: {bnn_metrics}")
+    table_logger.add_data(f"BNN {hessian_structure}", metrics=bnn_metrics)
 
     # Get NLL for GLM predict
     if posthoc_prior_opt:
@@ -472,8 +515,7 @@ def calc_la_metrics(
     glm_metrics = compute_metrics(
         pred_fn=glm_pred_fn, data_loader=test_loader, device=device
     )
-    print(f"glm_metrics: {glm_metrics}")
-    return {"glm": glm_metrics, "bnn": bnn_metrics}
+    table_logger.add_data(f"GLM {hessian_structure}", metrics=glm_metrics)
 
 
 if __name__ == "__main__":

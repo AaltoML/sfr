@@ -441,65 +441,101 @@ class SFR(nn.Module):
 
     def optimize_prior_precision(
         self,
-        pred_type,
-        method="grid",
-        # n_steps=100,
-        # lr=1e-1,
-        # init_prior_prec=1.0,
-        val_loader=None,
-        # loss=get_nll,
-        log_prior_prec_min=-8,
-        log_prior_prec_max=4,
-        grid_size=100,
-        # link_approx="probit",
-        n_samples=100,
-        # verbose=False,
-        # cv_loss_with_var=False,
+        pred_type,  # "nn" or "gp"
+        method="grid",  # "grid" or "bo"
+        val_loader: DataLoader = None,
+        n_samples: int = 100,
+        prior_prec_min: float = 1e-8,
+        prior_prec_max: float = 1.0,
+        num_trials: int = 20,
     ):
         if method == "grid":
-            interval = torch.logspace(log_prior_prec_min, log_prior_prec_max, grid_size)
-            results = list()
-            prior_precs = list()
+            log_prior_prec_min = np.log(prior_prec_min)
+            log_prior_prec_max = np.log(prior_prec_max)
+            interval = torch.logspace(
+                log_prior_prec_min, log_prior_prec_max, num_trials
+            )
+            prior_precs, nlls = [], []
             for prior_prec in interval:
                 prior_prec = prior_prec.item()
-                logger.info(f"Prior prec: {prior_prec}")
                 self.update_pred_fn(prior_prec)
-                try:
-                    py, targets = [], []
-                    for idx, (x, y) in enumerate(tqdm(val_loader, ncols=100)):
-                        p = self(
-                            x=x.to(self.device),
-                            idx=idx,
-                            pred_type=pred_type,
-                            num_samples=n_samples,
-                        )[0]
-                        py.append(p)
-                        targets.append(y.to(self.device))
-                    targets = torch.cat(targets, dim=0).cpu().numpy()
-                    probs = torch.cat(py).cpu().numpy()
-                    if probs.shape[-1] == 1:
-                        bernoulli = True
-                    else:
-                        bernoulli = False
-
-                    if bernoulli:
-                        dist = dists.Bernoulli(torch.Tensor(probs[:, 0]))
-                    else:
-                        dist = dists.Categorical(torch.Tensor(probs))
-                    result = -dist.log_prob(torch.Tensor(targets)).mean().numpy()
-                    logger.info(f"Prior prec {prior_prec} nll:{result}")
-                except RuntimeError:
-                    result = np.inf
-                results.append(result)
+                nll = self.nlpd(
+                    data_loader=val_loader,
+                    pred_type=pred_type,
+                    n_samples=n_samples,
+                    prior_prec=prior_prec,
+                )
+                logger.info(f"Prior prec {prior_prec} nll: {nll}")
+                nlls.append(nll)
                 prior_precs.append(prior_prec)
+            best_nll = np.min(nlls)
+            best_prior_prec = prior_precs[np.argmin(nlls)]
+        elif method == "bo":
+            from ax.service.managed_loop import optimize
 
-            # prior_precs.append(prior_prec)
+            def nlpd_objective(params):
+                return self.nlpd(
+                    data_loader=val_loader,
+                    pred_type=pred_type,
+                    n_samples=n_samples,
+                    prior_prec=params["prior_prec"],
+                )
+
+            best_parameters, values, experiment, model = optimize(
+                parameters=[
+                    {
+                        "name": "prior_prec",
+                        "type": "range",
+                        "bounds": [prior_prec_min, prior_prec_max],
+                        "log_scale": False,
+                    },
+                ],
+                evaluation_function=nlpd_objective,
+                objective_name="NLPD",
+                minimize=True,
+                total_trials=num_trials,
+            )
+            best_prior_prec = best_parameters["prior_prec"]
+            best_nll = values[0]["NLPD"]
         else:
             raise NotImplementedError
 
-        best_prior_prec = prior_precs[np.argmin(results)]
-        logger.info(f"Best prior prec {best_prior_prec} with nll: {np.min(results)}")
+        logger.info(f"Best prior prec {best_prior_prec} with nll: {best_nll}")
         self.update_pred_fn(best_prior_prec)
+
+    def nlpd(
+        self,
+        data_loader: DataLoader,
+        pred_type: str = "gp",
+        n_samples: int = 100,
+        prior_prec: Optional[float] = None,
+    ):
+        if prior_prec:
+            self.update_pred_fn(prior_prec)
+        try:
+            py, targets = [], []
+            for idx, (x, y) in enumerate(data_loader):
+                p = self(
+                    x=x.to(self.device),
+                    idx=idx,
+                    pred_type=pred_type,
+                    num_samples=n_samples,
+                )[0]
+                py.append(p)
+                targets.append(y.to(self.device))
+            targets = torch.cat(targets, dim=0).cpu().numpy()
+            probs = torch.cat(py).cpu().numpy()
+
+            if isinstance(self.likelihood, BernoulliLh):
+                dist = dists.Bernoulli(torch.Tensor(probs[:, 0]))
+            elif isinstance(self.likelihood, CategoricalLh):
+                dist = dists.Categorical(torch.Tensor(probs))
+            else:
+                raise NotImplementedError
+            nll = -dist.log_prob(torch.Tensor(targets)).mean().numpy()
+        except RuntimeError:
+            nll = torch.inf
+        return nll
 
 
 @torch.no_grad()

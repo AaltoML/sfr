@@ -268,13 +268,13 @@ class SFR(nn.Module):
         Kzz += Iz * jitter
         Kzz = Kzz.detach().cpu()
         Iz = Iz.detach().cpu()
-        print(f"Iz {Iz}")
-        print(f"Kzz {Kzz}")
+        # print(f"Iz {Iz}")
+        # print(f"Kzz {Kzz}")
         beta_u = beta_u.detach().cpu()
-        print(f"beta_u {beta_u}")
+        # print(f"beta_u {beta_u}")
         # KzzplusBeta = (Kzz + beta_u) + Iz * jitter
         KzzplusBeta = (Kzz + beta_u / (delta * num_data)) + Iz * jitter
-        print(f"KzzplusBeta {KzzplusBeta}")
+        # print(f"KzzplusBeta {KzzplusBeta}")
 
         # if test_loader and self.computed_Kss_Ksz == False:
         #     Kxx_cached = []
@@ -290,35 +290,35 @@ class SFR(nn.Module):
 
         def cho_factor_jitter(x):
             try:
-                print("trying cho_factor")
+                # print("trying cho_factor")
                 # L, _ = cho_factor(x)
                 L = torch.linalg.cholesky(x, upper=True)
-                print("completed cho_factor")
+                # print("completed cho_factor")
                 return L
             except:
-                print("Failed cho_factor")
+                # print("Failed cho_factor")
                 logger.info("Cholesky failed so adding more jitter")
-                print(f"x: {x.shape}")
+                # print(f"x: {x.shape}")
                 # Iz = np.eye(x.shape[-1])
                 Iz = torch.eye(x.shape[-1]).to(x.device)
-                print(f"Iz[0,...]: {Iz*jitter}")
-                print(f"Iz[0,...]: {Iz.shape}")
-                print(f"jiiter: {jitter}")
+                # print(f"Iz[0,...]: {Iz*jitter}")
+                # print(f"Iz[0,...]: {Iz.shape}")
+                # print(f"jiiter: {jitter}")
                 x += Iz * jitter
                 # x += Iz[0, ...].numpy() * jitter
-                print(f"x new: {x}")
-                print(f"x new: {x.shape}")
+                # print(f"x new: {x}")
+                # print(f"x new: {x.shape}")
                 return cho_factor_jitter(x)
 
         # beta_u += Iz * jitter
         # Lm = torch.linalg.cholesky(Kzz, upper=True)
         Lm = cho_factor_jitter(Kzz)
-        print(f"Lm {Lm}")
+        # print(f"Lm {Lm}")
         # L = torch.linalg.cholesky(beta_u, upper=True)
         # Lb = torch.linalg.cholesky(Kzz, upper=True)
         # Lb = torch.linalg.cholesky(KzzplusBeta, upper=True)
         Lb = cho_factor_jitter(KzzplusBeta)
-        print(f"Lb {Lb}")
+        # print(f"Lb {Lb}")
         # K, M, _ = Kzz.shape
         # print(f"Kzz: {Kzz.shape}")
         # print(f"Iz: {Iz.shape}")
@@ -379,11 +379,12 @@ class SFR(nn.Module):
             # Kxz = kernel(x, Z).detach().cpu().numpy()
             Kxx = kernel(x, x, full_cov=full_cov).detach().cpu()
             Kxz = kernel(x, Z).detach().cpu()
-            print(f"Kxx {Kxx}")
-            print(f"Kxz {Kxz}")
+            # print(f"Kxx {Kxx}")
+            # print(f"Kxz {Kxz}")
             # alpha_u = alpha_u.detach().cpu()
             f_mean = (Kxz @ alpha_u[..., None])[..., 0].T / (delta * num_data)
-            print(f"f_mean {f_mean}")
+            # f_mean = (Kxz @ alpha_u[..., None])[..., 0].T
+            # print(f"f_mean {f_mean}")
 
             if full_cov:
                 # TODO tmp could be computed before
@@ -420,21 +421,21 @@ class SFR(nn.Module):
                 # f_var = torch.from_numpy(fvarnp.T).to(self.device) / (delta * num_data)
 
                 Kzx = torch.transpose(Kxz, -1, -2)
-                print(f"Kzx {Kzx}")
+                # print(f"Kzx {Kzx}")
                 Am = torch.linalg.solve_triangular(
                     torch.transpose(Lm, -1, -2), Kzx, upper=False
                 )
-                print(f"Am {Am}")
+                # print(f"Am {Am}")
                 Ab = torch.linalg.solve_triangular(
                     torch.transpose(Lb, -1, -2), Kzx, upper=False
                 )
-                print(f"Ab {Ab}")
+                # print(f"Ab {Ab}")
                 f_var = (
                     Kxx
                     - torch.sum(torch.square(Am), -2)
                     + torch.sum(torch.square(Ab), -2)
                 ) / (delta * num_data)
-                print(f"f_var {f_var}")
+                # print(f"f_var {f_var}")
                 return f_mean.to(self.device), f_var.T.to(self.device)
 
         return predict

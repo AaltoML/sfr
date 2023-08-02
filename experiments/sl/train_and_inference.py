@@ -28,15 +28,31 @@ class TableLogger:
             "acc": [],
             "nlpd": [],
             "ece": [],
+            "prior_prec": [],
         }
         self.tbl = wandb.Table(
-            columns=["dataset", "model", "seed", "num_inducing", "acc", "nlpd", "ece"]
+            columns=[
+                "dataset",
+                "model",
+                "seed",
+                "num_inducing",
+                "acc",
+                "nlpd",
+                "ece",
+                "prior_prec",
+            ]
         )
 
     def add_data(
-        self, model_name: str, metrics: dict, num_inducing: Optional[int] = None
+        self,
+        model_name: str,
+        metrics: dict,
+        prior_prec: float,
+        num_inducing: Optional[int] = None,
     ):
         "Add NLL to data dict and wandb table"
+        if isinstance(prior_prec, torch.Tensor):
+            prior_prec = prior_prec.item()
         self.data["dataset"].append(self.cfg.dataset.name)
         self.data["model"].append(model_name)
         self.data["seed"].append(self.cfg.random_seed)
@@ -44,6 +60,7 @@ class TableLogger:
         self.data["acc"].append(metrics["acc"])
         self.data["nlpd"].append(metrics["nll"])
         self.data["ece"].append(metrics["ece"])
+        self.data["prior_prec"].append(prior_prec)
         self.tbl.add_data(
             self.cfg.dataset.name,
             model_name,
@@ -52,6 +69,7 @@ class TableLogger:
             metrics["acc"],
             metrics["nll"],
             metrics["ece"],
+            prior_prec,
         )
         wandb.log({"Metrics": wandb.Table(data=pd.DataFrame(self.data))})
 
@@ -189,7 +207,9 @@ def log_map_metrics(sfr, test_loader, table_logger, device):
     map_metrics = compute_metrics(
         pred_fn=map_pred_fn, data_loader=test_loader, device=device
     )
-    table_logger.add_data("NN MAP", metrics=map_metrics, num_inducing=None)
+    table_logger.add_data(
+        "NN MAP", metrics=map_metrics, num_inducing=None, prior_prec=sfr.prior.delta
+    )
     logger.info(f"map_metrics: {map_metrics}")
 
 
@@ -240,7 +260,12 @@ def log_sfr_metrics(
         data_loader=test_loader,
         device=device,
     )
-    table_logger.add_data("SFR (NN)", metrics=nn_metrics, num_inducing=num_inducing)
+    table_logger.add_data(
+        "SFR (NN)",
+        metrics=nn_metrics,
+        num_inducing=num_inducing,
+        prior_prec=sfr.prior.delta,
+    )
 
     gp_metrics = compute_metrics(
         pred_fn=sfr_pred(
@@ -249,7 +274,12 @@ def log_sfr_metrics(
         data_loader=test_loader,
         device=device,
     )
-    table_logger.add_data("SFR (GP)", metrics=gp_metrics, num_inducing=num_inducing)
+    table_logger.add_data(
+        "SFR (GP)",
+        metrics=gp_metrics,
+        num_inducing=num_inducing,
+        prior_prec=sfr.prior.delta,
+    )
 
     # Get NLL for NN predict
     if posthoc_prior_opt_bo:
@@ -269,7 +299,10 @@ def log_sfr_metrics(
             device=device,
         )
         table_logger.add_data(
-            "SFR (NN) BO", metrics=nn_metrics_bo, num_inducing=num_inducing
+            "SFR (NN) BO",
+            metrics=nn_metrics_bo,
+            num_inducing=num_inducing,
+            prior_prec=sfr.prior.delta,
         )
 
     if posthoc_prior_opt_grid:
@@ -289,7 +322,10 @@ def log_sfr_metrics(
             device=device,
         )
         table_logger.add_data(
-            "SFR (NN) GRID", metrics=nn_metrics, num_inducing=num_inducing
+            "SFR (NN) GRID",
+            metrics=nn_metrics,
+            num_inducing=num_inducing,
+            prior_prec=sfr.prior.delta,
         )
         # logger.info(f"map_metrics: {map_metrics}")
 
@@ -311,7 +347,10 @@ def log_sfr_metrics(
             device=device,
         )
         table_logger.add_data(
-            "SFR (GP) BO", metrics=gp_metrics_bo, num_inducing=num_inducing
+            "SFR (GP) BO",
+            metrics=gp_metrics_bo,
+            num_inducing=num_inducing,
+            prior_prec=sfr.prior.delta,
         )
 
     if posthoc_prior_opt_grid:
@@ -331,7 +370,10 @@ def log_sfr_metrics(
             device=device,
         )
         table_logger.add_data(
-            "SFR (GP) GRID", metrics=gp_metrics, num_inducing=num_inducing
+            "SFR (GP) GRID",
+            metrics=gp_metrics,
+            num_inducing=num_inducing,
+            prior_prec=sfr.prior.delta,
         )
 
 
@@ -391,7 +433,10 @@ def log_gp_metrics(
         device=device,
     )
     table_logger.add_data(
-        "GP Subest (NN)", metrics=nn_metrics_bo, num_inducing=num_inducing
+        "GP Subest (NN)",
+        metrics=nn_metrics_bo,
+        num_inducing=num_inducing,
+        prior_prec=gp.prior.delta,
     )
 
     nn_metrics_bo = compute_metrics(
@@ -402,7 +447,10 @@ def log_gp_metrics(
         device=device,
     )
     table_logger.add_data(
-        "GP Subest (GP)", metrics=nn_metrics_bo, num_inducing=num_inducing
+        "GP Subest (GP)",
+        metrics=nn_metrics_bo,
+        num_inducing=num_inducing,
+        prior_prec=gp.prior.delta,
     )
 
     if posthoc_prior_opt_bo:
@@ -422,7 +470,10 @@ def log_gp_metrics(
             device=device,
         )
         table_logger.add_data(
-            "GP Subest (NN) BO", metrics=nn_metrics_bo, num_inducing=num_inducing
+            "GP Subest (NN) BO",
+            metrics=nn_metrics_bo,
+            num_inducing=num_inducing,
+            prior_prec=gp.prior.delta,
         )
 
     if posthoc_prior_opt_grid:
@@ -442,7 +493,10 @@ def log_gp_metrics(
             device=device,
         )
         table_logger.add_data(
-            "GP Subest (NN) GRID", metrics=nn_metrics, num_inducing=num_inducing
+            "GP Subest (NN) GRID",
+            metrics=nn_metrics,
+            num_inducing=num_inducing,
+            prior_prec=gp.prior.delta,
         )
 
     if posthoc_prior_opt_bo:
@@ -462,7 +516,10 @@ def log_gp_metrics(
             device=device,
         )
         table_logger.add_data(
-            "GP Subest (GP) BO", metrics=gp_metrics_bo, num_inducing=num_inducing
+            "GP Subest (GP) BO",
+            metrics=gp_metrics_bo,
+            num_inducing=num_inducing,
+            prior_prec=gp.prior.delta,
         )
 
     if posthoc_prior_opt_grid:
@@ -482,7 +539,10 @@ def log_gp_metrics(
             device=device,
         )
         table_logger.add_data(
-            "GP Subest (GP) GRID", metrics=gp_metrics, num_inducing=num_inducing
+            "GP Subest (GP) GRID",
+            metrics=gp_metrics,
+            num_inducing=num_inducing,
+            prior_prec=gp.prior.delta,
         )
 
 
@@ -517,6 +577,33 @@ def log_la_metrics(
     la.fit(train_loader)
     logger.info("Finished fitting Laplace")
 
+    bnn_pred_fn = la_pred(
+        model=la,
+        pred_type="nn",
+        link_approx="mc",
+        num_samples=num_samples,
+        device=device,
+    )
+    bnn_metrics = compute_metrics(
+        pred_fn=bnn_pred_fn, data_loader=test_loader, device=device
+    )
+    table_logger.add_data(
+        f"BNN {hessian_structure}", metrics=bnn_metrics, prior_prec=la.prior_precision
+    )
+    glm_pred_fn = la_pred(
+        model=la,
+        pred_type="glm",
+        link_approx="mc",
+        num_samples=num_samples,
+        device=device,
+    )
+    glm_metrics = compute_metrics(
+        pred_fn=glm_pred_fn, data_loader=test_loader, device=device
+    )
+    table_logger.add_data(
+        f"GLM {hessian_structure}", metrics=glm_metrics, prior_prec=la.prior_precision
+    )
+
     # Get NLL for BNN predict
     if posthoc_prior_opt:
         la.optimize_prior_precision(
@@ -528,17 +615,21 @@ def log_la_metrics(
             # log_prior_prec_max=5,
             grid_size=40,
         )
-    bnn_pred_fn = la_pred(
-        model=la,
-        pred_type="nn",
-        link_approx="mc",
-        num_samples=num_samples,
-        device=device,
-    )
-    bnn_metrics = compute_metrics(
-        pred_fn=bnn_pred_fn, data_loader=test_loader, device=device
-    )
-    table_logger.add_data(f"BNN {hessian_structure}", metrics=bnn_metrics)
+        bnn_pred_fn = la_pred(
+            model=la,
+            pred_type="nn",
+            link_approx="mc",
+            num_samples=num_samples,
+            device=device,
+        )
+        bnn_metrics = compute_metrics(
+            pred_fn=bnn_pred_fn, data_loader=test_loader, device=device
+        )
+        table_logger.add_data(
+            f"BNN {hessian_structure} GRID",
+            metrics=bnn_metrics,
+            prior_prec=la.prior_precision,
+        )
 
     # Get NLL for GLM predict
     if posthoc_prior_opt:
@@ -550,17 +641,21 @@ def log_la_metrics(
             log_prior_prec_max=10,
             grid_size=40,
         )
-    glm_pred_fn = la_pred(
-        model=la,
-        pred_type="glm",
-        link_approx="mc",
-        num_samples=num_samples,
-        device=device,
-    )
-    glm_metrics = compute_metrics(
-        pred_fn=glm_pred_fn, data_loader=test_loader, device=device
-    )
-    table_logger.add_data(f"GLM {hessian_structure}", metrics=glm_metrics)
+        glm_pred_fn = la_pred(
+            model=la,
+            pred_type="glm",
+            link_approx="mc",
+            num_samples=num_samples,
+            device=device,
+        )
+        glm_metrics = compute_metrics(
+            pred_fn=glm_pred_fn, data_loader=test_loader, device=device
+        )
+        table_logger.add_data(
+            f"GLM {hessian_structure} GRID",
+            metrics=glm_metrics,
+            prior_prec=la.prior_precision,
+        )
 
 
 if __name__ == "__main__":

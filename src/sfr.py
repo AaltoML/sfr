@@ -234,6 +234,7 @@ class SFR(nn.Module):
         return self.train_data[0].shape[0]
 
     def update_pred_fn(self, delta: float):
+        self.prior.delta = delta
         self._predict_fn = self.predict_from_sparse_duals(
             alpha_u=self.alpha_u,
             beta_u=self.beta_u,

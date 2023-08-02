@@ -502,6 +502,10 @@ class SFR(nn.Module):
         else:
             raise NotImplementedError
 
+        for x, y in val_loader:
+            f_mean, f_var = self._predict_fn(x, full_cov=False)
+            logger.info(f"f_var after BO=: {f_var}")
+            break
         logger.info(f"Best prior prec {best_prior_prec} with nll: {best_nll}")
         self.update_pred_fn(best_prior_prec)
 

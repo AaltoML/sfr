@@ -126,9 +126,16 @@ class CategoricalLh(Likelihood):
             # print("f_mean {}".format(f_mean.shape))
 
             # print("f_var {}".format(f_var.shape))
-            # logger.info(
-            #     f"f_var: num_el {f_var.numel()} - zero el {(f_var < 0).sum().item()}"
-            # )
+            # if (f_var == 0).sum().item() > 0:
+            if (f_var < 1e-5).sum().item() > 0 and (f_var >= -1e-5).sum().item():
+                logger.info(f"f_var==0: {(f_var == 0).sum().item()}")
+                logger.info(
+                    f"f_var: num_el {f_var.numel()} - equal zero el {(f_var == 0).sum().item()}"
+                )
+            if (f_var < 0).sum().item() > 0:
+                logger.info(
+                    f"f_var: num_el {f_var.numel()} - less than zero el {(f_var < 0).sum().item()}"
+                )
 
             dist = Normal(f_mean, torch.sqrt(f_var.clamp(10 ** (-32))))
             # print("made dist")

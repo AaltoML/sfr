@@ -1110,7 +1110,7 @@ The experiments are run only in the single-head (SH) setting that is harder and 
  Our regularizer is evaluated on three CL benchmarks, specifically Split-MNIST (S-MNIST), Split-FashionMNIST (S-FMNIST), and the 10-tasks Permuted-MNIST (P-MNIST). We adhere to the same setups outlined in \cite{rudner2022continual, pan2020continual}, which use a two-layer MLP with 256 hidden units and ReLU activation for S-MNIST and S-FMNIST and a two-layer MLP with 100 hidden units for P-MNIST, to ensure consistency (see \cref{app:cl-exp} for full details).
 
 % Methods
-We compare our method against two categories of methods: {\em (i)}~weight-regularization methods: EWC, SI, and VCL (with coresets), and {\em(ii)}~function-based regularization methods: DER, FROMP, and S-FSVI. We also introduce an ablation study where we replace our $\bar{\MB}_t^{-1}$ with an identity matrix $\MI_M$, equivalent to having an L2 regularization between current and old function outputs.
+We compare our method against two categories of methods: {\em (i)}~weight-regularization methods: Online-EWC, SI, and VCL (with coresets), and {\em(ii)}~function-based regularization methods: DER, FROMP, and S-FSVI. We also introduce an ablation study where we replace our $\bar{\MB}_t^{-1}$ with an identity matrix $\MI_M$, equivalent to having an L2 regularization between current and old function outputs.
 In \cref{tbl:cl_table_1}, we use 200 points for each task, and we further demonstrate our method's ability to compress the task data set information on a lower number of points for S-MNIST.
 
 %% Comments on the results:

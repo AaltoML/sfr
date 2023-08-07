@@ -380,12 +380,12 @@ class SFR(nn.Module):
             # Kxz = kernel(x, Z).detach().cpu().numpy()
             Kxx = kernel(x, x, full_cov=full_cov).detach().cpu()
             Kxz = kernel(x, Z).detach().cpu()
-            print(f"Kxx {Kxx}")
-            print(f"Kxz {Kxz}")
+            # print(f"Kxx {Kxx}")
+            # print(f"Kxz {Kxz}")
             # alpha_u = alpha_u.detach().cpu()
             f_mean = (Kxz @ alpha_u[..., None])[..., 0].T / (delta * num_data)
             # f_mean = (Kxz @ alpha_u[..., None])[..., 0].T
-            print(f"f_mean {f_mean}")
+            # print(f"f_mean {f_mean}")
 
             if full_cov:
                 # TODO tmp could be computed before
@@ -422,15 +422,15 @@ class SFR(nn.Module):
                 # f_var = torch.from_numpy(fvarnp.T).to(self.device) / (delta * num_data)
 
                 Kzx = torch.transpose(Kxz, -1, -2)
-                print(f"Kzx {Kzx}")
+                # print(f"Kzx {Kzx}")
                 Am = torch.linalg.solve_triangular(
                     torch.transpose(Lm, -1, -2), Kzx, upper=False
                 )
-                print(f"Am {Am}")
+                # print(f"Am {Am}")
                 Ab = torch.linalg.solve_triangular(
                     torch.transpose(Lb, -1, -2), Kzx, upper=False
                 )
-                print(f"Ab {Ab}")
+                # print(f"Ab {Ab}")
                 f_var = (
                     Kxx
                     - torch.sum(torch.square(Am), -2)

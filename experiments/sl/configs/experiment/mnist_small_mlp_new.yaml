@@ -16,6 +16,7 @@ sfr:
 # batch_size: 64 # for training/val/test data
 batch_size: 128 # for training/val/test data
 
+num_inducings_as_percent: False
 num_inducings:
   - 6400
   - 5000

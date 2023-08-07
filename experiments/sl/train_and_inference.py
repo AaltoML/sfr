@@ -89,7 +89,7 @@ def train_and_inference(cfg: DictConfig):
     torch.set_default_dtype(torch.float)
 
     # Load train/val/test data sets
-    ds_train, ds_val, ds_test = hydra.utils.instantiate(
+    ds_train, ds_val, ds_test, _ = hydra.utils.instantiate(
         cfg.dataset, dir=os.path.join(get_original_cwd(), "data")
     )
 
@@ -113,7 +113,7 @@ def train_and_inference(cfg: DictConfig):
     sfr.double()
     sfr.eval()
 
-    ds_train, ds_val, ds_test = hydra.utils.instantiate(
+    ds_train, ds_val, ds_test, _ = hydra.utils.instantiate(
         cfg.dataset,
         dir=os.path.join(get_original_cwd(), "data"),
         double=cfg.double_inference,
@@ -146,6 +146,8 @@ def train_and_inference(cfg: DictConfig):
     num_data = len(ds_train)
     logger.info(f"num_data: {num_data}")
     for num_inducing in cfg.num_inducings:
+        if cfg.num_inducings_as_percent:
+            num_inducing = int(num_data * num_inducing * 100)
         torch.cuda.empty_cache()
         # Log SFR GP/NN NLPD/ACC/ECE
         log_sfr_metrics(

@@ -67,7 +67,7 @@ def train(cfg: TrainConfig):
     print("Using device: {}".format(cfg.device))
 
     # Load the data with train/val/test split
-    ds_train, ds_val, ds_test = hydra.utils.instantiate(
+    ds_train, ds_val, ds_test, _ = hydra.utils.instantiate(
         cfg.dataset, dir=os.path.join(get_original_cwd(), "data")
     )
     cfg.output_dim = ds_train.output_dim

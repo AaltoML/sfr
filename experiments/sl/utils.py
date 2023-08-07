@@ -205,10 +205,17 @@ def get_image_dataset(
     print("Final num train {}".format(len(ds_train)))
     print("Final num val {}".format(len(ds_val)))
     print("Final num test {}".format(len(ds_test)))
-    return ds_train, ds_val, ds_test
+    return ds_train, ds_val, ds_test, _
 
 
-def get_uci_dataset(name: str, random_seed: int, dir: str, double: bool, **kwargs):
+def get_uci_dataset(
+    name: str,
+    random_seed: int,
+    dir: str,
+    double: bool,
+    train_update_split: Optional[float] = None,
+    **kwargs,
+):
     ds_train = UCIClassificationDatasets(
         name,
         random_seed=random_seed,
@@ -217,6 +224,16 @@ def get_uci_dataset(name: str, random_seed: int, dir: str, double: bool, **kwarg
         train=True,
         double=double,
     )
+    if train_update_split:
+        ds_train, ds_update, _ = train_val_split(
+            ds_train=ds_train,
+            ds_test=None,
+            val_from_test=False,
+            val_split=train_update_split,
+        )
+    else:
+        ds_update = None
+
     ds_test = UCIClassificationDatasets(
         name,
         random_seed=random_seed,
@@ -247,6 +264,9 @@ def get_uci_dataset(name: str, random_seed: int, dir: str, double: bool, **kwarg
         ds_train.targets = ds_train.targets.long()
         ds_val.targets = ds_val.targets.long()
         ds_test.targets = ds_test.targets.long()
+        if train_update_split:
+            ds_update.data = ds_update.data.to(torch.double)
+            ds_update.targets = ds_update.targets.long()
 
     # always use Softmax instead of Bernoulli
     output_dim = ds_train.C
@@ -262,7 +282,7 @@ def get_uci_dataset(name: str, random_seed: int, dir: str, double: bool, **kwarg
     print(f"ds_train.C={ds_train.C}")
     # ds_train.K = output_dim
     ds_train.output_dim = output_dim
-    return ds_train, ds_val, ds_test
+    return ds_train, ds_val, ds_test, ds_update
 
 
 def get_image_network(name: str, ds_train, device: str):

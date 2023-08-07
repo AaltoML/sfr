@@ -130,9 +130,11 @@ def compute_metrics(
             p = pred_fn(x.to(device))
         py.append(p)
         targets.append(y.to(device))
+    print("after for loop")
 
     targets = torch.cat(targets, dim=0).cpu().numpy()
     probs = torch.cat(py).cpu().numpy()
+    print("after probs")
 
     if probs.shape[-1] == 1:
         bernoulli = True
@@ -144,13 +146,17 @@ def compute_metrics(
         acc = np.sum((y_pred[:, 0] == targets)) / len(probs)
     else:
         acc = (probs.argmax(-1) == targets).mean()
+    print("after bernoulli")
     ece = ECE(bins=15).measure(probs, targets)  # TODO does this work for bernoulli?
+    print("after ece")
 
     if bernoulli:
         dist = dists.Bernoulli(torch.Tensor(probs[:, 0]))
     else:
         dist = dists.Categorical(torch.Tensor(probs))
+    print("after dist")
     nll = -dist.log_prob(torch.Tensor(targets)).mean().numpy()
+    print("after nll")
     metrics = {"acc": acc, "nll": nll, "ece": ece}
     return metrics
 

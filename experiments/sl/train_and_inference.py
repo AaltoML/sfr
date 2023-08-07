@@ -268,15 +268,7 @@ def log_sfr_metrics(
     logger.info("Fitting SFR...")
     sfr.fit(train_loader=train_loader)
     logger.info("Finished fitting SFR")
-    logger.info(f"sfr {sfr}")
-    logger.info(f"sfr.network {sfr.network}")
-    logger.info(f"test_loader {test_loader}")
-    logger.info(f"test_loader.dataset {test_loader.dataset}")
-    logger.info(f"test_loader.dataset.data {test_loader.dataset.data}")
-    logger.info(f"test_loader.dataset.targets {test_loader.dataset.targets}")
-    logger.info(f"device {device}")
 
-    logger.info("Computing metrics SFR")
     nn_metrics = compute_metrics(
         pred_fn=sfr_pred(
             model=sfr, pred_type="nn", num_samples=num_samples, device=device
@@ -284,7 +276,6 @@ def log_sfr_metrics(
         data_loader=test_loader,
         device=device,
     )
-    logger.info("FINISHED Computing metrics SFR")
     table_logger.add_data(
         "SFR (NN)",
         metrics=nn_metrics,
@@ -293,7 +284,6 @@ def log_sfr_metrics(
         prior_prec=sfr.prior.delta,
     )
 
-    logger.info("Computing metrics GP")
     gp_metrics = compute_metrics(
         pred_fn=sfr_pred(
             model=sfr, pred_type="gp", num_samples=num_samples, device=device
@@ -301,7 +291,6 @@ def log_sfr_metrics(
         data_loader=test_loader,
         device=device,
     )
-    logger.info("FINISHED Computing metrics GP")
     table_logger.add_data(
         "SFR (GP)",
         metrics=gp_metrics,
@@ -320,8 +309,6 @@ def log_sfr_metrics(
             prior_prec_max=1.0,
             num_trials=20,
         )
-        logger.info("Finishe BO")
-        logger.info("Computing metrics")
         nn_metrics_bo = compute_metrics(
             pred_fn=sfr_pred(
                 model=sfr, pred_type="nn", num_samples=num_samples, device=device
@@ -329,7 +316,6 @@ def log_sfr_metrics(
             data_loader=test_loader,
             device=device,
         )
-        logger.info("FINISHED Computing metrics")
         table_logger.add_data(
             "SFR (NN) BO",
             metrics=nn_metrics_bo,
@@ -347,8 +333,6 @@ def log_sfr_metrics(
             prior_prec_max=1.0,
             num_trials=50,
         )
-        logger.info("Finished GRID")
-        logger.info("Computing metrics grid")
         nn_metrics = compute_metrics(
             pred_fn=sfr_pred(
                 model=sfr, pred_type="nn", num_samples=num_samples, device=device
@@ -356,7 +340,6 @@ def log_sfr_metrics(
             data_loader=test_loader,
             device=device,
         )
-        logger.info("FINISHED Computing metrics grid")
         table_logger.add_data(
             "SFR (NN) GRID",
             metrics=nn_metrics,

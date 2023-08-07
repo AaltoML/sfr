@@ -309,6 +309,8 @@ def log_sfr_metrics(
             prior_prec_max=1.0,
             num_trials=20,
         )
+        logger.info("Finishe BO")
+        logger.info("Computing metrics")
         nn_metrics_bo = compute_metrics(
             pred_fn=sfr_pred(
                 model=sfr, pred_type="nn", num_samples=num_samples, device=device
@@ -316,6 +318,7 @@ def log_sfr_metrics(
             data_loader=test_loader,
             device=device,
         )
+        logger.info("FINISHED Computing metrics")
         table_logger.add_data(
             "SFR (NN) BO",
             metrics=nn_metrics_bo,
@@ -333,6 +336,8 @@ def log_sfr_metrics(
             prior_prec_max=1.0,
             num_trials=50,
         )
+        logger.info("Finished GRID")
+        logger.info("Computing metrics grid")
         nn_metrics = compute_metrics(
             pred_fn=sfr_pred(
                 model=sfr, pred_type="nn", num_samples=num_samples, device=device
@@ -340,6 +345,7 @@ def log_sfr_metrics(
             data_loader=test_loader,
             device=device,
         )
+        logger.info("FINISHED Computing metrics grid")
         table_logger.add_data(
             "SFR (NN) GRID",
             metrics=nn_metrics,

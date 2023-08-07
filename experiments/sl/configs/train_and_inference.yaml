@@ -22,16 +22,9 @@ posthoc_prior_opt_laplace: True
 run_laplace_flag: True
 hessian_structures: ["diag", "kron", "full"]
 
-# num_inducings:
-#   - 512
-#   - 256
-#   - 128
-#   - 64
-#   - 32
-#   - 16
-#   - 8
 num_inducings_as_percent: True
 num_inducings:
+  - 1
   - 2
   - 5
   - 10

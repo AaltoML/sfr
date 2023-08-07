@@ -503,7 +503,11 @@ class SFR(nn.Module):
             raise NotImplementedError
 
         for x, y in val_loader:
-            f_mean, f_var = self._predict_fn(x, full_cov=False)
+            print("using val_loader")
+            print(x.dtype)
+            print(y.dtype)
+            # TODO this is just here for debugging
+            f_mean, f_var = self._predict_fn(x.to(self.device), full_cov=False)
             logger.info(f"f_var after BO=: {f_var}")
             break
         logger.info(f"Best prior prec {best_prior_prec} with nll: {best_nll}")

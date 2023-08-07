@@ -25,6 +25,7 @@ class TableLogger:
             "model": [],
             "seed": [],
             "num_inducing": [],
+            "num_inducing_percent": [],
             "acc": [],
             "nlpd": [],
             "ece": [],
@@ -36,6 +37,7 @@ class TableLogger:
                 "model",
                 "seed",
                 "num_inducing",
+                "num_inducing_percent",
                 "acc",
                 "nlpd",
                 "ece",
@@ -49,6 +51,7 @@ class TableLogger:
         metrics: dict,
         prior_prec: float,
         num_inducing: Optional[int] = None,
+        num_inducing_percent: Optional[int] = None,
     ):
         "Add NLL to data dict and wandb table"
         if isinstance(prior_prec, torch.Tensor):
@@ -57,6 +60,7 @@ class TableLogger:
         self.data["model"].append(model_name)
         self.data["seed"].append(self.cfg.random_seed)
         self.data["num_inducing"].append(num_inducing)
+        self.data["num_inducing_percent"].append(num_inducing_percent)
         self.data["acc"].append(metrics["acc"])
         self.data["nlpd"].append(metrics["nll"])
         self.data["ece"].append(metrics["ece"])
@@ -66,6 +70,7 @@ class TableLogger:
             model_name,
             self.cfg.random_seed,
             num_inducing,
+            num_inducing_percent,
             metrics["acc"],
             metrics["nll"],
             metrics["ece"],
@@ -144,10 +149,16 @@ def train_and_inference(cfg: DictConfig):
             )
 
     num_data = len(ds_train)
+    print(f"NUM_DATA {num_data}")
     logger.info(f"num_data: {num_data}")
     for num_inducing in cfg.num_inducings:
         if cfg.num_inducings_as_percent:
-            num_inducing = int(num_data * num_inducing * 100)
+            print(f"NUM_INDUCING PERCENT {num_inducing}")
+            num_inducing_percent = num_inducing
+            num_inducing = int(num_data * num_inducing / 100)
+            print(f"num_inducing {num_inducing}")
+        else:
+            num_inducing_percent = int(num_inducing / num_data * 100)
         torch.cuda.empty_cache()
         # Log SFR GP/NN NLPD/ACC/ECE
         log_sfr_metrics(
@@ -159,6 +170,7 @@ def train_and_inference(cfg: DictConfig):
             test_loader=test_loader,
             table_logger=table_logger,
             num_inducing=num_inducing,
+            num_inducing_percent=num_inducing_percent,
             dual_batch_size=cfg.dual_batch_size,
             device=cfg.device,
             posthoc_prior_opt_grid=cfg.posthoc_prior_opt_grid,
@@ -177,6 +189,7 @@ def train_and_inference(cfg: DictConfig):
             test_loader=test_loader,
             table_logger=table_logger,
             num_inducing=num_inducing,
+            num_inducing_percent=num_inducing_percent,
             dual_batch_size=cfg.dual_batch_size,
             device=cfg.device,
             posthoc_prior_opt_grid=cfg.posthoc_prior_opt_grid,
@@ -224,6 +237,7 @@ def log_sfr_metrics(
     test_loader,
     table_logger: TableLogger,
     num_inducing: int = 128,
+    num_inducing_percent: Optional[int] = None,
     dual_batch_size: int = 1000,
     # device="cpu",
     device="cuda",
@@ -266,6 +280,7 @@ def log_sfr_metrics(
         "SFR (NN)",
         metrics=nn_metrics,
         num_inducing=num_inducing,
+        num_inducing_percent=num_inducing_percent,
         prior_prec=sfr.prior.delta,
     )
 
@@ -280,6 +295,7 @@ def log_sfr_metrics(
         "SFR (GP)",
         metrics=gp_metrics,
         num_inducing=num_inducing,
+        num_inducing_percent=num_inducing_percent,
         prior_prec=sfr.prior.delta,
     )
 
@@ -304,6 +320,7 @@ def log_sfr_metrics(
             "SFR (NN) BO",
             metrics=nn_metrics_bo,
             num_inducing=num_inducing,
+            num_inducing_percent=num_inducing_percent,
             prior_prec=sfr.prior.delta,
         )
 
@@ -327,6 +344,7 @@ def log_sfr_metrics(
             "SFR (NN) GRID",
             metrics=nn_metrics,
             num_inducing=num_inducing,
+            num_inducing_percent=num_inducing_percent,
             prior_prec=sfr.prior.delta,
         )
         # logger.info(f"map_metrics: {map_metrics}")
@@ -352,6 +370,7 @@ def log_sfr_metrics(
             "SFR (GP) BO",
             metrics=gp_metrics_bo,
             num_inducing=num_inducing,
+            num_inducing_percent=num_inducing_percent,
             prior_prec=sfr.prior.delta,
         )
 
@@ -375,6 +394,7 @@ def log_sfr_metrics(
             "SFR (GP) GRID",
             metrics=gp_metrics,
             num_inducing=num_inducing,
+            num_inducing_percent=num_inducing_percent,
             prior_prec=sfr.prior.delta,
         )
 
@@ -388,6 +408,7 @@ def log_gp_metrics(
     test_loader,
     table_logger: TableLogger,
     num_inducing: int = 128,
+    num_inducing_percent: Optional[int] = None,
     dual_batch_size: int = 1000,
     # device="cpu",
     device="cuda",
@@ -438,6 +459,7 @@ def log_gp_metrics(
         "GP Subest (NN)",
         metrics=nn_metrics_bo,
         num_inducing=num_inducing,
+        num_inducing_percent=num_inducing_percent,
         prior_prec=gp.prior.delta,
     )
 
@@ -452,6 +474,7 @@ def log_gp_metrics(
         "GP Subest (GP)",
         metrics=nn_metrics_bo,
         num_inducing=num_inducing,
+        num_inducing_percent=num_inducing_percent,
         prior_prec=gp.prior.delta,
     )
 
@@ -475,6 +498,7 @@ def log_gp_metrics(
             "GP Subest (NN) BO",
             metrics=nn_metrics_bo,
             num_inducing=num_inducing,
+            num_inducing_percent=num_inducing_percent,
             prior_prec=gp.prior.delta,
         )
 
@@ -498,6 +522,7 @@ def log_gp_metrics(
             "GP Subest (NN) GRID",
             metrics=nn_metrics,
             num_inducing=num_inducing,
+            num_inducing_percent=num_inducing_percent,
             prior_prec=gp.prior.delta,
         )
 
@@ -521,6 +546,7 @@ def log_gp_metrics(
             "GP Subest (GP) BO",
             metrics=gp_metrics_bo,
             num_inducing=num_inducing,
+            num_inducing_percent=num_inducing_percent,
             prior_prec=gp.prior.delta,
         )
 
@@ -544,6 +570,7 @@ def log_gp_metrics(
             "GP Subest (GP) GRID",
             metrics=gp_metrics,
             num_inducing=num_inducing,
+            num_inducing_percent=num_inducing_percent,
             prior_prec=gp.prior.delta,
         )
 

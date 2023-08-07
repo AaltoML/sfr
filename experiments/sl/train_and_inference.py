@@ -272,6 +272,8 @@ def log_sfr_metrics(
     logger.info(f"sfr.network {sfr.network}")
     logger.info(f"test_loader {test_loader}")
     logger.info(f"test_loader.dataset {test_loader.dataset}")
+    logger.info(f"test_loader.dataset.data {test_loader.dataset.data}")
+    logger.info(f"test_loader.dataset.targets {test_loader.dataset.targets}")
     logger.info(f"device {device}")
 
     logger.info("Computing metrics SFR")

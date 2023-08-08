@@ -38,7 +38,8 @@ num_inducings:
 device: "cuda"
 # device: "cpu"
 output_dim: ???
-batch_size: 512
+batch_size: 128
+# batch_size: 512
 lr: 1e-4
 n_epochs: 500
 double: False

@@ -298,7 +298,7 @@ class SFR(nn.Module):
                 return L
             except:
                 # print("Failed cho_factor")
-                logger.info("Cholesky failed so adding more jitter")
+                logger.info(f"Cholesky failed so adding more jitter={jitter}")
                 # print(f"x: {x.shape}")
                 # Iz = np.eye(x.shape[-1])
                 Iz = torch.eye(x.shape[-1]).to(x.device)

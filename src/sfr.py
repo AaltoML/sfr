@@ -354,7 +354,7 @@ class SFR(nn.Module):
         alpha_u = torch.linalg.solve(
             KzzplusBeta, self.Lambda_u[..., None]  # .detach().cpu()
         )[..., 0]
-        print(f"alpha_u {alpha_u}")
+        # print(f"alpha_u {alpha_u}")
 
         @torch.no_grad()
         def predict(

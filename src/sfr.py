@@ -452,13 +452,16 @@ class SFR(nn.Module):
         prior_prec_max: float = 1.0,
         num_trials: int = 20,
     ):
-        prior_prec_before = self.delta
+        prior_prec_before = self.prior.delta
+        logger.info(f"prior_prec_before {prior_prec_before}")
         nll_before = self.nlpd(
             data_loader=val_loader,
             pred_type=pred_type,
             n_samples=n_samples,
             # prior_prec=prior_prec,
         )
+        logger.info(f"nll_before {nll_before}")
+
         if method == "grid":
             log_prior_prec_min = np.log(prior_prec_min)
             log_prior_prec_max = np.log(prior_prec_max)

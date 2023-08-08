@@ -301,59 +301,11 @@ def log_sfr_metrics(
         num_inducing_percent=num_inducing_percent,
         prior_prec=sfr.prior.delta,
     )
-
-    # Get NLL for NN predict
-    if posthoc_prior_opt_bo:
-        sfr.optimize_prior_precision(
-            pred_type="nn",
-            val_loader=val_loader,
-            method="bo",
-            prior_prec_min=1e-8,
-            prior_prec_max=1.0,
-            num_trials=num_bo_trials,
-        )
-        nn_metrics_bo = compute_metrics(
-            pred_fn=sfr_pred(
-                model=sfr, pred_type="nn", num_samples=num_samples, device=device
-            ),
-            data_loader=test_loader,
-            device=device,
-        )
-        table_logger.add_data(
-            "SFR (NN) BO",
-            metrics=nn_metrics_bo,
-            num_inducing=num_inducing,
-            num_inducing_percent=num_inducing_percent,
-            prior_prec=sfr.prior.delta,
-        )
-
-    if posthoc_prior_opt_grid:
-        sfr.optimize_prior_precision(
-            pred_type="nn",
-            val_loader=val_loader,
-            method="grid",
-            prior_prec_min=1e-8,
-            prior_prec_max=1.0,
-            num_trials=50,
-        )
-        nn_metrics = compute_metrics(
-            pred_fn=sfr_pred(
-                model=sfr, pred_type="nn", num_samples=num_samples, device=device
-            ),
-            data_loader=test_loader,
-            device=device,
-        )
-        table_logger.add_data(
-            "SFR (NN) GRID",
-            metrics=nn_metrics,
-            num_inducing=num_inducing,
-            num_inducing_percent=num_inducing_percent,
-            prior_prec=sfr.prior.delta,
-        )
-        # logger.info(f"map_metrics: {map_metrics}")
+    prior_prec = sfr.prior.delta
 
     # Get NLL for GP predict
     if posthoc_prior_opt_bo:
+        sfr.prior.delta = prior_prec
         sfr.optimize_prior_precision(
             pred_type="gp",
             val_loader=val_loader,
@@ -378,6 +330,7 @@ def log_sfr_metrics(
         )
 
     if posthoc_prior_opt_grid:
+        sfr.prior.delta = prior_prec
         sfr.optimize_prior_precision(
             pred_type="gp",
             val_loader=val_loader,
@@ -400,6 +353,58 @@ def log_sfr_metrics(
             num_inducing_percent=num_inducing_percent,
             prior_prec=sfr.prior.delta,
         )
+
+    # Get NLL for NN predict
+    if posthoc_prior_opt_bo:
+        sfr.prior.delta = prior_prec
+        sfr.optimize_prior_precision(
+            pred_type="nn",
+            val_loader=val_loader,
+            method="bo",
+            prior_prec_min=1e-8,
+            prior_prec_max=1.0,
+            num_trials=num_bo_trials,
+        )
+        nn_metrics_bo = compute_metrics(
+            pred_fn=sfr_pred(
+                model=sfr, pred_type="nn", num_samples=num_samples, device=device
+            ),
+            data_loader=test_loader,
+            device=device,
+        )
+        table_logger.add_data(
+            "SFR (NN) BO",
+            metrics=nn_metrics_bo,
+            num_inducing=num_inducing,
+            num_inducing_percent=num_inducing_percent,
+            prior_prec=sfr.prior.delta,
+        )
+
+    if posthoc_prior_opt_grid:
+        sfr.prior.delta = prior_prec
+        sfr.optimize_prior_precision(
+            pred_type="nn",
+            val_loader=val_loader,
+            method="grid",
+            prior_prec_min=1e-8,
+            prior_prec_max=1.0,
+            num_trials=50,
+        )
+        nn_metrics = compute_metrics(
+            pred_fn=sfr_pred(
+                model=sfr, pred_type="nn", num_samples=num_samples, device=device
+            ),
+            data_loader=test_loader,
+            device=device,
+        )
+        table_logger.add_data(
+            "SFR (NN) GRID",
+            metrics=nn_metrics,
+            num_inducing=num_inducing,
+            num_inducing_percent=num_inducing_percent,
+            prior_prec=sfr.prior.delta,
+        )
+        # logger.info(f"map_metrics: {map_metrics}")
 
 
 def log_gp_metrics(
@@ -481,56 +486,10 @@ def log_gp_metrics(
         num_inducing_percent=num_inducing_percent,
         prior_prec=gp.prior.delta,
     )
+    prior_prec = gp.prior.delta
 
     if posthoc_prior_opt_bo:
-        gp.optimize_prior_precision(
-            pred_type="nn",
-            val_loader=val_loader,
-            method="bo",
-            prior_prec_min=1e-8,
-            prior_prec_max=1.0,
-            num_trials=num_bo_trials,
-        )
-        nn_metrics_bo = compute_metrics(
-            pred_fn=sfr_pred(
-                model=gp, pred_type="nn", num_samples=num_samples, device=device
-            ),
-            data_loader=test_loader,
-            device=device,
-        )
-        table_logger.add_data(
-            "GP Subset (NN) BO",
-            metrics=nn_metrics_bo,
-            num_inducing=num_inducing,
-            num_inducing_percent=num_inducing_percent,
-            prior_prec=gp.prior.delta,
-        )
-
-    if posthoc_prior_opt_grid:
-        gp.optimize_prior_precision(
-            pred_type="nn",
-            val_loader=val_loader,
-            method="grid",
-            prior_prec_min=1e-8,
-            prior_prec_max=1.0,
-            num_trials=50,
-        )
-        nn_metrics = compute_metrics(
-            pred_fn=sfr_pred(
-                model=gp, pred_type="nn", num_samples=num_samples, device=device
-            ),
-            data_loader=test_loader,
-            device=device,
-        )
-        table_logger.add_data(
-            "GP Subset (NN) GRID",
-            metrics=nn_metrics,
-            num_inducing=num_inducing,
-            num_inducing_percent=num_inducing_percent,
-            prior_prec=gp.prior.delta,
-        )
-
-    if posthoc_prior_opt_bo:
+        gp.prior.delta = prior_prec
         gp.optimize_prior_precision(
             pred_type="gp",
             val_loader=val_loader,
@@ -555,6 +514,7 @@ def log_gp_metrics(
         )
 
     if posthoc_prior_opt_grid:
+        gp.prior.delta = prior_prec
         gp.optimize_prior_precision(
             pred_type="gp",
             val_loader=val_loader,
@@ -573,6 +533,56 @@ def log_gp_metrics(
         table_logger.add_data(
             "GP Subset (GP) GRID",
             metrics=gp_metrics,
+            num_inducing=num_inducing,
+            num_inducing_percent=num_inducing_percent,
+            prior_prec=gp.prior.delta,
+        )
+
+    if posthoc_prior_opt_bo:
+        gp.prior.delta = prior_prec
+        gp.optimize_prior_precision(
+            pred_type="nn",
+            val_loader=val_loader,
+            method="bo",
+            prior_prec_min=1e-8,
+            prior_prec_max=1.0,
+            num_trials=num_bo_trials,
+        )
+        nn_metrics_bo = compute_metrics(
+            pred_fn=sfr_pred(
+                model=gp, pred_type="nn", num_samples=num_samples, device=device
+            ),
+            data_loader=test_loader,
+            device=device,
+        )
+        table_logger.add_data(
+            "GP Subset (NN) BO",
+            metrics=nn_metrics_bo,
+            num_inducing=num_inducing,
+            num_inducing_percent=num_inducing_percent,
+            prior_prec=gp.prior.delta,
+        )
+
+    if posthoc_prior_opt_grid:
+        gp.prior.delta = prior_prec
+        gp.optimize_prior_precision(
+            pred_type="nn",
+            val_loader=val_loader,
+            method="grid",
+            prior_prec_min=1e-8,
+            prior_prec_max=1.0,
+            num_trials=50,
+        )
+        nn_metrics = compute_metrics(
+            pred_fn=sfr_pred(
+                model=gp, pred_type="nn", num_samples=num_samples, device=device
+            ),
+            data_loader=test_loader,
+            device=device,
+        )
+        table_logger.add_data(
+            "GP Subset (NN) GRID",
+            metrics=nn_metrics,
             num_inducing=num_inducing,
             num_inducing_percent=num_inducing_percent,
             prior_prec=gp.prior.delta,

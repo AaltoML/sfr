@@ -289,7 +289,7 @@ class SFR(nn.Module):
 
         assert beta_u.shape == Kzz.shape
 
-        def cho_factor_jitter(x):
+        def cho_factor_jitter(x, jitter: float = 1e-5, jitter_factor=4):
             try:
                 # print("trying cho_factor")
                 # L, _ = cho_factor(x)
@@ -305,20 +305,21 @@ class SFR(nn.Module):
                 # print(f"Iz[0,...]: {Iz*jitter}")
                 # print(f"Iz[0,...]: {Iz.shape}")
                 # print(f"jiiter: {jitter}")
+                jitter = jitter_factor * jitter
                 x += Iz * jitter
                 # x += Iz[0, ...].numpy() * jitter
                 # print(f"x new: {x}")
                 # print(f"x new: {x.shape}")
-                return cho_factor_jitter(x)
+                return cho_factor_jitter(x, jitter=jitter)
 
         # beta_u += Iz * jitter
         # Lm = torch.linalg.cholesky(Kzz, upper=True)
-        Lm = cho_factor_jitter(Kzz)
+        Lm = cho_factor_jitter(Kzz, jitter=jitter)
         # print(f"Lm {Lm}")
         # L = torch.linalg.cholesky(beta_u, upper=True)
         # Lb = torch.linalg.cholesky(Kzz, upper=True)
         # Lb = torch.linalg.cholesky(KzzplusBeta, upper=True)
-        Lb = cho_factor_jitter(KzzplusBeta)
+        Lb = cho_factor_jitter(KzzplusBeta, jitter=jitter)
         # print(f"Lb {Lb}")
         # K, M, _ = Kzz.shape
         # print(f"Kzz: {Kzz.shape}")

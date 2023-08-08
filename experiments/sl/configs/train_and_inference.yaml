@@ -14,6 +14,7 @@ defaults:
 posthoc_prior_opt_grid: False
 # posthoc_prior_opt: True
 posthoc_prior_opt_bo: True
+num_bo_trials: 30 # 30 for UCI and 20 for MNIST/FMNIST/...
 dual_batch_size: 5000
 EPS: 0.01 # Good for UCI
 jitter: 1e-5

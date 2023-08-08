@@ -175,6 +175,7 @@ def train_and_inference(cfg: DictConfig):
             device=cfg.device,
             posthoc_prior_opt_grid=cfg.posthoc_prior_opt_grid,
             posthoc_prior_opt_bo=cfg.posthoc_prior_opt_bo,
+            num_bo_trials=cfg.num_bo_trials,
             EPS=cfg.EPS,
             jitter=cfg.jitter,
         )
@@ -194,6 +195,7 @@ def train_and_inference(cfg: DictConfig):
             device=cfg.device,
             posthoc_prior_opt_grid=cfg.posthoc_prior_opt_grid,
             posthoc_prior_opt_bo=cfg.posthoc_prior_opt_bo,
+            num_bo_trials=cfg.num_bo_trials,
             EPS=cfg.EPS,
             jitter=cfg.jitter,
         )
@@ -243,7 +245,8 @@ def log_sfr_metrics(
     device="cuda",
     posthoc_prior_opt_grid: bool = True,
     posthoc_prior_opt_bo: bool = True,
-    num_samples=100,
+    num_bo_trials: int = 20,
+    num_samples: int = 100,
     EPS=0.01,
     # EPS=0.0,
     jitter: float = 1e-6,
@@ -307,7 +310,7 @@ def log_sfr_metrics(
             method="bo",
             prior_prec_min=1e-8,
             prior_prec_max=1.0,
-            num_trials=20,
+            num_trials=num_bo_trials,
         )
         nn_metrics_bo = compute_metrics(
             pred_fn=sfr_pred(
@@ -357,7 +360,7 @@ def log_sfr_metrics(
             method="bo",
             prior_prec_min=1e-8,
             prior_prec_max=1.0,
-            num_trials=20,
+            num_trials=num_bo_trials,
         )
         gp_metrics_bo = compute_metrics(
             pred_fn=sfr_pred(
@@ -414,7 +417,8 @@ def log_gp_metrics(
     device="cuda",
     posthoc_prior_opt_grid: bool = True,
     posthoc_prior_opt_bo: bool = True,
-    num_samples=100,
+    num_bo_trials: int = 20,
+    num_samples: int = 100,
     EPS=0.01,
     jitter: float = 1e-6,
 ):
@@ -485,7 +489,7 @@ def log_gp_metrics(
             method="bo",
             prior_prec_min=1e-8,
             prior_prec_max=1.0,
-            num_trials=20,
+            num_trials=num_bo_trials,
         )
         nn_metrics_bo = compute_metrics(
             pred_fn=sfr_pred(
@@ -533,7 +537,7 @@ def log_gp_metrics(
             method="bo",
             prior_prec_min=1e-8,
             prior_prec_max=1.0,
-            num_trials=20,
+            num_trials=num_bo_trials,
         )
         gp_metrics_bo = compute_metrics(
             pred_fn=sfr_pred(

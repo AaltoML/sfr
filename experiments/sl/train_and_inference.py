@@ -456,7 +456,7 @@ def log_gp_metrics(
         device=device,
     )
     table_logger.add_data(
-        "GP Subest (NN)",
+        "GP Subset (NN)",
         metrics=nn_metrics_bo,
         num_inducing=num_inducing,
         num_inducing_percent=num_inducing_percent,
@@ -471,7 +471,7 @@ def log_gp_metrics(
         device=device,
     )
     table_logger.add_data(
-        "GP Subest (GP)",
+        "GP Subset (GP)",
         metrics=nn_metrics_bo,
         num_inducing=num_inducing,
         num_inducing_percent=num_inducing_percent,
@@ -495,7 +495,7 @@ def log_gp_metrics(
             device=device,
         )
         table_logger.add_data(
-            "GP Subest (NN) BO",
+            "GP Subset (NN) BO",
             metrics=nn_metrics_bo,
             num_inducing=num_inducing,
             num_inducing_percent=num_inducing_percent,
@@ -519,7 +519,7 @@ def log_gp_metrics(
             device=device,
         )
         table_logger.add_data(
-            "GP Subest (NN) GRID",
+            "GP Subset (NN) GRID",
             metrics=nn_metrics,
             num_inducing=num_inducing,
             num_inducing_percent=num_inducing_percent,
@@ -543,7 +543,7 @@ def log_gp_metrics(
             device=device,
         )
         table_logger.add_data(
-            "GP Subest (GP) BO",
+            "GP Subset (GP) BO",
             metrics=gp_metrics_bo,
             num_inducing=num_inducing,
             num_inducing_percent=num_inducing_percent,
@@ -567,7 +567,7 @@ def log_gp_metrics(
             device=device,
         )
         table_logger.add_data(
-            "GP Subest (GP) GRID",
+            "GP Subset (GP) GRID",
             metrics=gp_metrics,
             num_inducing=num_inducing,
             num_inducing_percent=num_inducing_percent,

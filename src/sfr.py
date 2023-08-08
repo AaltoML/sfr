@@ -452,6 +452,13 @@ class SFR(nn.Module):
         prior_prec_max: float = 1.0,
         num_trials: int = 20,
     ):
+        prior_prec_before = self.delta
+        nll_before = self.nlpd(
+            data_loader=val_loader,
+            pred_type=pred_type,
+            n_samples=n_samples,
+            # prior_prec=prior_prec,
+        )
         if method == "grid":
             log_prior_prec_min = np.log(prior_prec_min)
             log_prior_prec_max = np.log(prior_prec_max)
@@ -503,10 +510,12 @@ class SFR(nn.Module):
         else:
             raise NotImplementedError
 
+        # If worse than original then reset
+        if nll_before < best_nll:
+            best_nll = nll_before
+            best_prior_prec = prior_prec_before
+
         for x, y in val_loader:
-            print("using val_loader")
-            print(x.dtype)
-            print(y.dtype)
             # TODO this is just here for debugging
             f_mean, f_var = self._predict_fn(x.to(self.device), full_cov=False)
             logger.info(f"f_var after BO=: {f_var}")

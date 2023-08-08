@@ -6,6 +6,8 @@ defaults:
 lr: 1e-4
 n_epochs: 10000
 
+EPS: 0.1
+
 early_stop:
   patience: 1000
   min_delta: 0

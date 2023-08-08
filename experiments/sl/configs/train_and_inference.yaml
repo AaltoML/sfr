@@ -24,14 +24,14 @@ hessian_structures: ["diag", "kron", "full"]
 
 num_inducings_as_percent: True
 num_inducings:
-  - 1
-  - 2
-  - 5
-  - 10
-  - 15
-  - 20
-  - 40
-  - 60
+  # - 1
+  # - 2
+  # - 5
+  # - 10
+  # - 15
+  # - 20
+  # - 40
+  # - 60
   - 80
   - 100
 

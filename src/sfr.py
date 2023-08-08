@@ -437,7 +437,7 @@ class SFR(nn.Module):
                     - torch.sum(torch.square(Am), -2)
                     + torch.sum(torch.square(Ab), -2)
                 ) / (delta * num_data)
-                print(f"f_var {f_var}")
+                # print(f"f_var {f_var}")
                 return f_mean.to(self.device), f_var.T.to(self.device)
 
         return predict

@@ -1,0 +1,369 @@
+% !TeX spellcheck = en_US
+\documentclass{article}
+
+% Pass options to natbib
+\PassOptionsToPackage{numbers, compress}{natbib}
+
+% NeurIPS packages
+\usepackage[]{neurips_2023}
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+%\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+
+% Redefine paragraph to be tighter
+\renewcommand{\paragraph}[1]{{\bf #1}~~}
+
+% Array/table packages
+\usepackage{tabularx}
+\usepackage{array,multirow}
+\usepackage{colortbl}
+\newcommand{\PreserveBackslash}[1]{\let\temp=\\#1\let\\=\temp}
+\newcolumntype{C}[1]{>{\PreserveBackslash\centering}p{#1}}
+\newlength{\tblw}
+
+% Latin
+\usepackage{xspace}
+\newcommand{\eg}{\textit{e.g.\@}\xspace}
+\newcommand{\ie}{\textit{i.e.\@}\xspace}
+\newcommand{\cf}{\textit{cf.\@}\xspace}
+\newcommand{\etc}{\textit{etc.\@}\xspace}
+\newcommand{\etal}{\textit{et~al.\@}\xspace}
+
+% Our method
+\newcommand{\our}{\textsc{sfr}\xspace}
+
+% Tikz
+\usepackage{tikz}
+\usepackage{pgfplots}
+\usetikzlibrary{patterns}
+\usetikzlibrary{decorations,backgrounds,arrows.meta,calc}
+\usetikzlibrary{shapes,arrows,positioning}
+
+% Appendix/supplement title
+\newcommand{\nipstitle}[1]{{%
+    % rules for title box at top and bottom
+    \def\toptitlebar{\hrule height4pt \vskip .25in \vskip -\parskip} 
+    \def\bottomtitlebar{\vskip .29in \vskip -\parskip \hrule height1pt \vskip .09in} 
+    \phantomsection\hsize\textwidth\linewidth\hsize%
+    \vskip 0.1in%
+    \toptitlebar%
+    \begin{minipage}{\textwidth}%
+        \centering{\LARGE\bf #1\par}%
+    \end{minipage}%
+    \bottomtitlebar%
+    \addcontentsline{toc}{section}{#1}%
+}}
+
+% Bibliography
+%\usepackage[maxcitenames=1, maxbibnames=4, doi=false, isbn=false, eprint=true, backend=bibtex, hyperref=true, url=false, style=authoryear-comp]{biblatex}
+%\addbibresource{zotero-library.bib}
+% \addbibresource{paper/zotero-library.bib}
+
+% Let's use good old bibtex instead
+
+% Figure customization: Tight legend box
+\pgfplotsset{every axis/.append style={
+		legend style={inner xsep=1pt, inner ysep=0.5pt, nodes={inner sep=1pt, text depth=0.1em},draw=none,fill=none}
+}}
+
+% Our packages
+\usepackage{todonotes}
+\usepackage[colorlinks=true,linkcolor=black,allcolors=black,urlcolor=black,citecolor=black]{hyperref}
+\usepackage{amsmath}
+\usepackage{bm}
+\usepackage{algpseudocode}
+\usepackage{algorithm}
+\usepackage{derivative}
+\usepackage{wrapfig}
+
+\usepackage{tikz,pgfplots}
+\usepackage{subcaption}
+\usetikzlibrary{}
+
+\input{utils.tex}
+
+% Short section names etc
+% This must be imported last!
+%\usepackage{cleveref}
+\usepackage[capitalise,nameinlink]{cleveref}
+\crefname{section}{Sec.}{Secs.}
+\crefname{algorithm}{Alg.}{Algs.}
+\crefname{appendix}{App.}{Apps.}
+\crefname{definition}{Def.}{Defs.}
+\crefname{table}{Table}{Tables}
+
+% Config for Arno's awesome TikZ plotting stuff
+\newlength{\figurewidth}
+\newlength{\figureheight}
+
+
+% Variables
+\newcommand{\state}{\ensuremath{\mathbf{s}}}
+\newcommand{\action}{\ensuremath{\mathbf{a}}}
+\newcommand{\noise}{\ensuremath{\bm\epsilon}}
+\newcommand{\discount}{\ensuremath{\gamma}}
+\newcommand{\inducingInput}{\ensuremath{\mathbf{Z}}}
+\newcommand{\inducingVariable}{\ensuremath{\mathbf{u}}}
+\newcommand{\dataset}{\ensuremath{\mathcal{D}}}
+\newcommand{\dualParam}[1]{\ensuremath{\bm{\lambda}_{#1}}}
+\newcommand{\meanParam}[1]{\ensuremath{\bm{\mu}_{#1}}}
+
+% Indexes
+\newcommand{\horizon}{\ensuremath{h}}
+\newcommand{\Horizon}{\ensuremath{H}}
+\newcommand{\numDataNew}{\ensuremath{N^{\text{new}}}}
+\newcommand{\numDataOld}{\ensuremath{N^{\text{old}}}}
+\newcommand{\numInducing}{\ensuremath{M}}
+
+% Domains
+\newcommand{\stateDomain}{\ensuremath{\mathcal{S}}}
+\newcommand{\actionDomain}{\ensuremath{\mathcal{A}}}
+\newcommand{\inputDomain}{\ensuremath{\mathbb{R}^{D}}}
+\newcommand{\outputDomain}{\ensuremath{\mathbb{R}^{C}}}
+\newcommand{\policyDomain}{\ensuremath{\Pi}}
+
+% Functions
+\newcommand{\rewardFn}{\ensuremath{r}}
+\newcommand{\transitionFn}{\ensuremath{f}}
+\newcommand{\latentFn}{\ensuremath{f}}
+
+\newcommand{\optimisticTransition}{\ensuremath{\hat{f}}}
+\newcommand{\optimisticTransitionMean}{\ensuremath{\mu_{\optimisticTransition}}}
+\newcommand{\optimisticTransitionCov}{\ensuremath{\mu_{\optimisticTransition}}}
+\newcommand{\optimisticTransitionSet}{\ensuremath{\mathcal{M}}}
+
+
+% Parameters
+% \newcommand{\weights}{\ensuremath{\bm\phi}}
+\newcommand{\weights}{\ensuremath{\mathbf{w}}}
+\newcommand{\valueFnParams}{\ensuremath{\psi}}
+\newcommand{\policyParams}{\ensuremath{\theta}}
+
+% Networks
+\newcommand{\transitionFnWithParams}{\ensuremath{\transitionFn_{\weights}}}
+\newcommand{\valueFn}{\ensuremath{\mathbf{Q}}}
+\newcommand{\stateValueFn}{\ensuremath{\mathbf{V}}}
+% \newcommand{\valueFn}{\ensuremath{\mathbf{Q}_{\valueFnParams}}}
+\newcommand{\policy}{\ensuremath{\pi}}
+\newcommand{\pPolicy}{\ensuremath{\pi_{\policyParams}}}
+
+
+% Packages for bold math
+\usepackage{bm}
+\newcommand{\mathbold}[1]{\bm{#1}}
+\newcommand{\mbf}[1]{\mathbf{#1}}
+\renewcommand{\mid}{\,|\,}
+
+
+% Math Macros
+\newcommand{\MB}{\mbf{B}}
+\newcommand{\MC}{\mbf{C}}
+\newcommand{\MZ}{\mbf{Z}}
+\newcommand{\MV}{\mbf{V}}
+\newcommand{\MX}{\mbf{X}}
+\newcommand{\MA}{\mbf{A}}
+\newcommand{\MK}{\mbf{K}}
+\newcommand{\MI}{\mbf{I}}
+\newcommand{\MH}{\mbf{H}}
+\newcommand{\T}{\top}
+\newcommand{\vzeros}{\mbf{0}}
+\newcommand{\vtheta}[0]{\mathbold{\theta}}
+\newcommand{\valpha}[0]{\mathbold{\alpha}}
+\newcommand{\vkappa}[0]{\mathbold{\kappa}}
+\newcommand{\vbeta}[0]{\mathbold{\beta}}
+\newcommand{\MBeta}[0]{\mathbold{B}}
+\newcommand{\vlambda}[0]{\mathbold{\lambda}}
+\newcommand{\diag}{\text{{diag}}}
+
+\newcommand{\vm}{\mbf{m}}
+\newcommand{\vz}{\mbf{z}}
+\newcommand{\vf}{\mbf{f}}
+\newcommand{\vu}{\mbf{u}}
+\newcommand{\vx}{\mbf{x}}
+\newcommand{\vy}{\mbf{y}}
+\newcommand{\vw}{\mbf{w}}
+\newcommand{\va}{\mbf{a}}
+
+\newcommand{\Jac}[2]{\mathcal{J}_{#1}(#2)}
+\newcommand{\JacT}[2]{\mathcal{J}_{#1}^\top(#2)}
+
+
+\newcommand{\GP}{\mathcal{GP}}
+\newcommand{\KL}[2]{\mathrm{D}_\textrm{KL} \dbar*{#1}{#2}}
+\newcommand{\MKzz}{\mbf{K}_{\mbf{z}\mbf{z}}}
+\newcommand{\MKzzc}{\mbf{K}_{\mbf{z}\mbf{z}, c}}
+\newcommand{\MKxx}{\mbf{K}_{\mbf{x}\mbf{x}}}
+\newcommand{\MKzx}{\mbf{K}_{\mbf{z}\mbf{x}}}
+\newcommand{\MKxz}{\mbf{K}_{\mbf{x}\mbf{z}}}
+\newcommand{\vkzi}{\mbf{k}_{\mbf{z}i}}
+\newcommand{\vkzic}{\mbf{k}_{\mbf{z}i,c}}
+\newcommand{\vkzs}{\mbf{k}_{\mbf{z}i}}
+\newcommand{\vk}{\mbf{k}}
+\newcommand{\MLambda}[0]{\mathbold{\Lambda}}
+\newcommand{\MSigma}[0]{\mathbold{\Sigma}}
+\definecolor{matplotlib-blue}{HTML}{1f77b4}
+\newcommand{\N}{\mathrm{N}}
+%\newcommand{\R}{\mathrm{R}}
+\newcommand{\myexpect}{\mathbb{E}}
+
+\DeclareMathOperator*{\argmax}{arg\,max}
+\DeclareMathOperator*{\argmin}{arg\,min}
+\newcommand{\Norm}{\mathcal{N}}
+
+\newcommand{\digit}[1]{\tikz[baseline=-.5ex]\node[inner sep=1pt,rounded corners=1pt,draw=black,text width=5pt,minimum width=5pt,align=center,fill=black!20]{\tiny\bf\sf#1};}
+
+
+%\title{Investigatin Uncertainty Quantification in Model-based Reinforcement Learning}
+% \title{Model-based Reinforcement Learning with Fast Posterior Updates}
+%\title{Sequential Decision-Making under Uncertainty with Big Data}
+% \title{Neural Network to Vatiational Sparse Gaussian Process: For Adaptive Exploration}
+% \title{Neural Network to Sparse Variational Gaussian Process: For Updates in Sequential Decision Making}
+% \title{Adapting Neural Networks to New Data For Updates in Sequential Decision Making via Gaussian Processes}
+% \title{Converting Neural Networks to Gaussian Processes for Sequential Decision-Making Under Uncertainty}
+%\title{Sparse Function Space Representation of Neural Networks for Exploration and Retention}
+%\title{Sparse Function-space Neural Networks}
+% \title{Sparse Function-space Representation \\ of Neural Networks}% for Adaptation and Retention}
+% \title{Rebuttal}% for Adaptation and Retention}
+% \author{}
+
+
+\begin{document}
+
+% \maketitle
+
+\begin{figure}[t]
+  \centering\scriptsize
+  \setlength{\figurewidth}{.26\textwidth}
+  \setlength{\figureheight}{\figurewidth}
+  \pgfplotsset{axis on top,scale only axis,y tick label style={rotate=90}, x tick label style={font=\footnotesize},y tick label style={font=\footnotesize},title style={yshift=-4pt,font=\large}, y label style={font=\large},x label style={font=\large},grid=major, width=\figurewidth, height=\figureheight}
+  \pgfplotsset{grid style={line width=.1pt, draw=gray!10,dashed}}
+  \pgfplotsset{xlabel={$M$},ylabel style={yshift=-12pt}}
+  %
+  \begin{minipage}[t]{.17\textwidth}
+    \raggedleft
+    \pgfplotsset{ylabel=NLPD}
+    \input{./fig/australian.tex}
+  \end{minipage}
+  \hfill
+%  \begin{minipage}[t]{.16\textwidth}
+%    \raggedleft
+%    \input{./fig/breast_cancer.tex}
+%  \end{minipage}
+%  \hfill
+%  \begin{minipage}[t]{.16\textwidth}
+%    \raggedleft
+%    \input{./fig/ionosphere.tex}
+%  \end{minipage}
+%  \hfill
+  \begin{minipage}[t]{.16\textwidth}
+    \raggedleft
+    \input{./fig/glass.tex}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{.16\textwidth}
+    \raggedleft
+    \input{./fig/vehicle.tex}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{.16\textwidth}
+    \raggedleft
+    \input{./fig/waveform.tex}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{.16\textwidth}
+    \raggedleft
+    \input{./fig/digits.tex}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{.16\textwidth}
+    \raggedleft
+    \input{./fig/satellite.tex}
+  \end{minipage}\\[-1em]
+  %
+  % Legend
+  \definecolor{steelblue31119180}{RGB}{31,119,180}
+  \definecolor{darkorange25512714}{RGB}{255,127,14}
+  \newcommand{\myline}[1]{\protect\tikz[baseline=-.5ex,line width=1.6pt]\protect\draw[draw=#1](0,0)--(1.2em,0);}
+  \caption{Comparison of convergence in terms of number of inducing points $M$ in NLPD (mean over 10 seeds) on UCI classification tasks: \our (thick) vs.\ subsets (\cite{immer2021improving}, thin). Orange lines (\myline{darkorange25512714}) use the GP mean, whereas blue lines (\myline{steelblue31119180}) the NN MAP estimate as mean. Our \our converges fast for all cases.\looseness-1}
+  \label{fig:uci-old}
+  %\vspace*{-6pt}
+\end{figure}
+
+%
+\begin{figure}[t]
+  \centering\scriptsize
+  \setlength{\figurewidth}{.26\textwidth}
+  \setlength{\figureheight}{\figurewidth}
+  \pgfplotsset{axis on top,scale only axis,y tick label style={rotate=90}, x tick label style={font=\footnotesize},y tick label style={font=\footnotesize},title style={yshift=-4pt,font=\large}, y label style={font=\large},x label style={font=\large},grid=major, width=\figurewidth, height=\figureheight}
+  % \pgfplotsset{axis on top,scale only axis,y tick label style={rotate=90}, x tick label style={font=\footnotesize},y tick label style={font=\footnotesize},title style={yshift=-4pt,font=\large}, y label style={font=\large},x label style={font=\large},grid=major, width=\figurewidth, height=\figureheight}
+  \pgfplotsset{grid style={line width=.1pt, draw=gray!10,dashed}}
+  % \pgfplotsset{xlabel={$M$},ylabel style={yshift=-12pt}}
+  %
+  \begin{minipage}[t]{.1\textwidth}
+    \raggedleft
+    \pgfplotsset{ylabel=NLPD}
+    \input{./fig/australian.tex}
+  \end{minipage}
+  \hfill
+%  \begin{minipage}[t]{.16\textwidth}
+%    \raggedleft
+%    \input{./fig/breast_cancer.tex}
+%  \end{minipage}
+%  \hfill
+%  \begin{minipage}[t]{.16\textwidth}
+%    \raggedleft
+%    \input{./fig/ionosphere.tex}
+%  \end{minipage}
+%  \hfill
+  \begin{minipage}[t]{.1\textwidth}
+    \raggedleft
+    \input{./fig/uci/glass.tex}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{.1\textwidth}
+    \raggedleft
+    \input{./fig/uci/vehicle.tex}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{.1\textwidth}
+    \raggedleft
+    \input{./fig/uci/waveform.tex}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{.1\textwidth}
+    \raggedleft
+    \input{./fig/uci/digits.tex}
+  \end{minipage}
+  \hfill
+  \begin{minipage}[t]{.1\textwidth}
+    \raggedleft
+    \input{./fig/uci/satellite.tex}
+  \end{minipage}\\[-1em]
+  %
+  % Legend
+  \definecolor{steelblue31119180}{RGB}{31,119,180}
+  \definecolor{darkorange25512714}{RGB}{255,127,14}
+  \newcommand{\myline}[1]{\protect\tikz[baseline=-.5ex,line width=1.6pt]\protect\draw[draw=#1](0,0)--(1.2em,0);}
+  \caption{Comparison of convergence in terms of number of inducing points $M$ in NLPD (mean over 10 seeds) on UCI classification tasks: \our (thick) vs.\ subsets (\cite{immer2021improving}, thin). Orange lines (\myline{darkorange25512714}) use the GP mean, whereas blue lines (\myline{steelblue31119180}) the NN MAP estimate as mean. Our \our converges fast for all cases.\looseness-1}
+  \label{fig:uci}
+  %\vspace*{-6pt}
+\end{figure}
+
+% \clearpage
+
+
+% \phantomsection%
+% \addcontentsline{toc}{section}{References}
+% \begingroup
+% \small
+% \bibliographystyle{abbrvnat}
+% \bibliography{bibliography}%zotero-library
+% \endgroup
+
+\end{document}

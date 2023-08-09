@@ -242,7 +242,7 @@
   \centering\scriptsize
   \caption{Comparisons and ablations on UCI data with negative log predictive density (NLPD\textcolor{gray}{\footnotesize$\pm$std}, lower better). Our \our is generally on par with the Laplace approximation (BNN/GLM). Moreover, it performs better than the GP subset method when using a lower number of inducing points. For clarity, we specify the number of inducing points as a percent $M (\%)$ of the training data $N$.}
 	\label{tbl:uci}
-	\vspace*{-4pt}
+	%\vspace*{-4pt}
 
 	% Control table spacing
 	\renewcommand{\arraystretch}{1.}
@@ -314,13 +314,16 @@
   \definecolor{steelblue31119180}{RGB}{31,119,180}
   \definecolor{darkorange25512714}{RGB}{255,127,14}
   \newcommand{\myline}[1]{\protect\tikz[baseline=-.5ex,line width=1.6pt]\protect\draw[draw=#1](0,0)--(1.2em,0);}
-  \caption{Comparison of convergence in terms of number of inducing points $M$ in NLPD (mean over 5 seeds) on UCI classification tasks: \our (GP) (\myline{steelblue31119180}) vs.GP subset (GP) (\myline{darkorange25512714}). Our \our (GP) converges fast for all cases.\looseness-1}
+  \caption{Comparison of convergence in terms of number of inducing points $M$ in NLPD (mean over 5 seeds) on UCI classification tasks: \our (GP) (\myline{steelblue31119180}) vs.\ GP subset (GP) (\myline{darkorange25512714}). Our \our (GP) converges fast for all cases.\looseness-1}
   \label{fig:uci}
   %\vspace*{-6pt}
 \end{figure}
 
 
 % \section{Old (won't be in rebuttal, just for our reference)}
+
+\end{document}
+
 
 \clearpage
 

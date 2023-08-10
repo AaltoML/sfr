@@ -42,6 +42,10 @@
 %\setlength{\bibsep}{0.0pt}
 \usetikzlibrary{calc}
 
+
+% Pass options to natbib
+\PassOptionsToPackage{numbers, compress}{natbib}
+
 % ====================
 % Lengths
 % ====================
@@ -58,7 +62,6 @@
 % Customization
 % ====================
 
-\newcommand{\action}{\ensuremath{\mathbf{a}}}
 \newcommand{\myline}[1]{\protect\tikz[baseline=-.5ex,line width=1.6pt]\protect\draw[draw=#1](0,0)--(1.2em,0);}
 \usepackage{subcaption}
 
@@ -219,6 +222,7 @@
 
 
 % Variables
+\newcommand{\action}{\ensuremath{\mathbf{a}}}
 \newcommand{\state}{\ensuremath{\mathbf{s}}}
 \newcommand{\noise}{\ensuremath{\bm\epsilon}}
 \newcommand{\discount}{\ensuremath{\gamma}}
@@ -412,7 +416,7 @@ International Workshop of Intelligent Autonomous Learning Systems 2023 - Kleinwa
   \heading{3. Sparsify the Gaussian Process}
 
   \begin{enumerate}[(a)]
-    \item Eqs. \ref{eq:gp_pred_mean}/\ref{eq:gp_pred_var} use all data $\color{red}{\mathcal{O}(N^3)}$ so sparsify using inducing points %$\vu_j=f_{\vw^*}(\vz_j)$ with   $\{\vz_j\}_{j=1}^M$:
+    \item Eqs. \ref{eq:gp_pred_mean}/\ref{eq:gp_pred_var} use all data $\color{red}{\mathcal{O}(N^3)}$ so sparsify using inducing points, %$\vu_j=f_{\vw^*}(\vz_j)$ with   $\{\vz_j\}_{j=1}^M$:
             %We can build a sparse GP posterior with the following form:
             \begin{align}
             \myexpect_{p(f_i \mid\vy)}[f_i] &\approx   \vkzs^{\T} \MKzz^{-1} \valpha_{\vu}
@@ -422,7 +426,7 @@ International Workshop of Intelligent Autonomous Learning Systems 2023 - Kleinwa
             % where $q_\vu(f_i)=\int p(f_i|\vu) q(\vu)\,\textrm{d}\vu$
             % $\color{red}{\mathcal{O}(M^3) \text{ with } (M\ll N)}$
             %\heading{Dual parameterization}
-            with \alert{SFR dual parameters} %$\valpha_{\vu} \in \R^M, \MBeta_{\vu} \in \R^{M \times M}$:
+            with \alert{SFR dual parameters}, %$\valpha_{\vu} \in \R^M, \MBeta_{\vu} \in \R^{M \times M}$:
             \begin{equation}
             \valpha_{\vu}  =  \sum_{i=1}^N  \vkzi \, \hat{\alpha}_{i} %\in \R^M
             \quad \text{and} \quad
@@ -510,7 +514,7 @@ International Workshop of Intelligent Autonomous Learning Systems 2023 - Kleinwa
     	\definecolor{steelblue31119180}{RGB}{31,119,180}
      \definecolor{darkorange25512714}{RGB}{255,127,14}
     %  \newcommand{\myline}[1]{\protect\tikz[baseline=-.5ex,line width=1.6pt]\protect\draw[draw=#1](0,0)--(1.2em,0);}
-    \caption{\footnotesize \textbf{\our \ (\myline{steelblue31119180}) requires fewer inducing points $M$} to converge to a good NLPD than a GP subset (\myline{darkorange25512714}) on UCI classification tasks.}
+    \caption{\footnotesize \textbf{\our \ (\myline{steelblue31119180}) requires fewer inducing points $M$} to converge to good NLPD than GP subset (\myline{darkorange25512714}) on UCI classification.}
     \end{subfigure}
     \end{figure}
 
@@ -566,7 +570,7 @@ International Workshop of Intelligent Autonomous Learning Systems 2023 - Kleinwa
 
         \alert{\bf Strategy} Policy \(\pi : \stateDomain \rightarrow \actionDomain\) based on posterior sampling:
         \begin{align} \label{eq-posterior-sampling}
-        \policy^{\text{PS}} &= \arg \max_{\pi \in \Pi} \mathbb{E}_{\noise_{0:\infty}} \bigg[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\action_{t}) \bigg]
+        \policy^{\text{PS}} &= \arg \max_{\pi \in \Pi} \mathbb{E}_{\noise_{0:\infty}} \bigg[ \sum_{t=0}^{\infty} \discount^{t} \rewardFn(\state_{t},\va_{t}) \bigg]
         \quad \text{s.t. } \tilde{\transitionFn} \sim q_{\mathbf{u}}({\transitionFn} \mid \dataset),
         \end{align}
 
@@ -616,24 +620,58 @@ International Workshop of Intelligent Autonomous Learning Systems 2023 - Kleinwa
 
 \begin{column}{\colwidth}
 
+  \begin{block}{Practical Considerations}
+
+  \begin{itemize}
+     \item Calculating dual parameters is costly,
+    \begin{itemize}
+        \item We batch over data to keep memory occupation in check.
+    \end{itemize}
+     \item Uncertainty is highly dependent on prior, e.g. activation fns,
+    \begin{itemize}
+        \item Tanh works well in practice (encodes smoothness).
+    \end{itemize}
+     \item We tune prior precision ($\delta$) using Bayesian optimisation,
+    \begin{itemize}
+        \item After calculating dual parameters.
+    \end{itemize}
+     % \item No straightforward method for specifying or tuning the prior covariance function.
+     % \item It is important to note that the Laplace-GGN
+% proach linearizes the network around the MAP solution w∗, resulting in the function-space prior (and340
+% consequently the posterior) being only a locally linear approximation of the neural network model
+   \end{itemize}
+
+  \end{block}
+
   \begin{block}{Outlook}
 
+
    \begin{itemize}
+     \item What functionality of \our \ can we leverage for model-based RL?
+    \begin{itemize}
+        \item Can we update dynamics during an episode using dual parameters?
+        \item Use consistent function samples during planning, i.e. pathwise conditioning.
+        \item Are there clever ways to select inducing points?
+        \begin{itemize}
+          \item We only need accurate dynamics along optimal trajectory,
+          \item Select using determinantal point process (DPP)?
+        \end{itemize}
+    \end{itemize}
+     \item Can we convert any BNN to SFR, e.g. variational inference,
+    \begin{itemize}
+        \item We should be able to consider any distribution over weights $p(\weights \mid \vy)$.
+    \end{itemize}
      \item How good are the dual updates in practice?
     \begin{itemize}
         \item They depend on linearisation around MAP weights,
         \item And performing updates pushes us away from the MAP weights...
         % \item Can they update a dynamics model during episode in model-based RL?
     \end{itemize}
-     \item Calculating dual parameters is costly (memory and computation),
-    \begin{itemize}
-        \item Speed up using KFAC?
-    \end{itemize}
-     \item Model-based RL
-    \begin{itemize}
-        \item Update dynamics model during episode using dual parameters
-        \item Consistent function samples along trajectories, i.e. pathwise conditioning.
-    \end{itemize}
+     \item Can we speed up computation of dual parameters? E.g. KFAC.
+    % \begin{itemize}
+    %     % \item Calculating dual parameters is costly in memory and computation,
+    %     \item Speed up using KFAC.
+    % \end{itemize}
      % \item No straightforward method for specifying or tuning the prior covariance function.
      % \item It is important to note that the Laplace-GGN
 % proach linearizes the network around the MAP solution w∗, resulting in the function-space prior (and340
@@ -649,6 +687,7 @@ International Workshop of Intelligent Autonomous Learning Systems 2023 - Kleinwa
   \begin{block}{References}
     \vspace*{-.25em}
     \footnotesize{\bibliographystyle{ieeetr}\bibliography{bibliography}}
+
   \end{block}
 
 \end{column}

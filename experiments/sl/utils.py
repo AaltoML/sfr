@@ -163,6 +163,7 @@ def get_image_dataset(
     debug: bool,
     val_from_test: bool,
     val_split: float,
+    train_update_split: Optional[float] = None,
 ):
     ds_train, ds_test = get_dataset(
         dataset=name, double=double, dir=dir, device=None, debug=debug
@@ -205,7 +206,8 @@ def get_image_dataset(
     print("Final num train {}".format(len(ds_train)))
     print("Final num val {}".format(len(ds_val)))
     print("Final num test {}".format(len(ds_test)))
-    return ds_train, ds_val, ds_test, _
+    ds_update = None  # TODO implement this properly
+    return ds_train, ds_val, ds_test, ds_update
 
 
 def get_uci_dataset(
@@ -225,12 +227,17 @@ def get_uci_dataset(
         double=double,
     )
     if train_update_split:
+        output_dim = ds_train.C  # set network output dim
         ds_train, ds_update, _ = train_val_split(
             ds_train=ds_train,
             ds_test=None,
             val_from_test=False,
             val_split=train_update_split,
         )
+        ds_train.C = output_dim
+        ds_train.output_dim = output_dim
+        ds_update.C = output_dim
+        ds_update.output_dim = output_dim
     else:
         ds_update = None
 
@@ -258,15 +265,21 @@ def get_uci_dataset(
     else:
         output_dim = 1
     if double:
-        ds_train.data = ds_train.data.to(torch.double)
+        try:
+            ds_train.data = ds_train.data.to(torch.double)
+            ds_train.targets = ds_train.targets.long()
+        except:
+            ds_train.dataset.data = ds_train.dataset.data.to(torch.double)
+            ds_train.dataset.targets = ds_train.dataset.targets.to(torch.double)
+            # ds_val.dataset.data = ds_val.dataset.data.to(torch.double)
         ds_val.data = ds_val.data.to(torch.double)
+        ds_val.targets = ds_val.targets.to(torch.double)
         ds_test.data = ds_test.data.to(torch.double)
-        ds_train.targets = ds_train.targets.long()
         ds_val.targets = ds_val.targets.long()
         ds_test.targets = ds_test.targets.long()
         if train_update_split:
-            ds_update.data = ds_update.data.to(torch.double)
-            ds_update.targets = ds_update.targets.long()
+            ds_update.dataset.data = ds_update.dataset.data.to(torch.double)
+            ds_update.dataset.targets = ds_update.dataset.targets.long()
 
     # always use Softmax instead of Bernoulli
     output_dim = ds_train.C
@@ -274,7 +287,10 @@ def get_uci_dataset(
         # ds_train.targets = ds_train.targets.to(torch.double)
         # ds_val.targets = ds_val.targets.to(torch.double)
         # ds_test.targets = ds_test.targets.to(torch.double)
-        ds_train.targets = ds_train.targets.long()
+        try:
+            ds_train.targets = ds_train.targets.long()
+        except:
+            ds_train.dataset.targets = ds_train.dataset.targets.long()
         ds_val.targets = ds_val.targets.long()
         ds_test.targets = ds_test.targets.long()
 
@@ -291,8 +307,12 @@ def get_image_network(name: str, ds_train, device: str):
 
 
 def get_uci_network(name, output_dim, ds_train, device: str):
+    try:
+        input_size = ds_train.data.shape[1]
+    except:
+        input_size = ds_train.dataset.data.shape[1]
     network = SiMLP(
-        input_size=ds_train.data.shape[1],
+        input_size=input_size,
         output_size=output_dim,
         n_layers=2,
         n_units=50,

@@ -184,6 +184,10 @@ class SFR(nn.Module):
         neg_log_prior = self.prior.nn_loss()
         return neg_log_likelihood + neg_log_prior
 
+    def update_from_dataloader(self, data_loader: DataLoader):
+        for x, y in data_loader:
+            self.update(x=x, y=y)
+
     @torch.no_grad()
     def update(self, x: InputData, y: OutputData):
         logger.info("Updating dual params...")
@@ -192,6 +196,7 @@ class SFR(nn.Module):
         assert x.ndim == 2
         num_new_data, input_dim = x.shape
         Kzx = self.kernel(self.Z, x)
+        # TODO are the equations still correct with new kernel scaling?
 
         if isinstance(self.likelihood, src.likelihoods.Gaussian):
             self.beta_u += (
@@ -220,10 +225,13 @@ class SFR(nn.Module):
         )
 
         logger.info("Building predict fn...")
+        num_data = self.num_data
         self._predict_fn = self.predict_from_sparse_duals(
             alpha_u=self.alpha_u,
             beta_u=self.beta_u,
             kernel=self.kernel,
+            delta=self.prior.delta,
+            num_data=num_data,
             Z=self.Z,
             jitter=self.jitter,
         )

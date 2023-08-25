@@ -76,7 +76,10 @@ class BernoulliLh(Likelihood):
     def __call__(
         self, f_mean: Union[FuncData, FuncMean], f_var: Optional[FuncVar] = None
     ):
-        p = self.prob(f_mean=f_mean, f_var=f_var)
+        if f_var is None:
+            p = self.inv_link(f_mean)
+        else:
+            p = self.prob(f_mean=f_mean, f_var=f_var)
         mean = p
         var = p - torch.square(p)
         return mean, var

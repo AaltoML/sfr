@@ -175,7 +175,10 @@ if __name__ == "__main__":
 
     batch_size = X_train.shape[0]
 
-    likelihood = src.likelihoods.BernoulliLh(EPS=0.01)
+    # likelihood = src.likelihoods.BernoulliLh(EPS=0.01)
+    likelihood = src.likelihoods.BernoulliLh(EPS=0.1)
+    likelihood = src.likelihoods.BernoulliLh(EPS=0.0005)
+    likelihood = src.likelihoods.BernoulliLh(EPS=0.000)
     # likelihood = src.likelihoods.CategoricalLh()
     # likelihood = src.likelihoods.Gaussian()
     prior = src.priors.Gaussian(params=network.parameters, delta=delta)
@@ -187,18 +190,36 @@ if __name__ == "__main__":
     #     # dual_batch_size=100,
     #     jitter=1e-4,
     # )
+
     sfr = SFR(
         network=network,
         # train_data=(X_train, Y_train),
         prior=prior,
         likelihood=likelihood,
         output_dim=1,
+        # dual_batch_size=None,
         dual_batch_size=100,
         # num_inducing=X_train.shape[0],
         num_inducing=50,
-        # jitter=1e-6,
-        jitter=1e-4,
+        # jitter=1e-10,
+        jitter=1e-6,
+        # jitter=1e-4,
     )
+
+    # sfr = src.NN2GPSubset(
+    #     network=network,
+    #     # train_data=(X_train, Y_train),
+    #     prior=prior,
+    #     likelihood=likelihood,
+    #     output_dim=1,
+    #     # dual_batch_size=100,
+    #     dual_batch_size=None,
+    #     # num_inducing=X_train.shape[0],
+    #     subset_size=50,
+    #     # num_inducing=50,
+    #     # jitter=1e-6,
+    #     jitter=1e-4,
+    # )
 
     metrics = train(
         sfr=sfr,

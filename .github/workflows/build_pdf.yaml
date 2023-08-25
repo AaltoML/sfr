@@ -12,9 +12,9 @@ jobs:
           root_file: main.tex
           # args: -f -pdf -file-line-error -halt-on-error -interaction=nonstopmode
           args: -f -pdf -interaction=nonstopmode
-          working_directory: ./paper
+          working_directory: ./papers/iclr-2024
       - name: Upload PDF file
         uses: actions/upload-artifact@v3
         with:
           name: PDF
-          path: ./paper/main.pdf
+          path: ./papers/iclr-2024/main.pdf

@@ -7,6 +7,6 @@ dependencies:
   - mesalib
   - pip
   - pip:
-      - --extra-index-url https://download.pytorch.org/whl/rocm5.4.2
+      # - -e ".[experiments]"
       - torch==2.0.0
       - torchvision==0.15.1

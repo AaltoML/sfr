@@ -3,11 +3,11 @@ import hydra
 from omegaconf import DictConfig
 
 
-@hydra.main(version_base="1.3", config_path="./configs", config_name="main")
+@hydra.main(version_base="1.3", config_path="./configs", config_name="train")
 def train(cfg: DictConfig):
-    from src.sl.train import train as train_fn
+    from experiments.sl.train import train
 
-    train_fn(cfg)
+    return train(cfg)
 
 
 if __name__ == "__main__":

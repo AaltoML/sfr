@@ -2,163 +2,175 @@
 import logging
 import os
 import random
-
-import hydra
-import laplace
-import torch
-import wandb
-from experiments.sl.bnn_predictive.preds.datasets import CIFAR10, FMNIST, MNIST
-from experiments.sl.bnn_predictive.preds.models import CIFAR10Net, CIFAR100Net, MLPS
-from experiments.sl.bnn_predictive.preds.utils import ece, macc, nll_cls
-from omegaconf import DictConfig, OmegaConf
-from torch.distributions import Normal
-from torch.utils.data import DataLoader, TensorDataset
-from torch.utils.data.dataset import Subset
+import shutil
+from pprint import pprint
 
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+import hydra
+import laplace
+import numpy as np
+import src
+import torch
+import wandb
+from experiments.sl.bnn_predictive.experiments.scripts.imgclassification import (
+    get_dataset,
+    get_model,
+)
+from experiments.sl.utils import compute_metrics, set_seed_everywhere, train_val_split
+from hydra.utils import get_original_cwd
 
-def set_seed_everywhere(random_seed):
-    random.seed(random_seed)
-    np.random.seed(random_seed)
-    torch.manual_seed(random_seed)
-    torch.cuda.manual_seed(random_seed)
-    torch.manual_seed(random_seed)
-    np.random.seed(random_seed)
-    random.seed(random_seed)
+# from laplace.utils import get_nll, validate
+from omegaconf import DictConfig, OmegaConf
+from torch.utils.data import DataLoader
 
-
-def get_dataset(dataset, double, dir, cfg, device=None):
-    if dataset == "MNIST":
-        # Download training data from open datasets.
-        ds_train = MNIST(train=True, double=double, root=dir)
-        ds_test = MNIST(train=False, double=double, root=dir)
-    elif dataset == "FMNIST":
-        ds_train = FMNIST(train=True, double=double, root=dir)
-        ds_test = FMNIST(train=False, double=double, root=dir)
-    elif dataset == "CIFAR10":
-        ds_train = CIFAR10(train=True, double=double, root=dir)
-        ds_test = CIFAR10(train=False, double=double, root=dir)
-    else:
-        raise ValueError("Invalid dataset argument")
-    if device is not None:
-        if cfg.debug:
-            ds_train.data = ds_train.data[:500]
-            ds_train.targets = ds_train.targets[:500]
-            ds_test.data = ds_test.data[:500]
-            ds_test.targets = ds_test.targets[:500]
-        return QuickDS(ds_train, device), QuickDS(ds_test, device)
-    else:
-        return ds_train, ds_test
-
-
-def get_model(model_name, ds_train):
-    if model_name == "MLP":
-        input_size = ds_train.pixels**2 * ds_train.channels
-        hidden_sizes = [1024, 512, 256, 128]
-        output_size = ds_train.K
-        return MLPS(input_size, hidden_sizes, output_size, "tanh", flatten=True)
-    elif model_name == "SmallMLP":
-        input_size = ds_train.pixels**2 * ds_train.channels
-        hidden_sizes = [128, 128]
-        output_size = ds_train.K
-        return MLPS(input_size, hidden_sizes, output_size, "tanh", flatten=True)
-    elif model_name == "CNN":
-        return CIFAR10Net(ds_train.channels, ds_train.K, use_tanh=True)
-    elif model_name == "AllCNN":
-        return CIFAR100Net(ds_train.channels, ds_train.K)
-    else:
-        raise ValueError("Invalid model name")
-
-
-def get_quick_loader(loader, device="cuda"):
-    return [(X.to(device).to(torch.float64), y.to(device)) for X, y in loader]
-
-
-def get_map_predictive(loader, model):
-    ys, pstar = list(), list()
-    for X, y in loader:
-        X, y = X, y
-        ys.append(y)
-        pstar.append(torch.softmax(model(X), dim=-1).detach())
-    ys = torch.cat(ys)
-    pstar = torch.cat(pstar)
-    return pstar, ys
-
-
-def get_svgp_predictive(
-    loader, svgp, likelihood, use_nn_out: bool = True, seeding: bool = False
+'''
+def optimize_prior_precision_base(
+    model,
+    pred_type,
+    method="marglik",
+    n_steps=100,
+    lr=1e-1,
+    init_prior_prec=1.0,
+    val_loader=None,
+    loss=get_nll,
+    log_prior_prec_min=-4,
+    log_prior_prec_max=4,
+    grid_size=100,
+    link_approx="probit",
+    n_samples=100,
+    verbose=False,
+    cv_loss_with_var=False,
 ):
-    ys, ps = list(), list()
-    for X, y in loader:  # tqdm(loader):
-        # X, y = X.cuda(), y.cuda() TODO put this back
-        X, y = X, y
-        if seeding:
-            torch.manual_seed(711)
-        ps.append(
-            sample_svgp(X, likelihood, svgp, use_nn_out, n_samples=100).mean(dim=0)
+    """Optimize the prior precision post-hoc using the `method`
+    specified by the user.
+
+    Parameters
+    ----------
+    pred_type : {'glm', 'nn', 'gp'}, default='glm'
+        type of posterior predictive, linearized GLM predictive or neural
+        network sampling predictive or Gaussian Process (GP) inference.
+        The GLM predictive is consistent with the curvature approximations used here.
+    method : {'marglik', 'CV'}, default='marglik'
+        specifies how the prior precision should be optimized.
+    n_steps : int, default=100
+        the number of gradient descent steps to take.
+    lr : float, default=1e-1
+        the learning rate to use for gradient descent.
+    init_prior_prec : float, default=1.0
+        initial prior precision before the first optimization step.
+    val_loader : torch.data.utils.DataLoader, default=None
+        DataLoader for the validation set; each iterate is a training batch (X, y).
+    loss : callable, default=get_nll
+        loss function to use for CV.
+    cv_loss_with_var: bool, default=False
+        if true, `loss` takes three arguments `loss(output_mean, output_var, target)`,
+        otherwise, `loss` takes two arguments `loss(output_mean, target)`
+    log_prior_prec_min : float, default=-4
+        lower bound of gridsearch interval for CV.
+    log_prior_prec_max : float, default=4
+        upper bound of gridsearch interval for CV.
+    grid_size : int, default=100
+        number of values to consider inside the gridsearch interval for CV.
+    link_approx : {'mc', 'probit', 'bridge'}, default='probit'
+        how to approximate the classification link function for the `'glm'`.
+        For `pred_type='nn'`, only `'mc'` is possible.
+    n_samples : int, default=100
+        number of samples for `link_approx='mc'`.
+    verbose : bool, default=False
+        if true, the optimized prior precision will be printed
+        (can be a large tensor if the prior has a diagonal covariance).
+    """
+    if method == "marglik":
+        model.prior_precision = init_prior_prec
+        log_prior_prec = model.prior_precision.log()
+        log_prior_prec.requires_grad = True
+        optimizer = torch.optim.Adam([log_prior_prec], lr=lr)
+        for _ in range(n_steps):
+            optimizer.zero_grad()
+            prior_prec = log_prior_prec.exp()
+            neg_log_marglik = -model.log_marginal_likelihood(prior_precision=prior_prec)
+            neg_log_marglik.backward()
+            optimizer.step()
+        model.prior_precision = log_prior_prec.detach().exp()
+    elif method == "CV":
+        if val_loader is None:
+            raise ValueError("CV requires a validation set DataLoader")
+        interval = torch.logspace(log_prior_prec_min, log_prior_prec_max, grid_size)
+        model.prior_precision = _gridsearch(
+            model,
+            loss,
+            interval,
+            val_loader,
+            pred_type=pred_type,
+            link_approx=link_approx,
+            n_samples=n_samples,
+            loss_with_var=cv_loss_with_var,
         )
-        ys.append(y)
-    ps = torch.cat(ps)
-    ys = torch.cat(ys)
-    return ps, ys
-
-
-def get_la_predictive(loader, la_pred, seeding: bool = False):
-    ys, ps = list(), list()
-    for X, y in loader:  
-        if seeding:
-            torch.manual_seed(711)
-        ps.append(
-            la_pred(x=X).mean(dim=0)
-        )
-        ys.append(y)
-    ps = torch.cat(ps)
-    ys = torch.cat(ys)
-    return ps, ys
-
-
-def sample_svgp(X, likelihood, svgp, use_nn_out: bool, n_samples: int):
-    """Sample the SVGP, assumes a batched input."""
-    print("inside sample svgp")
-    n_data = X.shape[0]
-    gp_means, gp_vars = svgp.predict_f(X)
-    print("predeicted mean")
-    logits = svgp.network(X)
-    print("predeicted logits")
-    if use_nn_out:
-        dist = Normal(logits, torch.sqrt(gp_vars.clamp(10 ** (-32))))
     else:
-        dist = Normal(gp_means, torch.sqrt(gp_vars.clamp(10 ** (-32))))
-    print("made dist")
-    logit_samples = dist.sample((n_samples,))
-    print("logit samples")
-    out_dim = logit_samples.shape[-1]
-    samples = likelihood.inv_link(logit_samples)
-    # samples = samples.reshape(n_samples, n_data, out_dim)
-    return samples
+        raise ValueError("For now only marglik and CV is implemented.")
+    if verbose:
+        print(f"Optimized prior precision is {model.prior_precision}.")
 
 
-def evaluate(lh, yte, gstar_te, yva, gstar_va):
-    res = dict()
-    res["nll_te"] = nll_cls(gstar_te, yte, lh)
-    res["nll_va"] = nll_cls(gstar_va, yva, lh)
-    res["acc_te"] = macc(gstar_te, yte)
-    res["acc_va"] = macc(gstar_va, yva)
-    res["ece_te"] = ece(gstar_te, yte)
-    res["ece_va"] = ece(gstar_va, yva)
-    return res
+def _gridsearch(
+    model,
+    loss,
+    interval,
+    val_loader,
+    pred_type,
+    link_approx="probit",
+    n_samples=100,
+    loss_with_var=False,
+):
+    results = list()
+    prior_precs = list()
+    for prior_prec in interval:
+        logger.info(f"Prior prec: {prior_prec}")
+        model.prior_precision = prior_prec
+        try:
+            out_dist, targets = validate(
+                model,
+                val_loader,
+                pred_type=pred_type,
+                link_approx=link_approx,
+                n_samples=n_samples,
+            )
+            if model.likelihood == "regression":
+                out_mean, out_var = out_dist
+                if loss_with_var:
+                    result = loss(out_mean, out_var, targets).item()
+                else:
+                    result = loss(out_mean, targets).item()
+            else:
+                result = loss(out_dist, targets).item()
+        except RuntimeError:
+            result = np.inf
+        results.append(result)
+        logger.info(f"result {result}\n")
+        prior_precs.append(prior_prec)
+    return prior_precs[np.argmin(results)]
+'''
 
 
 @hydra.main(version_base="1.3", config_path="./configs", config_name="inference")
 def main(cfg: DictConfig):
+    ckpt_cfg = OmegaConf.load(
+        os.path.join(get_original_cwd(), cfg.checkpoint, "files/config.yaml")
+    )
+    pprint("Loaded cfg from {}: {}".format(cfg.checkpoint, ckpt_cfg))
+
+    cfg.dataset = ckpt_cfg.dataset.value
+
     try:  # Make experiment reproducible
-        set_seed_everywhere(cfg.random_seed)
+        set_seed_everywhere(ckpt_cfg.random_seed.value)
+        cfg.random_seed = ckpt_cfg.random_seed.value
     except:
         random_seed = random.randint(0, 10000)
         set_seed_everywhere(random_seed)
+        cfg.random_seed = random_seed
 
     if cfg.double:
         torch.set_default_dtype(torch.double)
@@ -169,24 +181,50 @@ def main(cfg: DictConfig):
 
     cfg.device = "cuda" if torch.cuda.is_available() else "cpu"
     print("Using device: {}".format(cfg.device))
+    cfg.output_dim = ckpt_cfg.output_dim.value
 
-    ds_train, ds_test = get_dataset(
-        dataset=cfg.dataset, double=True, dir="./", device=cfg.device, cfg=cfg
+    # ds_train, ds_test = get_dataset(
+    #     dataset=ckpt_cfg.dataset.value,
+    #     # double=True,
+    #     double=False,
+    #     dir=get_original_cwd(),  # don't nest wandb inside hydra dir
+    #     device=cfg.device,
+    #     debug=ckpt_cfg.debug.value,
+    # )
+
+    # Load the data with train/val/test split
+    ds_train, ds_val, ds_test = hydra.utils.instantiate(
+        ckpt_cfg.dataset.value, dir=os.path.join(get_original_cwd(), "data")
     )
+    cfg.output_dim = ds_train.output_dim
 
-    n_classes = ds_train.K
-    cfg.output_dim = n_classes
+    # Create data loaders
+    ds_train.data = ds_train.data.to(torch.double)
+    ds_val.data = ds_val.data.to(torch.double)
+    ds_test.data = ds_test.data.to(torch.double)
+    train_loader = DataLoader(dataset=ds_train, shuffle=True, batch_size=cfg.batch_size)
+    val_loader = DataLoader(dataset=ds_val, shuffle=False, batch_size=cfg.batch_size)
+    test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)
 
-    # Load the model and load on GPU
-    network = get_model(model_name=cfg.model_name, ds_train=ds_train)
-    checkpoint = torch.load(cfg.checkpoint)
-    network.load_state_dict(checkpoint["model"])
+    # Instantiate the neural network
+    network = hydra.utils.instantiate(ckpt_cfg.network.value, ds_train=ds_train)
+    print("made network")
     network = network.to(cfg.device)
-    cfg.prior.delta = checkpoint["delta"]
+    network = network.double()
+    sfr = hydra.utils.instantiate(ckpt_cfg.sfr.value, model=network)
+    print("made SFR")
 
-    prior = hydra.utils.instantiate(cfg.prior, params=network.parameters)
-    sfr = hydra.utils.instantiate(cfg.sfr, prior=prior, network=network)
-    gp_subset = hydra.utils.instantiate(cfg.gp_subset, prior=prior, network=network)
+    # Load checkpoint
+    ckpt_fname = os.path.join(
+        get_original_cwd(), cfg.checkpoint, "files/best_ckpt_dict.pt"
+    )
+    checkpoint = torch.load(ckpt_fname)
+    print("loaded ckpt")
+    sfr.load_state_dict(checkpoint["model"])
+    print("loaded state dict")
+    sfr = sfr.double()
+    # print(f"new delta: {sfr.prior.delta}")
+    sfr.eval()
 
     if cfg.wandb.use_wandb:  # Initialise WandB
         run = wandb.init(
@@ -195,187 +233,146 @@ def main(cfg: DictConfig):
             group=cfg.wandb.group,
             tags=cfg.wandb.tags,
             config=OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True),
+            dir=get_original_cwd(),  # don't nest wandb inside hydra dir
         )
-    logger.info("cfg {}".format(cfg))
+        try:
+            # Save hydra configs with wandb (handles hydra's multirun dir)
+            shutil.copytree(
+                os.path.abspath(".hydra"),
+                os.path.join(os.path.join(get_original_cwd(), wandb.run.dir), "hydra"),
+            )
+            wandb.save("hydra")
+        except FileExistsError:
+            pass
 
-    compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint)
+    @torch.no_grad()
+    def map_pred_fn(x, idx=None):
+        f = sfr.network(x)
+        return sfr.likelihood.inv_link(f)
+        # return torch.softmax(sfr.network(x.to(cfg.device)), dim=-1)
 
-
-def compute_metrics(sfr, gp_subset, ds_train, ds_test, cfg, checkpoint):
-    M = len(ds_test)
-    n_inducing = sfr.num_inducing  # int(len(ds_train)*n_sparse)
-    logging.info(f"Train set size: {len(ds_train)}")
-    logging.info(f"Num inducing points: {n_inducing}")
-    perm_ixs = torch.randperm(M)
-    val_ixs, test_ixs = perm_ixs[: int(M / 2)], perm_ixs[int(M / 2) :]
-    ds_val = Subset(ds_test, val_ixs)
-    ds_test = Subset(ds_test, test_ixs)
-    val_loader = get_quick_loader(
-        DataLoader(ds_val, batch_size=cfg.inference_batch_size), device=cfg.device
+    map_metrics = compute_metrics(
+        pred_fn=map_pred_fn, data_loader=test_loader, device=cfg.device
     )
-    test_loader = get_quick_loader(
-        DataLoader(ds_test, batch_size=cfg.inference_batch_size), device=cfg.device
-    )
-    all_train = DataLoader(ds_train, batch_size=len(ds_train))
-    (X_train, y_train) = next(iter(all_train))
-    X_train = X_train.to(cfg.device)
-    y_train = y_train.to(cfg.device)
-    data = (X_train.to(torch.float64), y_train)
+    logger.info(f"map_metrics {map_metrics}")
+    wandb.log({"map": map_metrics})
 
-    # if cfg.predictive_model == "map":
-    # MAP
-    conf_name = "map"
-    logging.info("MAP performance")
-    gstar_te, yte = get_map_predictive(test_loader, sfr.network)
-    gstar_va, yva = get_map_predictive(val_loader, sfr.network)
-    checkpoint["map"] = evaluate(sfr.likelihood, yte, gstar_te, yva, gstar_va)
+    # model = laplace.Laplace(
+    #     likelihood="classification",
+    #     subset_of_weights="all",
+    #     hessian_structure="full",
+    #     backend=laplace.curvature.asdl.AsdlGGN,
+    # )
+    print("making inference model")
+    model = hydra.utils.instantiate(cfg.inference_strategy.model, model=sfr.network)
+    if isinstance(model, laplace.BaseLaplace):
+        # model.prior_precision = sfr.prior.delta
+        # TODO change this back maybe
+        model.prior_precision = cfg.delta_post_hoc
+    elif isinstance(model, src.SFR):
+        # model.prior.delta = sfr.prior.delta
+        model.prior.delta = cfg.delta_post_hoc
+        model = model.double()
+    logger.info("Starting inference...")
+    model.fit(train_loader)
+    logger.info("Finished inference")
 
-    logging.info(checkpoint["map"])
-    wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
-    if cfg.predictive_model == "sfr":
-        logging.info("SFR performance")
-
-        sfr.set_data(data)
-
-        conf_name = f"sfr_sparse{sfr.num_inducing}"
-
-        logging.info(f"Computing {conf_name}")
-        gstar_te, yte = get_svgp_predictive(
-            test_loader, sfr, use_nn_out=False, likelihood=sfr.likelihood
+    print("building pred fn")
+    for pred_cfg in cfg.inference_strategy.pred:
+        print("pred_cfg {}".format(pred_cfg))
+        pred_fn = hydra.utils.instantiate(pred_cfg, model=model)
+        print("Made pred fn")
+        metrics = compute_metrics(
+            pred_fn=pred_fn,
+            data_loader=test_loader,
+            device=cfg.device,
+            inference_strategy=cfg.inference_strategy.name,
         )
-        gstar_va, yva = get_svgp_predictive(
-            val_loader, sfr, use_nn_out=False, likelihood=sfr.likelihood
-        )
-        checkpoint[conf_name] = evaluate(sfr.likelihood, yte, gstar_te, yva, gstar_va)
-        logging.info(checkpoint[conf_name])
-        wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
+        print(f"Computed metrics {metrics}")
+        if isinstance(model, laplace.BaseLaplace):
+            name = (
+                cfg.inference_strategy.name
+                + "."
+                + pred_cfg.pred_type
+                + "."
+                + pred_cfg.link_approx
+            )
+        else:
+            name = cfg.inference_strategy.name + "." + pred_cfg.pred_type
+        wandb.log({name: metrics})
 
-        conf_name = f"sfr_nn_sparse{sfr.num_inducing}"
-        logging.info(f"Computing {conf_name}")
-        gstar_te, yte = get_svgp_predictive(
-            test_loader, sfr, use_nn_out=True, likelihood=sfr.likelihood
-        )
+    if cfg.inference_strategy.optimize_prior_precision_kwargs is not None:
+        # model.optimize_prior_precision(
+        # optimize_prior_precision_base(
+        #     model=model,
 
-        gstar_va, yva = get_svgp_predictive(
-            val_loader, sfr, use_nn_out=True, likelihood=sfr.likelihood
-        )
-        checkpoint[conf_name] = evaluate(sfr.likelihood, yte, gstar_te, yva, gstar_va)
-        logging.info(checkpoint[conf_name])
-        wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
+        #     **cfg.inference_strategy.optimize_prior_precision_kwargs,
+        #     val_loader=val_loader
+        # )
+        logger.info("Start post-hoc prior precision optimizaiton")
+        for pred_cfg in cfg.inference_strategy.pred:
+            logger.info(f"Post-hoc optimization for {pred_cfg}")
+            logger.debug(cfg.inference_strategy.optimize_prior_precision_kwargs)
+            model.optimize_prior_precision(
+                # model=model,
+                pred_type=pred_cfg.pred_type,
+                **cfg.inference_strategy.optimize_prior_precision_kwargs,
+                val_loader=val_loader,
+            )
+            torch.cuda.empty_cache()
+            print("pred_cfg {}".format(pred_cfg))
+            pred_fn = hydra.utils.instantiate(pred_cfg, model=model)
+            print("Made pred fn")
+            metrics = compute_metrics(
+                pred_fn=pred_fn, data_loader=test_loader, device=cfg.device
+            )
+            print("Computed metrics")
+            if isinstance(model, laplace.BaseLaplace):
+                name = (
+                    cfg.inference_strategy.name
+                    + "."
+                    + pred_cfg.pred_type
+                    + "."
+                    + pred_cfg.link_approx
+                    + ".posthoc"
+                )
+            else:
+                name = (
+                    cfg.inference_strategy.name + "." + pred_cfg.pred_type + ".posthoc"
+                )
+            wandb.log({name: metrics})
 
-    elif cfg.predictive_model == "gp_subset":
-        # GP subset
-        logging.info("GP subset")
 
-        conf_name = f"gp_subset_nn_sparse{gp_subset.subset_size}"
-        gp_subset.set_data(data)
-        gstar_te, yte = get_svgp_predictive(
-            test_loader, gp_subset, use_nn_out=True, likelihood=gp_subset.likelihood
-        )
-        gstar_va, yva = get_svgp_predictive(
-            val_loader, gp_subset, use_nn_out=True, likelihood=gp_subset.likelihood
-        )
+def sfr_pred(
+    model: src.SFR,
+    pred_type: str = "gp",  # "gp" or "nn"
+    num_samples: int = 100,
+    device: str = "cuda",
+):
+    @torch.no_grad()
+    def pred_fn(x, idx=None):
+        return model(x.to(device), idx, pred_type=pred_type, num_samples=num_samples)[0]
 
-        checkpoint[conf_name] = evaluate(
-            gp_subset.likelihood, yte, gstar_te, yva, gstar_va
-        )
-        logging.info(checkpoint[conf_name])
-        wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
+    return pred_fn
 
-        conf_name = f"gp_subset_sparse{gp_subset.subset_size}"
-        gstar_te, yte = get_svgp_predictive(
-            test_loader, gp_subset, use_nn_out=False, likelihood=gp_subset.likelihood
-        )
-        gstar_va, yva = get_svgp_predictive(
-            val_loader, gp_subset, use_nn_out=False, likelihood=gp_subset.likelihood
-        )
 
-        checkpoint[conf_name] = evaluate(
-            gp_subset.likelihood, yte, gstar_te, yva, gstar_va
-        )
-        logging.info(checkpoint[conf_name])
-        wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
-    elif cfg.predictive_model == "glm":
-        la = laplace.Laplace(
-            sfr.network,
-            "classification",
-            subset_of_weights=cfg.subset_of_weights,
-            hessian_structure=cfg.hessian_structure,
-            prior_precision=sfr.prior.delta,
-            backend=laplace.curvature.asdl.AsdlGGN,
-        )
-
-        print("Making train_loader fo LA...")
-        # train_loader = DataLoader(ds_train, batch_size=cfg.inference_batch_size)
-        train_loader_double = DataLoader(
-            TensorDataset(*data), batch_size=cfg.inference_batch_size
-        )
-        print("made train_loader {}".format(train_loader_double))
-
-        logger.info("Fitting laplace...")
-        la.fit(train_loader_double)
-        logger.info("Finished fitting laplace")
-
-        # GLM predictive
-        conf_name = "glm"
-        logging.info("GLM")
-
-        def la_pred(x):
-            return la.predictive_samples(x=x, pred_type="glm", n_samples=100)
-
-        gstar_te, yte = get_la_predictive(test_loader, la_pred, seeding=True)
-        gstar_va, yva = get_la_predictive(val_loader, la_pred, seeding=True)
-        checkpoint[conf_name] = evaluate(
-            gp_subset.likelihood, yte, gstar_te, yva, gstar_va
-        )
-        logging.info(checkpoint[conf_name])
-        wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
-
-    elif cfg.predictive_model == "bnn":
-        la = laplace.Laplace(
-            sfr.network,
-            "classification",
-            subset_of_weights=cfg.subset_of_weights,
-            hessian_structure=cfg.hessian_structure,
-            prior_precision=sfr.prior.delta,
-            backend=laplace.curvature.asdl.AsdlGGN,
+def la_pred(
+    model: laplace.BaseLaplace,
+    pred_type: str = "glm",  # "glm" or "nn"
+    link_approx: str = "probit",  # 'mc', 'probit', 'bridge', 'bridge_norm'
+    num_samples: int = 100,  # num_samples for link_approx="mc"
+    device: str = "cuda",
+):
+    @torch.no_grad()
+    def pred_fn(x, idx=None):
+        return model(
+            x.to(device),
+            pred_type=pred_type,
+            link_approx=link_approx,
+            n_samples=num_samples,
         )
 
-        print("Making train_loader fo LA...")
-        train_loader_double = DataLoader(
-            TensorDataset(*data), batch_size=cfg.inference_batch_size
-        )
-
-        print("made train_loader {}".format(train_loader_double))
-
-        logger.info("Fitting laplace...")
-        la.fit(train_loader_double)
-        logger.info("Finished fitting laplace")
-
-        # BNN predictive
-        conf_name = "bnn"
-        logging.info("BNN predictive")
-
-        def la_pred(x):
-            return la.predictive_samples(x=x, pred_type="nn", n_samples=100)
-
-        gstar_te, yte = get_la_predictive(test_loader, la_pred, seeding=True)
-        gstar_va, yva = get_la_predictive(val_loader, la_pred, seeding=True)
-        checkpoint[conf_name] = evaluate(
-            gp_subset.likelihood, yte, gstar_te, yva, gstar_va
-        )
-        logging.info(checkpoint[conf_name])
-        wandb.log({f"{conf_name}_{k}": v for k, v in checkpoint[conf_name].items()})
-
-    res_dir = "./saved_inference_results"
-    if not os.path.exists(res_dir):
-        os.makedirs(res_dir)
-    fname = (
-        "./"
-        + "_".join([cfg.dataset, cfg.model_name, str(cfg.random_seed)])
-        + f"_{cfg.prior.delta:.1e}.pt"
-    )
-    torch.save(checkpoint, os.path.join(res_dir, fname))
+    return pred_fn
 
 
 if __name__ == "__main__":

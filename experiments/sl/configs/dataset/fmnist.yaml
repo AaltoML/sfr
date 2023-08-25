@@ -1,0 +1,9 @@
+_target_: experiments.sl.utils.get_image_dataset
+name: "FMNIST"
+double: False
+# dir: ???
+device: ${device}
+debug: False
+random_seed: ${random_seed}
+val_from_test: True
+val_split: 0.5

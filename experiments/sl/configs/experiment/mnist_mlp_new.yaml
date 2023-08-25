@@ -1,0 +1,29 @@
+# @package _global_
+defaults:
+  - override /network: mlp
+  - override /dataset: mnist
+
+lr: 1e-4
+n_epochs: 500
+double_inference: False
+
+hessian_structures: ["diag", "kron"]
+
+sfr:
+  delta: 0.00045
+
+# batch_size: 512 # for training/val/test data
+# batch_size: 64 # for training/val/test data
+batch_size: 128 # for training/val/test data
+
+num_inducings_as_percent: False
+num_inducings:
+  - 128
+  - 256
+  - 512
+  - 1024
+  - 2048
+  - 3200
+
+wandb:
+  run_name: MLP-delta=${sfr.delta}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}

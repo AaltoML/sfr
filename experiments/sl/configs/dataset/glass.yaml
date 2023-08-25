@@ -1,0 +1,5 @@
+_target_: experiments.sl.utils.get_uci_dataset
+name: "glass"
+random_seed: ${random_seed}
+# dir: ???
+double: False

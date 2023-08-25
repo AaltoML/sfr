@@ -18,6 +18,7 @@ FuncVar = TensorType["num_data", "output_dim"]
 
 Alpha = TensorType["num_data", "output_dim"]
 Beta = TensorType["num_data", "num_data", "output_dim"]
+BetaDiag = TensorType["num_data", "output_dim"]
 Lambda = TensorType["num_data", "output_dim"]
 AlphaInducing = TensorType["output_dim", "num_inducing"]
 BetaInducing = TensorType["output_dim", "num_inducing", "num_inducing"]

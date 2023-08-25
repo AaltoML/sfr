@@ -77,7 +77,7 @@ if __name__ == "__main__":
         ys = np.stack(ys, 0).reshape(-1, 1)
         y2s = np.stack(y2s, 0).reshape(-1, 1)
         y = np.concatenate([ys, y2s], -1)
-        return torch.Tensor(ys)
+        return torch.Tensor(ys)[..., 0]
 
     delta = 0.0002
     # delta = 0.000002
@@ -162,7 +162,7 @@ if __name__ == "__main__":
 
     X_new = torch.linspace(-0.5, -0.2, 20, dtype=torch.float64).reshape(-1, 1)
     Y_new = func(X_new, noise=True)
-    plt.scatter(X_train, Y_train[:, 0])
+    plt.scatter(X_train, Y_train)
     plt.savefig(os.path.join(save_dir, "classification_data.pdf"))
 
     # X_new_2 = torch.linspace(3.0, 4.0, 20, dtype=torch.float64).reshape(-1, 1)
@@ -175,7 +175,10 @@ if __name__ == "__main__":
 
     batch_size = X_train.shape[0]
 
-    likelihood = src.likelihoods.BernoulliLh(EPS=0.01)
+    # likelihood = src.likelihoods.BernoulliLh(EPS=0.01)
+    likelihood = src.likelihoods.BernoulliLh(EPS=0.1)
+    likelihood = src.likelihoods.BernoulliLh(EPS=0.0005)
+    likelihood = src.likelihoods.BernoulliLh(EPS=0.000)
     # likelihood = src.likelihoods.CategoricalLh()
     # likelihood = src.likelihoods.Gaussian()
     prior = src.priors.Gaussian(params=network.parameters, delta=delta)
@@ -187,18 +190,36 @@ if __name__ == "__main__":
     #     # dual_batch_size=100,
     #     jitter=1e-4,
     # )
+
     sfr = SFR(
         network=network,
         # train_data=(X_train, Y_train),
         prior=prior,
         likelihood=likelihood,
         output_dim=1,
+        # dual_batch_size=None,
         dual_batch_size=100,
         # num_inducing=X_train.shape[0],
         num_inducing=50,
-        # jitter=1e-6,
-        jitter=1e-4,
+        # jitter=1e-10,
+        jitter=1e-6,
+        # jitter=1e-4,
     )
+
+    # sfr = src.NN2GPSubset(
+    #     network=network,
+    #     # train_data=(X_train, Y_train),
+    #     prior=prior,
+    #     likelihood=likelihood,
+    #     output_dim=1,
+    #     # dual_batch_size=100,
+    #     dual_batch_size=None,
+    #     # num_inducing=X_train.shape[0],
+    #     subset_size=50,
+    #     # num_inducing=50,
+    #     # jitter=1e-6,
+    #     jitter=1e-4,
+    # )
 
     metrics = train(
         sfr=sfr,
@@ -227,12 +248,10 @@ if __name__ == "__main__":
 
     def plot_output(i):
         fig = plt.subplots(1, 1)
-        plt.scatter(
-            X_train, Y_train[:, i], color="k", marker="x", alpha=0.6, label="Data"
-        )
+        plt.scatter(X_train, Y_train, color="k", marker="x", alpha=0.6, label="Data")
         plt.plot(
             X_test[:, 0],
-            func(X_test, noise=False)[:, i],
+            func(X_test, noise=False),
             color="b",
             label=r"$f_{true}(\cdot)$",
         )

@@ -76,11 +76,11 @@ if __name__ == "__main__":
         else:
             return torch.stack([f1[:, 0], f2[:, 0], f3[:, 0]], -1)
 
-    delta = 0.00005
+    # delta = 0.00005
     # delta = 0.005
     # delta = 0.00001
     # delta = 0.000005
-    # delta = 0.001
+    delta = 0.001
     # delta = 1.0
     # delta = 0.01
     # network = torch.nn.Sequential(
@@ -129,9 +129,10 @@ if __name__ == "__main__":
     # X_test = torch.linspace(-2, 2, 100, dtype=torch.float64).reshape(-1, 1)
     print("X_test: {}".format(X_test.shape))
     print("f: {}".format(network(X_test).shape))
+    X_test_short = X_test
 
     X_new = torch.linspace(-0.5, -0.2, 20, dtype=torch.float64).reshape(-1, 1)
-    X_new = torch.linspace(-5.0, -2.0, 20, dtype=torch.float64).reshape(-1, 1)
+    # X_new = torch.linspace(-5.0, -2.0, 20, dtype=torch.float64).reshape(-1, 1)
     Y_new = func(X_new, noise=True)
 
     # X_new_2 = torch.linspace(3.0, 4.0, 20, dtype=torch.float64).reshape(-1, 1)
@@ -198,12 +199,15 @@ if __name__ == "__main__":
         plt.scatter(
             X_train, Y_train[:, i], color="k", marker="x", alpha=0.6, label="Data"
         )
-        plt.plot(
-            X_test[:, 0],
-            func(X_test, noise=False)[:, i],
-            color="b",
-            label=r"$f_{true}(\cdot)$",
+        plt.scatter(
+            sfr.Z, torch.ones_like(sfr.Z) * -5, marker="|", color="b", label="Z"
         )
+        # plt.plot(
+        #     X_test[:, 0],
+        #     func(X_test, noise=False)[:, i],
+        #     color="b",
+        #     label=r"$f_{true}(\cdot)$",
+        # )
         plt.plot(
             X_test[:, 0],
             network(X_test).detach()[:, i],
@@ -223,18 +227,44 @@ if __name__ == "__main__":
                 alpha=0.2,
                 label=r"$\mu(\cdot) \pm 1.98\sigma(\cdot)$",
             )
-        plt.scatter(
-            sfr.Z, torch.ones_like(sfr.Z) * -5, marker="|", color="b", label="Z"
-        )
         plt.legend()
         plt.savefig(os.path.join(save_dir, "sfr" + str(i) + ".pdf"), transparent=True)
 
         if updates:
+            fig = plt.subplots(1, 1)
             plt.scatter(
-                X_new, Y_new[:, i], color="m", marker="o", alpha=0.6, label="New data"
+                X_train, Y_train[:, i], color="k", marker="x", alpha=0.6, label="Data"
+            )
+            plt.scatter(
+                sfr.Z, torch.ones_like(sfr.Z) * -5, marker="|", color="b", label="Z"
+            )
+            # plt.plot(
+            #     X_test[:, 0],
+            #     func(X_test, noise=False)[:, i],
+            #     color="b",
+            #     label=r"$f_{true}(\cdot)$",
+            # )
+            plt.plot(
+                X_test[:, 0],
+                network(X_test).detach()[:, i],
+                color="m",
+                linestyle="--",
+                label=r"$f_{NN}(\cdot)$",
+            )
+            plt.scatter(
+                X_new,
+                Y_new[:, i],
+                color="r",
+                marker="o",
+                alpha=0.6,
+                label="New data",
             )
             plt.plot(
-                X_test[:, 0], f_mean_new[:, i], color="m", label=r"$\mu_{new}(\cdot)$"
+                X_test[:, 0],
+                f_mean_new[:, i],
+                color="c",
+                # color="m",
+                label=r"$\mu_{new}(\cdot)$",
             )
             if plot_var:
                 plt.fill_between(
@@ -242,11 +272,17 @@ if __name__ == "__main__":
                     (f_mean_new - 1.98 * torch.sqrt(f_var_new))[:, i],
                     # pred.mean[:, 0],
                     (f_mean_new + 1.98 * torch.sqrt(f_var_new))[:, i],
-                    color="m",
+                    color="c",
+                    # color="m",
                     alpha=0.2,
                     label=r"$\mu_{new}(\cdot) \pm 1.98\sigma_{new}(\cdot)$",
                 )
 
+            plt.legend()
+            plt.savefig(
+                os.path.join(save_dir, "sfr_new" + str(i) + ".pdf"),
+                transparent=True,
+            )
             plt.scatter(
                 X_new_2,
                 Y_new_2[:, i],
@@ -297,7 +333,7 @@ if __name__ == "__main__":
 
             plt.legend()
             plt.savefig(
-                os.path.join(save_dir, "sfr_new" + str(i) + ".pdf"),
+                os.path.join(save_dir, "sfr_new_2_" + str(i) + ".pdf"),
                 transparent=True,
             )
 

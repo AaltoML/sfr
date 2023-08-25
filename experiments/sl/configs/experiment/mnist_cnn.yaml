@@ -1,0 +1,10 @@
+# @package _global_
+defaults:
+  - override /network: cnn
+  - override /dataset: mnist
+
+lr: 1e-4
+n_epochs: 500
+
+sfr:
+  delta: 0.0008

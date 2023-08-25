@@ -1,22 +1,23 @@
 import logging
-
-import wandb
-import numpy as np
-import torch
-from torch.nn.utils import parameters_to_vector
-from torch.utils.data import DataLoader
-from torch.optim import Adam
-from torch.optim.lr_scheduler import LambdaLR
-from torchvision.datasets import VisionDataset
-import torchvision.datasets as datasets_torch
-from torchvision.transforms import ToTensor
-from tqdm import tqdm
-from src import NTKSVGP, CategoricalLh
-import src as ntksvgp
 import os
 
-from preds.models import CIFAR10Net, MLPS, CIFAR100Net
-from preds.datasets import MNIST, FMNIST, CIFAR10
+import numpy as np
+
+# from src import CategoricalLh
+import src as ntksvgp
+import torch
+import torchvision.datasets as datasets_torch
+import wandb
+from experiments.sl.bnn_predictive.preds.datasets import CIFAR10, FMNIST, MNIST
+from experiments.sl.bnn_predictive.preds.models import CIFAR10Net, CIFAR100Net, MLPS
+from torch.nn.utils import parameters_to_vector
+from torch.optim import Adam
+from torch.optim.lr_scheduler import LambdaLR
+from torch.utils.data import DataLoader
+from torchvision.datasets import VisionDataset
+from torchvision.transforms import ToTensor
+from tqdm import tqdm
+
 
 torch.backends.cudnn.deterministic = True
 torch.backends.cudnn.benchmark = False
@@ -39,7 +40,7 @@ class QuickDS(VisionDataset):
         return len(self.D)
 
 
-def get_dataset(dataset, double, dir, device=None):
+def get_dataset(dataset, double, dir, debug: bool = False, device=None):
     if dataset == "MNIST":
         # Download training data from open datasets.
         ds_train = MNIST(train=True, double=double, root=dir)
@@ -53,9 +54,33 @@ def get_dataset(dataset, double, dir, device=None):
     else:
         raise ValueError("Invalid dataset argument")
     if device is not None:
+        if debug:
+            ds_train.data = ds_train.data[:500]
+            ds_train.targets = ds_train.targets[:500]
+            ds_test.data = ds_test.data[:500]
+            ds_test.targets = ds_test.targets[:500]
         return QuickDS(ds_train, device), QuickDS(ds_test, device)
     else:
         return ds_train, ds_test
+
+
+# def get_dataset(dataset, double, dir, device=None):
+#     if dataset == "MNIST":
+#         # Download training data from open datasets.
+#         ds_train = MNIST(train=True, double=double, root=dir)
+#         ds_test = MNIST(train=False, double=double, root=dir)
+#     elif dataset == "FMNIST":
+#         ds_train = FMNIST(train=True, double=double, root=dir)
+#         ds_test = FMNIST(train=False, double=double, root=dir)
+#     elif dataset == "CIFAR10":
+#         ds_train = CIFAR10(train=True, double=double, root=dir)
+#         ds_test = CIFAR10(train=False, double=double, root=dir)
+#     else:
+#         raise ValueError("Invalid dataset argument")
+#     if device is not None:
+#         return QuickDS(ds_train, device), QuickDS(ds_test, device)
+#     else:
+#         return ds_train, ds_test
 
 
 def get_model(model_name, ds_train):
@@ -172,14 +197,14 @@ def main_new(
     )
     train_loader = DataLoader(ds_train, batch_size=batch_size, shuffle=True)
     test_loader = DataLoader(ds_test, batch_size=batch_size, shuffle=False)
-    likelihood = CategoricalLh()
+    likelihood = src.likelihoods.CategoricalLh()
     n_classes = next(iter(ds_train))[0].shape[-1]
     for delta in deltas:
         torch.manual_seed(seed)
         model = get_model(model_name, ds_train).to(device)
         # f_out = model(next(iter(ds_train))[0])
         prior = ntksvgp.priors.Gaussian(params=model.parameters, delta=delta)
-        svgp = NTKSVGP(
+        svgp = src.NTKSVGP(
             network=model,
             likelihood=likelihood,
             output_dim=n_classes,

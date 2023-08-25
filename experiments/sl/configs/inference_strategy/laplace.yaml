@@ -1,0 +1,28 @@
+name: la-${inference_strategy.model.hessian_structure}-${inference_strategy.model.subset_of_weights}
+model:
+  _target_: laplace.Laplace
+  likelihood: "classification"
+  # subset_of_weights: "last_layer"
+  # hessian_structure: "diag"
+  subset_of_weights: "all"
+  hessian_structure: "diag"
+  sigma_noise: 1
+  # prior_precision: ???
+  backend:
+    _target_: laplace.curvature.asdl.AsdlGGN
+    _partial_: true
+pred:
+  - _target_: experiments.sl.inference.la_pred
+    pred_type: "nn"
+    link_approx: "mc"
+    num_samples: 100 # num_samples for link_approx="mc"
+  - _target_: experiments.sl.inference.la_pred
+    pred_type: "glm"
+    link_approx: "mc"
+    num_samples: 100 # num_samples for link_approx="mc"
+optimize_prior_precision_kwargs:
+  method: 'CV' # "marglik"
+  log_prior_prec_min: 1
+  log_prior_prec_max: 5
+  grid_size: 50
+

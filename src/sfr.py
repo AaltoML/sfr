@@ -337,7 +337,7 @@ class SFR(nn.Module):
         print(f"KzzplusBeta {KzzplusBeta.device}")
         self.Lb = cholesky_add_jitter_until_psd(KzzplusBeta, jitter=self.jitter)
         logger.info("Finished caching tensors for faster predictions")
-        print(f"Lb {Lb.device}")
+        print(f"Lb {self.Lb.device}")
 
     def optimize_prior_precision(
         self,

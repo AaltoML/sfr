@@ -323,3 +323,29 @@ def get_uci_network(name, output_dim, ds_train, device: str):
         activation="tanh",
     ).to(device)
     return network
+
+
+class Sin(torch.nn.Module):
+    def forward(self, x):
+        return torch.sin(x)
+
+
+def get_stationary_mlp(
+    ds_train, output_dim: int, hidden_size: int = 50, device: str = "cpu"
+):
+    try:
+        input_size = ds_train.data.shape[1]
+    except:
+        input_size = ds_train.dataset.data.shape[1]
+    network = torch.nn.Sequential(
+        torch.nn.Linear(input_size, hidden_size),
+        # torch.nn.Tanh(),
+        # torch.nn.Linear(input_size, hidden_size),
+        torch.nn.Tanh(),
+        torch.nn.Linear(hidden_size, 16),
+        Sin(),
+        # torch.nn.Tanh(),
+        # torch.nn.Tanh(),
+        torch.nn.Linear(16, output_dim),
+    )
+    return network.to(device)

@@ -223,6 +223,9 @@ class SFR(nn.Module):
             jitter=self.jitter,
             device=self.device,
         )
+        self.alpha_u = self.alpha_u.detach().cpu()
+        self.beta_u = self.beta_u.detach().cpu()
+        self.y_tilde_u = self.y_tilde_u.detach().cpu()
         # print(f"beta_u {beta_u}")
         logger.info("Finished projecting dual params onto inducing points")
 
@@ -240,7 +243,7 @@ class SFR(nn.Module):
         self.Kzz = self.Kzz.detach().cpu()
         print(f"Kzz {self.Kzz.shape}")
         # print(f"Kzz {Kzz}")
-        print(f"Iz.device {self.Iz.device}")
+        print(f"Iz {self.Iz.device}")
         print(f"beta_u.device {self.beta_u.device}")
         print(f"Kzz.device {self.Kzz.device}")
         print(f"Iz.device {self.Iz.device}")
@@ -248,7 +251,7 @@ class SFR(nn.Module):
         assert self.beta_u.shape == self.Kzz.shape
 
         self.Iz = self.Iz.detach().cpu()
-        print(f"Iz {self.Iz.shape}")
+        print(f"Iz {self.Iz.device}")
         KzzplusBeta = (self.Kzz + self.beta_u) + self.Iz * self.jitter
         print(f"KzzplusBeta {KzzplusBeta.shape}")
 

@@ -12,8 +12,6 @@ import logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-# EPS = 0.01
-
 
 class Likelihood:
     def __call__(
@@ -100,7 +98,11 @@ class BernoulliLh(Likelihood):
         return inv_probit(f)
 
     def residual(self, y, f):
-        return self.inv_link(f) - y
+        if f.ndim > 1:
+            f = f[:, 0]
+        res = y - self.inv_link(f)
+        res = res[..., None]
+        return res
 
     def nn_loss(self, f: FuncData, y: OutputData):
         if f.shape > y.shape:
@@ -124,12 +126,6 @@ class CategoricalLh(Likelihood):
         if f_var is None:
             p = self.prob(f=f_mean)
         else:
-            # raise NotImplementedError
-            # dist = Normal(f_mean, torch.sqrt(f_var.clamp(10 ** (-32))))
-            # print("f_mean {}".format(f_mean.shape))
-
-            # print("f_var {}".format(f_var.shape))
-            # if (f_var == 0).sum().item() > 0:
             if (f_var < 1e-5).sum().item() > 0 and (f_var >= -1e-5).sum().item():
                 logger.info(f"f_var==0: {(f_var == 0).sum().item()}")
                 logger.info(
@@ -141,22 +137,11 @@ class CategoricalLh(Likelihood):
                 )
 
             dist = Normal(f_mean, torch.sqrt(f_var.clamp(10 ** (-32))))
-            # print("made dist")
             logit_samples = dist.sample((num_samples,))
-            # print("logit samples")
             samples = self.inv_link(logit_samples)
-            # print("samples {}".format(samples.shape))
-            # samples_flat = torch.flatten(samples, start_dim=0, end_dim=1)
-            # print("samples_flat {}".format(samples_flat.shape))
-            # ps_flat = self.prob(f=samples_flat)
-            # print("ps_flat {}".format(ps_flat.shape))
-            # ps = torch.reshape(ps_flat, samples.shape)
-            # print("ps {}".format(ps.shape))
             p = torch.mean(samples, 0)
-            # print("p {}".format(p.shape))
 
         mean = p
-        # print("mean {}".format(mean.shape))
         var = p - torch.square(p)
         return mean, var
 
@@ -175,7 +160,7 @@ class CategoricalLh(Likelihood):
         y_expand = torch.zeros_like(f)
         ixs = torch.arange(0, len(y)).long()
         y_expand[ixs, y.long()] = 1
-        return self.inv_link(f) - y_expand
+        return y_expand - self.inv_link(f)
 
     def Hessian(self, f):
         p = torch.clamp(self.inv_link(f), self.EPS, 1 - self.EPS)
@@ -186,7 +171,4 @@ class CategoricalLh(Likelihood):
         return torch.nn.functional.softmax(f, dim=-1)
 
     def nn_loss(self, f: FuncData, y: OutputData):
-        # print("here")
-        # print(f.dtype)
-        # print(y.dtype)
         return torch.nn.CrossEntropyLoss(reduction="mean")(f, y)

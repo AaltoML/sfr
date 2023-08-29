@@ -28,7 +28,8 @@ InducingPoints = TensorType["num_inducing", "input_dim"]
 
 
 FullCov = Optional[bool]
-NTK = Callable[[InputData, InputData, FullCov], TensorType[""]]
+Index = Optional[int]
+NTK = Callable[[InputData, InputData, FullCov, Index], TensorType[""]]
 NTK_single = Callable[[InputData, InputData, int, FullCov], TensorType[""]]
 
 TestInput = TensorType["num_test", "input_dim"]

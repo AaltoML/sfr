@@ -13,8 +13,10 @@ import torch.distributions as dists
 import torch.nn as nn
 from scipy.linalg import cho_factor, cho_solve
 from src.custom_types import (
+    Alpha,
     AlphaInducing,
     Beta,
+    BetaDiag,
     BetaInducing,
     Data,
     FuncData,
@@ -57,7 +59,14 @@ class SFR(nn.Module):
         self.dual_batch_size = dual_batch_size
         self.jitter = jitter
         self.device = device
-        self.computed_Kss_Ksz = False
+        # self.computed_Kss_Ksz = False
+
+        if isinstance(self.prior, src.priors.Gaussian):
+            self._prior_precision = self.prior.prior_precision
+        else:
+            raise NotImplementedError(
+                "what should prior_precision be if not using Gaussian prior???"
+            )
 
     def __call__(
         self,
@@ -66,13 +75,73 @@ class SFR(nn.Module):
         pred_type: str = "gp",  # "gp" or "nn"
         num_samples: int = 100,
     ):
-        f_mean, f_var = self._predict_fn(x, idx, full_cov=False)
+        f_mean, f_var = self.predict_f(x, full_cov=False)
         if pred_type in "nn":
             f_mean = self.network(x)
         if isinstance(self.likelihood, src.likelihoods.CategoricalLh):
             return self.likelihood(f_mean=f_mean, f_var=f_var, num_samples=num_samples)
         else:
             return self.likelihood(f_mean=f_mean, f_var=f_var)
+
+    # def forward(self, x: InputData):
+    #     return self.predict(x=x)
+
+    # @torch.no_grad()
+    # def predict(self, x: TestInput) -> Tuple[FuncMean, FuncVar]:
+    #     f_mean, f_var = self.predict_f(x, full_cov=False)
+    #     return self.likelihood(f_mean=f_mean, f_var=f_var)
+
+    @torch.no_grad()
+    def predict_f(
+        self, x, full_cov: Optional[bool] = False
+    ) -> Tuple[FuncMean, FuncVar]:
+        Kxx = self.kernel(x, x, full_cov=full_cov).detach().cpu()
+        Kxz = self.kernel(x, self.Z).detach().cpu()
+        # print(f"Kxx {Kxx}")
+        # print(f"Kxz {Kxz}")
+        # alpha_u = alpha_u.detach().cpu()
+
+        f_mean = (Kxz @ self.alpha_u[..., None])[..., 0].T / (
+            self.prior_precision * self.num_data
+        )
+        # f_mean = (Kxz @ self.alpha_u[..., None])[..., 0].T
+        # print(f"f_mean {f_mean}")
+
+        if full_cov:
+            raise NotImplementedError
+            # TODO tmp could be computed before
+            tmp = torch.linalg.solve(self.Kzz, self.Iz) - torch.linalg.solve(
+                self.beta_u + self.Kzz, self.Iz
+            )
+            f_cov = Kxx - torch.matmul(
+                torch.matmul(Kxz, tmp), torch.transpose(Kxz, -1, -2)
+            )
+            return f_mean, f_cov
+        else:
+            Kzx = torch.transpose(Kxz, -1, -2)
+            # print(f"Kzx {Kzx}")
+            Am = torch.linalg.solve_triangular(
+                torch.transpose(self.Lm, -1, -2), Kzx, upper=False
+            )
+            # print(f"Am {Am}")
+            Ab = torch.linalg.solve_triangular(
+                torch.transpose(self.Lb, -1, -2), Kzx, upper=False
+            )
+            # print(f"Ab {Ab}")
+            f_var = (
+                Kxx - torch.sum(torch.square(Am), -2) + torch.sum(torch.square(Ab), -2)
+            ) / (self.prior_precision * self.num_data)
+            # print(f"f_var {f_var}")
+            return f_mean.to(self.device), f_var.T.to(self.device)
+
+    @torch.no_grad()
+    def predict_mean(self, x: TestInput) -> FuncMean:
+        x = x.to(self.Z.device)
+        Kxz = self.kernel(x, self.Z)
+        f_mean = (Kxz @ self.alpha_u[..., None])[..., 0].T / (
+            self.prior_precision * self.num_data
+        )
+        return f_mean
 
     def fit(self, train_loader: DataLoader):
         all_train = DataLoader(
@@ -104,79 +173,80 @@ class SFR(nn.Module):
         indices = torch.randperm(num_data)[: self.num_inducing]
         self.Z = X_train[indices.to(X_train.device)].to(self.device)
 
-        self.build_sfr()
+        self._build_sfr()
 
     @torch.no_grad()
-    def build_sfr(self):
-        logger.info("Calculating dual params and building prediction fn...")
-        if isinstance(self.prior, src.priors.Gaussian):
-            delta = self.prior.delta
-        else:
-            raise NotImplementedError(
-                "what should delta be if not using Gaussian prior???"
-            )
-        self.kernel, self.kernel_single = build_ntk(
+    def _build_sfr(self):
+        # Build kernel
+        self.kernel = build_ntk(
             network=self.network,
             num_data=self.num_data,
             output_dim=self.output_dim,
-            delta=delta,
+            prior_precision=self.prior_precision,
             scaled=False,
         )
-        if self.dual_batch_size:
-            self.alpha_u, self.beta_u, self.Lambda_u = calc_sparse_dual_params_batch(
-                network=self.network,
-                train_loader=DataLoader(
-                    TensorDataset(*(self.train_data)),
-                    batch_size=self.dual_batch_size,
-                    shuffle=False,
-                ),
-                Z=self.Z,
-                likelihood=self.likelihood,
-                kernel=self.kernel_single,
-                jitter=self.jitter,
-                out_dim=self.output_dim,
-                device=self.device,
-            )
-        else:
-            self.alpha_u, self.beta_u, self.Lambda_u = calc_sparse_dual_params(
-                network=self.network,
-                train_data=self.train_data,
-                Z=self.Z,
-                kernel=self.kernel,
-                likelihood=self.likelihood,
-                jitter=self.jitter,
-            )
-        logger.info("Finished calculating dual params")
-        self._predict_fn = self.predict_from_sparse_duals(
-            alpha_u=self.alpha_u,
-            beta_u=self.beta_u,
-            kernel=self.kernel,
-            delta=delta,
-            num_data=self.num_data,
-            Z=self.Z,
-            jitter=self.jitter,
+
+        # Calculate dual parameters
+        if self.dual_batch_size is None:
+            self.dual_batch_size = self.num_data
+        train_loader = DataLoader(
+            TensorDataset(*(self.train_data)),
+            batch_size=self.dual_batch_size,
+            shuffle=False,
         )
-        logger.info("Finished building predict fn")
+        logger.info("Calculating dual params...")
+        self.alpha, self.beta_diag, self.y_tilde = calc_dual_params(
+            network=self.network,
+            train_loader=train_loader,
+            likelihood=self.likelihood,
+            output_dim=self.output_dim,
+            device=self.device,
+        )
+        logger.info("Finished calculating dual params")
 
-    def forward(self, x: InputData):
-        return self.predict(x=x)
+        # Project dual parameters onto inducing points
+        logger.info("Project dual params onto inducing points...")
+        (
+            self.alpha_u,
+            self.beta_u,
+            self.y_tilde_u,
+        ) = project_dual_params_onto_inducing_points(
+            Z=self.Z,
+            kernel=self.kernel,
+            train_loader=train_loader,
+            # alpha=self.alpha,
+            beta_diag=self.beta_diag,
+            y_tilde=self.y_tilde,
+            output_dim=self.output_dim,
+            num_data=self.num_data,
+            prior_precision=self.prior_precision,
+            jitter=self.jitter,
+            device=self.device,
+        )
+        # print(f"beta_u {beta_u}")
+        logger.info("Finished projecting dual params onto inducing points")
 
-    @torch.no_grad()
-    def predict_mean(self, x: TestInput) -> FuncMean:
-        x = x.to(self.Z.device)
-        Kxz = self.kernel(x, self.Z)
-        f_mean = (Kxz @ self.alpha_u[..., None])[..., 0].T
-        return f_mean
+        # Calcualte kernel
+        self.Kzz = self.kernel(self.Z, self.Z)
+        print(f"Kzz {self.Kzz.shape}")
+        num_inducing = self.Kzz.shape[-1]
+        self.Iz = (
+            torch.eye(num_inducing, dtype=torch.float64)
+            .to(self.Z.device)[None, ...]
+            .repeat(self.output_dim, 1, 1)
+        )
+        print(f"Iz {self.Iz.shape}")
+        self.Kzz += self.Iz * self.jitter
+        self.Kzz = self.Kzz.detach().cpu()
+        # print(f"Kzz {Kzz}")
 
-    @torch.no_grad()
-    def predict(self, x: TestInput, idx=None) -> Tuple[FuncMean, FuncVar]:
-        f_mean, f_var = self._predict_fn(x, idx, full_cov=False)
-        return self.likelihood(f_mean=f_mean, f_var=f_var)
+        assert self.beta_u.shape == self.Kzz.shape
 
-    @torch.no_grad()
-    def predict_f(self, x: TestInput, idx=None) -> Tuple[FuncMean, FuncVar]:
-        f_mean, f_var = self._predict_fn(x, idx, full_cov=False)
-        return f_mean, f_var
+        self.Iz = self.Iz.detach().cpu()
+        KzzplusBeta = (self.Kzz + self.beta_u) + self.Iz * self.jitter
+
+        self.Lm = cholesky_add_jitter_until_psd(self.Kzz, jitter=self.jitter)
+        self.Lb = cholesky_add_jitter_until_psd(KzzplusBeta, jitter=self.jitter)
 
     def loss(self, x: InputData, y: OutputData):
         f = self.network(x)
@@ -184,273 +254,72 @@ class SFR(nn.Module):
         neg_log_prior = self.prior.nn_loss()
         return neg_log_likelihood + neg_log_prior
 
-    def update_from_dataloader(self, data_loader: DataLoader):
-        for x, y in data_loader:
-            self.update(x=x, y=y)
-
     @torch.no_grad()
-    def update(self, x: InputData, y: OutputData):
-        logger.info("Updating dual params...")
-        if x.ndim > 2:
-            x = torch.flatten(x, 1, -1)
-        assert x.ndim == 2
-        num_new_data, input_dim = x.shape
-        Kzx = self.kernel(self.Z, x)
-        # TODO are the equations still correct with new kernel scaling?
-
-        if isinstance(self.likelihood, src.likelihoods.Gaussian):
-            self.beta_u += (
-                Kzx
-                @ (1**-1 * torch.eye(num_new_data).to(self.Z)[None, ...])
-                @ torch.transpose(Kzx, -1, -2)
-            )
-            self.Lambda_u += (Kzx @ y.T[..., None])[..., 0]
-        elif isinstance(self.likelihood, src.likelihoods.CategoricalLh) or isinstance(
-            self.likelihood, src.likelihoods.BernoulliLh
-        ):
-            f = self.network(x)
-            if f.ndim == 1:
-                f = f.unsqueeze(-1)
-            Lambda_new, beta_new = calc_lambdas(Y=y, F=f, likelihood=self.likelihood)
-            beta_new = torch.diagonal(beta_new, dim1=-2, dim2=-1)  # [N, F]
-            self.beta_u += torch.einsum("fmn, nf, fun -> fmu", Kzx, beta_new, Kzx)
-            self.Lambda_u += torch.einsum("fmn, nf -> fm", Kzx, Lambda_new)
-        else:
-            raise NotImplementedError
-
-        self.alpha_u = calc_alpha_u_from_lambda(
-            beta_u=self.beta_u,
-            Lambda_u=self.Lambda_u,
-            Z=self.Z,
-            kernel=self.kernel,
-            jitter=self.jitter,
-        )
-
-        logger.info("Building predict fn...")
-        num_data = self.num_data
-        self._predict_fn = self.predict_from_sparse_duals(
-            alpha_u=self.alpha_u,
-            beta_u=self.beta_u,
-            kernel=self.kernel,
-            delta=self.prior.delta,
-            num_data=num_data,
-            Z=self.Z,
-            jitter=self.jitter,
-        )
-        logger.info("Finished build predict fn")
-
-    @property
-    def num_data(self):
-        return self.train_data[0].shape[0]
-
-    def update_pred_fn(self, delta: float):
-        self.prior.delta = delta
-        self._predict_fn = self.predict_from_sparse_duals(
-            alpha_u=self.alpha_u,
-            beta_u=self.beta_u,
-            kernel=self.kernel,
-            delta=delta,
-            num_data=self.num_data,
-            Z=self.Z,
-            jitter=self.jitter,
-        )
-
-    @torch.no_grad()
-    def predict_from_sparse_duals(
-        self,
-        alpha_u: AlphaInducing,
-        beta_u: BetaInducing,
-        kernel: NTK,
-        delta: float,
-        num_data: int,
-        Z: InducingPoints,
-        test_loader: DataLoader = None,
-        full_cov: bool = False,
-        jitter: float = 1e-3,
+    def update(
+        self, data_loader: DataLoader = None, x: InputData = None, y: OutputData = None
     ):
-        Kzz = kernel(Z, Z)
-        # print(f"Kzz {Kzz}")
-        output_dim = Kzz.shape[0]
-        Iz = (
-            torch.eye(Kzz.shape[-1], dtype=torch.float64)
-            .to(Kzz.device)[None, ...]
-            .repeat(output_dim, 1, 1)
-        )
-        Kzz += Iz * jitter
-        Kzz = Kzz.detach().cpu()
-        Iz = Iz.detach().cpu()
-        # print(f"Iz {Iz}")
-        # print(f"Kzz {Kzz}")
-        beta_u = beta_u.detach().cpu()
-        # print(f"beta_u {beta_u}")
-        # KzzplusBeta = (Kzz + beta_u) + Iz * jitter
-        KzzplusBeta = (Kzz + beta_u / (delta * num_data)) + Iz * jitter
-        # print(f"KzzplusBeta {KzzplusBeta}")
-
-        # if test_loader and self.computed_Kss_Ksz == False:
-        #     Kxx_cached = []
-        #     Kxz_cached = []
-        #     for x in test_loader:
-        #         Kxx = kernel(x, x, full_cov).detach().cpu()
-        #         Kxz = kernel(x, Z).detach().cpu()
-        #         Kxx_cached.append(Kxx)
-        #         Kxz_cached.append(Kxz)
-        #     self.computed_Kss_Ksz = True
-
-        assert beta_u.shape == Kzz.shape
-
-        def cho_factor_jitter(x, jitter: float = 1e-5, jitter_factor=4):
-            try:
-                # print("trying cho_factor")
-                # L, _ = cho_factor(x)
-                L = torch.linalg.cholesky(x, upper=True)
-                # print("completed cho_factor")
-                return L
-            except:
-                # print("Failed cho_factor")
-                logger.info(f"Cholesky failed so adding more jitter={jitter}")
-                # print(f"x: {x.shape}")
-                # Iz = np.eye(x.shape[-1])
-                Iz = torch.eye(x.shape[-1]).to(x.device)
-                # print(f"Iz[0,...]: {Iz*jitter}")
-                # print(f"Iz[0,...]: {Iz.shape}")
-                # print(f"jiiter: {jitter}")
-                jitter = jitter_factor * jitter
-                x += Iz * jitter
-                # x += Iz[0, ...].numpy() * jitter
-                # print(f"x new: {x}")
-                # print(f"x new: {x.shape}")
-                return cho_factor_jitter(x, jitter=jitter)
-
-        # beta_u += Iz * jitter
-        # Lm = torch.linalg.cholesky(Kzz, upper=True)
-        Lm = cho_factor_jitter(Kzz, jitter=jitter)
-        # print(f"Lm {Lm}")
-        # L = torch.linalg.cholesky(beta_u, upper=True)
-        # Lb = torch.linalg.cholesky(Kzz, upper=True)
-        # Lb = torch.linalg.cholesky(KzzplusBeta, upper=True)
-        Lb = cho_factor_jitter(KzzplusBeta, jitter=jitter)
-        # print(f"Lb {Lb}")
-        # K, M, _ = Kzz.shape
-        # print(f"Kzz: {Kzz.shape}")
-        # print(f"Iz: {Iz.shape}")
-        # Kzz += Iz * jitter
-        # Kzznp = Kzz.detach().cpu().numpy()
-        # KzzplusBetanp = KzzplusBeta.detach().cpu().numpy()
-        # L_Kzz = np.zeros_like(Kzznp)
-        # L_Bu = np.zeros_like(Kzznp)
-
-        # for k in range(K):
-        #     print(f"k: {k}")
-        #     L_Kzz[k], _ = cho_factor(Kzznp[k])
-        #     # L_Kzz[k] = cho_factor_jitter(Kzznp[k])
-        #     print(f"L_Kzz[k]: {L_Kzz[k]}")
-        #     # L_Bu[k] = cho_factor_jitter(KzzplusBetanp[k])
-        #     L_Bu[k], _ = cho_factor(KzzplusBetanp[k])
-        #     print(f"L_Bu[k]: {L_Bu[k]}")
-
-        # X = self.train_data[0].to(Z.device)
-        # Y = self.train_data[1].to(Z.device)
-        # KzX = kernel(Z, X)
-        # print(f"KzX {KzX}")
-        # F = self.network(X)
-        # Lambda, _ = calc_lambdas(Y=Y, F=F, likelihood=self.likelihood)
-        # print(f"Lambda {Lambda}")
-        # Lambda_u = torch.matmul(KzX, torch.transpose(Lambda, -1, -2)[..., None])[..., 0]
-        # print(f"Lambda_u {Lambda_u}")
-        # # Kzz += Iz * jittbeta er
-        # # KzzplusBeta = (Kzz + beta_u) + Iz * jitter
-        self.Lambda_u = self.Lambda_u.detach().cpu()
-        alpha_u = torch.linalg.solve(
-            KzzplusBeta, self.Lambda_u[..., None]  # .detach().cpu()
-        )[..., 0]
-        # print(f"alpha_u {alpha_u}")
-
-        @torch.no_grad()
-        def predict(
-            x, index=None, full_cov: bool = False
-        ) -> Tuple[OutputMean, OutputVar]:
-            # if isinstance(x, torch.Tensor):
-            #     Kxx = kernel(x, x, full_cov=full_cov).detach().cpu().numpy()
-            #     Kxz = kernel(x, Z).detach().cpu().numpy()
-            # else:
-            #     Kxx = Kxx_cached[index].numpy()
-            #     Kxz = Kxz_cached[index].numpy()
-            # print(f"Kxx {Kxx.shape}")
-            # print(f"Kxz {Kxz.shape}")
-
-            # K, M, _ = Kzz.shape
-            # # num_data = 50
-            # tmp_torch_Kxz = torch.from_numpy(np.array(Kxz)).to(alpha_u.device)
-            # # f_mean = (tmp_torch_Kxz @ alpha_u[..., None])[..., 0].T
-            # f_mean = (tmp_torch_Kxz @ alpha_u[..., None])[..., 0].T / (delta * num_data)
-
-            # Kxx = kernel(x, x, full_cov=full_cov)
-            # Kxz = kernel(x, Z)
-            # Kxx = kernel(x, x, full_cov=full_cov).detach().cpu().numpy()
-            # Kxz = kernel(x, Z).detach().cpu().numpy()
-            Kxx = kernel(x, x, full_cov=full_cov).detach().cpu()
-            Kxz = kernel(x, Z).detach().cpu()
-            # print(f"Kxx {Kxx}")
-            # print(f"Kxz {Kxz}")
-            # alpha_u = alpha_u.detach().cpu()
-            f_mean = (Kxz @ alpha_u[..., None])[..., 0].T / (delta * num_data)
-            # f_mean = (Kxz @ alpha_u[..., None])[..., 0].T
-            # print(f"f_mean {f_mean}")
-
-            if full_cov:
-                # TODO tmp could be computed before
-                tmp = torch.linalg.solve(Kzz, Iz) - torch.linalg.solve(beta_u + Kzz, Iz)
-                f_cov = Kxx - torch.matmul(
-                    torch.matmul(Kxz, tmp), torch.transpose(Kxz, -1, -2)
-                )
-                return f_mean, f_cov
+        if data_loader is None:
+            if x is None or y is None:
+                raise NotImplementedError
             else:
-                # fvarnp = []
-                # for k in range(K):
-                #     Kxxk = Kxx[k]
-                #     Kxzk = Kxz[k]
-                #     Kzxk = Kxzk.T
-                #     # Note the first argument is a tuple that takes the result
-                #     # from the cho_factor (by default lower=False, then (A, False)
-                #     # is fed to cho_solve)
-                #     # print(f"before Amk")
-                #     Amk = cho_solve((L_Kzz[k], False), Kzxk)
-                #     print(f"Amk: {Amk.shape}")
-                #     # print(f"before Abk")
-                #     Abk = cho_solve((L_Bu[k], False), Kzxk)
-                #     print(f"Abk: {Abk.shape}")
-                #     # logger.debug(f"pred_fn delta: {delta} num_data: {num_data}")
-                #     # fvark = (Kxxk - (Amk**2).sum()) / delta / num_data + (
-                #     # fvark = (1 / delta / num_data) * (Kxxk - (Amk**2).sum()) + (
-                #     #     Abk**2
-                #     # ).sum()
-                #     fvark = Kxxk - np.sum(np.square(Amk), 0) + np.sum(np.square(Abk), 0)
-                #     print(f"fvark {fvark.shape}")
-                #     fvarnp.append(fvark)
-                # fvarnp = np.stack(fvarnp, -1)
-                # print(f"fvarnp {fvarnp.shape}")
-                # f_var = torch.from_numpy(fvarnp.T).to(self.device) / (delta * num_data)
-
-                Kzx = torch.transpose(Kxz, -1, -2)
-                # print(f"Kzx {Kzx}")
-                Am = torch.linalg.solve_triangular(
-                    torch.transpose(Lm, -1, -2), Kzx, upper=False
+                data_loader = DataLoader(
+                    TensorDataset(*(x, y)),
+                    batch_size=self.dual_batch_size,
+                    shuffle=False,
                 )
-                # print(f"Am {Am}")
-                Ab = torch.linalg.solve_triangular(
-                    torch.transpose(Lb, -1, -2), Kzx, upper=False
-                )
-                # print(f"Ab {Ab}")
-                f_var = (
-                    Kxx
-                    - torch.sum(torch.square(Am), -2)
-                    + torch.sum(torch.square(Ab), -2)
-                ) / (delta * num_data)
-                # print(f"f_var {f_var}")
-                return f_mean.to(self.device), f_var.T.to(self.device)
+        logger.info("Updating dual params...")
 
-        return predict
+        alpha_new, beta_diag_new, y_tilde_new = calc_dual_params(
+            network=self.network,
+            train_loader=data_loader,
+            likelihood=self.likelihood,
+            output_dim=self.output_dim,
+            device=self.device,
+        )
+        logger.info("Finished calculating new dual params")
+
+        # Project dual parameters onto inducing points
+        logger.info("Project new dual params onto inducing points...")
+        (
+            alpha_u_new,
+            beta_u_new,
+            y_tilde_u_new,
+        ) = project_dual_params_onto_inducing_points(
+            Z=self.Z,
+            kernel=self.kernel,
+            train_loader=data_loader,
+            beta_diag=beta_diag_new,
+            y_tilde=y_tilde_new,
+            output_dim=self.output_dim,
+            num_data=self.num_data,
+            prior_precision=self.prior_precision,
+            jitter=self.jitter,
+            device=self.device,
+        )
+        # print(f"beta_u {beta_u}")
+        logger.info("Finished projecting new dual params onto inducing points")
+
+        # beta_u_new = beta_u_new * num_new_data
+
+        logger.info("Adding new and old dual params ")
+        self.beta_u += beta_u_new
+        self.y_tilde_u += y_tilde_u_new
+        logger.info("Finished adding new and old dual params")
+
+        self.alpha_u = calc_alpha_u(
+            self.Kzz,
+            beta_u=self.beta_u,
+            y_tilde_u=self.y_tilde_u,
+            output_dim=self.output_dim,
+            jitter=self.jitter,
+        )
+
+        logger.info("Caching tensors for faster predictions...")
+        KzzplusBeta = (self.Kzz + self.beta_u) + self.Iz * self.jitter
+        # print(f"KzzplusBeta {KzzplusBeta}")
+        self.Lb = cholesky_add_jitter_until_psd(KzzplusBeta, jitter=self.jitter)
+        logger.info("Finished caching tensors for faster predictions")
+        # print(f"Lb {Lb}")
 
     def optimize_prior_precision(
         self,
@@ -462,7 +331,7 @@ class SFR(nn.Module):
         prior_prec_max: float = 1.0,
         num_trials: int = 20,
     ):
-        prior_prec_before = self.prior.delta
+        prior_prec_before = self.prior_precision
         logger.info(f"prior_prec_before {prior_prec_before}")
         nll_before = self.nlpd(
             data_loader=val_loader,
@@ -481,7 +350,8 @@ class SFR(nn.Module):
             prior_precs, nlls = [], []
             for prior_prec in interval:
                 prior_prec = prior_prec.item()
-                self.update_pred_fn(prior_prec)
+                # self.update_pred_fn(prior_prec)
+                self.prior_precision = prior_prec
                 nll = self.nlpd(
                     data_loader=val_loader,
                     pred_type=pred_type,
@@ -530,11 +400,12 @@ class SFR(nn.Module):
 
         for x, y in val_loader:
             # TODO this is just here for debugging
-            f_mean, f_var = self._predict_fn(x.to(self.device), full_cov=False)
+            f_mean, f_var = self.predict_f(x.to(self.device), full_cov=False)
             logger.info(f"f_var after BO=: {f_var}")
             break
         logger.info(f"Best prior prec {best_prior_prec} with nll: {best_nll}")
-        self.update_pred_fn(best_prior_prec)
+        # self.update_pred_fn(best_prior_prec)
+        self.prior_precision = best_prior_prec
 
     def nlpd(
         self,
@@ -544,7 +415,8 @@ class SFR(nn.Module):
         prior_prec: Optional[float] = None,
     ):
         if prior_prec:
-            self.update_pred_fn(prior_prec)
+            self.prior_precision = prior_prec
+            # self.update_pred_fn(prior_prec)
         try:
             py, targets = [], []
             for idx, (x, y) in enumerate(data_loader):
@@ -570,15 +442,197 @@ class SFR(nn.Module):
             nll = torch.inf
         return nll
 
+    @property
+    def prior_precision(self):
+        return self._prior_precision
+
+    @prior_precision.setter
+    def prior_precision(self, prior_precision):
+        old_prior_precision = self._prior_precision
+        self._prior_precision = prior_precision
+        self.prior.prior_precision = prior_precision
+        # Rebuild dual params with new prior precision
+        # TODO probably needs to have if self.beta_u exists
+        if self.beta_u is not None:
+            self.beta_u = self.beta_u * old_prior_precision / prior_precision
+            KzzplusBeta = (self.Kzz + self.beta_u) + self.Iz * self.jitter
+            self.Lb = cholesky_add_jitter_until_psd(KzzplusBeta, jitter=self.jitter)
+            self.alpha_u = calc_alpha_u(
+                self.Kzz,
+                beta_u=self.beta_u,
+                y_tilde_u=self.y_tilde_u,
+                output_dim=self.output_dim,
+                jitter=self.jitter,
+            )
+
+    @property
+    def num_data(self):
+        return self.train_data[0].shape[0]
+
+
+def project_dual_params_onto_inducing_points(
+    Z,
+    kernel: NTK,
+    train_loader: DataLoader,
+    # alpha: Alpha,
+    beta_diag: BetaDiag,
+    y_tilde: Lambda,
+    output_dim: int,
+    num_data: int,
+    prior_precision: float,
+    jitter: float = 1e-3,
+    device: str = "cpu",
+):
+    num_inducing = Z.shape[0]
+    alpha_u = torch.zeros((output_dim, num_inducing)).cpu()
+    y_tilde_u = torch.zeros((output_dim, num_inducing)).cpu()
+    beta_u = torch.zeros((output_dim, num_inducing, num_inducing)).cpu()
+
+    for output_c in range(output_dim):
+        start_idx, end_idx = 0, 0
+        logging.info(f"Computing covariance for output dim {output_c}")
+        for batch in train_loader:
+            x_i, y_i = batch[0], batch[1]
+            x_i, y_i = x_i.to(device), y_i.to(device)
+            batch_size = x_i.shape[0]
+            end_idx = start_idx + batch_size
+            Kui_c = kernel(Z, x_i, index=output_c).cpu()
+            print(f"Kui_c {Kui_c.shape}")
+
+            # alpha_batch = alpha[start_idx:end_idx, output_c]
+            # print(f"alpha_batch {alpha_batch.shape}")
+            y_tilde_batch = y_tilde[start_idx:end_idx, output_c]
+            print(f"y_tilde_batch {y_tilde_batch.shape}")
+            beta_diag_batch = beta_diag[start_idx:end_idx, output_c]
+            print(f"beta_diag_batch {beta_diag_batch.shape}")
+            y_tilde_u_batch = torch.einsum("mb, b -> m", Kui_c, y_tilde_batch)
+            print(f"y_tilde_u_batch {y_tilde_u_batch.shape}")
+            beta_batch = torch.einsum("mb, b, nb -> mn", Kui_c, beta_diag_batch, Kui_c)
+            print(f"beta_batch {beta_batch.shape}")
+
+            # alpha_u_batch = calc_alpha_u(Kui_c, alpha=alpha_batch)
+
+            y_tilde_u[output_c] += y_tilde_u_batch.cpu()
+            # alpha_u[output_c] += alpha_u_batch.cpu()
+            beta_u[output_c] += beta_batch.cpu() / (prior_precision * num_data)
+
+            start_idx = end_idx
+            del Kui_c
+        torch.cuda.empty_cache()
+        Kzz_c = (
+            kernel(Z, Z, index=output_c).cpu()
+            + torch.eye(num_inducing, device="cpu") * jitter
+        )
+
+        torch.cuda.empty_cache()
+        # beta_u = beta_u / (prior_precision * num_data)
+        alpha_u[output_c] = torch.linalg.solve(
+            (Kzz_c + beta_u[output_c]), y_tilde_u[output_c]
+        )
+        # alpha_u[output_c] = torch.linalg.solve(Kzz_c, alpha_u[output_c])
+    torch.cuda.empty_cache()
+    return alpha_u.to(device), beta_u.to(device), y_tilde_u.to(device)
+
+
+def calc_dual_params(
+    network: nn.Module,
+    likelihood: Likelihood,
+    train_loader: DataLoader,
+    output_dim: int,
+    device: str = "cpu",
+):
+    num_data = len(train_loader.dataset)
+    items_shape = (num_data, output_dim)
+
+    # rename lambda_1 is Lambda, lamba2 is beta
+    y_tilde = torch.zeros(items_shape).cpu()
+    beta_diag = torch.zeros(items_shape).cpu()
+    alpha = torch.zeros(items_shape).cpu()
+
+    # Calculate dual params at data. Actually calc beta_diag and y_tilde
+    start_idx, end_idx = 0, 0
+    for x, y in train_loader:
+        x, y = x.to(device), y.to(device)
+        batch_size = x.shape[0]
+        f = network(x)
+        if f.ndim == 1:
+            f = f.unsqueeze(-1)
+        beta_batch = calc_beta(likelihood=likelihood, F=f)
+        print(f"beta_batch {beta_batch.shape}")
+        alpha_batch = calc_alpha(likelihood=likelihood, Y=y, F=f)
+        print(f"alpha_batch {alpha_batch.shape}")
+        y_tilde_batch = calc_y_tilde(F=f, alpha=alpha_batch, beta=beta_batch)
+        # y_tilde_batch = y - y_tilde_batch
+        print(f"y_tilde_batch {y_tilde_batch.shape}")
+
+        beta_diag_batch = torch.vmap(torch.diag)(beta_batch)
+        print(f"beta_diag_batch {beta_diag_batch.shape}")
+
+        end_idx = start_idx + batch_size
+        y_tilde[start_idx:end_idx] = y_tilde_batch
+        beta_diag[start_idx:end_idx] = beta_diag_batch
+        alpha[start_idx:end_idx] = alpha_batch
+        start_idx = end_idx
+    return alpha, beta_diag, y_tilde
+
+
+@torch.no_grad()
+def calc_y_tilde_u(Kzx, y_tilde: Lambda):
+    return torch.matmul(Kzx, torch.transpose(y_tilde, -1, -2)[..., None])[..., 0]
+
+
+@torch.no_grad()
+def calc_alpha_u(
+    Kzz, beta_u: BetaInducing, y_tilde_u: Lambda, output_dim: int, jitter: float = 1e-3
+) -> AlphaInducing:
+    Iz = (
+        torch.eye(Kzz.shape[-1], dtype=torch.float64)
+        .to(Kzz.device)[None, ...]
+        .repeat(output_dim, 1, 1)
+    )
+    KzzplusBeta = (Kzz + beta_u) + Iz * jitter
+    alpha_u = torch.linalg.solve(KzzplusBeta, y_tilde_u[..., None])[..., 0]
+    # alpha_u = torch.linalg.solve((Kzz + beta_u), y_tilde_u)
+    return alpha_u
+
+
+@torch.no_grad()
+def calc_beta_u(kernel: NTK, Z, X: InputData, beta_diag: Beta) -> BetaInducing:
+    Kzi = kernel(Z, X)
+    return torch.einsum("mb, b, nb -> mn", Kzi, beta_diag, Kzi)
+
+
+@torch.no_grad()
+def calc_alpha(likelihood: Likelihood, Y: OutputData, F: FuncData) -> Alpha:
+    assert F.ndim == 2
+    assert Y.shape[0] == F.shape[0]
+    # nll = likelihood.nn_loss
+    # nll_jacobian_fn = jacrev(nll)
+    # return -1 * nll_jacobian_fn(F, Y)  # [num_data, output_dim]
+    # TODO put this back to using Jacobian
+    return likelihood.residual(f=F, y=Y)  # [num_data, output_dim]
+
+
+@torch.no_grad()
+def calc_beta(likelihood: Likelihood, F: FuncData) -> Beta:
+    assert F.ndim == 2
+    return likelihood.Hessian(f=F)
+
+
+@torch.no_grad()
+def calc_y_tilde(F: FuncData, alpha: Alpha, beta: Beta) -> Lambda:
+    beta_diag = torch.diagonal(beta, dim1=-2, dim2=-1)  # [num_data, output_dim]
+    return alpha + F * beta_diag
+
 
 @torch.no_grad()
 def build_ntk(
     network: nn.Module,
     num_data: int,
     output_dim: int,
-    delta: float = 1.0,
+    prior_precision: float = 1.0,
     scaled: bool = True,
-) -> Tuple[NTK, NTK_single]:
+) -> NTK:
     network = network.eval()
     params = {k: v.detach() for k, v in network.named_parameters()}
 
@@ -610,13 +664,13 @@ def build_ntk(
         result = result.sum(0)
         if full_cov:
             if scaled:
-                return 1 / (delta * num_data) * result[..., 0, 0]
+                return 1 / (prior_precision * num_data) * result[..., 0, 0]
             else:
                 return result[..., 0, 0]
         else:
             result = torch.diagonal(result[..., 0], dim1=-1, dim2=-2)
             if scaled:
-                return 1 / (delta * num_data) * result
+                return 1 / (prior_precision * num_data) * result
             else:
                 return result
 
@@ -644,10 +698,10 @@ def build_ntk(
         basis = torch.eye(
             output.numel(), dtype=output.dtype, device=output.device
         ).view(output.numel(), -1)
-        return 1 / (delta * num_data) * vmap(get_ntk_slice)(basis)
+        return 1 / (prior_precision * num_data) * vmap(get_ntk_slice)(basis)
 
     @torch.no_grad()
-    def ntk(X1: InputData, X2: Optional[InputData], full_cov: bool = True):
+    def ntk(X1: InputData, X2: Optional[InputData], full_cov: Optional[bool] = True):
         if X2 is None:
             X2 = X1
         if full_cov:
@@ -658,178 +712,30 @@ def build_ntk(
             K[i, ...] = single_output_ntk_contraction(X1, X2, i=i, full_cov=full_cov)
         return K
 
-    return ntk, single_output_ntk_contraction
+    @torch.no_grad()
+    def kernel(
+        X1: InputData,
+        X2: Optional[InputData],
+        full_cov: Optional[bool] = True,
+        index: Optional[int] = None,
+    ):
+        if index is not None:
+            return single_output_ntk_contraction(
+                x1=X1, x2=X2, i=index, full_cov=full_cov
+            )
+        else:
+            return ntk(X1=X1, X2=X2, full_cov=full_cov)
+
+    return kernel
 
 
-@torch.no_grad()
-def calc_sparse_dual_params_batch(
-    network: torch.nn.Module,
-    train_loader: DataLoader,
-    Z: InducingPoints,
-    kernel: NTK_single,
-    likelihood,
-    out_dim: int = 10,
-    jitter: float = 1e-4,
-    subset_out_dim: Optional[List] = None,
-    device: str = "cpu",
-) -> Tuple[AlphaInducing, BetaInducing, Lambda]:
-    num_train = len(train_loader.dataset)
-    items_shape = (num_train, out_dim)
-
-    # rename lambda_1 is Lambda, lamba2 is beta
-    Lambda = torch.zeros(items_shape).cpu()
-    beta_diag = torch.zeros(items_shape).cpu()
-
-    start_idx = 0
-    end_idx = 0
-
-    for batch in train_loader:
-        x_i, y_i = batch[0], batch[1]
-        x_i, y_i = x_i.to(device), y_i.to(device)
-        batch_size = x_i.shape[0]
-        logits_i = network(x_i)
-        if logits_i.ndim == 1:
-            logits_i = logits_i.unsqueeze(-1)
-        Lambda_i, beta_i = calc_lambdas(Y=y_i, F=logits_i, likelihood=likelihood)
-        beta_i = torch.vmap(torch.diag)(beta_i)
-
-        end_idx = start_idx + batch_size
-        Lambda[start_idx:end_idx] = Lambda_i
-        beta_diag[start_idx:end_idx] = beta_i
-        start_idx = end_idx
-        # try:
-        #     print(f"beta_diag: {beta_diag}")
-        #     print(f"beta_diag: {beta_diag.shape}")
-        #     print("trying cho_factor BETA_DIAG")
-        #     L, _ = cho_factor(beta_diag)
-        #     print("completed cho_factor")
-        # except:
-        #     print("Failed cho_factor BETA_DIAG")
-
-    alpha_u = torch.zeros((out_dim, Z.shape[0])).cpu()
-    Lambda_u = torch.zeros((out_dim, Z.shape[0])).cpu()
-    beta_u = torch.zeros((out_dim, Z.shape[0], Z.shape[0])).cpu()
-
-    if subset_out_dim is not None:
-        out_dim_range = subset_out_dim
-    else:
-        out_dim_range = list(range(out_dim))
-
-    for output_c in out_dim_range:
-        start_idx = 0
-        end_idx = 0
-        logging.info(f"Computing covariance for class {output_c}")
-        for batch in train_loader:
-            x_i, y_i = batch[0], batch[1]
-            x_i, y_i = x_i.to(device), y_i.to(device)
-            batch_size = x_i.shape[0]
-            end_idx = start_idx + batch_size
-            Kui_c = kernel(Z, x_i, output_c).cpu()
-
-            Lambda_batch = Lambda[start_idx:end_idx, output_c]
-            beta_batch = beta_diag[start_idx:end_idx, output_c]
-            alpha_batch = torch.einsum("mb, b -> m", Kui_c, Lambda_batch)
-            beta_batch = torch.einsum("mb, b, nb -> mn", Kui_c, beta_batch, Kui_c)
-            # print(f"beta_batch: {beta_batch}")
-            # print(f"Kui_c: {Kui_c}")
-            # try:
-            #     print("trying cho_factor beta_batch")
-            #     L, _ = cho_factor(beta_batch)
-            #     print("completed cho_factor")
-            # except:
-            #     print("Failed cho_factor beta_batch")
-
-            alpha_u[output_c] += alpha_batch.cpu()
-            beta_u[output_c] += beta_batch.cpu()
-
-            start_idx = end_idx
-            del Kui_c
-        torch.cuda.empty_cache()
-        Lambda_u[output_c] = alpha_u[output_c]
-        Kzz_c = (
-            kernel(Z, Z, output_c).cpu() + torch.eye(Z.shape[0], device="cpu") * jitter
-        )
-        alpha_u[output_c] = torch.linalg.solve(
-            (Kzz_c + beta_u[output_c]), alpha_u[output_c]
-        )
-    torch.cuda.empty_cache()
-    return alpha_u.to(device), beta_u.to(device), Lambda_u.to(device)
-
-
-@torch.no_grad()
-def calc_sparse_dual_params(
-    network: torch.nn.Module,
-    train_data: Tuple[InputData, OutputData],
-    Z: InducingPoints,
-    kernel: NTK,
-    likelihood: Likelihood,
-    jitter: float = 1e-3,
-) -> Tuple[AlphaInducing, BetaInducing, Lambda]:
-    X, Y = train_data
-    Kzx = kernel(Z, X)
-
-    F = network(X)
-    Lambda, beta = calc_lambdas(Y=Y, F=F, likelihood=likelihood)
-
-    beta_diag = torch.diagonal(beta, dim1=-2, dim2=-1)  # [num_data, output_dim]
-    beta = torch.diag_embed(beta_diag.T)  # [output_dim, num_data, num_data]
-    beta_u = torch.matmul(torch.matmul(Kzx, beta), torch.transpose(Kzx, -1, -2))
-
-    Lambda_u = torch.matmul(Kzx, torch.transpose(Lambda, -1, -2)[..., None])[..., 0]
-
-    alpha_u = calc_alpha_u_from_lambda(
-        beta_u=beta_u, Lambda_u=Lambda_u, Z=Z, kernel=kernel, jitter=jitter
-    )
-    return alpha_u, beta_u, Lambda_u
-
-
-@torch.no_grad()
-def calc_alpha_u_from_lambda(
-    beta_u: BetaInducing,
-    Lambda_u: Lambda,
-    Z: InducingPoints,
-    kernel: NTK,
-    jitter: float = 1e-3,
-) -> AlphaInducing:
-    Kzz = kernel(Z, Z)
-    output_dim = Kzz.shape[0]
-    Iz = (
-        torch.eye(Kzz.shape[-1], dtype=torch.float64)
-        .to(Z.device)[None, ...]
-        .repeat(output_dim, 1, 1)
-    )
-    Kzz += Iz * jitter
-    KzzplusBeta = (Kzz + beta_u) + Iz * jitter
-    alpha_u = torch.linalg.solve(KzzplusBeta, Lambda_u[..., None])[..., 0]
-    return alpha_u
-
-
-@torch.no_grad()
-def calc_lambdas(
-    Y: OutputData, F: FuncData, likelihood: Likelihood
-) -> Tuple[Lambda, Beta]:
-    beta = calc_beta(F=F, likelihood=likelihood)
-    Lambda = calc_lambda(Y=Y, F=F, likelihood=likelihood, beta=beta)
-    return Lambda, beta
-
-
-@torch.no_grad()
-def calc_beta(F: FuncData, likelihood: Likelihood) -> Beta:
-    assert F.ndim == 2
-    beta = likelihood.Hessian(f=F)
-    return beta
-
-
-@torch.no_grad()
-def calc_lambda(
-    Y: OutputData, F: FuncData, likelihood: Likelihood, beta: Beta
-) -> Lambda:
-    assert F.ndim == 2
-    assert Y.shape[0] == F.shape[0]
-    assert beta.ndim == 3
-    nll = likelihood.nn_loss
-    nll_jacobian_fn = jacrev(nll)
-    alpha = -1 * nll_jacobian_fn(F, Y)  # [num_data, output_dim]
-    beta_diag = torch.diagonal(beta, dim1=-2, dim2=-1)  # [num_data, output_dim]
-    Lambda = alpha + F * beta_diag
-    return Lambda
+def cholesky_add_jitter_until_psd(x, jitter: float = 1e-5, jitter_factor=4):
+    try:
+        L = torch.linalg.cholesky(x, upper=True)
+        return L
+    except:
+        logger.info(f"Cholesky failed so adding more jitter={jitter}")
+        Iz = torch.eye(x.shape[-1]).to(x.device)
+        jitter = jitter_factor * jitter
+        x += Iz * jitter
+        return cholesky_add_jitter_until_psd(x, jitter=jitter)

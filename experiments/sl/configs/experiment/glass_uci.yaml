@@ -7,8 +7,8 @@ lr: 1e-4
 n_epochs: 15000
 
 sfr:
-  delta: 0.003
+  prior_precision: 0.003
 
 early_stop:
   patience: 10000
-  min_delta: 0
+  min_prior_precision: 0

@@ -16,14 +16,15 @@ class Prior(nn.Module):
 
 
 class Gaussian(Prior):
-    def __init__(self, params: torch.nn.Parameter, delta: float = 0.001):
+    def __init__(self, params: torch.nn.Parameter, prior_precision: float = 0.001):
         super().__init__(params=params)
-        self.delta = delta
+        self.prior_precision = prior_precision
 
     def log_prob(self):
         raise NotImplementedError
         return torch.distributions.Normal(
-            torch.ones_like(self.params), self.delta * torch.ones_like(self.params)
+            torch.ones_like(self.params),
+            self.prior_precision * torch.ones_like(self.params),
         ).log_prob(self.params)
 
     def nn_loss(self):
@@ -31,4 +32,4 @@ class Gaussian(Prior):
             [torch.square(param.view(-1)) for param in self.params()]
         )
         l2r = 0.5 * torch.sum(squared_params)
-        return self.delta * l2r
+        return self.prior_precision * l2r

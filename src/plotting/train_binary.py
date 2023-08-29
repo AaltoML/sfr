@@ -79,15 +79,19 @@ if __name__ == "__main__":
         y = np.concatenate([ys, y2s], -1)
         return torch.Tensor(ys)[..., 0]
 
-    delta = 0.0002
-    # delta = 0.000002
-    # delta = 0.002
-    # delta = 0.005
-    # delta = 0.01
-    # delta = 1.0
-    # delta = 0.00001
+    prior_precision = 0.0006
+    prior_precision = 0.006
+    prior_precision = 0.00008
+    # prior_precision = 0.00002
+    # prior_precision = 0.02
+    # prior_precision = 0.000002
+    # prior_precision = 0.002
+    # prior_precision = 0.005
+    # prior_precision = 0.01
+    # prior_precision = 1.0
+    # prior_precision = 0.00001
 
-    # delta = 1.0
+    # prior_precision = 1.0
     # network = torch.nn.Sequential(
     #     torch.nn.Linear(1, 64),
     #     # torch.nn.ReLU(),
@@ -181,7 +185,9 @@ if __name__ == "__main__":
     likelihood = src.likelihoods.BernoulliLh(EPS=0.000)
     # likelihood = src.likelihoods.CategoricalLh()
     # likelihood = src.likelihoods.Gaussian()
-    prior = src.priors.Gaussian(params=network.parameters, delta=delta)
+    prior = src.priors.Gaussian(
+        params=network.parameters, prior_precision=prior_precision
+    )
     # sfr = src.NN2GPSubset(
     #     network=network,
     #     prior=prior,

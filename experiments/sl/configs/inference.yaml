@@ -23,7 +23,7 @@ defaults:
 checkpoint: "./wandb/run-20230713_182143-voioempg"
 # checkpoint: "./wandb/run-20230717_141052-ndx8hrpi/"
 
-delta_post_hoc: 1e-2
+prior_precision_post_hoc: 1e-2
 
 device: ???
 output_dim: ???
@@ -44,10 +44,10 @@ wandb:
   project: "sfr-sl-inference"
   use_wandb: True
   run_name: ${inference_strategy.name}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
-  # run_name: delta=${prior.delta}-lr=${lr}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
+  # run_name: prior_precision=${prior.prior_precision}-lr=${lr}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   tags:
     - "inference"
-    # - "delta=${prior.delta}"
+    # - "prior_precision=${prior.prior_precision}"
     # - "m=${sfr.num_inducing}"
     # - "dataset=${dataset}"
 

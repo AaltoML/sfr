@@ -2,7 +2,7 @@ name: gp-${inference_strategy.model.subset_size}
 model:
   _target_: experiments.sl.utils.init_NN2GPSubset_with_gaussian_prior
   _convert_: all
-  delta: 1e-4
+  prior_precision: 1e-4
   likelihood:
     _target_: src.likelihoods.CategoricalLh
     EPS: 0.0 # TODO default is 0.01

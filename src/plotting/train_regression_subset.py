@@ -77,13 +77,13 @@ if __name__ == "__main__":
         else:
             return torch.stack([f1[:, 0], f2[:, 0], f3[:, 0]], -1)
 
-    delta = 0.00005
-    # delta = 0.005
-    # delta = 0.00001
-    # delta = 0.000005
-    # delta = 0.001
-    # delta = 1.0
-    # delta = 0.01
+    prior_precision = 0.00005
+    # prior_precision = 0.005
+    # prior_precision = 0.00001
+    # prior_precision = 0.000005
+    # prior_precision = 0.001
+    # prior_precision = 1.0
+    # prior_precision = 0.01
     # network = torch.nn.Sequential(
     #     torch.nn.Linear(1, 64),
     #     # torch.nn.Sigmoid(),
@@ -151,7 +151,9 @@ if __name__ == "__main__":
     # likelihood = src.likelihoods.Gaussian(sigma_noise=0.1)
     # likelihood = src.likelihoods.Gaussian(sigma_noise=2)
     # likelihood = src.likelihoods.Gaussian(sigma_noise=0.8)
-    prior = src.priors.Gaussian(params=network.parameters, delta=delta)
+    prior = src.priors.Gaussian(
+        params=network.parameters, prior_precision=prior_precision
+    )
     nn2gp = src.NN2GPSubset(
         network=network,
         prior=prior,

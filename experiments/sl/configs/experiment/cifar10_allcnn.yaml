@@ -7,7 +7,7 @@ lr: 1e-3
 n_epochs: 500
 
 sfr:
-  delta: 0.0018
+  prior_precision: 0.0018
 
 hydra:
   launcher:

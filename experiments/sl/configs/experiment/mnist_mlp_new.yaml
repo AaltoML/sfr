@@ -10,7 +10,7 @@ double_inference: False
 hessian_structures: ["diag", "kron"]
 
 sfr:
-  delta: 0.00045
+  prior_precision: 0.00045
 
 # batch_size: 512 # for training/val/test data
 # batch_size: 64 # for training/val/test data
@@ -26,4 +26,4 @@ num_inducings:
   - 3200
 
 wandb:
-  run_name: MLP-delta=${sfr.delta}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
+  run_name: MLP-prior_precision=${sfr.prior_precision}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}

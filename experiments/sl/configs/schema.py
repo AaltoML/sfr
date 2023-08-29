@@ -44,7 +44,7 @@ class LikelihoodConfig:
 
 @dataclass
 class SFRConfig:
-    delta: float
+    prior_precision: float
     likelihood: LikelihoodConfig
     num_inducing: int
     dual_batch_size: int

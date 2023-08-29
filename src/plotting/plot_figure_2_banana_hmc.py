@@ -155,8 +155,8 @@ for i, (input, target) in enumerate(testloader):
 
 # print(y_val.shape)
 
-delta = 0.0002 * N_train
-tau = delta
+prior_precision = 0.0002 * N_train
+tau = prior_precision
 tau_list = [
     tau * torch.ones(2 * width),
     tau * torch.ones(width),

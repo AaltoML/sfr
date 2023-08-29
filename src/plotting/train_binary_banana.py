@@ -76,7 +76,7 @@ if __name__ == "__main__":
 
     torch.set_default_dtype(torch.float64)
 
-    delta = 0.0002
+    prior_precision = 0.0002
 
     class Sin(nn.Module):
         def forward(self, x):
@@ -124,7 +124,9 @@ if __name__ == "__main__":
     likelihood = src.likelihoods.BernoulliLh()
     # likelihood = src.likelihoods.CategoricalLh()
     # likelihood = src.likelihoods.Gaussian()
-    prior = src.priors.Gaussian(params=network.parameters, delta=delta)
+    prior = src.priors.Gaussian(
+        params=network.parameters, prior_precision=prior_precision
+    )
     sfr = SFR(
         network=network,
         # train_data=(X_train, Y_train),

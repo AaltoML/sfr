@@ -8,7 +8,7 @@ n_epochs: 10000
 EPS: 0.1
 
 sfr:
-  delta: 0.1
+  prior_precision: 0.1
 
 # sfr:
 #   likelihood:
@@ -17,4 +17,4 @@ sfr:
 
 early_stop:
   patience: 1000
-  min_delta: 0
+  min_prior_precision: 0

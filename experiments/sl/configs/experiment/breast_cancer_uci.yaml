@@ -13,4 +13,4 @@ n_epochs: 10000
 
 early_stop:
   patience: 1000
-  min_delta: 0
+  min_prior_precision: 0

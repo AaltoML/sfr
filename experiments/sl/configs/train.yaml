@@ -26,13 +26,13 @@ random_seed: 117
 
 early_stop:
   patience: 15
-  min_delta: 0
+  min_prior_precision: 0
 
 sfr:
   _target_: experiments.sl.utils.init_SFR_with_gaussian_prior
   _convert_: all
   # network: ???
-  delta: 1e-4
+  prior_precision: 1e-4
   likelihood:
     _target_: src.likelihoods.CategoricalLh
     EPS: 0.0 # TODO default is 0.01
@@ -46,9 +46,9 @@ wandb:
   group: ${dataset.name}
   project: "sfr-sl"
   use_wandb: True
-  run_name: ${network.name}-delta=${sfr.delta}-lr=${lr}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
+  run_name: ${network.name}-prior_precision=${sfr.prior_precision}-lr=${lr}-seed=${random_seed}-${now:%Y-%m-%d_%H-%M-%S}
   tags:
-    - "delta=${sfr.delta}"
+    - "prior_precision=${sfr.prior_precision}"
     - "dataset=${dataset.name}"
     - "model=${network.name}"
 

@@ -11,4 +11,4 @@ jitter: 1e-4
 
 early_stop:
   patience: 1000
-  min_delta: 0
+  min_prior_precision: 0

@@ -24,13 +24,13 @@ random_seed: 117
 
 early_stop:
   patience: 15
-  min_delta: 0
+  min_prior_precision: 0
 
 sfr:
   _target_: experiments.sl.utils.init_SFR_with_gaussian_prior
   _convert_: all
   # network: ???
-  delta: 1e-4
+  prior_precision: 1e-4
   likelihood:
     _target_: src.likelihoods.CategoricalLh
     EPS: 0.0 # TODO default is 0.01

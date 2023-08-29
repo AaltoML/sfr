@@ -32,9 +32,9 @@ def set_seed_everywhere(random_seed):
 
 
 class EarlyStopper:
-    def __init__(self, patience=1, min_delta=0):
+    def __init__(self, patience=1, min_prior_precision=0):
         self.patience = patience
-        self.min_delta = min_delta
+        self.min_prior_precision = min_prior_precision
         self.counter = 0
         self.min_val_nll = np.inf
 
@@ -42,7 +42,7 @@ class EarlyStopper:
         if validation_loss < self.min_val_nll:
             self.min_val_nll = validation_loss
             self.counter = 0
-        elif validation_loss > (self.min_val_nll + self.min_delta):
+        elif validation_loss > (self.min_val_nll + self.min_prior_precision):
             self.counter += 1
             if self.counter >= self.patience:
                 return True
@@ -51,7 +51,7 @@ class EarlyStopper:
 
 def init_SFR_with_gaussian_prior(
     model: torch.nn.Module,
-    delta: float,
+    prior_precision: float,
     likelihood: src.likelihoods.Likelihood,
     output_dim: int,
     num_inducing: int = 30,
@@ -59,7 +59,9 @@ def init_SFR_with_gaussian_prior(
     jitter: float = 1e-6,
     device: str = "cpu",
 ) -> src.SFR:
-    prior = src.priors.Gaussian(params=model.parameters, delta=delta)
+    prior = src.priors.Gaussian(
+        params=model.parameters, prior_precision=prior_precision
+    )
     return src.SFR(
         network=model,
         prior=prior,
@@ -74,7 +76,7 @@ def init_SFR_with_gaussian_prior(
 
 def init_NN2GPSubset_with_gaussian_prior(
     model: torch.nn.Module,
-    delta: float,
+    prior_precision: float,
     likelihood: src.likelihoods.Likelihood,
     output_dim: int,
     subset_size: int = 30,
@@ -82,7 +84,9 @@ def init_NN2GPSubset_with_gaussian_prior(
     jitter: float = 1e-6,
     device: str = "cpu",
 ) -> src.NN2GPSubset:
-    prior = src.priors.Gaussian(params=model.parameters, delta=delta)
+    prior = src.priors.Gaussian(
+        params=model.parameters, prior_precision=prior_precision
+    )
     return src.NN2GPSubset(
         network=model,
         prior=prior,

@@ -238,15 +238,24 @@ class SFR(nn.Module):
         print(f"Iz {self.Iz.shape}")
         self.Kzz += self.Iz * self.jitter
         self.Kzz = self.Kzz.detach().cpu()
+        print(f"Kzz {self.Kzz.shape}")
         # print(f"Kzz {Kzz}")
+        print(f"Iz {Iz.device}")
+        print(f"beta_u.device {self.beta_u.device}")
+        print(f"Kzz.device {self.Kzz.device}")
+        print(f"Iz.device {self.Iz.device}")
 
         assert self.beta_u.shape == self.Kzz.shape
 
         self.Iz = self.Iz.detach().cpu()
+        print(f"Iz {self.Iz.shape}")
         KzzplusBeta = (self.Kzz + self.beta_u) + self.Iz * self.jitter
+        print(f"KzzplusBeta {KzzplusBeta.shape}")
 
         self.Lm = cholesky_add_jitter_until_psd(self.Kzz, jitter=self.jitter)
+        print(f"Lm.device {self.Lm.device}")
         self.Lb = cholesky_add_jitter_until_psd(KzzplusBeta, jitter=self.jitter)
+        print(f"Lb.device {self.Lb.device}")
 
     def loss(self, x: InputData, y: OutputData):
         f = self.network(x)

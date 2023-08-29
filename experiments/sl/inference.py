@@ -223,7 +223,7 @@ def main(cfg: DictConfig):
     sfr.load_state_dict(checkpoint["model"])
     print("loaded state dict")
     sfr = sfr.double()
-    # print(f"new delta: {sfr.prior.delta}")
+    # print(f"new prior_precision: {sfr.prior.prior_precision}")
     sfr.eval()
 
     if cfg.wandb.use_wandb:  # Initialise WandB
@@ -266,12 +266,12 @@ def main(cfg: DictConfig):
     print("making inference model")
     model = hydra.utils.instantiate(cfg.inference_strategy.model, model=sfr.network)
     if isinstance(model, laplace.BaseLaplace):
-        # model.prior_precision = sfr.prior.delta
+        # model.prior_precision = sfr.prior.prior_precision
         # TODO change this back maybe
-        model.prior_precision = cfg.delta_post_hoc
+        model.prior_precision = cfg.prior_precision_post_hoc
     elif isinstance(model, src.SFR):
-        # model.prior.delta = sfr.prior.delta
-        model.prior.delta = cfg.delta_post_hoc
+        # model.prior.prior_precision = sfr.prior.prior_precision
+        model.prior.prior_precision = cfg.prior_precision_post_hoc
         model = model.double()
     logger.info("Starting inference...")
     model.fit(train_loader)

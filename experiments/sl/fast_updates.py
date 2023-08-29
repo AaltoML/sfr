@@ -181,7 +181,7 @@ def main(cfg: DictConfig):
 
         early_stopper = EarlyStopper(
             patience=int(cfg.early_stop.patience / cfg.logging_epoch_freq),
-            min_delta=cfg.early_stop.min_delta,
+            min_prior_precision=cfg.early_stop.min_prior_precision,
         )
 
         best_nll = float("inf")
@@ -289,7 +289,7 @@ def main(cfg: DictConfig):
 
     # Dual updates on D2 and log
     start_time = time.time()
-    sfr.update_from_dataloader(data_loader=update_loader_double)
+    sfr.update(data_loader=update_loader_double)
     update_inference_time = time.time() - start_time
     log_sfr_metrics(
         sfr,
@@ -355,7 +355,7 @@ def log_map_metrics(
         "NN MAP",
         metrics=map_metrics,
         num_inducing=None,
-        prior_prec=sfr.prior.delta,
+        prior_prec=sfr.prior.prior_precision,
         time=time,
         method=name,
     )
@@ -384,7 +384,7 @@ def log_sfr_metrics(
     #     "SFR (NN) " + name,
     #     metrics=nn_metrics,
     #     num_inducing=sfr.num_inducing,
-    #     prior_prec=sfr.prior.delta,
+    #     prior_prec=sfr.prior.prior_precision,
     #     time=time,
     # )
 
@@ -399,10 +399,11 @@ def log_sfr_metrics(
         "SFR (GP)",
         metrics=gp_metrics,
         num_inducing=sfr.num_inducing,
-        prior_prec=sfr.prior.delta,
+        prior_prec=sfr.prior.prior_precision,
         time=time,
         method=name,
     )
+    logger.info(f"SFR metrics: {gp_metrics}")
 
 
 if __name__ == "__main__":

@@ -131,7 +131,7 @@ def train(cfg: TrainConfig):
 
     early_stopper = EarlyStopper(
         patience=int(cfg.early_stop.patience / cfg.logging_epoch_freq),
-        min_delta=cfg.early_stop.min_delta,
+        min_prior_precision=cfg.early_stop.min_prior_precision,
     )
 
     best_nll = float("inf")

@@ -138,7 +138,7 @@ def train_and_inference(cfg: DictConfig):
         for hessian_structure in cfg.hessian_structures:
             log_la_metrics(
                 network=sfr.network,
-                delta=sfr.prior.delta,
+                prior_precision=sfr.prior.prior_precision,
                 train_loader=train_loader,
                 val_loader=val_loader,
                 test_loader=test_loader,
@@ -164,7 +164,7 @@ def train_and_inference(cfg: DictConfig):
         log_sfr_metrics(
             network=sfr.network,
             output_dim=ds_train.output_dim,
-            delta=sfr.prior.delta,  # TODO how to set this?
+            prior_precision=sfr.prior.prior_precision,  # TODO how to set this?
             train_loader=train_loader,
             val_loader=val_loader,
             test_loader=test_loader,
@@ -184,7 +184,7 @@ def train_and_inference(cfg: DictConfig):
         log_gp_metrics(
             network=sfr.network,
             output_dim=ds_train.output_dim,
-            delta=sfr.prior.delta,  # TODO how to set this?
+            prior_precision=sfr.prior.prior_precision,  # TODO how to set this?
             train_loader=train_loader,
             val_loader=val_loader,
             test_loader=test_loader,
@@ -225,7 +225,10 @@ def log_map_metrics(sfr, test_loader, table_logger, device):
         pred_fn=map_pred_fn, data_loader=test_loader, device=device
     )
     table_logger.add_data(
-        "NN MAP", metrics=map_metrics, num_inducing=None, prior_prec=sfr.prior.delta
+        "NN MAP",
+        metrics=map_metrics,
+        num_inducing=None,
+        prior_prec=sfr.prior.prior_precision,
     )
     logger.info(f"map_metrics: {map_metrics}")
 
@@ -233,7 +236,7 @@ def log_map_metrics(sfr, test_loader, table_logger, device):
 def log_sfr_metrics(
     network,
     output_dim,
-    delta,
+    prior_precision,
     train_loader,
     val_loader,
     test_loader,
@@ -258,7 +261,7 @@ def log_sfr_metrics(
     likelihood = src.likelihoods.CategoricalLh(EPS=EPS)
     sfr = init_SFR_with_gaussian_prior(
         model=network,
-        delta=delta,  # TODO what should this be
+        prior_precision=prior_precision,  # TODO what should this be
         likelihood=likelihood,
         output_dim=output_dim,
         num_inducing=num_inducing,
@@ -284,7 +287,7 @@ def log_sfr_metrics(
         metrics=nn_metrics,
         num_inducing=num_inducing,
         num_inducing_percent=num_inducing_percent,
-        prior_prec=sfr.prior.delta,
+        prior_prec=sfr.prior.prior_precision,
     )
 
     gp_metrics = compute_metrics(
@@ -299,13 +302,13 @@ def log_sfr_metrics(
         metrics=gp_metrics,
         num_inducing=num_inducing,
         num_inducing_percent=num_inducing_percent,
-        prior_prec=sfr.prior.delta,
+        prior_prec=sfr.prior.prior_precision,
     )
-    prior_prec = sfr.prior.delta
+    prior_prec = sfr.prior.prior_precision
 
     # Get NLL for GP predict
     if posthoc_prior_opt_bo:
-        sfr.prior.delta = prior_prec
+        sfr.prior.prior_precision = prior_prec
         sfr.optimize_prior_precision(
             pred_type="gp",
             val_loader=val_loader,
@@ -326,11 +329,11 @@ def log_sfr_metrics(
             metrics=gp_metrics_bo,
             num_inducing=num_inducing,
             num_inducing_percent=num_inducing_percent,
-            prior_prec=sfr.prior.delta,
+            prior_prec=sfr.prior.prior_precision,
         )
 
     if posthoc_prior_opt_grid:
-        sfr.prior.delta = prior_prec
+        sfr.prior.prior_precision = prior_prec
         sfr.optimize_prior_precision(
             pred_type="gp",
             val_loader=val_loader,
@@ -351,12 +354,12 @@ def log_sfr_metrics(
             metrics=gp_metrics,
             num_inducing=num_inducing,
             num_inducing_percent=num_inducing_percent,
-            prior_prec=sfr.prior.delta,
+            prior_prec=sfr.prior.prior_precision,
         )
 
     # Get NLL for NN predict
     if posthoc_prior_opt_bo:
-        sfr.prior.delta = prior_prec
+        sfr.prior.prior_precision = prior_prec
         sfr.optimize_prior_precision(
             pred_type="nn",
             val_loader=val_loader,
@@ -377,11 +380,11 @@ def log_sfr_metrics(
             metrics=nn_metrics_bo,
             num_inducing=num_inducing,
             num_inducing_percent=num_inducing_percent,
-            prior_prec=sfr.prior.delta,
+            prior_prec=sfr.prior.prior_precision,
         )
 
     if posthoc_prior_opt_grid:
-        sfr.prior.delta = prior_prec
+        sfr.prior.prior_precision = prior_prec
         sfr.optimize_prior_precision(
             pred_type="nn",
             val_loader=val_loader,
@@ -402,7 +405,7 @@ def log_sfr_metrics(
             metrics=nn_metrics,
             num_inducing=num_inducing,
             num_inducing_percent=num_inducing_percent,
-            prior_prec=sfr.prior.delta,
+            prior_prec=sfr.prior.prior_precision,
         )
         # logger.info(f"map_metrics: {map_metrics}")
 
@@ -410,7 +413,7 @@ def log_sfr_metrics(
 def log_gp_metrics(
     network,
     output_dim,
-    delta,
+    prior_precision,
     train_loader,
     val_loader,
     test_loader,
@@ -442,7 +445,7 @@ def log_gp_metrics(
     likelihood = src.likelihoods.CategoricalLh(EPS=EPS)
     gp = init_NN2GPSubset_with_gaussian_prior(
         model=network,
-        delta=delta,  # TODO what should this be
+        prior_precision=prior_precision,  # TODO what should this be
         likelihood=likelihood,
         output_dim=output_dim,
         subset_size=num_inducing,
@@ -469,7 +472,7 @@ def log_gp_metrics(
         metrics=nn_metrics_bo,
         num_inducing=num_inducing,
         num_inducing_percent=num_inducing_percent,
-        prior_prec=gp.prior.delta,
+        prior_prec=gp.prior.prior_precision,
     )
 
     nn_metrics_bo = compute_metrics(
@@ -484,12 +487,12 @@ def log_gp_metrics(
         metrics=nn_metrics_bo,
         num_inducing=num_inducing,
         num_inducing_percent=num_inducing_percent,
-        prior_prec=gp.prior.delta,
+        prior_prec=gp.prior.prior_precision,
     )
-    prior_prec = gp.prior.delta
+    prior_prec = gp.prior.prior_precision
 
     if posthoc_prior_opt_bo:
-        gp.prior.delta = prior_prec
+        gp.prior.prior_precision = prior_prec
         gp.optimize_prior_precision(
             pred_type="gp",
             val_loader=val_loader,
@@ -510,11 +513,11 @@ def log_gp_metrics(
             metrics=gp_metrics_bo,
             num_inducing=num_inducing,
             num_inducing_percent=num_inducing_percent,
-            prior_prec=gp.prior.delta,
+            prior_prec=gp.prior.prior_precision,
         )
 
     if posthoc_prior_opt_grid:
-        gp.prior.delta = prior_prec
+        gp.prior.prior_precision = prior_prec
         gp.optimize_prior_precision(
             pred_type="gp",
             val_loader=val_loader,
@@ -535,11 +538,11 @@ def log_gp_metrics(
             metrics=gp_metrics,
             num_inducing=num_inducing,
             num_inducing_percent=num_inducing_percent,
-            prior_prec=gp.prior.delta,
+            prior_prec=gp.prior.prior_precision,
         )
 
     if posthoc_prior_opt_bo:
-        gp.prior.delta = prior_prec
+        gp.prior.prior_precision = prior_prec
         gp.optimize_prior_precision(
             pred_type="nn",
             val_loader=val_loader,
@@ -560,11 +563,11 @@ def log_gp_metrics(
             metrics=nn_metrics_bo,
             num_inducing=num_inducing,
             num_inducing_percent=num_inducing_percent,
-            prior_prec=gp.prior.delta,
+            prior_prec=gp.prior.prior_precision,
         )
 
     if posthoc_prior_opt_grid:
-        gp.prior.delta = prior_prec
+        gp.prior.prior_precision = prior_prec
         gp.optimize_prior_precision(
             pred_type="nn",
             val_loader=val_loader,
@@ -585,13 +588,13 @@ def log_gp_metrics(
             metrics=nn_metrics,
             num_inducing=num_inducing,
             num_inducing_percent=num_inducing_percent,
-            prior_prec=gp.prior.delta,
+            prior_prec=gp.prior.prior_precision,
         )
 
 
 def log_la_metrics(
     network,
-    delta: float,
+    prior_precision: float,
     train_loader: DataLoader,
     val_loader: DataLoader,
     test_loader: DataLoader,
@@ -615,7 +618,7 @@ def log_la_metrics(
         model=network,
     )
     print(f"la {la}")
-    la.prior_precision = delta
+    la.prior_precision = prior_precision
     logger.info("Fitting Laplace...")
     la.fit(train_loader)
     logger.info("Finished fitting Laplace")

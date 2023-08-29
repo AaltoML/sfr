@@ -318,8 +318,8 @@ class SFR(nn.Module):
         print(f"y_tilde_u_new {y_tilde_u_new.device}")
         print(f"self.beta_u {self.beta_u.device}")
         print(f"self.y_tilde_u {self.y_tilde_u.device}")
-        self.beta_u += beta_u_new
-        self.y_tilde_u += y_tilde_u_new
+        self.beta_u += beta_u_new.detach().cpu()
+        self.y_tilde_u += y_tilde_u_new.detach().cpu()
         logger.info("Finished adding new and old dual params")
 
         self.alpha_u = calc_alpha_u(
@@ -330,13 +330,14 @@ class SFR(nn.Module):
             jitter=self.jitter,
         )
         print(f"alpha_u {self.alpha_u.device}")
+        self.alpha_u = self.alpha_u.detach().cpu()
 
         logger.info("Caching tensors for faster predictions...")
         KzzplusBeta = (self.Kzz + self.beta_u) + self.Iz * self.jitter
-        # print(f"KzzplusBeta {KzzplusBeta}")
+        print(f"KzzplusBeta {KzzplusBeta.device}")
         self.Lb = cholesky_add_jitter_until_psd(KzzplusBeta, jitter=self.jitter)
         logger.info("Finished caching tensors for faster predictions")
-        # print(f"Lb {Lb}")
+        print(f"Lb {Lb.device}")
 
     def optimize_prior_precision(
         self,

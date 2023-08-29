@@ -240,7 +240,7 @@ class SFR(nn.Module):
         self.Kzz = self.Kzz.detach().cpu()
         print(f"Kzz {self.Kzz.shape}")
         # print(f"Kzz {Kzz}")
-        print(f"Iz {Iz.device}")
+        print(f"Iz.device {self.Iz.device}")
         print(f"beta_u.device {self.beta_u.device}")
         print(f"Kzz.device {self.Kzz.device}")
         print(f"Iz.device {self.Iz.device}")

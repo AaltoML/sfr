@@ -53,7 +53,7 @@ class NN2GPSubset(SFR):
         Y_subset = Y_train[indices.to(Y_train.device)].to(self.device)
         self.train_data = (X_subset, Y_subset)
         self.Z = X_subset
-        self.build_sfr()
+        self._build_sfr()
 
     @property
     def num_data(self):

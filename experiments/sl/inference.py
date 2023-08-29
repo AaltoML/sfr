@@ -351,7 +351,9 @@ def sfr_pred(
 ):
     @torch.no_grad()
     def pred_fn(x, idx=None):
-        return model(x.to(device), idx, pred_type=pred_type, num_samples=num_samples)[0]
+        return model(
+            x.to(device), idx=idx, pred_type=pred_type, num_samples=num_samples
+        )[0]
 
     return pred_fn
 

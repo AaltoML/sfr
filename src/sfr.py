@@ -314,6 +314,10 @@ class SFR(nn.Module):
         # beta_u_new = beta_u_new * num_new_data
 
         logger.info("Adding new and old dual params ")
+        print(f"beta_u_new {beta_u_new.device}")
+        print(f"y_tilde_u_new {y_tilde_u_new.device}")
+        print(f"self.beta_u {self.beta_u.device}")
+        print(f"self.y_tilde_u {self.y_tilde_u.device}")
         self.beta_u += beta_u_new
         self.y_tilde_u += y_tilde_u_new
         logger.info("Finished adding new and old dual params")
@@ -325,6 +329,7 @@ class SFR(nn.Module):
             output_dim=self.output_dim,
             jitter=self.jitter,
         )
+        print(f"alpha_u {self.alpha_u.device}")
 
         logger.info("Caching tensors for faster predictions...")
         KzzplusBeta = (self.Kzz + self.beta_u) + self.Iz * self.jitter

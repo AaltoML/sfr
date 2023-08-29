@@ -68,7 +68,8 @@ if __name__ == "__main__":
     plot_var = False
     plot_var = True
     save_dir = "./figs"
-    plot_updates = False
+    # plot_updates = False
+    plot_updates = True
 
     torch.set_default_dtype(torch.float64)
 
@@ -76,6 +77,9 @@ if __name__ == "__main__":
         ys, y2s = [], []
         for x_i in x:
             if x_i > 0.2 and x_i < 1.2:
+                y = 1
+                y2 = 0
+            elif x_i < 0.0 and x_i > -0.3:
                 y = 1
                 y2 = 0
             else:
@@ -91,9 +95,9 @@ if __name__ == "__main__":
         # y = np.concatenate([ys, y2s], -1)
         return torch.Tensor(ys).long()
 
-    delta = 0.0001
-    delta = 0.0002
-    # delta = 0.05
+    prior_precision = 0.0001
+    prior_precision = 0.0002
+    # prior_precision = 0.05
     width = 64
     network = torch.nn.Sequential(
         torch.nn.Linear(1, width),
@@ -163,7 +167,9 @@ if __name__ == "__main__":
     # likelihood = src.likelihoods.BernoulliLh()
     likelihood = src.likelihoods.CategoricalLh()
     # likelihood = src.likelihoods.Gaussian()
-    prior = src.priors.Gaussian(params=network.parameters, delta=delta)
+    prior = src.priors.Gaussian(
+        params=network.parameters, prior_precision=prior_precision
+    )
     sfr = SFR(
         network=network,
         # train_data=(X_train, Y_train),
@@ -237,10 +243,6 @@ if __name__ == "__main__":
             label=r"$f_{NN,2}(\cdot)$",
         )
 
-        # probs = likelihood.prob(f_mean=f_mean, f_var=f_var)
-        # print("probs {}".format(probs.shape))
-        # plt.plot(X_test[:, 0], probs[:, i], color="c", label=r"$\Pr(y=1 \mid x)$")
-        # plt.plot(X_test_short[:, 0], probs[:, i], color="c", label=r"$\Pr(y=1 \mid x)$")
         plt.plot(X_test[:, 0], f_mean[:, 0], color="m", label=r"$\mu_1(\cdot)$")
         plt.plot(X_test[:, 0], f_mean[:, 1], color="c", label=r"$\mu_2(\cdot)$")
         if plot_var:
@@ -282,7 +284,7 @@ if __name__ == "__main__":
                 X_new, Y_new, color="m", marker="o", alpha=0.6, label="New data"
             )
             plt.plot(
-                X_test[:, 0], f_mean_new[:, i], color="m", label=r"$\mu_{new}(\cdot)$"
+                X_test[:, 0], f_mean_new[:, i], color="y", label=r"$\mu_{new}(\cdot)$"
             )
             if plot_var:
                 plt.fill_between(
@@ -290,36 +292,36 @@ if __name__ == "__main__":
                     (f_mean_new - 1.96 * torch.sqrt(f_var_new))[:, i],
                     # pred.mean[:, 0],
                     (f_mean_new + 1.96 * torch.sqrt(f_var_new))[:, i],
-                    color="m",
+                    color="y",
                     alpha=0.2,
                     label=r"$\mu_{new}(\cdot) \pm 1.96\sigma_{new}(\cdot)$",
                 )
 
-            plt.scatter(
-                X_new_2,
-                Y_new_2,
-                color="y",
-                marker="o",
-                alpha=0.6,
-                label="New data 2"
-                # X_new_2, Y_new_2[:, i], color="y", marker="o", alpha=0.6, label="New data 2"
-            )
-            plt.plot(
-                X_test[:, 0],
-                f_mean_new_2[:, i],
-                color="y",
-                linestyle="-",
-                label=r"$\mu_{new,2}(\cdot)$",
-            )
-            if plot_var:
-                plt.fill_between(
-                    X_test[:, 0],
-                    (f_mean_new_2 - 1.96 * torch.sqrt(f_var_new_2))[:, i],
-                    (f_mean_new_2 + 1.96 * torch.sqrt(f_var_new_2))[:, i],
-                    color="y",
-                    alpha=0.2,
-                    label=r"$\mu_{new,2}(\cdot) \pm 1.96\sigma_{new,2}(\cdot)$",
-                )
+            # plt.scatter(
+            #     X_new_2,
+            #     Y_new_2,
+            #     color="y",
+            #     marker="o",
+            #     alpha=0.6,
+            #     label="New data 2"
+            #     # X_new_2, Y_new_2[:, i], color="y", marker="o", alpha=0.6, label="New data 2"
+            # )
+            # plt.plot(
+            #     X_test[:, 0],
+            #     f_mean_new_2[:, i],
+            #     color="y",
+            #     linestyle="-",
+            #     label=r"$\mu_{new,2}(\cdot)$",
+            # )
+            # if plot_var:
+            #     plt.fill_between(
+            #         X_test[:, 0],
+            #         (f_mean_new_2 - 1.96 * torch.sqrt(f_var_new_2))[:, i],
+            #         (f_mean_new_2 + 1.96 * torch.sqrt(f_var_new_2))[:, i],
+            #         color="y",
+            #         alpha=0.2,
+            #         label=r"$\mu_{new,2}(\cdot) \pm 1.96\sigma_{new,2}(\cdot)$",
+            #     )
 
             # svgp.update(x=X_new_3, y=Y_new_3)
             # pred_new_3 = svgp.predict(X_test)
@@ -347,6 +349,57 @@ if __name__ == "__main__":
             plt.legend()
             plt.savefig(
                 os.path.join(save_dir, "sfr_new_classification" + str(i) + ".pdf"),
+                transparent=True,
+            )
+        fig = plt.subplots(1, 1)
+
+        plt.scatter(
+            X_train,
+            Y_train,
+            color="k",
+            marker="x",
+            alpha=0.6,
+            label="Data"
+            # X_train, Y_train[:, i], color="k", marker="x", alpha=0.6, label="Data"
+        )
+        plt.plot(
+            X_test[:, 0],
+            # func(X_test, noise=False)[:, i],
+            func(X_test, noise=False),
+            color="b",
+            label=r"$f_{true}(\cdot)$",
+        )
+        plt.scatter(X_new, Y_new, color="y", marker="o", alpha=0.6, label="New data")
+
+        # plt.plot(X_test[:, 0], f_mean[:, 0], color="m", label=r"$\mu_1(\cdot)$")
+        # plt.plot(X_test[:, 0], f_mean[:, 1], color="c", label=r"$\mu_2(\cdot)$")
+
+        probs = likelihood(f_mean=f_mean, f_var=f_var)[0]
+        print("probs {}".format(probs.shape))
+        plt.plot(X_test[:, 0], probs[:, i], color="c", label=r"$\Pr(y=1 \mid x)$")
+        # plt.plot(X_test_short[:, 0], probs[:, i], color="c", label=r"$\Pr(y=1 \mid x)$")
+        plt.legend()
+        plt.savefig(
+            os.path.join(save_dir, "sfr_classification_probs_" + str(i) + ".pdf"),
+            transparent=True,
+        )
+        if plot_updates:
+            # fig = plt.subplots(1, 1)
+            probs = likelihood(f_mean=f_mean_new, f_var=f_var_new)[0]
+            print("probs {}".format(probs.shape))
+            plt.plot(
+                X_test[:, 0],
+                probs[:, i],
+                color="r",
+                label=r"$\Pr_{new}(y=1 \mid x)$",
+                linestyle="--",
+            )
+            # plt.plot(X_test_short[:, 0], probs[:, i], color="c", label=r"$\Pr(y=1 \mid x)$")
+            plt.legend()
+            plt.savefig(
+                os.path.join(
+                    save_dir, "sfr_new_classification_probs_" + str(i) + ".pdf"
+                ),
                 transparent=True,
             )
 

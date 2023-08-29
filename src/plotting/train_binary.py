@@ -59,6 +59,7 @@ if __name__ == "__main__":
     plot_var = True
     save_dir = "./figs/binary"
     plot_update = False
+    plot_update = True
 
     torch.set_default_dtype(torch.float64)
 
@@ -134,6 +135,28 @@ if __name__ == "__main__":
         # Sin(),
         torch.nn.Linear(width, 1),
     )
+
+    class Sin(torch.nn.Module):
+        def forward(self, x):
+            return torch.sin(x)
+
+    network = torch.nn.Sequential(
+        torch.nn.Linear(1, 64),
+        # torch.nn.ReLU(),
+        # torch.nn.Sigmoid(),
+        torch.nn.Tanh(),
+        torch.nn.Linear(64, 16),
+        # torch.nn.Tanh(),
+        # torch.nn.ReLU(),
+        # torch.nn.Sigmoid(),
+        # torch.nn.Linear(64, 8),
+        Sin(),
+        # torch.nn.Tanh(),
+        # torch.nn.Tanh(),
+        torch.nn.Linear(16, 1),
+        # torch.nn.Linear(8, 1),
+    )
+
     network.apply(weights_init_normal)
     print("network: {}".format(network))
     # noise_var = torch.nn.parameter.Parameter(torch.Tensor([0]), requires_grad=True)
@@ -159,13 +182,15 @@ if __name__ == "__main__":
     X_test = torch.linspace(-2.0, 3.5, 300, dtype=torch.float64).reshape(-1, 1)
     X_test = torch.linspace(-0.7, 3.5, 300, dtype=torch.float64).reshape(-1, 1)
     # X_test = torch.linspace(-0.05, 2.05, 300, dtype=torch.float64).reshape(-1, 1)
-    # X_test = torch.linspace(-8, 8, 200, dtype=torch.float64).reshape(-1, 1)
+    X_test = torch.linspace(-8, 8, 200, dtype=torch.float64).reshape(-1, 1)
     # X_test = torch.linspace(-2, 2, 100, dtype=torch.float64).reshape(-1, 1)
     print("X_test: {}".format(X_test.shape))
     print("f: {}".format(network(X_test).shape))
 
     X_new = torch.linspace(-0.5, -0.2, 20, dtype=torch.float64).reshape(-1, 1)
+    X_new = torch.linspace(-4.0, -3.0, 20, dtype=torch.float64).reshape(-1, 1)
     Y_new = func(X_new, noise=True)
+    Y_new = torch.ones(Y_new.shape)
     plt.scatter(X_train, Y_train)
     plt.savefig(os.path.join(save_dir, "classification_data.pdf"))
 
@@ -207,8 +232,9 @@ if __name__ == "__main__":
         dual_batch_size=100,
         # num_inducing=X_train.shape[0],
         num_inducing=50,
-        # jitter=1e-10,
-        jitter=1e-6,
+        jitter=1e-10,
+        # jitter=1e-6,
+        # jitter=0.0,
         # jitter=1e-4,
     )
 
@@ -230,10 +256,38 @@ if __name__ == "__main__":
     metrics = train(
         sfr=sfr,
         data=data,
-        num_epochs=5000,
+        # num_epochs=5000,
+        num_epochs=15000,
         batch_size=batch_size,
-        learning_rate=1e-2,
+        learning_rate=1e-3,
     )
+
+    sfr.Z = torch.linspace(-6, 6, sfr.num_inducing)[..., None]
+    sfr._build_sfr()
+
+    # def rbf(x1, x2, full_cov=False):
+    #     variance = 1.0
+    #     k = torch.zeros((x1.shape[0], x2.shape[0]))
+    #     print(f"k {k.shape}")
+    #     for i, x1_ in enumerate(x1):
+    #         for j, x2_ in enumerate(x2):
+    #             dist = (x1_ - x2_) ** 2
+    #             k[i, j] = torch.exp(-(dist) / variance**2)
+    #     return k[None, ...]
+    #     # return torch.exp(-(dist).sum() / variance ^ 2)
+
+    # def rbf_single(x1, x2, full_cov=False):
+    #     variance = 1.0
+    #     k = torch.zeros((x1.shape[0], x2.shape[0]))
+    #     print(f"k {k.shape}")
+    #     for i, x1_ in enumerate(x1):
+    #         for j, x2_ in enumerate(x2):
+    #             dist = (x1_ - x2_) ** 2
+    #             k[i, j] = torch.exp(-(dist) / variance**2)
+    #     return k
+
+    # sfr.kernel = rbf
+    # sfr.kernel_single = rbf_single
 
     # f_mean, f_var = sfr.predict_f(X_test_short)
     f_mean, f_var = sfr.predict_f(X_test)
@@ -242,10 +296,10 @@ if __name__ == "__main__":
     print("X_test_short {}".format(X_test_short.shape))
     print(X_test_short.shape)
 
-    # sfr.update(x=X_new, y=Y_new)
-    # f_mean_new, f_var_new = sfr.predict_f(X_test)
-    # print("MEAN NEW_2 {}".format(f_mean_new.shape))
-    # print("VAR NEW_2 {}".format(f_var_new.shape))
+    print(f"Y_train {Y_new}")
+    print(f"Y_train {Y_train.shape}")
+    print(f"Y_new {Y_new}")
+    print(f"Y_new {Y_new.shape}")
 
     # sfr.update(x=X_new_2, y=Y_new_2)
     # f_mean_new_2, f_var_new_2 = sfr.predict_f(X_test)
@@ -253,6 +307,27 @@ if __name__ == "__main__":
     # print("VAR NEW_2 {}".format(f_var_new_2.shape))
 
     def plot_output(i):
+        fig = plt.subplots(1, 1)
+        plt.scatter(X_train, Y_train, color="k", marker="x", alpha=0.6, label="Data")
+
+        # nn_probs = likelihood.inv_link(network(X_test)).detach()
+        nn_probs = likelihood(network(X_test))[0].detach()
+        print("nn_probs {}".format(nn_probs.shape))
+        plt.plot(
+            X_test[:, 0],
+            nn_probs[:, i],
+            color="m",
+            linestyle="--",
+            label=r"$\Pr_{NN}(y=1 \mid x)$",
+        )
+        probs = likelihood(f_mean=f_mean, f_var=f_var)[0]
+        plt.plot(X_test[:, 0], probs[:, i], color="c", label=r"$\Pr(y=1 \mid x)$")
+        plt.legend()
+        plt.savefig(
+            os.path.join(save_dir, "sfr_classification_probs" + str(i) + ".pdf"),
+            transparent=True,
+        )
+
         fig = plt.subplots(1, 1)
         plt.scatter(X_train, Y_train, color="k", marker="x", alpha=0.6, label="Data")
         plt.plot(
@@ -327,8 +402,12 @@ if __name__ == "__main__":
         )
 
         if plot_update:
+            sfr.update(x=X_new, y=Y_new)
+            f_mean_new, f_var_new = sfr.predict_f(X_test)
+            print("MEAN NEW {}".format(f_mean_new.shape))
+            print("VAR NEW {}".format(f_var_new.shape))
             plt.scatter(
-                X_new, Y_new[:, i], color="m", marker="o", alpha=0.6, label="New data"
+                X_new, Y_new, color="m", marker="o", alpha=0.6, label="New data"
             )
             plt.plot(
                 X_test[:, 0],
@@ -394,6 +473,40 @@ if __name__ == "__main__":
             plt.legend()
             plt.savefig(
                 os.path.join(save_dir, "sfr_new_classification" + str(i) + ".pdf"),
+                transparent=True,
+            )
+            fig = plt.subplots(1, 1)
+            plt.scatter(
+                X_train, Y_train, color="k", marker="x", alpha=0.6, label="Data"
+            )
+            plt.scatter(
+                X_new, Y_new, color="m", marker="o", alpha=0.6, label="New data"
+            )
+
+            # nn_probs = likelihood.inv_link(network(X_test)).detach()
+            nn_probs = likelihood(network(X_test))[0].detach()
+            print("nn_probs {}".format(nn_probs.shape))
+            plt.plot(
+                X_test[:, 0],
+                nn_probs[:, i],
+                color="m",
+                linestyle="--",
+                label=r"$\Pr_{NN}(y=1 \mid x)$",
+            )
+            probs_new = likelihood(f_mean=f_mean_new, f_var=f_var_new)[0]
+            print("probs_new {}".format(probs_new.shape))
+            plt.plot(X_test[:, 0], probs[:, i], color="c", label=r"$\Pr(y=1 \mid x)$")
+            plt.plot(
+                X_test[:, 0],
+                probs_new[:, i],
+                color="r",
+                label=r"$\Pr_{new}(y=1 \mid x)$",
+            )
+            plt.legend()
+            plt.savefig(
+                os.path.join(
+                    save_dir, "sfr_new_classification_probs" + str(i) + ".pdf"
+                ),
                 transparent=True,
             )
 

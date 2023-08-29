@@ -100,13 +100,34 @@ if __name__ == "__main__":
         # torch.nn.Sigmoid(),
         torch.nn.Linear(64, 3),
     )
+
+    class Sin(torch.nn.Module):
+        def forward(self, x):
+            return torch.sin(x)
+
+    network = torch.nn.Sequential(
+        torch.nn.Linear(1, 64),
+        # torch.nn.ReLU(),
+        # torch.nn.Sigmoid(),
+        # torch.nn.Tanh(),
+        # torch.nn.Linear(64, 64),
+        torch.nn.Tanh(),
+        # torch.nn.ReLU(),
+        # torch.nn.Sigmoid(),
+        torch.nn.Linear(64, 16),
+        Sin(),
+        # torch.nn.Tanh(),
+        # torch.nn.Tanh(),
+        torch.nn.Linear(16, 3),
+    )
+
     print("network: {}".format(network))
     # noise_var = torch.nn.parameter.Parameter(torch.Tensor([0]), requires_grad=True)
 
     # X_train = torch.rand((50, 1)) * 2 - 1
     # X_train = torch.rand((50, 1)) * 2
     X_train = torch.rand((100, 1)) * 2
-    X_train = torch.rand((200, 1)) * 2
+    X_train = torch.rand((200, 1)) * 6
     print("X_train {}".format(X_train.shape))
     X_train_clipped_1 = X_train[X_train < 1.5].reshape(-1, 1)
     X_train_clipped_2 = X_train[X_train > 1.9].reshape(-1, 1)
@@ -125,14 +146,14 @@ if __name__ == "__main__":
     # X_test = torch.linspace(-6.0, 2.2, 200, dtype=torch.float64).reshape(-1, 1)
     X_test = torch.linspace(-2.0, 3.5, 300, dtype=torch.float64).reshape(-1, 1)
     X_test = torch.linspace(-0.7, 3.5, 300, dtype=torch.float64).reshape(-1, 1)
-    # X_test = torch.linspace(-8, 8, 200, dtype=torch.float64).reshape(-1, 1)
+    X_test = torch.linspace(-8, 8, 200, dtype=torch.float64).reshape(-1, 1)
     # X_test = torch.linspace(-2, 2, 100, dtype=torch.float64).reshape(-1, 1)
     print("X_test: {}".format(X_test.shape))
     print("f: {}".format(network(X_test).shape))
     X_test_short = X_test
 
-    X_new = torch.linspace(-0.5, -0.2, 20, dtype=torch.float64).reshape(-1, 1)
-    # X_new = torch.linspace(-5.0, -2.0, 20, dtype=torch.float64).reshape(-1, 1)
+    # X_new = torch.linspace(-0.5, -0.2, 20, dtype=torch.float64).reshape(-1, 1)
+    X_new = torch.linspace(-5.0, -2.0, 20, dtype=torch.float64).reshape(-1, 1)
     Y_new = func(X_new, noise=True)
 
     # X_new_2 = torch.linspace(3.0, 4.0, 20, dtype=torch.float64).reshape(-1, 1)
@@ -146,8 +167,9 @@ if __name__ == "__main__":
     batch_size = X_train.shape[0]
 
     num_inducing = 32
-    # likelihood = src.likelihoods.Gaussian(sigma_noise=1)
-    likelihood = src.likelihoods.Gaussian(sigma_noise=2)
+    num_inducing = 100
+    likelihood = src.likelihoods.Gaussian(sigma_noise=1)
+    # likelihood = src.likelihoods.Gaussian(sigma_noise=2)
     # likelihood = src.likelihoods.Gaussian(sigma_noise=0.1)
     # likelihood = src.likelihoods.Gaussian(sigma_noise=2)
     # likelihood = src.likelihoods.Gaussian(sigma_noise=0.8)
@@ -176,6 +198,8 @@ if __name__ == "__main__":
         batch_size=batch_size,
         learning_rate=1e-2,
     )
+    sfr.Z = torch.linspace(-6, 4, num_inducing, dtype=torch.float64).reshape(-1, 1)
+    sfr._build_sfr()
 
     f_mean, f_var = sfr.predict_f(X_test_short)
     print("MEAN {}".format(f_mean.shape))
@@ -185,10 +209,12 @@ if __name__ == "__main__":
 
     if updates:
         sfr.update(x=X_new, y=Y_new)
+        # sfr.update_full(x=X_new, y=Y_new)
         f_mean_new, f_var_new = sfr.predict_f(X_test)
         print("MEAN NEW_2 {}".format(f_mean_new.shape))
         print("VAR NEW_2 {}".format(f_var_new.shape))
 
+        # sfr.update_full(x=X_new_2, y=Y_new_2)
         sfr.update(x=X_new_2, y=Y_new_2)
         f_mean_new_2, f_var_new_2 = sfr.predict_f(X_test)
         print("MEAN NEW_2 {}".format(f_mean_new_2.shape))

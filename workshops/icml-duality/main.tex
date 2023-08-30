@@ -559,6 +559,7 @@ In the next section, we present our method for converting a trained NN to a spar
 
 
 
+\newpage
 \section{\our: Sparse function-space representation of neural networks}\label{sec:sfr}
 %\paragraph{GP in the dual parameters}
 \todo{update this with paul}
@@ -606,7 +607,7 @@ Substituting \cref{eq:dual_param_laplace} into \cref{eq:gp_pred}, we obtain our 
 
 \begin{table*}[t!]
   \centering\scriptsize
-  \caption{Comparisons and ablations on UCI data with negative log predictive density (NLPD\textcolor{gray}{\footnotesize$\pm$std}, lower better). Our sparse \our ($M=20\% \text{ of } N$) is on par with full models (left) and outperforms the GP subset approach of \citet{immer2021improving} (right).} %Results for methods marked with * as reported in the original benchmark~\citep{immer2021improving}.} %See \cref{app:uci} for additional tables with comparisons.}
+  \caption{Comparisons and ablations on UCI data with negative log predictive density (NLPD\textcolor{gray}{\footnotesize$\pm$std}, lower better). Our sparse \our (with $M=20\% \text{ of } N$) is on par with the Laplace methods (BNN/GLM) and outperforms the GP subset method.} %Results for methods marked with * as reported in the original benchmark~\citep{immer2021improving}.} %See \cref{app:uci} for additional tables with comparisons.}
 	\label{tbl:uci}
 	% \vspace*{-4pt}
 

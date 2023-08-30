@@ -1,18 +1,9 @@
 #!/usr/bin/env python3
-import math
-import os
-
-import hydra
-import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-import scipy as sp
-import seaborn as sns
-import tikzplotlib
-import torch
 import wandb
-from omegaconf import DictConfig, OmegaConf
-from scipy.stats import ttest_rel, ttest_ind
+from omegaconf import OmegaConf
+from scipy.stats import ttest_ind
 
 
 WANDB_RUNS = OmegaConf.create(
@@ -37,7 +28,6 @@ WANDB_RUNS = OmegaConf.create(
             "aalto-ml/sl-train-and-inference/5s6z2mb5",  # 93
             "aalto-ml/sl-train-and-inference/8ro0hyrj",  # 17
             "aalto-ml/sl-train-and-inference/p4l0h40s",  # 69
-            # "aalto-ml/sl-train-and-inference/",  # 117
         ],
         "Glass": [
             "aalto-ml/sl-train-and-inference/vamcf07x",  # 101
@@ -78,37 +68,40 @@ WANDB_RUNS = OmegaConf.create(
         ],
     }
 )
-COLUMNS_TITLES_NUM_INDUCING = [
-    "SFR (GP)",
-    "SFR (NN)",
-    # "GP Subest (GP) BO",
-    # "GP Subest (NN) BO",
-    "GP Subset (GP) BO",
-    "GP Subset (NN) BO",
-]
+# COLUMNS_TITLES_NUM_INDUCING = [
+#     "SFR (GP)",
+#     "SFR (NN)",
+#     # "GP Subest (GP) BO",
+#     # "GP Subest (NN) BO",
+#     "GP Subset (GP) BO",
+#     "GP Subset (NN) BO",
+# ]
 COLUMNS_TITLES = [
     "NN MAP",
+    # "BNN full",
+    # "GLM full",
+    # "GP Subset (GP)",
+    # "SFR (GP)",
     "BNN full GRID",
     "GLM full GRID",
-    # "GP Subest (GP) BO",
     "GP Subset (GP) BO",
-    # "GP Subest (NN)",
     "SFR (GP) BO",
-    # "SFR (NN)",
 ]
 COLUMNS_TITLES_DICT = {
     "NN MAP": "\sc nn map",
+    "BNN full": "\sc bnn",
+    "GLM full": "\sc glm",
     "BNN full GRID": "\sc bnn",
     "GLM full GRID": "\sc glm",
     # "GP Subest (GP)": "{\sc gp} subset (\sc gp)",
     # "GP Subest (NN)": "{\sc gp} subset (\sc nn)",
-    "GP Subset (GP)": "{\sc gp} subset (\sc gp)",
+    "GP Subset (GP)": "{\sc gp} subset",
     "GP Subset (NN)": "{\sc gp} subset (\sc nn)",
-    "SFR (GP)": "\our (\sc gp)",
+    "SFR (GP)": "\our",
     "SFR (NN)": "\our (\sc nn)",
     # "GP Subest (GP) BO": "{\sc gp} subset (\sc gp)",
-    "GP Subset (GP) BO": "{\sc gp} subset (\sc gp)",
-    "SFR (GP) BO": "\our (\sc gp)",
+    "GP Subset (GP) BO": "{\sc gp} subset",
+    "SFR (GP) BO": "\our",
 }
 
 # DATASETS = {
@@ -169,8 +162,12 @@ def make_uci_table():
     df = df[
         df["model"].isin(
             [
-                "BNN full GRID",
                 "NN MAP",
+                # "BNN full",
+                # "GLM full",
+                # "GP Subset (GP)",
+                # "SFR (GP)",
+                "BNN full GRID",
                 "GLM full GRID",
                 "GP Subset (GP) BO",
                 "SFR (GP) BO",
@@ -209,6 +206,8 @@ def make_uci_table():
         for model_name in COLUMNS_TITLES:
             # breakpoint()
             # nlpd = df_dataset[df_dataset["model"] == model_name].iloc[0]["mean"]
+            print(f"model_name {model_name}")
+            print(df_dataset.loc[df_dataset.model == model_name, "mean"].values)
             nlpd = df_dataset.loc[df_dataset.model == model_name, "mean"].values[0]
             if nlpd < best_nlpd:
                 best_nlpd = nlpd
@@ -257,7 +256,9 @@ def make_uci_table():
     # Print the LaTeX table
     print(uci_table.to_latex(column_format="lcccccccc", escape=False))
 
-    with open("../../../workshop/tables/workshop_uci_table.tex", "w") as file:
+    with open(
+        "../../../workshops/icml-duality/tables/workshop_uci_table.tex", "w"
+    ) as file:
         file.write(uci_table.to_latex(column_format="lcccccccc", escape=False))
 
 

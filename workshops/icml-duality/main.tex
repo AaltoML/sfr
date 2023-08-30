@@ -353,7 +353,7 @@ Deep learning \citep{goodfellow2016deep} has become the cornerstone of contempor
   \pgfplotsset{axis on top,scale only axis,width=\figurewidth,height=\figureheight, ylabel near ticks,ylabel style={yshift=-2pt},y tick label style={rotate=90},legend style={nodes={scale=1., transform shape}},tick label style={font=\tiny,scale=1}}
   \pgfplotsset{xlabel={Input, $x$},axis line style={rounded corners=2pt}}
   % Set figure
-  \setlength{\figurewidth}{.19\textwidth}
+  \setlength{\figurewidth}{.4\textwidth}
   \setlength{\figureheight}{\figurewidth}
   %
   \def\inducing{\large Sparse inducing points}
@@ -529,9 +529,9 @@ As Gaussian distributions remain tractable under linear transformations, a linea
 A common approach is to approximate the correlation structure of a distribution centred at the MAP estimate as done in the Laplace-GGN~\citep{khan2019approximate, daxberger2021laplace, maddox2021fast}.
 The Laplace-GGN takes the MAP solution and approximates the Hessian of the loss function
 with the GGN.
-Following the work of \citet{khan2019approximate}, we can view this approximation as building an approximate linear model of the neural network as $f_{\weights^*}(\vx) \approx
+Following the work of \citet{khan2019approximate}, we can view this as a linear approximation of the neural network, as $f_{\weights^*}(\vx) \approx
 %g_{\weights}(\vx) =
-\Jac{\weights_*}{\vx} \, \weights$, where $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{1 \times P}$ is the Jacobian at the MAP.
+\Jac{\weights^*}{\vx} \, \weights$, where $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{1 \times P}$ is the Jacobian at the MAP.
 For notational conciseness, we % \cref{eq-laplace-approx-function-space},
 restrict our notatin to a single function output. The extension to multiple outputs is straightforward.
 
@@ -559,6 +559,7 @@ In the next section, we present our method for converting a trained NN to a spar
 
 \section{\our: Sparse function-space representation of neural networks}\label{sec:sfr}
 %\paragraph{GP in the dual parameters}
+\todo{update this with paul}
 The seminal work by \citet{csato2002sparse} (parameterization Lemma~1) gives a parameterization for the posterior process that can be found through the Bayesian update using the GP prior and the likelihood function. This gives a `dual' parameterization, $\valpha$ and $\vbeta$,
 %
 \begin{align}  \label{eq:gp_pred}
@@ -566,7 +567,8 @@ The seminal work by \citet{csato2002sparse} (parameterization Lemma~1) gives a p
   \mathrm{Var}_{p(f_i \mid \vy)}[f_i] &= k_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i}, \nonumber
 \end{align}
 %
-where the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{N \times N}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $k_{ii} = \kappa(\vx_i, \vx_i)$.
+where $f_\vw(\vx_i) = f_i$ is the function output at input $\vx_i$
+and the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{N \times N}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $k_{ii} = \kappa(\vx_i, \vx_i)$.
 \cref{eq:gp_pred} states that the first two moments of the resultant posterior process (which may not be a GP), can be parameterized via the dual
 parameters $\valpha, \vbeta \in \R^{N}$,
 % which are the vectors
@@ -577,11 +579,11 @@ defined as, \looseness-1
   \label{eq:dual_param}
   \alpha_i &\coloneqq \myexpect_{p(\vw \mid \vy)}[\nabla_{f}\log p(y_i \mid f) |_{f=f_i}], \\
   %\quad \text{and} \quad
-  \beta_i &\coloneqq - \myexpect_{p(\vw \mid \vy)}[\nabla^2_{f f}\log p(y_i \mid f_i) |_{f=f_i}],
+  \beta_i &\coloneqq - \myexpect_{p(\vw \mid \vy)}[\nabla^2_{f f}\log p(y_i \mid f_i) |_{f=f_i}].
   \end{split}
 \end{equation}
 %
-where $f_\vw(\vx_i) = f_i$ is the function output at input $\vx_i$. The relationships specified are valid for generic likelihoods, and involve no approximations since the expectation is under the exact posterior, but given that the model can be expressed in a kernel formulation. \cref{eq:gp_pred} and \cref{eq:dual_param} highlight that the approximate inference technique, usually viewed as a posterior approximation, can be alternatively interpreted as an approximation of the expectation of gradients of loss/likelihoods.
+The relationships specified are valid for generic likelihoods, and involve no approximations since the expectation is under the exact posterior, but given that the model can be expressed in a kernel formulation. \cref{eq:gp_pred} and \cref{eq:dual_param} highlight that the approximate inference technique, usually viewed as a posterior approximation, can be alternatively interpreted as an approximation of the expectation of gradients of loss/likelihoods.
 
 Originally \citet{csato2002sparse} iteratively find dual variables using an expectation propagation \citep[EP,][]{minka2001expectation} method. More recently, \citet{khan2017conjugate,adam2021dual} have shown this relationship for variational Gaussian processes where the above expectation is with respect to the approximate variational posterior. Meanwhile in \citet{wilkinson2023bayes}, they show links between linearization methods and how they solve the \cref{eq:dual_param}.
 
@@ -602,7 +604,7 @@ Substituting \cref{eq:dual_param_laplace} into \cref{eq:gp_pred}, we obtain our 
 
 \begin{table*}[t!]
   \centering\scriptsize
-  \caption{Comparisons and ablations on UCI data with negative log predictive density (NLPD\textcolor{gray}{\footnotesize$\pm$std}, lower better). Our sparse \our ($M=20\% \text{of} N$) is on par with full models (left) and outperforms the GP subset approach of \citet{immer2021improving} (right). Results for methods marked with * as reported in the original benchmark~\citep{immer2021improving}.} %See \cref{app:uci} for additional tables with comparisons.}
+  \caption{Comparisons and ablations on UCI data with negative log predictive density (NLPD\textcolor{gray}{\footnotesize$\pm$std}, lower better). Our sparse \our ($M=20\% \text{ of } N$) is on par with full models (left) and outperforms the GP subset approach of \citet{immer2021improving} (right).} %Results for methods marked with * as reported in the original benchmark~\citep{immer2021improving}.} %See \cref{app:uci} for additional tables with comparisons.}
 	\label{tbl:uci}
 	% \vspace*{-4pt}
 
@@ -684,63 +686,63 @@ Substituting \cref{eq:dual_param_laplace} into \cref{eq:gp_pred}, we obtain our 
   %\vspace*{-6pt}
 \end{figure*}
 
-\begin{figure*}[t]
-  \centering\scriptsize
-  \setlength{\figurewidth}{.18\textwidth}
-  \setlength{\figureheight}{\figurewidth}
-  \pgfplotsset{axis on top,scale only axis,y tick label style={rotate=90}, x tick label style={font=\footnotesize},y tick label style={font=\footnotesize},title style={yshift=-4pt,font=\large}, y label style={font=\large},x label style={font=\large},grid=major, width=\figurewidth, height=\figureheight}
-  \pgfplotsset{grid style={line width=.1pt, draw=gray!10,dashed}}
-  \pgfplotsset{xlabel={$M$},ylabel style={yshift=-12pt}}
-  %
-  \begin{minipage}[t]{.13\textwidth}
-    \raggedleft
-    \pgfplotsset{ylabel=NLPD}
-    \input{./fig/australian.tex}
-  \end{minipage}
-  \hfill
-  \begin{minipage}[t]{.12\textwidth}
-    \raggedleft
-    \input{./fig/breast_cancer.tex}
-  \end{minipage}
-  \hfill
-  \begin{minipage}[t]{.12\textwidth}
-    \raggedleft
-    \input{./fig/ionosphere.tex}
-  \end{minipage}
-  \hfill
-  \begin{minipage}[t]{.12\textwidth}
-    \raggedleft
-    \input{./fig/glass.tex}
-  \end{minipage}
-  \hfill
-  \begin{minipage}[t]{.12\textwidth}
-    \raggedleft
-    \input{./fig/vehicle.tex}
-  \end{minipage}
-  \hfill
-  \begin{minipage}[t]{.12\textwidth}
-    \raggedleft
-    \input{./fig/waveform.tex}
-  \end{minipage}
-  \hfill
-  \begin{minipage}[t]{.12\textwidth}
-    \raggedleft
-    \input{./fig/digits.tex}
-  \end{minipage}
-  \hfill
-  \begin{minipage}[t]{.12\textwidth}
-    \raggedleft
-    \input{./fig/satellite.tex}
-  \end{minipage}\\[-1em]
-  %
-  % Legend
-  \definecolor{steelblue31119180}{RGB}{31,119,180}
-  \definecolor{darkorange25512714}{RGB}{255,127,14}
-  \newcommand{\myline}[1]{\protect\tikz[baseline=-.5ex,line width=1.6pt]\protect\draw[draw=#1](0,0)--(1.2em,0);}
-  \caption{Comparison of convergence in terms of number of inducing points $M$ in NLPD (mean over 10 seeds) on UCI classification tasks: \our (thick) vs.\ subsets \citep[][thin]{immer2021improving}. Orange lines (\myline{darkorange25512714}) use the GP mean, whereas blue lines (\myline{steelblue31119180}) the NN MAP estimate as mean. Our \our converges fast for all cases showing clear benefits of its ability to summarize all the data onto a sparse set of inducing points.\looseness-1}
-  \label{fig:uci}
-  %\vspace*{-6pt}
-\end{figure*}
+% \begin{figure*}[t]
+%   \centering\scriptsize
+%   \setlength{\figurewidth}{.18\textwidth}
+%   \setlength{\figureheight}{\figurewidth}
+%   \pgfplotsset{axis on top,scale only axis,y tick label style={rotate=90}, x tick label style={font=\footnotesize},y tick label style={font=\footnotesize},title style={yshift=-4pt,font=\large}, y label style={font=\large},x label style={font=\large},grid=major, width=\figurewidth, height=\figureheight}
+%   \pgfplotsset{grid style={line width=.1pt, draw=gray!10,dashed}}
+%   \pgfplotsset{xlabel={$M$},ylabel style={yshift=-12pt}}
+%   %
+%   \begin{minipage}[t]{.13\textwidth}
+%     \raggedleft
+%     \pgfplotsset{ylabel=NLPD}
+%     \input{./fig/australian.tex}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}[t]{.12\textwidth}
+%     \raggedleft
+%     \input{./fig/breast_cancer.tex}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}[t]{.12\textwidth}
+%     \raggedleft
+%     \input{./fig/ionosphere.tex}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}[t]{.12\textwidth}
+%     \raggedleft
+%     \input{./fig/glass.tex}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}[t]{.12\textwidth}
+%     \raggedleft
+%     \input{./fig/vehicle.tex}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}[t]{.12\textwidth}
+%     \raggedleft
+%     \input{./fig/waveform.tex}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}[t]{.12\textwidth}
+%     \raggedleft
+%     \input{./fig/digits.tex}
+%   \end{minipage}
+%   \hfill
+%   \begin{minipage}[t]{.12\textwidth}
+%     \raggedleft
+%     \input{./fig/satellite.tex}
+%   \end{minipage}\\[-1em]
+%   %
+%   % Legend
+%   \definecolor{steelblue31119180}{RGB}{31,119,180}
+%   \definecolor{darkorange25512714}{RGB}{255,127,14}
+%   \newcommand{\myline}[1]{\protect\tikz[baseline=-.5ex,line width=1.6pt]\protect\draw[draw=#1](0,0)--(1.2em,0);}
+%   \caption{Comparison of convergence in terms of number of inducing points $M$ in NLPD (mean over 10 seeds) on UCI classification tasks: \our (thick) vs.\ subsets \citep[][thin]{immer2021improving}. Orange lines (\myline{darkorange25512714}) use the GP mean, whereas blue lines (\myline{steelblue31119180}) the NN MAP estimate as mean. Our \our converges fast for all cases showing clear benefits of its ability to summarize all the data onto a sparse set of inducing points.\looseness-1}
+%   \label{fig:uci}
+%   %\vspace*{-6pt}
+% \end{figure*}
 
 
 
@@ -766,7 +768,7 @@ where the sparse dual variables are now a sum over \emph{all data points}, with 
 \end{align}
 where $\MKzz$ and $\vkzs$ are defined similarly to $\MKxx$ and $\vk_{\vx i}$ but over the inducing points $\{\vz_j\}_{i=1}^M$, $\vz \in \R^{D}$, instead of the full data set $\dataset$. The key quantities we need to make predictions from our sparse GP from the converged neural network are $(\hat{\alpha}_i, \hat{\beta}_i)$ (\cref{eq:dual_param_laplace}) and a kernel function $\kappa$ (\cref{eq-laplace-approx-function-space}). Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred}, we can see that the computational complexity went from $\mathcal{O}(N^3)$ to $\mathcal{O}(M^3)$, with $M \ll N$.  Crucially, given the structure of our probabilistic model, our sparse dual variables \cref{eq:dual_sparse} are a compact representation of the full model projected using the kernel.
 
-Unlike our approach, \citet{immer2021improving} employ a subset of the data points to construct a sparse GP, reducing computational complexity. However, the method could be considered less principled for building a sparse model, as it ignores contribution from the complete data set. It is important to note that the sparsifying process is independent of the approximate inference technique because the dual variables of \cref{eq:dual_param} are computed using \cref{eq-empirical-risk} and a Laplace approximation. More complicated inference techniques, such as variational inference, could be used, but given its simplicity, in our experiments we used the Laplace-GGN approximation with the trained neural network. Furthermore, our dual variable view of approximate inference means we do not need to retrain a separate sparse GP.\looseness-2
+Unlike our approach, \citet{immer2021improving} employ a subset of the data points to construct a sparse GP, reducing computational complexity. However, this method ignores contributions from the complete data set. It is important to note that the sparsifying process is independent of the approximate inference technique because the dual variables of \cref{eq:dual_param} are computed using \cref{eq-empirical-risk} and a Laplace approximation. More complicated inference techniques, such as variational inference, could be used, but given its simplicity, in our experiments we used the Laplace-GGN approximation with the trained neural network. Furthermore, our dual variable view of approximate inference means we do not need to retrain a separate sparse GP.\looseness-2
 % \todo{shouldn't this sentence be clear from the context? we derive the mean/kernel function that define the process, then we have a sparse GP already}
 
 
@@ -793,20 +795,24 @@ Unlike our approach, \citet{immer2021improving} employ a subset of the data poin
 
 %
 We provide a proof-of-concept example by evaluating \our on eight UCI benchmarks~\citep{UCI}, a variety of binary and multi-class classification tasks with different data set sizes.
+\todo{update text to say we don't tune prior precision}
 We train a two-layer MLP for each of the classification tasks and follow the experiment set up in \citet{immer2021improving} by using the same hyperparameters, performing a hyperparameter search over the prior precision $\delta$, and run the experiment over $10$ random splits.
 % We follow \cite{immer2021improving} by using the same hyperparameters, performing a hyperparameter search over the prior precision $\delta$,
 %
 % That is, after training we construct the \our dual and use the resulting model for uncertainty quantification.
 % for the neural network training as in the UCI experiments of
-\cref{tbl:uci} (left) shows that \our with $M=256$ either matches or outperforms the predictive performance of the NN MAP, mean-field VI, Bayesian NN, and GLM
+% \cref{tbl:uci} shows that \our with $M=20\%N$ always outperforms
+% \citep[baselines from][]{immer2021improving}.
+%
+\todo{update text to say what our results show}
+\cref{tbl:uci} shows that \our with $M=20\%$ of $N$ either matches or outperforms the predictive performance of the Bayesian NN, and GLM
 predictions %in terms of negative log-predictive density (NLPD).
 \citep[baselines from][]{immer2021improving}.
-That is, we match predictive performance despite being sparse.
-
-In \cref{tbl:uci} (right) we compare to the subset GP method from \citet{immer2021improving} whilst using only $M=32$ inducing points.
-It shows that \our is able to summarize the full data set more effectively than the GP subset method as it maintains predictive performance
+% That is, we match predictive performance despite being sparse.
+% In \cref{tbl:uci} (right) we compare to the subset GP method from \citet{immer2021improving} whilst using only $M=32$ inducing points.
+\cref{tbl:uci} also shows that \our is able to summarize the full data set more effectively than the GP subset method as it maintains predictive performance
 whilst using fewer inducing points.
-\cref{fig:uci} further shows that as the number of inducing points is lowered $M=512,\ldots, 16$, \our is able to maintain a much better NLPD than the GP subset.
+\cref{fig:uci} further shows that as the number of inducing points is lowered from $M=100\%N$ to $M=1\%M$, \our is able to maintain a much better NLPD than the GP subset.
 These results demonstrate \our's sparse representation captures information from the entire data set and as a result provides good uncertainty estimates. See \citet{immer2021improving} for further details on this particular benchmark setup.
 %We provide further details of our experiments in \cref{app:uci}.
 % as well as further results with varying number of inducing poitns ,64,128,256$

@@ -91,8 +91,8 @@ COLUMNS_TITLES_MULTI = [
     ("N", ""),
     ("D", ""),
     ("C", ""),
-    # "\sc nn map",
-    ("No $\delta$ tuning", "\sc nn map"),
+    ("\sc nn map", ""),
+    # ("No $\delta$ tuning", "\sc nn map"),
     ("No $\delta$ tuning", "\sc bnn"),
     ("No $\delta$ tuning", "\sc glm"),
     ("No $\delta$ tuning", "{\sc gp} subset"),
@@ -336,7 +336,7 @@ def make_uci_table():
     # Print the LaTeX table
     print(
         uci_table.to_latex(
-            column_format="lccc|ccccc|cccc|", escape=False, multicolumn_format="c|"
+            column_format="lccc|c|cccc|cccc|", escape=False, multicolumn_format="c|"
         )
     )
 
@@ -345,7 +345,7 @@ def make_uci_table():
     ) as file:
         file.write(
             uci_table.to_latex(
-                column_format="lccc|ccccc|cccc|", escape=False, multicolumn_format="c|"
+                column_format="lccc|c|cccc|cccc|", escape=False, multicolumn_format="c|"
             )
         )
 

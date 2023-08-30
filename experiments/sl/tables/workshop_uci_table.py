@@ -78,15 +78,31 @@ WANDB_RUNS = OmegaConf.create(
 # ]
 COLUMNS_TITLES = [
     "NN MAP",
-    # "BNN full",
-    # "GLM full",
-    # "GP Subset (GP)",
-    # "SFR (GP)",
+    "BNN full",
+    "GLM full",
+    "GP Subset (GP)",
+    "SFR (GP)",
     "BNN full GRID",
     "GLM full GRID",
     "GP Subset (GP) BO",
     "SFR (GP) BO",
 ]
+COLUMNS_TITLES_MULTI = [
+    ("N", ""),
+    ("D", ""),
+    ("C", ""),
+    # "\sc nn map",
+    ("No $\delta$ tuning", "\sc nn map"),
+    ("No $\delta$ tuning", "\sc bnn"),
+    ("No $\delta$ tuning", "\sc glm"),
+    ("No $\delta$ tuning", "{\sc gp} subset"),
+    ("No $\delta$ tuning", "\our"),
+    ("$\delta$ tuning", "\sc bnn"),
+    ("$\delta$ tuning", "\sc glm"),
+    ("$\delta$ tuning", "{\sc gp} subset"),
+    ("$\delta$ tuning", "\our"),
+]
+
 COLUMNS_TITLES_DICT = {
     "NN MAP": "\sc nn map",
     "BNN full": "\sc bnn",
@@ -96,9 +112,9 @@ COLUMNS_TITLES_DICT = {
     # "GP Subest (GP)": "{\sc gp} subset (\sc gp)",
     # "GP Subest (NN)": "{\sc gp} subset (\sc nn)",
     "GP Subset (GP)": "{\sc gp} subset",
-    "GP Subset (NN)": "{\sc gp} subset (\sc nn)",
+    # "GP Subset (NN)": "{\sc gp} subset (\sc nn)",
     "SFR (GP)": "\our",
-    "SFR (NN)": "\our (\sc nn)",
+    # "SFR (NN)": "\our (\sc nn)",
     # "GP Subest (GP) BO": "{\sc gp} subset (\sc gp)",
     "GP Subset (GP) BO": "{\sc gp} subset",
     "SFR (GP) BO": "\our",
@@ -109,7 +125,17 @@ COLUMNS_TITLES_DICT = {
 #     "breast_cancer": "Cancer",
 # }
 
-DATASETS_NAMES = {
+# DATASETS_NAMES = {
+#     "australian": "Australian",
+#     "breast_cancer": "Breast cancer",
+#     "ionosphere": "Ionosphere",
+#     "glass": "Glass",
+#     "vehicle": "Vehicle",
+#     "waveform": "Waveform",
+#     "digits": "Digits",
+#     "satellite": "Satellite",
+# }
+DATASETS = {
     "australian": "Australian",
     "breast_cancer": "Breast cancer",
     "ionosphere": "Ionosphere",
@@ -119,17 +145,6 @@ DATASETS_NAMES = {
     "digits": "Digits",
     "satellite": "Satellite",
 }
-DATASETS = {
-    "australian": "Australian (N=690, D=14, C=2)",
-    "breast_cancer": "Breast cancer (N=683, D=10, C=2)",
-    "ionosphere": "Ionosphere (N=351, D=34, C=2)",
-    "glass": "Glass (N=214, D=9, C=6)",
-    "vehicle": "Vehicle (N=846, D=18, C=4)",
-    "waveform": "Waveform (N=1000, D=21, C=3)",
-    "digits": "Digits (N=1797, D=64, C=10)",
-    "satellite": "Satellite (N=6435, D=35, C=6)",
-}
-
 NUM_DATAS = {
     "australian": 690,
     "breast_cancer": 683,
@@ -139,6 +154,28 @@ NUM_DATAS = {
     "waveform": 1000,
     "digits": 1797,
     "satellite": 6435,
+}
+INPUT_DIMS = {
+    "australian": 14,
+    "breast_cancer": 10,
+    "ionosphere": 34,
+    "glass": 9,
+    "vehicle": 18,
+    "waveform": 21,
+    "digits": 64,
+    "satellite": 35,
+}
+
+
+NUM_CLASSES = {
+    "australian": 2,
+    "breast_cancer": 2,
+    "ionosphere": 2,
+    "glass": 6,
+    "vehicle": 4,
+    "waveform": 3,
+    "digits": 10,
+    "satellite": 6,
 }
 
 
@@ -153,6 +190,25 @@ def bold_if_significant(row):
     return "\\val{" + mean + "}{" + std + "}"
 
 
+def add_num_data(row):
+    return NUM_DATAS[row["dataset"]]
+
+
+def add_num_classes(row):
+    return NUM_CLASSES[row["dataset"]]
+
+
+def add_input_dims(row):
+    return INPUT_DIMS[row["dataset"]]
+
+
+def add_posthoc(row):
+    if "BO" in row["model"]:
+        return "Prior precision tuning"
+    else:
+        return "Fixed prior precision"
+
+
 def make_uci_table():
     df = load_table_as_dataframe()
     print("df")
@@ -163,10 +219,10 @@ def make_uci_table():
         df["model"].isin(
             [
                 "NN MAP",
-                # "BNN full",
-                # "GLM full",
-                # "GP Subset (GP)",
-                # "SFR (GP)",
+                "BNN full",
+                "GLM full",
+                "GP Subset (GP)",
+                "SFR (GP)",
                 "BNN full GRID",
                 "GLM full GRID",
                 "GP Subset (GP) BO",
@@ -194,6 +250,11 @@ def make_uci_table():
     )
     print("df_with_stats")
     print(df_with_stats)
+
+    df_with_stats["N"] = df_with_stats.apply(add_num_data, axis=1)
+    df_with_stats["D"] = df_with_stats.apply(add_input_dims, axis=1)
+    df_with_stats["C"] = df_with_stats.apply(add_num_classes, axis=1)
+    df_with_stats["prior_prec_tuning"] = df_with_stats.apply(add_posthoc, axis=1)
 
     # Calculate pvalues for bolding
     df_with_stats["pvalue"] = np.nan
@@ -242,24 +303,51 @@ def make_uci_table():
     df_with_stats["mean_pm_std"] = df_with_stats.apply(bold_if_significant, axis=1)
 
     uci_table = df_with_stats.pivot(
-        index=["dataset"], columns="model", values="mean_pm_std"
+        index=["dataset"],
+        # index=["dataset", "N", "D", "C"],
+        columns="model",
+        values="mean_pm_std",
     )
     print("uci_table")
     print(uci_table)
+    print(NUM_DATAS.values())
+    uci_table["N"] = pd.Series(NUM_DATAS.values(), index=uci_table.index)
+    uci_table["D"] = pd.Series(INPUT_DIMS.values(), index=uci_table.index)
+    uci_table["C"] = pd.Series(NUM_CLASSES.values(), index=uci_table.index)
 
+    # uci_table.index.names = ["Dataset", "N", "D", "C"]
     uci_table.index.names = ["Dataset"]
+    uci_table.index.names = [None]
+    # uci_table.index.names = None
     uci_table.rename(index=DATASETS, inplace=True)
+    # uci_table = uci_table.reset_index().to_string(index=False)
     uci_table.fillna("-", inplace=True)
-    uci_table = uci_table.reindex(columns=COLUMNS_TITLES).rename_axis(columns=None)
+    uci_table = uci_table.reindex(columns=["N", "D", "C"] + COLUMNS_TITLES).rename_axis(
+        columns=None
+    )
+
+    # columns = [("0", "n"), ("0", "p"), ("0", "e"), ("1", "n"), ("1", "p"), ("1", "e")]
+    uci_table.columns = pd.MultiIndex.from_tuples(COLUMNS_TITLES_MULTI)
+
     uci_table.rename(columns=COLUMNS_TITLES_DICT, inplace=True)
+    # breakpoint()
+    # uci_table.reset_index(inplace=True)
 
     # Print the LaTeX table
-    print(uci_table.to_latex(column_format="lcccccccc", escape=False))
+    print(
+        uci_table.to_latex(
+            column_format="lccc|ccccc|cccc|", escape=False, multicolumn_format="c|"
+        )
+    )
 
     with open(
         "../../../workshops/icml-duality/tables/workshop_uci_table.tex", "w"
     ) as file:
-        file.write(uci_table.to_latex(column_format="lcccccccc", escape=False))
+        file.write(
+            uci_table.to_latex(
+                column_format="lccc|ccccc|cccc|", escape=False, multicolumn_format="c|"
+            )
+        )
 
 
 def load_table_as_dataframe():

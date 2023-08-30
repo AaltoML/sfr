@@ -607,13 +607,13 @@ Substituting \cref{eq:dual_param_laplace} into \cref{eq:gp_pred}, we obtain our 
 
 \begin{table*}[t!]
   \centering\scriptsize
-  \caption{Comparisons and ablations on UCI data with negative log predictive density (NLPD\textcolor{gray}{\footnotesize$\pm$std}, lower better). Our sparse \our (with $M=20\% \text{ of } N$) is on par with the Laplace methods (BNN/GLM) and outperforms the GP subset method.} %Results for methods marked with * as reported in the original benchmark~\citep{immer2021improving}.} %See \cref{app:uci} for additional tables with comparisons.}
+  \caption{Comparisons and ablations on UCI data with negative log predictive density (NLPD\textcolor{gray}{\footnotesize$\pm$std}, lower better). Our sparse \our (with $M=20\% \text{ of } N$) is on par with the Laplace methods (BNN/GLM) and outperforms the GP subset method when the prior precision $(\delta)$ is tuned (right). Interestingly, when no prior precision ($\delta$) tuning is used (left), \our outperforms all other methods.} %Results for methods marked with * as reported in the original benchmark~\citep{immer2021improving}.} %See \cref{app:uci} for additional tables with comparisons.}
 	\label{tbl:uci}
 	% \vspace*{-4pt}
 
 	% Control table spacing
 	% \renewcommand{\arraystretch}{1.}
-	% \setlength{\tabcolsep}{1.2pt}
+	\setlength{\tabcolsep}{1.6pt}
 	% \setlength{\tblw}{0.083\textwidth}
 
 	% Custom error formatting

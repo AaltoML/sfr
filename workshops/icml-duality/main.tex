@@ -348,15 +348,16 @@ Deep learning \citep{goodfellow2016deep} has become the cornerstone of contempor
 
 
 \begin{figure}[t!]
-  \centering\scriptsize
+  % \centering\scriptsize
+  \centering\Large
   % Figure options
-  \pgfplotsset{axis on top,scale only axis,width=\figurewidth,height=\figureheight, ylabel near ticks,ylabel style={yshift=-2pt},y tick label style={rotate=90},legend style={nodes={scale=1., transform shape}},tick label style={font=\tiny,scale=1}}
+  \pgfplotsset{axis on top,scale only axis,width=\figurewidth,height=\figureheight, ylabel near ticks,ylabel style={yshift=-2pt},y tick label style={rotate=90},legend style={nodes={scale=1., transform shape}},tick label style={font=\Large,scale=1}}
   \pgfplotsset{xlabel={Input, $x$},axis line style={rounded corners=2pt}}
   % Set figure
   \setlength{\figurewidth}{.4\textwidth}
   \setlength{\figureheight}{\figurewidth}
   %
-  \def\inducing{\large Sparse inducing points}
+  \def\inducing{\Huge Sparse inducing points}
   %
   \begin{subfigure}[c]{.52\columnwidth}
     \raggedleft
@@ -385,7 +386,7 @@ Deep learning \citep{goodfellow2016deep} has become the cornerstone of contempor
 %    \pgfplotsset{yticklabels={,,},ytick={\empty}}
 %    \input{./fig/regression-update.tex}%
 %  \end{subfigure}
-  \vspace*{-1em}
+  % \vspace*{-1em}
   \caption{\textbf{Regression example on an MLP with two hidden layers.} Left:~Predictions from the trained neural network. Right:~Our approach summarizes all the training data with the help of a set of inducing points.} %The model captures the predictive mean and uncertainty, and (right) makes it possible to incorporate new data without retraining the model.}
   \label{fig:teaser}
   %
@@ -393,7 +394,8 @@ Deep learning \citep{goodfellow2016deep} has become the cornerstone of contempor
     % Arrow style
     \tikzstyle{myarrow} = [draw=black!80, single arrow, minimum height=14mm, minimum width=2pt, single arrow head extend=4pt, fill=black!80, anchor=center, rotate=0, inner sep=5pt, rounded corners=1pt]
     % Arrows
-    \node[myarrow] (p0-arr) at ($(p0) + (1em,1.5em)$) {};
+    \node[myarrow] (p0-arr) at ($(p0) + (0.2em,1.2em)$) {};
+    % \node[myarrow] (p0-arr) at ($(p0) + (1em,1.5em)$) {};
     %\node[myarrow] (p1-arr) at ($(p1) + (1em,1.5em)$) {};
     % Arrow labels
     \node[font=\scriptsize\sc,color=white] at (p0-arr) {\our};

@@ -144,7 +144,7 @@
 \usepackage{subcaption}
 \usetikzlibrary{}
 
-\input{aidans-utils.tex}
+\input{utils.tex}
 
 % Short section names etc
 % This must be imported last!
@@ -355,7 +355,8 @@ Similarly, in RL, the model must adapt to environmental observations and can lev
   \pgfplotsset{axis on top,scale only axis,width=\figurewidth,height=\figureheight, ylabel near ticks,ylabel style={yshift=-2pt},y tick label style={rotate=90},legend style={nodes={scale=1., transform shape}},tick label style={font=\Large,scale=1}}
   \pgfplotsset{xlabel={Input, $x$},axis line style={rounded corners=2pt}}
   % Set figure
-  \setlength{\figurewidth}{.41\textwidth}
+  % \setlength{\figurewidth}{.41\textwidth}
+  \setlength{\figurewidth}{.38\textwidth}
   \setlength{\figureheight}{\figurewidth}
   %
   \def\inducing{\Huge Sparse inducing points}
@@ -693,7 +694,7 @@ The problem with the predictions in \cref{eq:gp_pred} is that they incur a cost 
   \definecolor{steelblue31119180}{RGB}{31,119,180}
   \definecolor{darkorange25512714}{RGB}{255,127,14}
   \newcommand{\myline}[1]{\protect\tikz[baseline=-.5ex,line width=1.6pt]\protect\draw[draw=#1](0,0)--(1.2em,0);}
-  \caption{Comparison of convergence in terms of number of inducing points $M$ in NLPD (mean$\pm$std over 5 seeds) on UCI classification tasks: \our (\myline{steelblue31119180}) vs. GP subset (\myline{darkorange25512714}). Our \our converges fast for all cases showing clear benefits of its ability to summarize all the data onto a sparse set of inducing points. The number of inducing points $M$ are specified as a percent of the number of training data $N$.}
+  \caption{Comparison of convergence in terms of number of inducing points $M$ in NLPD (mean\textcolor{gray}{\footnotesize$\pm$std} over 5 seeds) on UCI classification tasks: \our (\myline{steelblue31119180}) vs. GP subset (\myline{darkorange25512714}). Our \our converges fast for all cases showing clear benefits of its ability to summarize all the data onto a sparse set of inducing points. The number of inducing points $M$ are specified as a percent of the number of training data $N$.}
   \label{fig:uci}
   %\vspace*{-6pt}
 \end{figure*}
@@ -764,7 +765,7 @@ The problem with the predictions in \cref{eq:gp_pred} is that they incur a cost 
 Sparse GPs reduce the computational complexity by representing the GP as a low-rank approximation induced by a sparse set of input points \citep[see][for an early overview]{quinonero2005unifying}. Given that we have computed the dual parameters derived from our NN predictions and a kernel function, we could essentially employ any of these sparsification methods. In this work, we opt for the approach suggested by \citet{titsias2009variational} \citep[also used in the DTC approximation, see][]{quinonero2005unifying}, which defines the marginal predictive distribution as $q_{\vu}(f_i)  = \int p(f_i  \mid \vu) \, q(\vu) \, \mathrm{d}\vu$. Given that we have $p(f_i \mid \vu)$ determined by our GP prior, the goal is to find a $q(\vu)$.
 
 As demonstrated in \citet{adam2021dual}, the posterior under this model bears a structure akin to \cref{eq:gp_pred}. The authors of that paper exploit the dual parameters for approximate inference, but write them using the natural parameterization, primarily because this form is more suitable for optimization through natural gradients.
-We project the dual parameters onto the inducing points sparse GP using the dual parameters,
+We project the dual parameters onto the inducing points giving sparse dual parameters,
 % In order to link the dual parameters defined in \cref{eq:dual_param}, we write them in the sparse GP using the dual parameters,
 %
 \begin{equation} \textstyle

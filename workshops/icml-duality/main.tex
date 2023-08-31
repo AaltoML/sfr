@@ -782,7 +782,40 @@ where the sparse dual parameters are now a sum over \emph{all data points}, with
 \end{align}
 where $\MKzz$ and $\vkzs$ are defined similarly to $\MKxx$ and $\vk_{\vx i}$ but over the inducing points $\{\vz_j\}_{i=1}^M$, $\vz \in \R^{D}$, instead of the full data set $\dataset$. The key quantities we need to make predictions from our sparse GP from the converged NN are $(\hat{\alpha}_i, \hat{\beta}_i)$ (\cref{eq:dual_param_laplace}) and a kernel function $\kappa$ (\cref{eq-laplace-approx-function-space}). Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred}, we can see that the computational complexity went from $\mathcal{O}(N^3)$ to $\mathcal{O}(M^3)$, with $M \ll N$.  Crucially, given the structure of our probabilistic model, our sparse dual parameters \cref{eq:dual_sparse} are a compact representation of the full model projected using the kernel.
 
-Unlike our approach, \citet{immer2021improving} employ a subset of the data points to construct a sparse GP, reducing computational complexity. However, this method ignores contributions from the complete data set. It is important to note that the sparsifying process is independent of the approximate inference technique because the dual parameters of \cref{eq:dual_param} are computed using \cref{eq-empirical-risk} and a Laplace approximation. More complicated inference techniques, such as variational inference, could be used, but given its simplicity, in our experiments we used the Laplace-GGN approximation with the trained NN. Furthermore, our dual variable view of approximate inference means we do not need to retrain a separate sparse GP.\looseness-2
+
+We highlight that \our differs from the GP subset method from \citet{immer2021improving}, which results in several advantages.
+First, \our leverages a dual parameterization to construct a sparse GP, which captures information from the entire data set.
+In contrast, \citet{immer2021improving} utilise a subset of the data points which ignores information from the rest of the data set.
+% It is also worth noting that our sparsification via dual parameters does not require any further optimization, we do not need to retrain a separate sparse GP.
+Second, \our makes predictions with the GP mean, whereas \citet{immer2021improving} center predictions around NN predictions $f_{\vw^*}(\cdot)$.
+As such, \our can incorporate new data without retraining (i.e. condition on new data) whilst the GP subset method cannot.
+
+To the best of our knowledge, we are the first to formulate a dual GP from a NN.
+Our dual parameterization has two main benefits: 1) it enables us to construct a sparse GP without requiring us to peform further optimization, and 2)
+it enables us to incorporate new data without retraining (i.e. condition on new data) using \cref{eq:dual_sparse}.
+
+% Unlike our approach, \citet{immer2021improving} employ a subset of the data points to construct a sparse GP, reducing computational complexity. However, this method ignores contributions from the complete data set. It is important to note that the sparsifying process is independent of the approximate inference technique because the dual parameters of \cref{eq:dual_param} are computed using \cref{eq-empirical-risk} and a Laplace approximation. More complicated inference techniques, such as variational inference, could be used, but given its simplicity, in our experiments we used the Laplace-GGN approximation with the trained NN.
+% Furthermore, our dual variable view of approximate inference means we do not need to retrain a separate sparse GP.\looseness-2
+
+% so predictions can be updated by conditioning on new data.
+% This contrasts, \citet{immer2021improving} as they set the GP posterior mean to match the NN predictions $f_{\vw^*}(\cdot)$.
+
+
+
+% Further to this, \cref{eq:dual_sparse} implies that we can 1) incorporate new data (i.e. condition on new data) without retraining and 2) unlearn data points.
+
+% Importantly, our dual parameterization enabled us to construct a sparse GP without requiring us to peform further optimization.
+% sparse GP which has lower complexity, whilst still capturing information from the entire data set.
+
+% Further to this, \cref{eq:dual_sparse} implies that we can 1) incorporate new data (i.e. condition on new data) without retraining and 2) unlearn data points.
+
+
+% In contrast to previous approaches,
+% dual conditioning
+% sparse GP which has lower complexity, whilst still capturing information from the entire data set.
+
+
+% Unlike our approach, \citet{immer2021improving} employ a subset of the data points to construct a sparse GP, reducing computational complexity. However, this method ignores contributions from the complete data set. It is important to note that the sparsifying process is independent of the approximate inference technique because the dual parameters of \cref{eq:dual_param} are computed using \cref{eq-empirical-risk} and a Laplace approximation. More complicated inference techniques, such as variational inference, could be used, but given its simplicity, in our experiments we used the Laplace-GGN approximation with the trained NN. Furthermore, our dual variable view of approximate inference means we do not need to retrain a separate sparse GP.\looseness-2
 % \todo{shouldn't this sentence be clear from the context? we derive the mean/kernel function that define the process, then we have a sparse GP already}
 
 

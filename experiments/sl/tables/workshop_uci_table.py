@@ -88,9 +88,9 @@ COLUMNS_TITLES = [
     "SFR (GP) BO",
 ]
 COLUMNS_TITLES_MULTI = [
-    ("N", ""),
-    ("D", ""),
-    ("C", ""),
+    ("$N$", ""),
+    ("$D$", ""),
+    ("$C$", ""),
     ("\sc nn map", ""),
     # ("No $\delta$ tuning", "\sc nn map"),
     ("No $\delta$ tuning", "\sc bnn"),
@@ -136,14 +136,14 @@ COLUMNS_TITLES_DICT = {
 #     "satellite": "Satellite",
 # }
 DATASETS = {
-    "australian": "Australian",
-    "breast_cancer": "Breast cancer",
-    "ionosphere": "Ionosphere",
-    "glass": "Glass",
-    "vehicle": "Vehicle",
-    "waveform": "Waveform",
-    "digits": "Digits",
-    "satellite": "Satellite",
+    "australian": "\sc Australian",
+    "breast_cancer": "\sc Breast cancer",
+    "ionosphere": "\sc Ionosphere",
+    "glass": "\sc Glass",
+    "vehicle": "\sc Vehicle",
+    "waveform": "\sc Waveform",
+    "digits": "\sc Digits",
+    "satellite": "\sc Satellite",
 }
 NUM_DATAS = {
     "australian": 690,
@@ -311,9 +311,9 @@ def make_uci_table():
     print("uci_table")
     print(uci_table)
     print(NUM_DATAS.values())
-    uci_table["N"] = pd.Series(NUM_DATAS.values(), index=uci_table.index)
-    uci_table["D"] = pd.Series(INPUT_DIMS.values(), index=uci_table.index)
-    uci_table["C"] = pd.Series(NUM_CLASSES.values(), index=uci_table.index)
+    uci_table["$N$"] = pd.Series(NUM_DATAS.values(), index=uci_table.index)
+    uci_table["$D$"] = pd.Series(INPUT_DIMS.values(), index=uci_table.index)
+    uci_table["$C$"] = pd.Series(NUM_CLASSES.values(), index=uci_table.index)
 
     # uci_table.index.names = ["Dataset", "N", "D", "C"]
     uci_table.index.names = ["Dataset"]
@@ -322,9 +322,9 @@ def make_uci_table():
     uci_table.rename(index=DATASETS, inplace=True)
     # uci_table = uci_table.reset_index().to_string(index=False)
     uci_table.fillna("-", inplace=True)
-    uci_table = uci_table.reindex(columns=["N", "D", "C"] + COLUMNS_TITLES).rename_axis(
-        columns=None
-    )
+    uci_table = uci_table.reindex(
+        columns=["$N$", "$D$", "$C$"] + COLUMNS_TITLES
+    ).rename_axis(columns=None)
 
     # columns = [("0", "n"), ("0", "p"), ("0", "e"), ("1", "n"), ("1", "p"), ("1", "e")]
     uci_table.columns = pd.MultiIndex.from_tuples(COLUMNS_TITLES_MULTI)
@@ -336,7 +336,7 @@ def make_uci_table():
     # Print the LaTeX table
     print(
         uci_table.to_latex(
-            column_format="lccc|c|cccc|cccc|", escape=False, multicolumn_format="c|"
+            column_format="lccc|c|cccc|cccc", escape=False, multicolumn_format="c"
         )
     )
 
@@ -345,7 +345,7 @@ def make_uci_table():
     ) as file:
         file.write(
             uci_table.to_latex(
-                column_format="lccc|c|cccc|cccc|", escape=False, multicolumn_format="c|"
+                column_format="lccc|c|cccc|cccc", escape=False, multicolumn_format="c"
             )
         )
 

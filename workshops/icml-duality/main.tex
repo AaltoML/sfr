@@ -413,7 +413,7 @@ Recent techniques  \citep[\eg,][]{ritter2018kfac,khan2019approximate,daxberger20
 %Yet many problems lie in high dimensional input space; for example, images are where GPs cannot learn representations. In such scenarios such as in many reinforcement learning environments neural networks are used as the surrogate model. However, uncertainty is still essential to ensure effective exploration for sequential algorithms. Successful approaches have attempted to blend neural networks with uncertainty estimates around predictions, allowing for sophisticated exploration strategies. However, there has been limited use of hybrid models that possess the feature representation ability of neural networks but also attractive the properties of GPs, such a hybrid method we propose in this paper.
 
 %Need for adaptive learning methods + failures with current methods
-Given an approximate inference technique, we demonstrate that the neural network emits `dual' parameters which are the building blocks of a GP~\citep{csato2002sparse, adam2021dual, chang2020fast} . In contrast to previous work that utilizes subsets of training data \citep{immer2021scalable}, this parameterization allows capturing the contributions from {\em all} data points into a sparse representation, essential for predictive uncertainty. Crucially, the resulting GP directly predicts in the same space as the original trained neural network, with the benefit of avoiding the complexity introduced by working in weight-space and the notorious cubic complexity of vanilla GPs.
+Given an approximate inference technique, we demonstrate that the neural network emits `dual' parameters which are the building blocks of a GP~\citep{csato2002sparse, adam2021dual, chang2023memory} . In contrast to previous work that utilizes subsets of training data \citep{immer2021scalable}, this parameterization allows capturing the contributions from {\em all} data points into a sparse representation, essential for predictive uncertainty. Crucially, the resulting GP directly predicts in the same space as the original trained neural network, with the benefit of avoiding the complexity introduced by working in weight-space and the notorious cubic complexity of vanilla GPs.
 %\todo{Could make it clearer that the GP predicts in the output space while avoiding the NN parameter space}
 %, a feature not present in previous approaches, while avoiding the notorious cubic complexity of vanilla GPs.
 Through the dual parameter formulation, we establish a connection between the neural network, full GPs, and a sparse approximation similar to sparse variational GPs~\citep{titsias2009variational}. We refer to our method as Sparse Function-space Representation (\our)---a sparse GP derived from a trained neural network; see \cref{fig:teaser} for an example. %Moreover, this dual parameterization can be exploited to perform dual conditioning \citep{chang2022fantasizing}, \ie, an effective approach for conditioning on new data without needing to retrain the model (see \cref{fig:teaser}).
@@ -533,8 +533,7 @@ As Gaussian distributions remain tractable under linear transformations, a linea
 % The posterior structure directly relates to the optimization loss around the MAP weights $\vw^*$.
 A common approach is to approximate the correlation structure of a distribution centred at the MAP estimate as done in the Laplace-GGN~\citep{khan2019approximate, daxberger2021laplace, maddox2021fast}.
 The Laplace-GGN takes the MAP solution and approximates the Hessian of the loss function
-with the GGN.
-Following the work of \citet{khan2019approximate}, we can view this as a linear approximation of the NN, as $f_{\weights^*}(\vx) \approx
+with the GGN, we can view this as a linear approximation of the NN, as $f_{\weights^*}(\vx) \approx
 %g_{\weights}(\vx) =
 \Jac{\weights^*}{\vx} \, \weights$, where $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{1 \times P}$ is the Jacobian at the MAP.
 For notational conciseness, we % \cref{eq-laplace-approx-function-space},
@@ -552,9 +551,12 @@ Therefore, the Laplace-GGN linear model can be used to convert our weight space 
 where the kernel is the so-called Neural Tangent Kernel \citep[NTK,][]{jacot2018neural}.
 We can combine this kernel function with the data set $\dataset$ to construct the posterior.
 %
-\citet{khan2019approximate} took a similar approach, but instead of fitting the GP posterior to the actual $\vy$, they rely on a transformation of $\vy$. Similarly, \citet{immer2021improving} obtain the same covariance function but use a different mean because they rely on a first-order approximation of the NN to form a Bayesian GLM model. Both approaches adjust the GP posterior mean function to ensure the predictions are from the NN $f_{\vw^*}(\vx)$.
-In contrast, our method makes predictions directly from the GP and avoids such adjustments.
-In the next section, we present our method for converting a trained NN to a sparse functional representation.
+We highlight that  \citet{immer2021improving}  adjust the GP posterior mean function to match the NN predictions $f_{\vw^*}(\cdot)$. In contrast, our method makes predictions directly from the GP and avoids such adjustments. In the next section, we present our method for converting a trained NN to a sparse functional representation.
+
+
+%took a similar approach, but instead of fitting the GP posterior to the actual $\vy$, they rely on a transformation of $\vy$. Similarly, \citet{immer2021improving} obtain the same covariance function but use a different mean because they rely on a first-order approximation of the NN to form a Bayesian GLM model. Both approaches adjust the GP posterior mean function to ensure the predictions are from the NN $f_{\vw^*}(\vx)$.
+%In contrast, our method makes predictions directly from the GP and avoids such adjustments.
+%In the next section, we present our method for converting a trained NN to a sparse functional representation.
 % on the non-sparse approximation.
 % of our
 % based on the non-sparse approximation.
@@ -610,12 +612,7 @@ Given that we use a Laplace approximation of the NN, we remove the expectation o
   \end{split}
 \end{equation}
 %
-Substituting \cref{eq:dual_param_laplace} into \cref{eq:gp_pred}, we obtain our GP based on the converged NN. Again, this is similar to what was derived in \citet{immer2021improving} for the posterior variance function.
-However, they use the NN's prediction $f_{\vw^*}(\cdot)$ for the posterior mean and do not emphasize the significance of the dual parameters.
-The problem with the predictions in \cref{eq:gp_pred} is that they incur a cost of $O(N^3)$, which limits its application on large data sets.
-
-
-
+Substituting \cref{eq:dual_param_laplace} into \cref{eq:gp_pred}, we obtain our GP based on the converged NN. The problem with forming predictions using \cref{eq:gp_pred} is that they cost $O(N^3)$, which limits a full GP model to application on large data sets.
 
 \begin{table*}[t!]
   \centering\scriptsize

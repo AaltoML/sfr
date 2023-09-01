@@ -851,17 +851,21 @@ The checkpoint with the lowest validation NLPD was used as the NN MAP.
 We first compare \our to alternative posthoc Bayesian deep learning approaches.
 In particular, we compare to the Laplace approximation when making predictions with 1) the nonlinear NN (BNN) and 2) the generalised linear model (GLM).
 We use the Laplace PyTorch library \citep{daxberger2021laplace} with the full Hessian.%, i.e. we do not resort to the diagonal or KFAC approximations.
-We report results when tuning (\cref{tbl:uci} right) and not tuning (\cref{tbl:uci} left) the prior precision $\delta$ after performing inference.
+It is common practice to tune the prior precision $\delta$ after training the NN.
+That is, find a prior precision $\delta_{\text{tune}}$ which has a better NLPD on the validation set than the $\delta$ used to train the NN.
+Note that tuning the prior precision in this way leads to different prior precisions being used at train and inference time.
+We highlihgt that technically this invalidates the Laplace/SFR methods as the NN weights are no longer the MAP weights.
+Nevertheless, we report results when the prior precision $\delta$ is tuned (\cref{tbl:uci} right) and is not tuned (\cref{tbl:uci} left).
 When tuning the prior precision $\delta$, \our matches the performance of the Laplace methods (BNN/GLM).
-Interestingly, also \our performs well without tuning the prior precision $\delta$, unlike the Laplace methods (BNN/GLM).
+Interestingly, \our also  performs well without tuning the prior precision $\delta$, unlike the Laplace methods (BNN/GLM).
 
 As \our captures information from all of the training data in the inducing points, we compare \our to making GP predictions with a subset of the training data (GP subset).
 To make the comparison fair, we use \our's inducing inputs $\vz$ as the subset.
 \cref{tbl:uci} shows that \our is able to summarize the full data set more effectively than the GP subset method as it maintains predictive performance
 whilst using fewer inducing points.
 This is further illustrated in \cref{fig:uci}, which shows that as the number of inducing points is lowered from $M=100\%$ of $N$ to $M=1\%$ of $N$,
-\our is able to maintain a much better NLPD than the GP subset.
-This demonstrates that \our's sparse representation captures information from the entire data set and as a result can use fewer inducing points than the GP subset.
+\our is able to maintain a much better NLPD.
+This demonstrates that \our  captures information from the entire data set and as a result can use fewer inducing points than the GP subset.
 
 % \our represents information from all of the training data in the inducing points.
 % As such, we compare \our to using a GP with a subset of the training data (GP subset) with the subset corresponding to the inducing inputs $\vz$ used for \our.

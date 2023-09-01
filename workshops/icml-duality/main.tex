@@ -575,10 +575,12 @@ The dual parameterization from \citet{adam2021dual,chang2023memory}, consists of
 % , we can build on the insight from \citet{csato2002sparse} to obtain a `dual' parameterization, $\valpha$ and $\vbeta$,
 % The seminal work by \citet{csato2002sparse} (parameterization Lemma~1) gives a parameterization for the posterior process that can be found through the Bayesian update using the GP prior and the likelihood function. This gives a `dual' parameterization, $\valpha$ and $\vbeta$,
 % %
-\begin{align}  \label{eq:gp_pred}
+\begin{subequations}  \label{eq:gp_pred}
+\begin{align}
   \myexpect_{p(f_i \mid\vy)}[f_i] &= \vk_{\vx i}^\top \valpha, \\
-  \mathrm{Var}_{p(f_i \mid \vy)}[f_i] &= k_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i}, \nonumber
+  \mathrm{Var}_{p(f_i \mid \vy)}[f_i] &= k_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i},  \nonumber
 \end{align}
+\end{subequations}
 %
 where $f_i = f_\vw(\vx_i)$ is the function output at input $\vx_i$,
 the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{N \times N}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $k_{ii} = \kappa(\vx_i, \vx_i)$.
@@ -587,14 +589,14 @@ parameters $\valpha, \vbeta \in \R^{N}$,
 % which are the vectors
 defined as, \looseness-1
 %
-\begin{equation}
-\begin{split}
-  \label{eq:dual_param}
+\begin{subequations}
+\label{eq:dual_param}
+\begin{align}
   \alpha_i &\coloneqq \myexpect_{p(\vw \mid \vy)}[\nabla_{f}\log p(y_i \mid f) |_{f=f_i}], \\
   %\quad \text{and} \quad
   \beta_i &\coloneqq - \myexpect_{p(\vw \mid \vy)}[\nabla^2_{f f}\log p(y_i \mid f_i) |_{f=f_i}].
-  \end{split}
-\end{equation}
+  \end{align}
+\end{subequations}
 %
 The relationships specified are valid for generic likelihoods and involve no approximations since the expectation is under the exact posterior, but given that the model can be expressed in a kernel formulation. \cref{eq:gp_pred} and \cref{eq:dual_param} highlight that the approximate inference technique, usually viewed as a posterior approximation, can be alternatively interpreted as an approximation of the expectation of gradients of loss/likelihoods.
 
@@ -603,14 +605,14 @@ The relationships specified are valid for generic likelihoods and involve no app
 \paragraph{Dual parameters from NN}
 Given that we use a Laplace approximation of the NN, we remove the expectation over the posterior \citep[see Ch.~3.4.1 in][for derivation]{rasmussen2006gaussian} and our dual parameters are given by,
 %
-\begin{equation}
-\begin{split}
-  \label{eq:dual_param_laplace}
+\begin{subequations}
+\label{eq:dual_param_laplace}
+\begin{align}
   \hat{\alpha}_i &\coloneqq \nabla_{f}\log p(y_i \mid f) |_{f=f_i} , \\
   %\quad \text{and} \quad
   \hat{\beta}_i &\coloneqq - \nabla^2_{ff}\log p(y_i \mid f) |_{f=f_i}.
-  \end{split}
-\end{equation}
+  \end{align}
+\end{subequations}
 %
 Substituting \cref{eq:dual_param_laplace} into \cref{eq:gp_pred}, we obtain our GP based on the converged NN. The problem with forming predictions using \cref{eq:gp_pred} is that they cost $O(N^3)$, which limits a full GP model to application on large data sets.
 
@@ -776,10 +778,13 @@ We project the dual parameters onto the inducing points giving sparse dual param
 %
 where the sparse dual parameters are now a sum over \emph{all data points}, with $\valpha_{\vu} \in \R^{M}$ and $\MBeta_{\vu} \in \R^{M  \times M}$. Using this sparse definition of the dual parameters, our sparse GP posterior takes the following form:
 \begin{align}\label{eq:dual_sparse_post}
+\begin{subequations} \label{eq:dual_sparse_post}
+\begin{align}
    \myexpect_{q_{\vu}(\vf)}[f_i] &= \vkzs^{\T} \MKzz^{-1} \valpha_{\vu}, \\
    %\quad \text{and} \quad
    \textrm{Var}_{q_{\vu}(\vf)}[f_i]  &= k_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \MBeta_{\vu})^{-1} ]\vkzs, \nonumber
 \end{align}
+\end{subequations}
 where $\MKzz$ and $\vkzs$ are defined similarly to $\MKxx$ and $\vk_{\vx i}$ but over the inducing points $\{\vz_j\}_{i=1}^M$, $\vz \in \R^{D}$, instead of the full data set $\dataset$. The key quantities we need to make predictions from our sparse GP from the converged NN are $(\hat{\alpha}_i, \hat{\beta}_i)$ (\cref{eq:dual_param_laplace}) and a kernel function $\kappa$ (\cref{eq-laplace-approx-function-space}). Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred}, we can see that the computational complexity went from $\mathcal{O}(N^3)$ to $\mathcal{O}(M^3)$, with $M \ll N$.  Crucially, given the structure of our probabilistic model, our sparse dual parameters \cref{eq:dual_sparse} are a compact representation of the full model projected using the kernel.
 
 

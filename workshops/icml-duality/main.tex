@@ -221,6 +221,7 @@
 
 % Math Macros
 \newcommand{\MB}{\mbf{B}}
+\newcommand{\MS}{\mbf{S}}
 \newcommand{\MC}{\mbf{C}}
 \newcommand{\MZ}{\mbf{Z}}
 \newcommand{\MV}{\mbf{V}}
@@ -485,77 +486,253 @@ Through the dual parameter formulation, we establish a connection between the NN
 \section{Background}
 \label{sec:methods}
 %
-In this section, we recap how a trained NN can be converted to a GP by locally linearising the NN around its weights.
+% In this section, we recap how a trained NN can be converted to a GP by locally linearising the NN around its weights.
+
+% Our method builds on two recent observations.
+% First is that the Laplace generalised Gauss-Newton (GGN) approximation corresponds to a linearised model.
+% Second, any Bayesian linear model in weight space can be converted to a GP in function space.
+
+
 % a GP posterior -- can be obtained
 % around the Maximum a Posteriori (MAP) weights.
 
 % by linearising a neural network around the Maximum a Posteriori (MAP) weights.
 % a GP posterior -- can be obtained
 %
-\textbf{NN training}
-In supervised learning, given a data set $\dataset = \{(\vx_{i} , \vy_{i})\}_{i=1}^{N}$, with input $\vx_i \in \inputDomain$ and output $\vy_i \in \outputDomain$ pairs, the weights $\weights \in \R^{P}$ of a NN, $f_\mathbf{w}: \inputDomain \to \outputDomain$ (yet, to simplify the notation we restrict presentation to scalar output), are usually trained to minimize the (regularized) empirical risk,\looseness-1
+% \textbf{NN training gives MAP weights}
+% In supervised learning, given a data set $\dataset = \{(\vx_{i} , \vy_{i})\}_{i=1}^{N}$, with input $\vx_i \in \inputDomain$ and output $\vy_i \in \outputDomain$ pairs, the weights $\weights \in \R^{P}$ of a NN, $f_\mathbf{w}: \inputDomain \to \outputDomain$ (yet, to simplify the notation we restrict presentation to scalar output), are usually trained to minimize the (regularized) empirical risk,\looseness-1
+% %
+% \begin{align} \label{eq-empirical-risk}
+%   \weights^{*} &=
+%   \arg \min_{\weights} \mathcal{L}(\dataset,\weights) \nonumber \\ &=
+%   \arg \min_{\weights} \textstyle\sum_{i=1}^{N} \ell(f_\weights(\mathbf{x}_{i}), y_i) + \delta \mathcal{R}(\weights).
+% \end{align}
+% %
+% If $\ell(f_\weights(\vx_{i}), y_i) = -\log(p(y_{i} \mid f_\weights(\vx_{i}))$ and the regularizer $\mathcal{R}(\weights) = \frac{1}{2}\|\weights\|^{2}_2$, then we can view \cref{eq-empirical-risk} as the maximum {\it a~posteriori} (MAP) solution to a Bayesian objective, where the regularization weight takes the role of a prior precision parameter, \ie, $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$.
+% %Bayesian inference offers a principled approach to quantifying uncertainty in neural networks.
+% %The goal is to find the posterior over the weights ${p(\vw \mid \vy) \propto p(\vy \mid f_{\weights}(\vx)) \, p(\weights)}$ as it represents our belief in the parameters after combining data $\dataset$ with our prior $p(\vw)$.
+% %Although the true posterior $p(\vw \mid \dataset)$ is intractable given the non-linearities of the neural network, one can resort to sampling techniques such as Hamiltonian Monte-Carlo (HMC).
+% %However, for most applications their high computational costs make them impractical so we need approximate inference techniques.
+% %In \cref{fig:banana}, we show a qualitative example of the induced function-space posterior obtained with our method compared to the posterior obtained through HMC sampling on the Banana toy dataset.
+% The posterior over the weights ${p(\vw \mid \dataset) \propto p(\vy \mid f_{\weights}(\vx)) \, p(\weights)}$ is generally not available in closed form. Sampling methods that characterize the posterior with a finite set of samples in weight-space are general-purpose, but computationally heavy and impractical for downstream applications.
+
+% % \textbf{NN function-space} %\todo{Could be titled some other way, like Function-space representation}
+% \textbf{NN function-space} %\todo{Could be titled some other way, like Function-space representation}
+% %As a NN is a deterministic mapping, the weight-space posterior induces a distribution over the function values.
+% %Intuitively, if one was to sample from the weight posterior, the corresponding functions created can
+% %be viewed as perturbed versions of the function at the MAP estimate $f_{\vw^*}$.
+% %In most applications, we care about predictions from the neural network and not the weights themselves.
+% %As such, it is the distribution over function values that we are actually interested in.
+% NNs are deterministic parametric functions, but even if the training is typically an optimization in the weight-space, in most applications, we are interested in the parametrized function and not in the weights themselves.
+% %While neural networks are deterministic mappings defined by their weights, the ultimate goal of training a neural network is to optimize the function it represents, not the weights themselves.
+% Consequently, the weight-space posterior corresponds to a distribution over function values.
+% Intuitively, if one was to sample from the weight posterior, the corresponding functions created can be viewed as perturbed versions of the function at the MAP estimate $f_{\vw^*}$. This perspective aligns better with the main objective of making representative predictions given the observations.
+
+We consider supervised learning with inputs $\vx_i \in \inputDomain$ and outputs $\vy_i \in \outputDomain$ (e.g. regression) or $\vy_{i} \in \{0,1\}^{C}$ (e.g. classification),
+giving a data set $\dataset = \{(\vx_{i} , \vy_{i})\}_{i=1}^{N}$.
+We introduce a  NN $f_\mathbf{w}: \inputDomain \to \outputDomain$ with weights $\weights \in \R^{P}$ and use a likelihood function $p(\vy \mid f_\mathbf{w}(\vx))$
+to link the function values to the output $\vy$ (Gaussian for regresssion or Categorical for classification).
+For notational conciseness we stick to scalar outputs $y_{i}$.
+
+\textbf{Bayesian NNs}
+In Bayesian deep learning, we place a prior over the weights $p(\vw)$ and aim to calculate the posterior over the weights given the data $p(\vw \mid \mathcal{D})$.
+Given the posterior over the weights $p(\vw \mid \mathcal{D})$, we can then make probabilistic predictions with,
+\begin{align} \label{eq-predictions}
+  p_{\text{\sc BNN}}(y \mid \vx, \mathcal{D}) = \E_{p(\vw \mid \mathcal{D})} \left[ p(y \mid f_{\vw}(\vx)) \right]
+\end{align}
+The posterior ${p(\vw \mid \dataset) \propto p(\vy \mid f_{\weights}(\vx)) \, p(\weights)}$ is generally not available in closed form
+so we resort to approximations.
+% Sampling methods that characterize the posterior with a finite set of samples in weight-space are general-purpose, but computationally heavy and impractical for downstream applications.
+% In this paper, we build on the Laplace approximation
+
+
+% , are usually trained to minimize the (regularized) empirical risk,\looseness-1
+
+% In supervised learning, given a data set $\dataset = \{(\vx_{i} , \vy_{i})\}_{i=1}^{N}$, with input $\vx_i \in \inputDomain$ and output $\vy_i \in \outputDomain$ pairs, the weights $\weights \in \R^{P}$ of a NN, $f_\mathbf{w}: \inputDomain \to \outputDomain$ (yet, to simplify the notation we restrict presentation to scalar output),
+
+% \subsection{Laplace approximation}
+\textbf{MAP}
+It is common to train the NN's weights $\vw$ to minimize the (regularized) empirical risk,
 %
 \begin{align} \label{eq-empirical-risk}
   \weights^{*} &=
-  \arg \min_{\weights} \mathcal{L}(\dataset,\weights) \nonumber \\ &=
-  \arg \min_{\weights} \textstyle\sum_{i=1}^{N} \ell(f_\weights(\mathbf{x}_{i}), y_i) + \delta \mathcal{R}(\weights).
+                 \arg \min_{\weights} \mathcal{L}(\dataset,\weights) \nonumber \\
+               &=
+  \arg \min_{\weights} \textstyle\sum_{i=1}^{N} \underbrace{\ell(f_\weights(\mathbf{x}_{i}), y_i)}_{-\log p(y_{i} \mid f_{\vw}(\vx_{i}))} + \underbrace{\delta \mathcal{R}(\weights)}_{-\log p(\vw)}.
 \end{align}
 %
-If $\ell(f_\weights(\vx_{i}), y_i) = -\log(p(y_{i} \mid f_\weights(\vx_{i}))$ and the regularizer $\mathcal{R}(\weights) = \frac{1}{2}\|\weights\|^{2}_2$, then we can view \cref{eq-empirical-risk} as the maximum {\it a~posteriori} (MAP) solution to a Bayesian objective, where the regularization weight takes the role of a prior precision parameter, \ie, $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$.
+This objective corresponds to the log joint distribution $\mathcal{L}(\mathcal{D},\vw)=p(\mathcal{D}, \vw)$
+as the loss can be interpreted as a negative log likelihood $\ell(f_\weights(\vx_{i}), y_i) = -\log(p(y_{i} \mid f_\weights(\vx_{i}))$
+and the regularizer corresponds to a log prior over the weights $\delta\mathcal{R}(\weights) = \log p(\vw)$.
+For example, a weight decay regularizer $\mathcal{R}(\vw) = \frac{1}{2}\|\weights\|^{2}_2$ corresponds to a Gaussinan prior over the weights $p(\vw) = \Norm(\vzeros, \delta^{-1} \MI)$ with
+prior precision $\delta$.
+As such, we can view \cref{eq-empirical-risk} as the maximum {\it a~posteriori} (MAP) solution.
+
 %Bayesian inference offers a principled approach to quantifying uncertainty in neural networks.
 %The goal is to find the posterior over the weights ${p(\vw \mid \vy) \propto p(\vy \mid f_{\weights}(\vx)) \, p(\weights)}$ as it represents our belief in the parameters after combining data $\dataset$ with our prior $p(\vw)$.
 %Although the true posterior $p(\vw \mid \dataset)$ is intractable given the non-linearities of the neural network, one can resort to sampling techniques such as Hamiltonian Monte-Carlo (HMC).
 %However, for most applications their high computational costs make them impractical so we need approximate inference techniques.
 %In \cref{fig:banana}, we show a qualitative example of the induced function-space posterior obtained with our method compared to the posterior obtained through HMC sampling on the Banana toy dataset.
-The posterior over the weights ${p(\vw \mid \dataset) \propto p(\vy \mid f_{\weights}(\vx)) \, p(\weights)}$ is generally not available in closed form. Sampling methods that characterize the posterior with a finite set of samples in weight-space are general-purpose, but computationally heavy and impractical for downstream applications.
+% The posterior over the weights ${p(\vw \mid \dataset) \propto p(\vy \mid f_{\weights}(\vx)) \, p(\weights)}$ is generally not available in closed form. Sampling methods that characterize the posterior with a finite set of samples in weight-space are general-purpose, but computationally heavy and impractical for downstream applications.
 
-% \textbf{NN function-space} %\todo{Could be titled some other way, like Function-space representation}
-\textbf{NN function-space} %\todo{Could be titled some other way, like Function-space representation}
-%As a NN is a deterministic mapping, the weight-space posterior induces a distribution over the function values.
-%Intuitively, if one was to sample from the weight posterior, the corresponding functions created can
-%be viewed as perturbed versions of the function at the MAP estimate $f_{\vw^*}$.
-%In most applications, we care about predictions from the neural network and not the weights themselves.
-%As such, it is the distribution over function values that we are actually interested in.
-NNs are deterministic parametric functions, but even if the training is typically an optimization in the weight-space, in most applications, we are interested in the parametrized function and not in the weights themselves.
-%While neural networks are deterministic mappings defined by their weights, the ultimate goal of training a neural network is to optimize the function it represents, not the weights themselves.
-Consequently, the weight-space posterior corresponds to a distribution over function values.
-Intuitively, if one was to sample from the weight posterior, the corresponding functions created can be viewed as perturbed versions of the function at the MAP estimate $f_{\vw^*}$. This perspective aligns better with the main objective of making representative predictions given the observations.
-
-
-% \textbf{Linearization gives rise to a Gaussian process}
-\textbf{Linearization gives rise to a GP}
-Our goal is to capture the distribution over the NN model functions through their first two moments. The first two moments characterize a GP with a mean function $\mu(\cdot)$ and a covariance function (kernel) $\kappa(\cdot,\cdot)$.
-Recent work \citep{khan2019approximate,maddox2021fast} has shown that linearizing approximations in the weight space lead to function-space equivalent approximations.
-As Gaussian distributions remain tractable under linear transformations, a linear function in terms of parameters can be converted from the weight space to the function space \citep[see Ch.~2.1 in ][]{rasmussen2006gaussian} as follows:
-%
-\begin{align} \label{eq:weight_func}
- &f_\weights(\vx) \approx
-%g_\weights(\mathbf{x}) =
- \phi^\top\!(\vx) \, \vw \quad\implies \nonumber \\
- &\mu(\vx) = 0 \quad \text{and} \quad \kappa(\vx, \vx') = \frac{1}{\delta} \phi^\T\!(\vx) \, \phi(\vx').
+\textbf{Laplace-GGN}
+The Laplace approximation \citet{aa} builds upon this observation and approximates the weight-space posterior $p(\vw \mid \mathcal{D}) = \mathcal{N}(\vw^{*} , \bm\Sigma)$
+around the MAP weights ($\vw^{*}$) by setting the covariance to the Hessian of the posterior,
+\begin{align} \label{eq:laplace-cov}
+ \bm\Sigma = - \left[\nabla^{2}_{\vw\vw} \log p(\vw \mid \mathcal{D})  |_{\vw=\vw^{*}} \right]^{-1}.
 \end{align}
-% The posterior structure directly relates to the optimization loss around the MAP weights $\vw^*$.
-A common approach is to approximate the correlation structure of a distribution centred at the MAP estimate as done in the Laplace-GGN~\citep{khan2019approximate, daxberger2021laplace, maddox2021fast}.
-The Laplace-GGN takes the MAP solution and approximates the Hessian of the loss function
-with the GGN, we can view this as a linear approximation of the NN, as $f_{\weights^*}(\vx) \approx
-%g_{\weights}(\vx) =
-\Jac{\weights^*}{\vx} \, \weights$, where $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{1 \times P}$ is the Jacobian at the MAP.
-For notational conciseness, we % \cref{eq-laplace-approx-function-space},
-restrict our notatin to a single function output. The extension to multiple outputs is straightforward.
+Computing \cref{eq:laplace-cov} requires calculating the Hessian of the log-likelihood $\nabla^{2}_{\vw\vw} \log p(\vy \mid f_{\vw}(\vx))$ from \cref{eq-empirical-risk}.
+As highlighted in \citet{immer2021improving}, computing this Hessian is often infeasible and in practice it is common to adopt the
+generalised Gauss-Newton (GGN) approximation,
+\begin{align}
+ \nabla^{2}_{\vw\vw} \log p(\vy \mid f_{\vw}(\vx)) \approx \Jac{\vw}{\vx}^{\top} \nabla_{\vf\vf}^{2}\log(\vy\mid\vf) \Jac{\vw}{\vx}.
+\end{align}
+% \textbf{Laplace-GGN converts BNN into GLM}
+\citet{immer2021improving} highlighted that the GGN approximation corresponds to a local linearization of the NN,
+% Recent work \citep{khan2019approximate,maddox2021fast} has converted NNs to GPs by linearizing around the NN's MAP weights (obtained from \cref{eq-empirical-risk}).
+% Recent work \citep{khan2019approximate,maddox2021fast} has shown that NN (in weight space) leads to a GP, i.e. a function-space approximation.
+$f_{\weights^{*}}^{\text{lin}}(\vx) = f_{\weights}(\vx) + \Jac{\weights^{*}}{\vx}(\weights-\weights^{*})$.
+This suggests that predictions should be made with a generalised linear model (GLM), given by,
+\begin{align} \label{eq-glm}
+  p_{\text{\sc GLM}}(\vy \mid \vx, \mathcal{D}) &= \E_{q(\vw)} \left[ p(\vy \mid f_{\vw^{*}}^{\text{lin}}(\vx))\right]. %\nonumber \\
+  % &\approx \frac{1}{S} \sum_{s} p(\vy \mid f_{\vw_{s}}^{\text{lin}}(\vx)), \quad \vw_{s} \sim q(\vw)
+\end{align}
 
-Using the Hessian of the approximate model, we arrive at the Laplace-GGN approximate posterior over $\vw$.
-Therefore, the Laplace-GGN linear model can be used to convert our weight space model to the function space,
-\begin{equation}
-\label{eq-laplace-approx-function-space}
-% g(\vx) \sim \GP \left( \mu(\vx), \kappa(\vx, \vx') \right) \quad \text{with} \quad
-  \mu(\vx) =  0 \quad \text{and} \quad
-  \kappa(\vx, \vx')
-  = \frac{1}{\delta} \Jac{\weights^*}{\vx} \, \JacT{\weights^*}{\vx'},
-\end{equation}
-where the kernel is the so-called Neural Tangent Kernel \citep[NTK,][]{jacot2018neural}.
-We can combine this kernel function with the data set $\dataset$ to construct the posterior.
-%
-We highlight that  \citet{immer2021improving}  adjust the GP posterior mean function to match the NN predictions $f_{\vw^*}(\cdot)$. In contrast, our method makes predictions directly from the GP and avoids such adjustments. In the next section, we present our method for converting a trained NN to a sparse function-space representation.
+
+\textbf{Weight space GLM is equivalent to a GP}
+As Gaussian distributions remain tractable under linear transformations, a linear function in terms of parameters can be converted from the weight space to the function space \citep[see Ch.~2.1 in ][]{rasmussen2006gaussian}.
+ % highlighted that the GGN approximation corresponds to a local linearization of the NN,
+As such (and show in \citet{immer2021improving}), the Bayesian GLM in \cref{eq-glm} has an equivalent GP formulation,
+% \begin{align}
+%   p_{\text{\sc GP}}(\vy \mid \vx, \mathcal{D}) &= \E_{q(\vf)} \left[ p(\vy \mid \vf)\right] %\nonumber \\
+%   % &\approx \frac{1}{S} \sum_{s} p(\vy \mid f_{\vw_{s}}^{\text{lin}}(\vx)), \quad \vw_{s} \sim q(\vw)
+% \end{align}
+% where the GP posterior is given by,
+\begin{subequations}  \label{eq-gp-pred-immer}
+\begin{align}
+  p_{\text{\sc GP}}(\vy \mid \vx, \mathcal{D}) &= \E_{q(\vf)} \left[ p(\vy \mid \vf)\right] \\ %\nonumber \\
+  \myexpect_{p(f_i \mid\vy)}[f_i] &= f_{\vw^{*}}(\vx_{i}), \\
+  \mathrm{Var}_{p(f_i \mid \vy)}[f_i] &= k_{ii} - \vk_{\vx i}^\top ( \MKxx + \bm\Lambda^{-1})^{-1} \vk_{\vx i},
+\end{align}
+\end{subequations}
+where the kernel $\kappa(\vx,\vx')=\frac{1}{\delta} \Jac{\weights^*}{\vx} \, \JacT{\weights^*}{\vx'}$ is the Neural Tangent Kernel \citep[NTK,][]{jacot2018neural},
+based on the Jacobian at the MAP $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{1 \times P}$.
+The $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{N \times N}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where
+each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, $k_{ii} = \kappa(\vx_i, \vx_i)$ and $\bm\Lambda = - \nabla^2_{\vf \vf}\log p(\vy \mid \vf)$ can be interpreted as per-input noise.
+% For notational conciseness, we % \cref{eq-laplace-approx-function-space},
+% restrict our notatin to a single function output. The extension to multiple outputs is straightforward.
+
+The GP formulation from \citet{immer2021improving} (shown in \cref{eq-gp-pred-immer})
+requires inverting an $N\times N$ matrix which has complexity $O(N^3)$. This limits its applicability to large data sets, which are common in deep learning.
+
+% The GP formulation from \citet{immer2021improving} (shown in \cref{eq-gp-pred-immer}) has two limitations:
+% First, it requires inverting an $N\times N$ matrix which has complexity $O(N^3)$. This limits its applicability to large data sets, which are common in deep learning.
+% Second, the posterior mean is the NN  $f_{\vw^*}(\vx)$. As such, new data cannot be incorporated by conditioning on it.
+% Our method overcomes these limitations  via a dual parameterization.
+% Importantly, our dual parameterization makes predictions directly from the GP and enables us to sparsify the GP.
+
+
+% making predictions directly from the GP.
+% In the next section, we present our method for converting a trained NN to a sparse function-space representation.
+% The GP formulation from \citet{immer2021improving} (shown in \cref{eq-gp-pred-immer})  requires inverting an $N\times N$ matrix which has complexity $O(N^3)$.
+% As such, this limits its applicability to large data sets, which are common in deep learning.
+
+% We highlight that  \citet{immer2021improving}  adjust the GP posterior mean function to match the NN predictions $f_{\vw^*}(\cdot)$. In contrast, our method makes predictions directly from the GP and avoids such adjustments. In the next section, we present our method for converting a trained NN to a sparse function-space representation.
+
+% \citet{immer2021improving} showed that making predictions in function space
+
+
+\textbf{Sparse Gaussian processes}
+Sparse GPs reduce the computational complexity by representing the GP as a low-rank approximation at a set of inducing
+inputs $\vz \in \R^{D}$ with corresponding inducing variables $\vu = f(\vz)$ \citep[see][for an early overview]{quinonero2005unifying}.
+The approach by \citet{titsias2009variational} \citep[also used in the DTC approximation, see][]{quinonero2005unifying},
+defines the marginal predictive distribution as $q_{\vu}(f_i)  = \int p(f_i  \mid \vu) \, q(\vu) \, \mathrm{d}\vu$.
+This give the sparse GP predictive posterior,
+\begin{subequations}  \label{eq-svgp-pred}
+\begin{align}
+  \myexpect_{q_{\vu}(f_i)}[f_i] &= f_{\vw^{*}}(\vx_{i}) + \vk_{\vz i}^{\top}\MKzz^{-1}(\vm - f_{\vw^{*}}(\vz)), \\
+  \mathrm{Var}_{q_{\vu}(f_i)}[f_i] &= k_{ii} - \vk_{\vx i}^\top \MKzz^{-1}( \MKzz - \MS_{\vz\vz} )^{-1} \MKzz^{-1} \vk_{\vx i},  \nonumber
+\end{align}
+\end{subequations}
+where the variational distribution is parameterized as $q(\vu) = \mathcal{N}\left(\vu \mid \vm, \MS \right)$ (as in \citet{titsias2009variational,hensman2013gaussian}).
+\todo{is this what titsias used or just hensman?}
+To the best of our knowledge, there are no methods that convert NNs to sparse GPs.
+It is worth noting that the parameters of the variational posterior ($\vm$ and $\MS$) are usually obtained via variational inference.
+However, this requires further optimization and is non trivial in the NN setting.
+
+Not only does the GP formulation from \citet{immer2021improving} (shown in \cref{eq-gp-pred-immer}) struggle to scale to large data sets but
+it also cannot be incorporate new data by conditioning on it.
+This is because it's posterior mean is the NN  $f_{\vw^*}(\vx)$
+Our method overcomes both of these limitations via a dual parameterization.
+Importantly, our dual parameterization enables us to sparsify it whilst making predictions directly from the GP.
+
+
+% Converting the NN GP formulation from \citet{immer2021improving} (shown in \cref{eq-gp-pred-immer}) to a sparse GP is a promising direction for scaling
+% such methods to deep learning data sets.
+% However,
+% eq-svgp-pred
+% Given that we have $p(f_i \mid \vu)$ determined by our GP prior, the goal is to find a $q(\vu)$.
+
+% Sparse GPs reduce the computational complexity by representing the GP as a low-rank approximation induced by a sparse set of input
+% points \citep[see][for an early overview]{quinonero2005unifying}.
+% Given that we have computed the dual parameters derived from our NN predictions and a kernel function, we could essentially employ any of these sparsification methods.
+% In this work, we opt for the approach suggested by \citet{titsias2009variational} \citep[also used in the DTC approximation, see][]{quinonero2005unifying},
+% which defines the marginal predictive distribution as $q_{\vu}(f_i)  = \int p(f_i  \mid \vu) \, q(\vu) \, \mathrm{d}\vu$.
+% Given that we have $p(f_i \mid \vu)$ determined by our GP prior, the goal is to find a $q(\vu)$.
+% Instead of parameterizing the sparse GP posterior as $q(\vu) = \mathcal{N}\left(\vu \mid \vm, \MS \right)$ (as in \citet{titsias2009variational,hensman2013gaussian})
+% we follow insights from \citet{adam2021dual} that the posterior under this model bears a structure akin to \cref{eq:gp_pred}.
+% As such, we project the dual parameters onto the inducing points giving sparse dual parameters,
+% Using this sparse definition of the dual parameters, our sparse GP posterior takes the following form:
+
+% Recent work \citep{khan2019approximate,maddox2021fast} has converted NNs to GPs by linearizing around the NN's MAP weights (obtained from \cref{eq-empirical-risk}).
+% % leads to a GP, i.e. a function-space approximation.
+% % Recent work \citep{khan2019approximate,maddox2021fast} has shown that linearizing a NN (in weight space) leads to a GP, i.e. a function-space approximation.
+% T
+% \begin{align}
+
+% \label{eq-laplace-approx-function-space}
+% f_{\weights^{*}}^{\text{lin}}(\vx) &\sim \GP \left( \mu(\vx), \kappa(\vx, \vx') \right)  \\
+%   % \mu(\vx) &=  0 \quad \text{and} \quad
+%   \kappa(\vx, \vx') &= \frac{1}{\delta} \Jac{\weights^*}{\vx} \, \JacT{\weights^*}{\vx'},
+%   % \mu(\vx) &=  0 \quad \text{and} \quad
+%   % \kappa(\vx, \vx') = \frac{1}{\delta} \Jac{\weights^*}{\vx} \, \JacT{\weights^*}{\vx'},
+% \end{align}
+
+% % \textbf{Linearization gives rise to a Gaussian process}
+% \textbf{Convert NN to GP via linearization}
+% % Our goal is to capture the distribution over the NN model functions through their first two moments.
+% % The first two moments characterize a GP with a mean function $\mu(\cdot)$ and a covariance function (kernel) $\kappa(\cdot,\cdot)$.
+% Recent work \citep{khan2019approximate,maddox2021fast} has shown that linearizing a NN (in weight space) leads to a GP, i.e. a function-space approximation.
+% % As Gaussian distributions remain tractable under linear transformations, a linear function in terms of parameters can be converted from the weight space to the function space \citep[see Ch.~2.1 in ][]{rasmussen2006gaussian} as follows:
+% %
+% \begin{align} \label{eq:weight_func}
+%  &f_\weights(\vx) \approx
+% %g_\weights(\mathbf{x}) =
+%  \phi^\top\!(\vx) \, \vw \quad\implies \nonumber \\
+%  &\mu(\vx) = 0 \quad \text{and} \quad \kappa(\vx, \vx') = \frac{1}{\delta} \phi^\T\!(\vx) \, \phi(\vx').
+% \end{align}
+% % The posterior structure directly relates to the optimization loss around the MAP weights $\vw^*$.
+% A common approach is to approximate the correlation structure of a distribution centred at the MAP estimate as done in the Laplace-GGN~\citep{khan2019approximate, daxberger2021laplace, maddox2021fast}.
+% The Laplace-GGN takes the MAP solution and approximates the Hessian of the loss function
+% with the GGN, we can view this as a linear approximation of the NN, as $f_{\weights^*}(\vx) \approx
+% %g_{\weights}(\vx) =
+% \Jac{\weights^*}{\vx} \, \weights$, where $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{1 \times P}$ is the Jacobian at the MAP.
+% For notational conciseness, we % \cref{eq-laplace-approx-function-space},
+% restrict our notatin to a single function output. The extension to multiple outputs is straightforward.
+
+% Using the Hessian of the approximate model, we arrive at the Laplace-GGN approximate posterior over $\vw$.
+% Therefore, the Laplace-GGN linear model can be used to convert our weight space model to the function space,
+% \begin{equation}
+% \label{eq-laplace-approx-function-space}
+% % g(\vx) \sim \GP \left( \mu(\vx), \kappa(\vx, \vx') \right) \quad \text{with} \quad
+%   \mu(\vx) =  0 \quad \text{and} \quad
+%   \kappa(\vx, \vx')
+%   = \frac{1}{\delta} \Jac{\weights^*}{\vx} \, \JacT{\weights^*}{\vx'},
+% \end{equation}
+% where the kernel is the so-called Neural Tangent Kernel \citep[NTK,][]{jacot2018neural}.
+% We can combine this kernel function with the data set $\dataset$ to construct the posterior.
+% %
+% We highlight that  \citet{immer2021improving}  adjust the GP posterior mean function to match the NN predictions $f_{\vw^*}(\cdot)$. In contrast, our method makes predictions directly from the GP and avoids such adjustments. In the next section, we present our method for converting a trained NN to a sparse function-space representation.
 
 
 %took a similar approach, but instead of fitting the GP posterior to the actual $\vy$, they rely on a transformation of $\vy$. Similarly, \citet{immer2021improving} obtain the same covariance function but use a different mean because they rely on a first-order approximation of the NN to form a Bayesian GLM model. Both approaches adjust the GP posterior mean function to ensure the predictions are from the NN $f_{\vw^*}(\vx)$.
@@ -768,10 +945,25 @@ Substituting \cref{eq:dual_param_laplace} into \cref{eq:gp_pred}, we obtain our 
 \paragraph{Sparsification via dual parameters}
 \label{sec:sparse-dual-gp}
 %
-Sparse GPs reduce the computational complexity by representing the GP as a low-rank approximation induced by a sparse set of input points \citep[see][for an early overview]{quinonero2005unifying}. Given that we have computed the dual parameters derived from our NN predictions and a kernel function, we could essentially employ any of these sparsification methods. In this work, we opt for the approach suggested by \citet{titsias2009variational} \citep[also used in the DTC approximation, see][]{quinonero2005unifying}, which defines the marginal predictive distribution as $q_{\vu}(f_i)  = \int p(f_i  \mid \vu) \, q(\vu) \, \mathrm{d}\vu$. Given that we have $p(f_i \mid \vu)$ determined by our GP prior, the goal is to find a $q(\vu)$.
+Sparse GPs reduce the computational complexity by representing the GP as a low-rank approximation induced by a sparse set of input points \citep[see][for an early overview]{quinonero2005unifying}. Given that we have computed the dual parameters derived from our NN predictions and a kernel function, we could essentially employ any of these sparsification methods. In this work, we opt for the approach suggested by \citet{titsias2009variational} \citep[also used in the DTC approximation, see][]{quinonero2005unifying}, which defines the marginal predictive distribution as $q_{\vu}(f_i)  = \int p(f_i  \mid \vu) \, q(\vu) \, \mathrm{d}\vu$.
+Given that we have $p(f_i \mid \vu)$ determined by our GP prior, the goal is to find a $q(\vu)$.
+Instead of parameterizing the sparse GP posterior as $q(\vu) = \mathcal{N}\left(\vu \mid \vm, \MS \right)$ (as in \citet{titsias2009variational,hensman2013gaussian})
+we follow insights from \citet{adam2021dual} that the posterior under this model bears a structure akin to \cref{eq:gp_pred}.
+As such, we project the dual parameters onto the inducing points giving sparse dual parameters,
+Using this sparse definition of the dual parameters, our sparse GP posterior takes the following form:
+\begin{subequations} \label{eq:dual_sparse_post}
+\begin{align}
+   \myexpect_{q_{\vu}(\vf)}[f_i] &= \vkzs^{\T} \MKzz^{-1} \valpha_{\vu}, \\
+   %\quad \text{and} \quad
+   \textrm{Var}_{q_{\vu}(\vf)}[f_i]  &= k_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \MBeta_{\vu})^{-1} ]\vkzs, \nonumber
+\end{align}
+\end{subequations}
+where $\MKzz$ and $\vkzs$ are defined similarly to $\MKxx$ and $\vk_{\vx i}$ but over the inducing points $\{\vz_j\}_{i=1}^M$, $\vz \in \R^{D}$, instead of the full data set $\dataset$. The key quantities we need to make predictions from our sparse GP from the converged NN are $(\hat{\alpha}_i, \hat{\beta}_i)$ (\cref{eq:dual_param_laplace}) and a kernel function $\kappa$ (\cref{eq-laplace-approx-function-space}). Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred}, we can see that the computational complexity went from $\mathcal{O}(N^3)$ to $\mathcal{O}(M^3)$, with $M \ll N$.  Crucially, given the structure of our probabilistic model, our sparse dual parameters \cref{eq:dual_sparse} are a compact representation of the full model projected using the kernel.
 
-As demonstrated in \citet{adam2021dual}, the posterior under this model bears a structure akin to \cref{eq:gp_pred}. The authors of that paper exploit the dual parameters for approximate inference but write them using the natural parameterization, primarily because this form is more suitable for optimization through natural gradients.
-We project the dual parameters onto the inducing points giving sparse dual parameters,
+
+% As demonstrated in \citet{adam2021dual}, the posterior under this model bears a structure akin to \cref{eq:gp_pred}.
+% The authors of that paper exploit the dual parameters for approximate inference but write them using the natural parameterization, primarily because this form is more suitable for optimization through natural gradients.
+As such, we project the dual parameters onto the inducing points giving sparse dual parameters,
 % In order to link the dual parameters defined in \cref{eq:dual_param}, we write them in the sparse GP using the dual parameters,
 %
 \begin{equation} \textstyle
@@ -781,8 +973,9 @@ We project the dual parameters onto the inducing points giving sparse dual param
 \label{eq:dual_sparse}
 \end{equation}
 %
-where the sparse dual parameters are now a sum over \emph{all data points}, with $\valpha_{\vu} \in \R^{M}$ and $\MBeta_{\vu} \in \R^{M  \times M}$. Using this sparse definition of the dual parameters, our sparse GP posterior takes the following form:
-\begin{align}\label{eq:dual_sparse_post}
+where the sparse dual parameters are now a sum over \emph{all data points}, with $\valpha_{\vu} \in \R^{M}$ and $\MBeta_{\vu} \in \R^{M  \times M}$.
+
+Using this sparse definition of the dual parameters, our sparse GP posterior takes the following form:
 \begin{subequations} \label{eq:dual_sparse_post}
 \begin{align}
    \myexpect_{q_{\vu}(\vf)}[f_i] &= \vkzs^{\T} \MKzz^{-1} \valpha_{\vu}, \\
@@ -864,7 +1057,7 @@ We use the Laplace PyTorch library \citep{daxberger2021laplace} with the full He
 It is common practice to tune the prior precision $\delta$ after training the NN.
 That is, find a prior precision $\delta_{\text{tune}}$ which has a better NLPD on the validation set than the $\delta$ used to train the NN.
 Note that tuning the prior precision in this way leads to different prior precisions being used at train and inference time.
-We highlihgt that technically this invalidates the Laplace/SFR methods as the NN weights are no longer the MAP weights.
+We highlighted that technically this invalidates the Laplace/SFR methods as the NN weights are no longer the MAP weights.
 Nevertheless, we report results when the prior precision $\delta$ is tuned (\cref{tbl:uci} right) and is not tuned (\cref{tbl:uci} left).
 When tuning the prior precision $\delta$, \our matches the performance of the Laplace methods (BNN/GLM).
 Interestingly, \our also  performs well without tuning the prior precision $\delta$, unlike the Laplace methods (BNN/GLM).

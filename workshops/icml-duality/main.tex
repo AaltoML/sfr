@@ -154,7 +154,7 @@
 \crefname{algorithm}{Alg.}{Algs.}
 \crefname{appendix}{App.}{Apps.}
 \crefname{definition}{Def.}{Defs.}
-\crefname{table}{Table}{Tables}
+\crefname{table}{Tab.}{Tabs.}
 
 % Config for Arno's awesome TikZ plotting stuff
 \newlength{\figurewidth}
@@ -544,7 +544,7 @@ Through the dual parameterization, we establish a connection between the NN, GPs
 We consider supervised learning with inputs $\vx_i \in \inputDomain$ and outputs $\vy_i \in \outputDomain$ (e.g. regression) or $\vy_{i} \in \{0,1\}^{C}$ (e.g. classification),
 giving a data set $\dataset = \{(\vx_{i} , \vy_{i})\}_{i=1}^{N}$.
 We introduce a  NN $f_\mathbf{w}: \inputDomain \to \outputDomain$ with weights $\weights \in \R^{P}$ and use a likelihood function $p(\vy \mid f_\mathbf{w}(\vx))$
-to link the function values to the output $\vy$ (Gaussian for regresssion or Categorical for classification).
+to link the function values to the output $\vy$ (e.g. Categorical for classification).
 For notational conciseness we stick to scalar outputs $y_{i}$.
 
 \textbf{Bayesian NNs}
@@ -589,7 +589,7 @@ As such, we can view \cref{eq-empirical-risk} as the maximum {\it a~posteriori} 
 % The posterior over the weights ${p(\vw \mid \dataset) \propto p(\vy \mid f_{\weights}(\vx)) \, p(\weights)}$ is generally not available in closed form. Sampling methods that characterize the posterior with a finite set of samples in weight-space are general-purpose, but computationally heavy and impractical for downstream applications.
 
 \textbf{Laplace-GGN}
-The Laplace approximation \citet{aa} builds upon this observation and approximates the weight-space posterior $p(\vw \mid \mathcal{D}) = \mathcal{N}(\vw^{*} , \bm\Sigma)$
+The Laplace approximation \citet{aa} builds upon this and approximates the weight posterior $p(\vw \mid \mathcal{D}) \approx q(\vw)= \mathcal{N}(\vw^{*} , \bm\Sigma)$
 around the MAP weights ($\vw^{*}$) by setting the covariance to the Hessian of the posterior,
 \begin{align} \label{eq:laplace-cov}
  \bm\Sigma = - \left[\nabla^{2}_{\vw\vw} \log p(\vw \mid \mathcal{D})  |_{\vw=\vw^{*}} \right]^{-1}.
@@ -599,6 +599,7 @@ As highlighted in \citet{immer2021improving}, computing this Hessian is often in
 generalised Gauss-Newton (GGN) approximation,
 \begin{align}
  \nabla^{2}_{\vw\vw} \log p(\vy \mid f_{\vw}(\vx)) \approx \Jac{\vw}{\vx}^{\top} \nabla_{\vf\vf}^{2}\log(\vy\mid\vf) \Jac{\vw}{\vx}.
+  \nonumber
 \end{align}
 % \textbf{Laplace-GGN converts BNN into GLM}
 \citet{immer2021improving} highlighted that the GGN approximation corresponds to a local linearization of the NN,
@@ -613,9 +614,10 @@ This suggests that predictions should be made with a generalised linear model (G
 
 
 \textbf{Weight space GLM is equivalent to a GP}
-As Gaussian distributions remain tractable under linear transformations, a linear function in terms of parameters can be converted from the weight space to the function space \citep[see Ch.~2.1 in ][]{rasmussen2006gaussian}.
+As Gaussian distributions remain tractable under linear transformations, we can covert our model from
+weight space to function space \citep[see Ch.~2.1 in ][]{rasmussen2006gaussian}.
  % highlighted that the GGN approximation corresponds to a local linearization of the NN,
-As such (and show in \citet{immer2021improving}), the Bayesian GLM in \cref{eq-glm} has an equivalent GP formulation,
+As such (and shown in \citet{immer2021improving}), the Bayesian GLM in \cref{eq-glm} has an equivalent GP formulation,
 % \begin{align}
 %   p_{\text{\sc GP}}(\vy \mid \vx, \mathcal{D}) &= \E_{q(\vf)} \left[ p(\vy \mid \vf)\right] %\nonumber \\
 %   % &\approx \frac{1}{S} \sum_{s} p(\vy \mid f_{\vw_{s}}^{\text{lin}}(\vx)), \quad \vw_{s} \sim q(\vw)
@@ -629,14 +631,12 @@ As such (and show in \citet{immer2021improving}), the Bayesian GLM in \cref{eq-g
 \end{align}
 \end{subequations}
 where the kernel $\kappa(\vx,\vx')=\frac{1}{\delta} \Jac{\weights^*}{\vx} \, \JacT{\weights^*}{\vx'}$ is the Neural Tangent Kernel \citep[NTK,][]{jacot2018neural},
-based on the Jacobian at the MAP $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{1 \times P}$.
+based on the Jacobian at the MAP $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\weights f_\weights(\vx)\right]^\top \in \R^{1 \times P}$
+and $f_i = f_\vw(\vx_i)$ denotes the function output at input $\vx_i$.
 The $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{N \times N}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where
 each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, $k_{ii} = \kappa(\vx_i, \vx_i)$ and $\bm\Lambda = - \nabla^2_{\vf \vf}\log p(\vy \mid \vf)$ can be interpreted as per-input noise.
 % For notational conciseness, we % \cref{eq-laplace-approx-function-space},
 % restrict our notatin to a single function output. The extension to multiple outputs is straightforward.
-
-The GP formulation from \citet{immer2021improving} (shown in \cref{eq-gp-pred-immer})
-requires inverting an $N\times N$ matrix which has complexity $O(N^3)$. This limits its applicability to large data sets, which are common in deep learning.
 
 % The GP formulation from \citet{immer2021improving} (shown in \cref{eq-gp-pred-immer}) has two limitations:
 % First, it requires inverting an $N\times N$ matrix which has complexity $O(N^3)$. This limits its applicability to large data sets, which are common in deep learning.
@@ -656,28 +656,35 @@ requires inverting an $N\times N$ matrix which has complexity $O(N^3)$. This lim
 
 
 \textbf{Sparse Gaussian processes}
+The GP formulation from \citet{immer2021improving} (shown in \cref{eq-gp-pred-immer})
+requires inverting an $N\times N$ matrix which has complexity $O(N^3)$.
+This limits its applicability to large data sets, which are common in deep learning.
 Sparse GPs reduce the computational complexity by representing the GP as a low-rank approximation at a set of inducing
 inputs $\vz \in \R^{D}$ with corresponding inducing variables $\vu = f(\vz)$ \citep[see][for an early overview]{quinonero2005unifying}.
 The approach by \citet{titsias2009variational} \citep[also used in the DTC approximation, see][]{quinonero2005unifying},
-defines the marginal predictive distribution as $q_{\vu}(f_i)  = \int p(f_i  \mid \vu) \, q(\vu) \, \mathrm{d}\vu$.
-This give the sparse GP predictive posterior,
+defines the marginal predictive distribution as $q_{\vu}(f_i)  = \int p(f_i  \mid \vu) \, q(\vu) \, \mathrm{d}\vu$ where
+the variational distribution is parameterized as $q(\vu) = \mathcal{N}\left(\vu \mid \vm, \MS \right)$ (as in \citet{titsias2009variational,hensman2013gaussian}).
+\todo{is this what titsias used or just hensman?}
+This gives the sparse GP predictive posterior,
 \begin{subequations}  \label{eq-svgp-pred}
 \begin{align}
   \myexpect_{q_{\vu}(f_i)}[f_i] &= f_{\vw^{*}}(\vx_{i}) + \vk_{\vz i}^{\top}\MKzz^{-1}(\vm - f_{\vw^{*}}(\vz)), \\
-  \mathrm{Var}_{q_{\vu}(f_i)}[f_i] &= k_{ii} - \vk_{\vx i}^\top \MKzz^{-1}( \MKzz - \MS_{\vz\vz} )^{-1} \MKzz^{-1} \vk_{\vx i},  \nonumber
+  \mathrm{Var}_{q_{\vu}(f_i)}[f_i] &= k_{ii} - \vk_{\vx i}^\top \MKzz^{-1}( \MKzz - \MS )^{-1} \MKzz^{-1} \vk_{\vx i},  \nonumber
 \end{align}
 \end{subequations}
-where the variational distribution is parameterized as $q(\vu) = \mathcal{N}\left(\vu \mid \vm, \MS \right)$ (as in \citet{titsias2009variational,hensman2013gaussian}).
-\todo{is this what titsias used or just hensman?}
-To the best of our knowledge, there are no methods that convert NNs to sparse GPs.
-It is worth noting that the parameters of the variational posterior ($\vm$ and $\MS$) are usually obtained via variational inference.
-However, this requires further optimization and is non trivial in the NN setting.
+where $\MKzz$ and $\vkzs$ are defined similarly to $\MKxx$ and $\vk_{\vx i}$ but over the inducing points $\{\vz_j\}_{i=1}^M=\vz \in \R^{M \times D}$.%, instead of the full data set $\dataset$.
+% To the best of our knowledge, there are no methods that convert NNs to sparse GPs.
+It is worth noting that the parameters of the variational posterior ($\vm$ and $\MS$) are usually obtained via variational
+inference, which requires further optimization.% and is non trivial in the NN setting.
 
 Not only does the GP formulation from \citet{immer2021improving} (shown in \cref{eq-gp-pred-immer}) struggle to scale to large data sets but
 it also cannot be incorporate new data by conditioning on it.
-This is because it's posterior mean is the NN  $f_{\vw^*}(\vx)$
+This is because it's posterior mean is the NN  $f_{\vw^*}(\vx)$.
 Our method overcomes both of these limitations via a dual parameterization.
-Importantly, our dual parameterization enables us to sparsify it whilst making predictions directly from the GP.
+Importantly, our dual parameterization enables us to 1) sparsify the GP withput resorting to further optimisation, and 2)
+incorporate new data without retraining (in a computationally efficient manner).
+
+% on new data  make predictions directly from the GP.
 
 
 % Converting the NN GP formulation from \citet{immer2021improving} (shown in \cref{eq-gp-pred-immer}) to a sparse GP is a promising direction for scaling
@@ -763,7 +770,7 @@ Importantly, our dual parameterization enables us to sparsify it whilst making p
 \section{\our: Sparse function-space representation of NNs}\label{sec:sfr}
 %\paragraph{GP in the dual parameters}
 In this section, we present our method, named \our, which converts a trained NN into a GP.
-\our is built upon a dual parameterization of the GP posterior, i.e. an alternative parameterization.
+\our is built upon a dual parameterization of the GP posterior.
 Early work by \citet{csato2002sparse} showed that Expectation Propagation gives rise to a dual parameterization.
 More recent work by \citet{adam2021dual,chang2023memory} showed a different dual parameterization arising from the evidence lower bound for sparse variational GPs \citep{hensman2013gaussian,titsias2009variational}.
 The dual parameterization from \citet{adam2021dual,chang2023memory}, consists of parameters $\valpha$ and $\vbeta$, which gives rise to the predictive posterior,
@@ -777,8 +784,8 @@ The dual parameterization from \citet{adam2021dual,chang2023memory}, consists of
 \end{align}
 \end{subequations}
 %
-where $f_i = f_\vw(\vx_i)$ is the function output at input $\vx_i$,
-the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{N \times N}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $k_{ii} = \kappa(\vx_i, \vx_i)$.
+% where $f_i = f_\vw(\vx_i)$ is the function output at input $\vx_i$.
+% the $ij$\textsuperscript{th} entry of the matrix $\MKxx \in \R^{N \times N}$ is $\kappa(\vx_i,\vx_j)$, $\vk_{\vx i}$ denotes a vector where each $j$\textsuperscript{th} element is $\kappa(\vx_i, \vx_j)$, and $k_{ii} = \kappa(\vx_i, \vx_i)$.
 \cref{eq:gp_pred} states that the first two moments of the resultant posterior process (which may not be a GP), can be parameterized via the dual
 parameters $\valpha, \vbeta \in \R^{N}$,
 % which are the vectors
@@ -793,12 +800,15 @@ defined as, \looseness-1
   \end{align}
 \end{subequations}
 %
-The relationships specified are valid for generic likelihoods and involve no approximations since the expectation is under the exact posterior, but given that the model can be expressed in a kernel formulation. \cref{eq:gp_pred} and \cref{eq:dual_param} highlight that the approximate inference technique, usually viewed as a posterior approximation, can be alternatively interpreted as an approximation of the expectation of gradients of loss/likelihoods.
+The relationships specified are valid for generic likelihoods and involve no approximations since the expectation is under the
+exact posterior, given that the model can be expressed in a kernel formulation.
+\cref{eq:gp_pred} and \cref{eq:dual_param} highlight that the approximate inference technique, usually viewed as a posterior approximation,
+can alternatively be interpreted as an approximation of the expectation of loss (likelihood) gradients.
 
 % Originally \citet{csato2002sparse} iteratively find dual parameters using an expectation propagation \citep[EP,][]{minka2001expectation} method. More recently, \citet{khan2017conjugate,adam2021dual} have shown this relationship for variational Gaussian processes where the above expectation is with respect to the approximate variational posterior. Meanwhile in \citet{wilkinson2023bayes}, they show links between linearization methods and how they solve the \cref{eq:dual_param}.
 
 \paragraph{Dual parameters from NN}
-Given that we use a Laplace approximation of the NN, we remove the expectation over the posterior \citep[see Ch.~3.4.1 in][for derivation]{rasmussen2006gaussian} and our dual parameters are given by,
+Given that we use a Laplace approximation of the NN, we remove the expectation over the posterior \citep[see Ch.3.4.1 in][for derivation]{rasmussen2006gaussian} and our dual parameters are given by,
 %
 \begin{subequations}
 \label{eq:dual_param_laplace}
@@ -809,7 +819,7 @@ Given that we use a Laplace approximation of the NN, we remove the expectation o
   \end{align}
 \end{subequations}
 %
-Substituting \cref{eq:dual_param_laplace} into \cref{eq:gp_pred}, we obtain our GP based on the converged NN. The problem with forming predictions using \cref{eq:gp_pred} is that they cost $O(N^3)$, which limits a full GP model to application on large data sets.
+Substituting \cref{eq:dual_param_laplace} into \cref{eq:gp_pred}, we obtain our GP based on the converged NN. The problem with forming predictions using \cref{eq:gp_pred} is that they cost $O(N^3)$, which limits its applicability to large data sets.
 
 \begin{table*}[t!]
   \centering\scriptsize
@@ -958,8 +968,10 @@ Substituting \cref{eq:dual_param_laplace} into \cref{eq:gp_pred}, we obtain our 
 \paragraph{Sparsification via dual parameters}
 \label{sec:sparse-dual-gp}
 %
-Sparse GPs reduce the computational complexity by representing the GP as a low-rank approximation induced by a sparse set of input points \citep[see][for an early overview]{quinonero2005unifying}. Given that we have computed the dual parameters derived from our NN predictions and a kernel function, we could essentially employ any of these sparsification methods. In this work, we opt for the approach suggested by \citet{titsias2009variational} \citep[also used in the DTC approximation, see][]{quinonero2005unifying}, which defines the marginal predictive distribution as $q_{\vu}(f_i)  = \int p(f_i  \mid \vu) \, q(\vu) \, \mathrm{d}\vu$.
-Given that we have $p(f_i \mid \vu)$ determined by our GP prior, the goal is to find a $q(\vu)$.
+% Sparse GPs reduce the computational complexity by representing the GP as a low-rank approximation induced by a sparse set of input points \citep[see][for an early overview]{quinonero2005unifying}.
+Given that we have computed the dual parameters derived from our NN predictions and a kernel function, we could essentially employ any sparsification method \citep{quinonero2005unifying}.
+In this work, we opt for the approach suggested by \citet{titsias2009variational} \citep[also used in the DTC approximation, see][]{quinonero2005unifying}, which defines the marginal predictive distribution as $q_{\vu}(f_i)  = \int p(f_i  \mid \vu) \, q(\vu) \, \mathrm{d}\vu$.
+% Given that we have $p(f_i \mid \vu)$ determined by our GP prior, the goal is to find a $q(\vu)$.
 Instead of parameterizing the sparse GP posterior as $q(\vu) = \mathcal{N}\left(\vu \mid \vm, \MS \right)$ (as in \citet{titsias2009variational,hensman2013gaussian})
 we follow insights from \citet{adam2021dual} that the posterior under this model bears a structure akin to \cref{eq:gp_pred}.
 As such, we project the dual parameters onto the inducing points giving sparse dual parameters,
@@ -971,32 +983,34 @@ Using this sparse definition of the dual parameters, our sparse GP posterior tak
    \textrm{Var}_{q_{\vu}(\vf)}[f_i]  &= k_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \MBeta_{\vu})^{-1} ]\vkzs, \nonumber
 \end{align}
 \end{subequations}
-where $\MKzz$ and $\vkzs$ are defined similarly to $\MKxx$ and $\vk_{\vx i}$ but over the inducing points $\{\vz_j\}_{i=1}^M$, $\vz \in \R^{D}$, instead of the full data set $\dataset$. The key quantities we need to make predictions from our sparse GP from the converged NN are $(\hat{\alpha}_i, \hat{\beta}_i)$ (\cref{eq:dual_param_laplace}) and a kernel function $\kappa$ (\cref{eq-laplace-approx-function-space}). Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred}, we can see that the computational complexity went from $\mathcal{O}(N^3)$ to $\mathcal{O}(M^3)$, with $M \ll N$.  Crucially, given the structure of our probabilistic model, our sparse dual parameters \cref{eq:dual_sparse} are a compact representation of the full model projected using the kernel.
-
-
+% where the key quantities we need to make predictions from our sparse GP from the converged NN are $(\hat{\alpha}_i, \hat{\beta}_i)$ (\cref{eq:dual_param_laplace}) and a kernel function $\kappa$ (\cref{eq-laplace-approx-function-space}).
 % As demonstrated in \citet{adam2021dual}, the posterior under this model bears a structure akin to \cref{eq:gp_pred}.
 % The authors of that paper exploit the dual parameters for approximate inference but write them using the natural parameterization, primarily because this form is more suitable for optimization through natural gradients.
-As such, we project the dual parameters onto the inducing points giving sparse dual parameters,
+where the dual parameters are projected onto the inducing points to get our sparse dual parameters,
 % In order to link the dual parameters defined in \cref{eq:dual_param}, we write them in the sparse GP using the dual parameters,
 %
 \begin{equation} \textstyle
   \valpha_{\vu}  =  \sum_{i=1}^N  \vkzi \, \hat{\alpha}_{i}
   \quad \text{and} \quad
-  \MBeta_{\vu} =  \sum_{i=1}^N \vkzi \,\hat{\beta}_{i} \, \vkzi^{\T} ,
+  \MBeta_{\vu} =  \sum_{i=1}^N \vkzi \,\hat{\beta}_{i} \, \vkzi^{\T} .
 \label{eq:dual_sparse}
 \end{equation}
 %
-where the sparse dual parameters are now a sum over \emph{all data points}, with $\valpha_{\vu} \in \R^{M}$ and $\MBeta_{\vu} \in \R^{M  \times M}$.
+Note that the sparse dual parameters are now a sum over \emph{all data points}, with $\valpha_{\vu} \in \R^{M}$ and $\MBeta_{\vu} \in \R^{M  \times M}$.
+Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred}, we can see that the computational complexity went from $\mathcal{O}(N^3)$ to $\mathcal{O}(M^3)$, with $M \ll N$.
+Crucially, given the structure of our probabilistic model, our sparse dual parameters \cref{eq:dual_sparse} are a compact representation of the full model projected using the kernel.
 
-Using this sparse definition of the dual parameters, our sparse GP posterior takes the following form:
-\begin{subequations} \label{eq:dual_sparse_post}
-\begin{align}
-   \myexpect_{q_{\vu}(\vf)}[f_i] &= \vkzs^{\T} \MKzz^{-1} \valpha_{\vu}, \\
-   %\quad \text{and} \quad
-   \textrm{Var}_{q_{\vu}(\vf)}[f_i]  &= k_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \MBeta_{\vu})^{-1} ]\vkzs, \nonumber
-\end{align}
-\end{subequations}
-where $\MKzz$ and $\vkzs$ are defined similarly to $\MKxx$ and $\vk_{\vx i}$ but over the inducing points $\{\vz_j\}_{i=1}^M$, $\vz \in \R^{D}$, instead of the full data set $\dataset$. The key quantities we need to make predictions from our sparse GP from the converged NN are $(\hat{\alpha}_i, \hat{\beta}_i)$ (\cref{eq:dual_param_laplace}) and a kernel function $\kappa$ (\cref{eq-laplace-approx-function-space}). Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred}, we can see that the computational complexity went from $\mathcal{O}(N^3)$ to $\mathcal{O}(M^3)$, with $M \ll N$.  Crucially, given the structure of our probabilistic model, our sparse dual parameters \cref{eq:dual_sparse} are a compact representation of the full model projected using the kernel.
+
+
+% Using this sparse definition of the dual parameters, our sparse GP posterior takes the following form:
+% \begin{subequations} \label{eq:dual_sparse_post}
+% \begin{align}
+%    \myexpect_{q_{\vu}(\vf)}[f_i] &= \vkzs^{\T} \MKzz^{-1} \valpha_{\vu}, \\
+%    %\quad \text{and} \quad
+%    \textrm{Var}_{q_{\vu}(\vf)}[f_i]  &= k_{ii} - \vkzs^\top [\MKzz^{-1} - (\MKzz + \MBeta_{\vu})^{-1} ]\vkzs, \nonumber
+% \end{align}
+% \end{subequations}
+% where $\MKzz$ and $\vkzs$ are defined similarly to $\MKxx$ and $\vk_{\vx i}$ but over the inducing points $\{\vz_j\}_{i=1}^M$, $\vz \in \R^{D}$, instead of the full data set $\dataset$. The key quantities we need to make predictions from our sparse GP from the converged NN are $(\hat{\alpha}_i, \hat{\beta}_i)$ (\cref{eq:dual_param_laplace}) and a kernel function $\kappa$ (\cref{eq-laplace-approx-function-space}). Contrasting \cref{eq:dual_sparse_post} and \cref{eq:gp_pred}, we can see that the computational complexity went from $\mathcal{O}(N^3)$ to $\mathcal{O}(M^3)$, with $M \ll N$.  Crucially, given the structure of our probabilistic model, our sparse dual parameters \cref{eq:dual_sparse} are a compact representation of the full model projected using the kernel.
 
 
 We highlight that \our differs from the GP subset method from \citet{immer2021improving}, which results in several advantages.
@@ -1062,7 +1076,7 @@ Following \citet{immer2021improving}, we used a two-layer MLP with width 50 and 
 We trained the NN using Adam \cite{adam} with a learning rate of $10^{-4}$ and a batch size of $128$.
 Training was stopped when the validation NLPD stopped decreasing after 1000 steps.
 The checkpoint with lowest NLPD was the NN MAP.
-Each experiment was run for $5$ seeds.
+Each experiment was run for $5$ seeds.\looseness-1
 
 We first compare \our to alternative posthoc Bayesian deep learning approaches.
 In particular, we compare to the Laplace approximation when making predictions with 1) the nonlinear NN (BNN) and 2) the generalised linear model (GLM).
@@ -1124,8 +1138,8 @@ This demonstrates that \our  captures information from the entire data set and a
 \section{Discussion and conclusion}
 \label{sec:conclusion}
 %
-In this paper, we introduced \our, a novel approach for representing NNs in sparse function space.
-It leverages a dual parameterization to obtain an efficient low-rank (sparse) approximation that captures information from the entire data set.
+In this paper, we introduced \our, a novel approach for representing NNs in function space.
+It leverages a dual parameterization to obtain a low-rank (sparse) approximation that captures information from the entire data set.
 We showcased \our's uncertainty quantification in UCI benchmark classification tasks (\cref{tbl:uci}).
 Interestingly, \our achieves good predictive performance without tuning the prior precision $\delta$ after performing inference.
 This contrasts the Laplace approximation (BNN/GLM) and we believe this stays more true to Bayesian inference.% (as tuning the prior precision is equivalent to altering the prior after calculating the posterior).

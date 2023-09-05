@@ -677,11 +677,12 @@ inputs $\MZ = \{\vz_{j} \}_{j=1}^{M} \in \R^{M \times D}$ with corresponding ind
 The approach by \citet{titsias2009variational} (also used in the DTC approximation),
 defines the marginal predictive distribution as $q_{\vu}(f_i)  = \int p(f_i  \mid \vu) \, q(\vu) \, \mathrm{d}\vu$ where
 the variational distribution is parameterized as $q(\vu) = \mathcal{N}\left(\vu \mid \vm, \MS \right)$ (as in \citet{titsias2009variational,hensman2013gaussian}).
-This gives the sparse GP predictive posterior,
+Assuming a zero mean function, the sparse GP predictive posterior is
 \begin{subequations}  \label{eq-svgp-pred}
 \begin{align}
-  \myexpect_{q_{\vu}(f_i)}[f_i] &= f_{\vw^{*}}(\vx_{i}) + \vk_{\vz i}^{\top}\MKzz^{-1}(\vm - f_{\vw^{*}}(\MZ)), \\
-  \mathrm{Var}_{q_{\vu}(f_i)}[f_i] &= k_{ii} - \vk_{\vx i}^\top ( \MKzz -  \MKzz^{-1}\MS  \MKzz^{-1}))^{-1} \vk_{\vx i},  \nonumber
+  % \myexpect_{q_{\vu}(f_i)}[f_i] &= f_{\vw^{*}}(\vx_{i}) + \vk_{\vz i}^{\top}\MKzz^{-1}(\vm - f_{\vw^{*}}(\MZ)), \\
+  \myexpect_{q_{\vu}(f_i)}[f_i] &= \vk_{\vz i}^{\top}\MKzz^{-1}\vm, \\
+  \mathrm{Var}_{q_{\vu}(f_i)}[f_i] &= k_{ii} - \vk_{\vz i}^\top ( \MKzz^{-1} -  \MKzz^{-1}\MS  \MKzz^{-1})) \vk_{\vz i},  \nonumber
 \end{align}
 \end{subequations}
 where $\MKzz$ and $\vkzs$ are defined similarly to $\MKxx$ and $\vk_{\vx i}$ but over the inducing points $\MZ$.%, instead of the full data set $\dataset$.

@@ -1109,7 +1109,7 @@ Note that this leads to a different prior precision being used for training and 
 We highlighted that technically this invalidates the Laplace/SFR methods as the NN weights are no longer the MAP weights.
 Nevertheless, we report results when the prior precision $\delta$ is tuned (\cref{tbl:uci} right) and is not tuned (\cref{tbl:uci} left).
 When tuning the prior precision $\delta$, \our matches the performance of the Laplace methods (BNN/GLM).
-Interestingly, \our also  performs well without tuning the prior precision $\delta$, unlike the Laplace methods (BNN/GLM).
+Interestingly, \our also  performs well without tuning the prior precision $\delta$, unlike the Laplace methods.
 
 As \our captures information from all of the training data in the inducing points, we compare \our to making GP predictions with a subset of the training data (GP subset).
 To make the comparison fair, we use \our's inducing inputs $\vz$ as the subset.

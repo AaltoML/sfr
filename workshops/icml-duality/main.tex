@@ -154,7 +154,7 @@
 \crefname{algorithm}{Alg.}{Algs.}
 \crefname{appendix}{App.}{Apps.}
 \crefname{definition}{Def.}{Defs.}
-\crefname{table}{Tab.}{Tabs.}
+%\crefname{table}{Tab.}{Tabs.} % Let's leave table as is
 
 % Config for Arno's awesome TikZ plotting stuff
 \newlength{\figurewidth}
@@ -424,8 +424,8 @@ Given an approximate inference technique, we demonstrate that NNs emit `dual' pa
 In contrast to previous work that utilizes subsets of training data \citep{immer2021scalable}, our parameterization captures
 information from {\em all} data points in a sparse representation, essential for scaling to deep learning data sets.
 % predictive uncertainty.
-Importantly, the dual parameterization can be used to 1) sparsify the GP without requiring further optimization
-(e.g. variational inference) whilst capturing information from all data points, and 2) incorporate new data without retraining (in a computationally efficient manner
+Importantly, the dual parameterization can be used to {\em (i)}~sparsify the GP without requiring further optimization
+(\eg, variational inference) whilst capturing information from all data points, and {\em (ii)}~incorporate new data without retraining (in a computationally efficient manner
 by conditioning on new data).
 % In contrast to previous work that utilizes subsets of training data \citep{immer2021scalable}, our parameterization captures information from {\em all} data points in a sparse representation, essential for predictive uncertainty.
 % Importantly, our method predicts in the same space as the original trained NN, with the benefit of avoiding the
@@ -543,18 +543,18 @@ Through the dual parameterization, we establish a connection between the NN, GPs
 % Consequently, the weight-space posterior corresponds to a distribution over function values.
 % Intuitively, if one was to sample from the weight posterior, the corresponding functions created can be viewed as perturbed versions of the function at the MAP estimate $f_{\vw^*}$. This perspective aligns better with the main objective of making representative predictions given the observations.
 
-We consider supervised learning with inputs $\vx_i \in \inputDomain$ and outputs $\vy_i \in \outputDomain$ (e.g. regression) or $\vy_{i} \in \{0,1\}^{C}$ (e.g. classification),
+We consider supervised learning with inputs $\vx_i \in \inputDomain$ and outputs $\vy_i \in \outputDomain$ (\eg, regression) or $\vy_{i} \in \{0,1\}^{C}$ (\eg, classification),
 giving a data set $\dataset = \{(\vx_{i} , \vy_{i})\}_{i=1}^{N}$.
 We introduce a  NN $f_\mathbf{w}: \inputDomain \to \outputDomain$ with weights $\weights \in \R^{P}$ and use a likelihood function $p(\vy \mid f_\mathbf{w}(\vx))$
-to link the function values to the output $\vy$ (e.g. Categorical for classification).
+to link the function values to the output $\vy$ (\eg, categorical for classification).
 For notational conciseness, we stick to scalar outputs $y_{i}$.
 
 % \textbf{Bayesian NNs}
 \textbf{BNNs}
 In Bayesian deep learning, we place a prior over the weights $p(\vw)$ and aim to calculate the posterior over the weights given the data $p(\vw \mid \mathcal{D})$.
-Given the weight posterior $p(\vw \mid \mathcal{D})$, we can make probabilistic predictions with,
+Given the weight posterior $p(\vw \mid \mathcal{D})$, we can make probabilistic predictions with
 \begin{align} \label{eq-predictions}
-  p_{\text{\sc BNN}}(y \mid \vx, \mathcal{D}) = \E_{p(\vw \mid \mathcal{D})} \left[ p(y \mid f_{\vw}(\vx)) \right]
+  p_{\text{\sc BNN}}(y \mid \vx, \mathcal{D}) = \E_{p(\vw \mid \mathcal{D})} \left[ p(y \mid f_{\vw}(\vx)) \right].
 \end{align}
 The posterior ${p(\vw \mid \dataset) \propto p(\vy \mid f_{\weights}(\vx)) \, p(\weights)}$ is generally not available in closed form
 so we resort to approximations.
@@ -610,7 +610,7 @@ where the Jacobian is given by $\Jac{\weights}{\vx} \coloneqq \left[ \nabla_\wei
 % Recent work \citep{khan2019approximate,maddox2021fast} has converted NNs to GPs by linearizing around the NN's MAP weights (obtained from \cref{eq-empirical-risk}).
 % Recent work \citep{khan2019approximate,maddox2021fast} has shown that NN (in weight space) leads to a GP, i.e. a function-space approximation.
 $f_{\weights^{*}}^{\text{lin}}(\vx) = f_{\weights}(\vx) + \Jac{\weights^{*}}{\vx}(\weights-\weights^{*})$.
-This suggests that predictions should be made with a generalized linear model (GLM), given by,
+This suggests that predictions should be made with a generalized linear model (GLM), given by
 \begin{align} \label{eq-glm}
   p_{\text{\sc GLM}}(y_{i} \mid \vx, \mathcal{D}) &= \E_{q(\vw)} \left[ p(y_{i} \mid f_{\vw^{*}}^{\text{lin}}(\vx))\right]. %\nonumber \\
   % &\approx \frac{1}{S} \sum_{s} p(\vy \mid f_{\vw_{s}}^{\text{lin}}(\vx)), \quad \vw_{s} \sim q(\vw)
@@ -636,7 +636,7 @@ As such (and shown in \citet{immer2021improving}), the Bayesian GLM in \cref{eq-
 % \end{align}
 % \end{subequations}
 \begin{align} \label{eq-gp-pred-immer}
-  p_{\text{\sc GP}}(y_{i} \mid \vx, \mathcal{D}) &= \E_{q(f_{i})} \left[ p(y_{i} \mid f_{i} )\right]
+  p_{\text{\sc GP}}(y_{i} \mid \vx, \mathcal{D}) &= \E_{q(f_{i})} \left[ p(y_{i} \mid f_{i} )\right],
 \end{align}
 where $q(f_{i}) = \mathcal{N} \left( f_{\vw^{*}}(\vx_{i}), \sigma^{2}_{i} \right)$ is the GP's predictive posterior with variance,
 % where $q(\vf) = \mathcal{N} \left( \myexpect_{p(f_i \mid\vy)}[f_i], \mathrm{Var}_{p(f_i \mid \vy)}[f_i] \right)$ is the predictive GP posterior given by,
@@ -693,8 +693,7 @@ Not only does the GP formulation from \citet{immer2021improving} (shown in \cref
 data sets but it also cannot incorporate new data by conditioning on it.
 This is because its posterior mean is the NN  $f_{\vw^*}(\vx)$.
 Our method overcomes both of these limitations via a dual parameterization.
-Importantly, our dual parameterization enables us to 1) sparsify the GP without further optimization, and 2)
-incorporate new data without retraining.\looseness-1 % (in a computationally efficient manner).
+Importantly, our dual parameterization enables us to {\em (i)}~sparsify the GP without further optimization, and {\em (ii)}~incorporate new data without retraining.\looseness-1 % (in a computationally efficient manner).
 
 % on new data  make predictions directly from the GP.
 
@@ -792,7 +791,7 @@ The dual parameterization from \citet{adam2021dual,chang2023memory}, consists of
 \begin{subequations}  \label{eq:gp_pred}
 \begin{align}
   \myexpect_{p(f_i \mid\vy)}[f_i] &= \vk_{\vx i}^\top \valpha, \\
-  \mathrm{Var}_{p(f_i \mid \vy)}[f_i] &= k_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i},  \nonumber
+  \mathrm{Var}_{p(f_i \mid \vy)}[f_i] &= k_{ii} - \vk_{\vx i}^\top ( \MKxx + \diag(\vbeta)^{-1})^{-1} \vk_{\vx i}.  \nonumber
 \end{align}
 \end{subequations}
 %
@@ -801,7 +800,7 @@ The dual parameterization from \citet{adam2021dual,chang2023memory}, consists of
 \cref{eq:gp_pred} states that the first two moments of the resultant posterior process (which may not be a GP), can be parameterized via the dual
 parameters $\valpha, \vbeta \in \R^{N}$,
 % which are the vectors
-defined as, \looseness-1
+defined as \looseness-1
 %
 \begin{subequations}
 \label{eq:dual_param}
@@ -820,7 +819,7 @@ can alternatively be interpreted as an approximation of the expectation of loss 
 % Originally \citet{csato2002sparse} iteratively find dual parameters using an expectation propagation \citep[EP,][]{minka2001expectation} method. More recently, \citet{khan2017conjugate,adam2021dual} have shown this relationship for variational Gaussian processes where the above expectation is with respect to the approximate variational posterior. Meanwhile in \citet{wilkinson2023bayes}, they show links between linearization methods and how they solve the \cref{eq:dual_param}.
 
 \paragraph{Dual parameters from NN}
-Given that we use a Laplace approximation of the NN, we remove the expectation over the posterior \citep[see Ch.3.4.1 in][for derivation]{rasmussen2006gaussian} and our dual parameters are given by,
+Given that we use a Laplace approximation of the NN, we remove the expectation over the posterior \citep[see Ch.~3.4.1 in][for derivation]{rasmussen2006gaussian} and our dual parameters are given by
 %
 \begin{subequations}
 \label{eq:dual_param_laplace}
@@ -865,11 +864,11 @@ Making predictions with \cref{eq:gp_pred} costs $O(N^3)$, which limits its appli
   % \setlength{\figurewidth}{.18\textwidth}
   \setlength{\figurewidth}{.27\textwidth}
   \setlength{\figureheight}{\figurewidth}
-  \pgfplotsset{axis on top,scale only axis,y tick label style={rotate=90}, x tick label style={font=\Large},y tick label style={font=\LARGE},title style={yshift=-4pt,font=\LARGE}, y label style={font=\LARGE},x label style={font=\LARGE},grid=major, width=\figurewidth, height=\figureheight}
+  \pgfplotsset{axis on top,scale only axis,y tick label style={rotate=90}, x tick label style={font=\Large},y tick label style={font=\Large},title style={yshift=-4pt,font=\LARGE}, y label style={font=\Large},x label style={font=\LARGE},grid=major, width=\figurewidth, height=\figureheight}
   \pgfplotsset{grid style={line width=.1pt, draw=gray!10,dashed}}
   \pgfplotsset{xlabel={$M$ as \% of $N$},ylabel style={yshift=-5pt},xlabel style={yshift=-5pt}}
   %
-  \begin{minipage}[t]{.155\textwidth}
+  \begin{minipage}[t]{.175\textwidth}
     \raggedleft
     \pgfplotsset{ylabel=NLPD}
     \input{./fig/australian.tex}
@@ -991,7 +990,7 @@ which is shown in \cref{eq-svgp-pred}.
 However, instead of parameterizing the variational distribution as $q(\vu) = \mathcal{N}\left(\vu \mid \vm, \MS \right)$,
 we follow insights from \citet{adam2021dual} that the posterior under this model bears a structure akin to \cref{eq:gp_pred}.
 As such, we project the dual parameters onto the inducing points giving sparse dual parameters.
-Using this sparse definition of the dual parameters, our sparse GP posterior is given by,
+Using this sparse definition of the dual parameters, our sparse GP posterior is given by
 %
 \begin{subequations} \label{eq:dual_sparse_post}
 \begin{align}
@@ -1037,11 +1036,10 @@ First, \our leverages a dual parameterization to construct a sparse GP, which ca
 In contrast, \citet{immer2021improving} utilize a subset of the data points which ignores information from the rest of the data set.
 % It is also worth noting that our sparsification via dual parameters does not require any further optimization, we do not need to retrain a separate sparse GP.
 Second, \our makes predictions with the GP mean, whereas \citet{immer2021improving} center predictions around NN predictions $f_{\vw^*}(\cdot)$.
-As such, \our can incorporate new data without retraining (i.e. condition on new data) whilst the GP subset method cannot.
+As such, \our can incorporate new data without retraining (\ie, condition on new data) whilst the GP subset method cannot.
 
 To the best of our knowledge, we are the first to formulate a dual GP from a NN.
-Our dual parameterization has two main benefits: 1) it enables us to construct a sparse GP without requiring us to perform further optimization, and 2)
-it enables us to incorporate new data without retraining (i.e. condition on new data) using \cref{eq:dual_sparse}.
+Our dual parameterization has two main benefits: {\em (i)}~it enables us to construct a sparse GP without requiring us to perform further optimization, and {\em (ii)}~it enables us to incorporate new data without retraining (\ie, condition on new data) using \cref{eq:dual_sparse}.
 
 % Unlike our approach, \citet{immer2021improving} employ a subset of the data points to construct a sparse GP, reducing computational complexity. However, this method ignores contributions from the complete data set. It is important to note that the sparsifying process is independent of the approximate inference technique because the dual parameters of \cref{eq:dual_param} are computed using \cref{eq-empirical-risk} and a Laplace approximation. More complicated inference techniques, such as variational inference, could be used, but given its simplicity, in our experiments we used the Laplace-GGN approximation with the trained NN.
 % Furthermore, our dual variable view of approximate inference means we do not need to retrain a separate sparse GP.\looseness-2
@@ -1101,8 +1099,8 @@ Each experiment was run for $5$ seeds.\looseness-1
 
 % We first compare \our to other posthoc Bayesian deep learning approaches.
 % In particular, we compare to the Laplace approximation when making predictions with 1) the nonlinear NN (BNN) and 2) the generalised linear model (GLM).
-We first compare \our to the Laplace approximation when making predictions with 1) the nonlinear NN (BNN) and 2) the generalised linear model (GLM) in \cref{eq-glm}.
-We use the Laplace PyTorch library \citep{daxberger2021laplace} with the full Hessian.%, i.e. we do not resort to the diagonal or KFAC approximations.
+We first compare \our to the Laplace approximation when making predictions with {\em (i)}~the nonlinear NN (BNN) and {\em (ii)}~the generalised linear model (GLM) in \cref{eq-glm}.
+We use the Laplace PyTorch library \citep{daxberger2021laplace} with the full Hessian. %, i.e. we do not resort to the diagonal or KFAC approximations.
 It is common practice to tune the prior precision $\delta$ after training the NN.
 That is, find a prior precision $\delta_{\text{tune}}$ which has a better NLPD on the validation set than the $\delta$ used to train the NN.
 Note that this leads to a different prior precision being used for training and inference.

@@ -180,13 +180,17 @@ NUM_CLASSES = {
 
 
 def bold_if_significant(row):
-    print(f"ROW ROW: {row}")
-    if row["pvalue"] > 0.05:
-        mean = "\mathbf{" + f"{row['mean']:.2f}" + "}"
-        std = "\mathbf{" + f"{(row['std']):.2f}" + "}"
-    else:
+    # print(f"ROW ROW: {row}")
+    print(f"Model: {row['model']}")
+    print(f"tstatistic {row['tstatistic']}")
+    print(f"pvalue{row['pvalue']}")
+    if row["pvalue"] < 0.05:
+        # reject the null hypothesis of identical avg NLPDs
         mean = f"{row['mean']:.2f}"
         std = f"{(row['std']):.2f}"
+    else:
+        mean = "\mathbf{" + f"{row['mean']:.2f}" + "}"
+        std = "\mathbf{" + f"{(row['std']):.2f}" + "}"
     return "\\val{" + mean + "}{" + std + "}"
 
 
@@ -258,9 +262,8 @@ def make_uci_table():
 
     # Calculate pvalues for bolding
     df_with_stats["pvalue"] = np.nan
-    groups = []
+    df_with_stats["tstatistic"] = np.nan
     best_nlpd = np.inf
-    pvalues = []
     for dataset_name in DATASETS.keys():
         df_dataset = df_with_stats[df_with_stats["dataset"] == dataset_name]
         # Find the best NLPD to use as base for paired t test
@@ -273,26 +276,28 @@ def make_uci_table():
             if nlpd < best_nlpd:
                 best_nlpd = nlpd
                 best_model_name = model_name
-        print("groups")
-        print(groups)
         print("best_model_name")
         print(best_model_name)
 
-        group1 = df[df["dataset"] == dataset_name]
-        group1 = group1[group1["model"] == best_model_name]
-        print("group1")
-        print(group1)
+        group2 = df[df["dataset"] == dataset_name]
+        group2 = group2[group2["model"] == best_model_name]
+        print("group2")
+        print(group2)
         for model_name in COLUMNS_TITLES:
-            group2 = df[df["dataset"] == dataset_name]
-            group2 = group2[group2["model"] == model_name]
-            print("group2")
-            print(group2)
-            if model_name in best_model_name:
+            group1 = df[df["dataset"] == dataset_name]
+            group1 = group1[group1["model"] == model_name]
+            print("group1")
+            print(group1)
+            if model_name == best_model_name:
                 pvalue = np.inf
+                t_statistic = np.inf
             else:
-                pvalue = ttest_ind(group1["nlpd"], group2["nlpd"]).pvalue
+                result = ttest_ind(group2["nlpd"], group1["nlpd"])
+                t_statistic = result.statistic
+                pvalue = result.pvalue
             # pvalues.append(pvalue)
             # df_dataset[df_dataset["model"] == model_name]["pvalue"] = pvalue
+            df_dataset.loc[df_dataset.model == model_name, "tstatistic"] = t_statistic
             df_dataset.loc[df_dataset.model == model_name, "pvalue"] = pvalue
             df_with_stats[df_with_stats["dataset"] == dataset_name] = df_dataset
             # breakpoint()

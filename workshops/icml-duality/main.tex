@@ -682,7 +682,7 @@ Assuming a zero mean function, the sparse GP predictive posterior is
 \begin{align}
   % \myexpect_{q_{\vu}(f_i)}[f_i] &= f_{\vw^{*}}(\vx_{i}) + \vk_{\vz i}^{\top}\MKzz^{-1}(\vm - f_{\vw^{*}}(\MZ)), \\
   \myexpect_{q_{\vu}(f_i)}[f_i] &= \vk_{\vz i}^{\top}\MKzz^{-1}\vm, \\
-  \mathrm{Var}_{q_{\vu}(f_i)}[f_i] &= k_{ii} - \vk_{\vz i}^\top ( \MKzz^{-1} -  \MKzz^{-1}\MS  \MKzz^{-1})) \vk_{\vz i},  \nonumber
+  \mathrm{Var}_{q_{\vu}(f_i)}[f_i] &= k_{ii} - \vk_{\vz i}^\top ( \MKzz^{-1} -  \MKzz^{-1}\MS  \MKzz^{-1}) \vk_{\vz i},  \nonumber
 \end{align}
 \end{subequations}
 where $\MKzz$ and $\vkzs$ are defined similarly to $\MKxx$ and $\vk_{\vx i}$ but over the inducing points $\MZ$.%, instead of the full data set $\dataset$.

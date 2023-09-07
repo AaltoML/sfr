@@ -1,0 +1,16 @@
+# _target_: experiments.sl.utils.BostonDataset
+# # _partial_: true
+# name: "boston"
+# # random_seed: ${random_seed}
+# # dir: ???
+# # double: False
+
+_target_: experiments.sl.utils.get_boston_dataset
+name: "boston"
+random_seed: ${random_seed}
+double: False
+data_split:
+  - 45 # Train
+  - 15 # Val
+  - 15 # Test
+  - 25 # Update

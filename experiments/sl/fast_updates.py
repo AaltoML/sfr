@@ -16,9 +16,14 @@ import src
 import torch
 import wandb
 from experiments.sl.train import checkpoint
-from experiments.sl.utils import compute_metrics, EarlyStopper, set_seed_everywhere
+from experiments.sl.utils import (
+    compute_metrics,
+    EarlyStopper,
+    set_seed_everywhere,
+    compute_metrics_regression,
+)
 from omegaconf import DictConfig, OmegaConf
-from torch.utils.data import ConcatDataset, DataLoader, Dataset
+from torch.utils.data import ConcatDataset, DataLoader, Dataset, TensorDataset
 from tqdm import tqdm
 
 
@@ -34,6 +39,7 @@ class TableLogger:
             "acc": [],
             "nlpd": [],
             "ece": [],
+            "mse": [],
             "prior_prec": [],
             "time": [],
             "method": [],
@@ -47,6 +53,7 @@ class TableLogger:
                 "acc",
                 "nlpd",
                 "ece",
+                "mse",
                 "prior_prec",
                 "time",
                 "method",
@@ -69,9 +76,22 @@ class TableLogger:
         self.data["model"].append(model_name)
         self.data["seed"].append(self.cfg.random_seed)
         self.data["num_inducing"].append(num_inducing)
-        self.data["acc"].append(metrics["acc"])
+
+        print(f"meterics {metrics}")
         self.data["nlpd"].append(metrics["nll"])
-        self.data["ece"].append(metrics["ece"])
+        try:
+            self.data["acc"].append(metrics["acc"])
+        except:
+            self.data["acc"].append("")
+        try:
+            self.data["mse"].append(metrics["mse"])
+        except:
+            self.data["mse"].append("")
+        try:
+            self.data["ece"].append(metrics["acc"])
+        except:
+            self.data["ece"].append("")
+
         self.data["prior_prec"].append(prior_prec)
         self.data["time"].append(time)
         self.data["method"].append(method)
@@ -80,9 +100,10 @@ class TableLogger:
             model_name,
             self.cfg.random_seed,
             num_inducing,
-            metrics["acc"],
-            metrics["nll"],
-            metrics["ece"],
+            self.data["acc"],
+            self.data["nlpd"],
+            self.data["ece"],
+            self.data["mse"],
             prior_prec,
             time,
             method,
@@ -90,20 +111,35 @@ class TableLogger:
         wandb.log({"Metrics": wandb.Table(data=pd.DataFrame(self.data))})
 
 
-def make_ds_double(ds: Dataset) -> Dataset:
+def make_ds_double(ds: Dataset, likelihood: str = "classification") -> Dataset:
+    if isinstance(ds, TensorDataset):
+        tensors = []
+        for tensor in ds.tensors:
+            tensors.append(tensor.to(torch.double))
+        ds.tensors = tensors
+        return ds
     try:
         ds.data = ds.data.to(torch.double)
-        ds.targets = ds.targets.long()
+        if likelihood == "classification":
+            ds.targets = ds.targets.long()
+        else:
+            ds.targets = ds.targets.double()
     except:
         ds.dataset.data = ds.dataset.data.to(torch.double)
         ds.dataset.targets = ds.dataset.targets.long()
+        if likelihood == "classification":
+            ds.dataset.targets = ds.dataset.targets.long()
+        else:
+            ds.dataset.targets = ds.dataset.targets.double()
     return ds
 
 
-def make_data_loader_double(data_loader: DataLoader) -> DataLoader:
+def make_data_loader_double(
+    data_loader: DataLoader, likelihood: str = "classification"
+) -> DataLoader:
     double_data_loader = copy.deepcopy(data_loader)
     ds = double_data_loader.dataset
-    make_ds_double(ds)
+    make_ds_double(ds, likelihood=likelihood)
     return double_data_loader
 
 
@@ -139,11 +175,10 @@ def main(cfg: DictConfig):
     train_and_update_loader = DataLoader(
         ConcatDataset([ds_train, ds_update]), batch_size=cfg.batch_size, shuffle=True
     )
-    test_loader_double = make_data_loader_double(data_loader=test_loader)
-    update_loader_double = make_data_loader_double(data_loader=update_loader)
 
     # Init Weight and Biases
     cfg.output_dim = ds_train.output_dim
+    print(f"cfg.output_dim {cfg.output_dim}")
     print(OmegaConf.to_yaml(cfg))
     run = wandb.init(
         project=cfg.wandb.project,
@@ -160,6 +195,18 @@ def main(cfg: DictConfig):
     # Instantiate SFR
     sfr = hydra.utils.instantiate(cfg.sfr, model=network)
     print(f"made sfr {sfr}")
+    if isinstance(sfr.likelihood, src.likelihoods.Gaussian):
+        likelihood = "regresssion"
+    else:
+        likelihood = "classification"
+    test_loader_double = make_data_loader_double(
+        data_loader=test_loader, likelihood=likelihood
+    )
+    print(next(iter(test_loader_double))[0].dtype)
+    print(next(iter(test_loader_double))[1].dtype)
+    update_loader_double = make_data_loader_double(
+        data_loader=update_loader, likelihood=likelihood
+    )
 
     @torch.no_grad()
     def map_pred_fn(x, idx=None):
@@ -189,6 +236,8 @@ def main(cfg: DictConfig):
             for X, y in data_loader:
                 X = X.to(torch.float).to(cfg.device)
                 y = y.to(cfg.device)
+                # print(f"X {X.dtype}")
+                # print(f"y {y.dtype}")
                 loss = sfr.loss(X, y)
                 optimizer.zero_grad()
                 loss.backward()
@@ -198,27 +247,26 @@ def main(cfg: DictConfig):
             if epoch % cfg.logging_epoch_freq == 0:
                 val_loss = loss_fn(val_loader)
                 wandb.log({"val_loss": val_loss})
-                train_metrics = compute_metrics(
-                    pred_fn=map_pred_fn,
-                    data_loader=train_loader,
-                    # ds_test=ds_train,
-                    # batch_size=cfg.batch_size,
-                    device=cfg.device,
-                )
-                val_metrics = compute_metrics(
-                    pred_fn=map_pred_fn,
-                    data_loader=val_loader,
-                    # ds_test=ds_val,
-                    # batch_size=cfg.batch_size,
-                    device=cfg.device,
-                )
-                test_metrics = compute_metrics(
-                    pred_fn=map_pred_fn,
-                    data_loader=test_loader,
-                    # ds_test=ds_test,
-                    # batch_size=cfg.batch_size,
-                    device=cfg.device,
-                )
+                if likelihood == "classification":
+                    train_metrics = compute_metrics(
+                        pred_fn=map_pred_fn, data_loader=train_loader, device=cfg.device
+                    )
+                    val_metrics = compute_metrics(
+                        pred_fn=map_pred_fn, data_loader=val_loader, device=cfg.device
+                    )
+                    test_metrics = compute_metrics(
+                        pred_fn=map_pred_fn, data_loader=test_loader, device=cfg.device
+                    )
+                else:
+                    train_metrics = compute_metrics_regression(
+                        model=sfr.network, data_loader=train_loader, device=cfg.device
+                    )
+                    val_metrics = compute_metrics_regression(
+                        model=sfr.network, data_loader=val_loader, device=cfg.device
+                    )
+                    test_metrics = compute_metrics_regression(
+                        model=sfr.network, data_loader=test_loader, device=cfg.device
+                    )
                 wandb.log({"train/": train_metrics})
                 wandb.log({"val/": val_metrics})
                 wandb.log({"test/": test_metrics})
@@ -274,6 +322,11 @@ def main(cfg: DictConfig):
         logger.info("Finished fitting SFR")
 
         # Log SFR
+        print(f"test_loader_double {test_loader_double.dataset}")
+        print(f"test_loader_double {test_loader_double.dataset.data.dtype}")
+        print(f"test_loader_double {test_loader_double.dataset.targets.dtype}")
+        print(f"test_loader_double {next(iter(test_loader_double))[0].dtype}")
+        print(f"test_loader_double {next(iter(test_loader_double))[1].dtype}")
         log_sfr_metrics(
             sfr,
             name=name,
@@ -348,9 +401,14 @@ def log_map_metrics(
         f = sfr.network(x.to(device))
         return sfr.likelihood.inv_link(f)
 
-    map_metrics = compute_metrics(
-        pred_fn=map_pred_fn, data_loader=test_loader, device=device
-    )
+    if isinstance(sfr.likelihood, src.likelihoods.Gaussian):
+        map_metrics = compute_metrics_regression(
+            model=sfr.network, data_loader=test_loader, device=device
+        )
+    else:
+        map_metrics = compute_metrics(
+            pred_fn=map_pred_fn, data_loader=test_loader, device=device
+        )
     table_logger.add_data(
         "NN MAP",
         metrics=map_metrics,
@@ -388,13 +446,18 @@ def log_sfr_metrics(
     #     time=time,
     # )
 
-    gp_metrics = compute_metrics(
-        pred_fn=sfr_pred(
-            model=sfr, pred_type="gp", num_samples=num_samples, device=device
-        ),
-        data_loader=test_loader,
-        device=device,
-    )
+    if isinstance(sfr.likelihood, src.likelihoods.Gaussian):
+        gp_metrics = compute_metrics_regression(
+            model=sfr, pred_type="gp", data_loader=test_loader, device=device
+        )
+    else:
+        gp_metrics = compute_metrics(
+            pred_fn=sfr_pred(
+                model=sfr, pred_type="gp", num_samples=num_samples, device=device
+            ),
+            data_loader=test_loader,
+            device=device,
+        )
     table_logger.add_data(
         "SFR (GP)",
         metrics=gp_metrics,

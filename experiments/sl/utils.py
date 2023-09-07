@@ -359,7 +359,10 @@ def get_uci_network(name, output_dim, ds_train, device: str):
     try:
         input_size = ds_train.data.shape[1]
     except:
-        input_size = ds_train.dataset.data.shape[1]
+        try:
+            input_size = ds_train.dataset.data.shape[1]
+        except:
+            input_size = ds_train[0][0].shape[0]
     network = SiMLP(
         input_size=input_size,
         output_size=output_dim,
@@ -394,3 +397,69 @@ def get_stationary_mlp(
         torch.nn.Linear(16, output_dim),
     )
     return network.to(device)
+
+
+class BostonDataset(torch.utils.data.Dataset):
+    def __init__(self, device: str = "cpu", name: str = "boston"):
+        self.name = name
+        self.device = device
+
+        import pandas as pd
+        import numpy as np
+
+        data_url = "http://lib.stat.cmu.edu/datasets/boston"
+        raw_df = pd.read_csv(data_url, sep="\s+", skiprows=22, header=None)
+        self.data = np.hstack([raw_df.values[::2, :], raw_df.values[1::2, :2]])
+        self.targets = raw_df.values[1::2, 2]
+        self.targets = self.targets.reshape(-1, 1)
+
+    def __getitem__(self, index):
+        return self.data[index], self.targets[index]
+
+    def __len__(self):
+        return self.data.shape[0]
+
+
+def get_boston_dataset(
+    random_seed: int,
+    double: bool = False,
+    data_split: Optional[list] = [70, 15, 15, 0],
+    **kwargs,
+):
+    ds = BostonDataset()
+    output_dim = 1
+    ds_train, ds_val, ds_test, ds_update = split_dataset(
+        dataset=ds, random_seed=random_seed, double=double, data_split=data_split
+    )
+    ds_train.output_dim = output_dim
+    return ds_train, ds_val, ds_test, ds_update
+
+
+def split_dataset(
+    dataset: torch.utils.data.Dataset,
+    random_seed: int,
+    double: bool = False,
+    data_split: Optional[list] = [70, 30],
+):
+    if random_seed:
+        random.seed(random_seed)
+    num_data = len(dataset)
+    idxs = np.random.permutation(num_data)
+    datasets = []
+    idx_start = 0
+    for split in data_split:
+        idx_end = idx_start + int(num_data * split / 100)
+        idxs_ = idxs[idx_start:idx_end]
+        X = torch.from_numpy(dataset.data[idxs_])
+        y = torch.from_numpy(dataset.targets[idxs_])
+        if double:
+            X = X.to(torch.double)
+            y = y.to(torch.double)
+        else:
+            X = X.to(torch.float)
+            y = y.to(torch.float)
+        ds = torch.utils.data.TensorDataset(X, y)
+        ds.data = X
+        ds.targets = y
+        datasets.append(ds)
+    return datasets

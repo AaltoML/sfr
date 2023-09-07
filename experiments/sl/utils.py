@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 import random
-from typing import Optional
+from typing import Optional, Union
 
+# from sklearn.datasets import load_boston
 import numpy as np
 import src
 import torch
@@ -16,7 +17,9 @@ from experiments.sl.bnn_predictive.experiments.scripts.imginference import (
 )
 from experiments.sl.bnn_predictive.preds.datasets import UCIClassificationDatasets
 from experiments.sl.bnn_predictive.preds.models import SiMLP
+from laplace import BaseLaplace
 from netcal.metrics import ECE
+from src import SFR
 from torch.utils.data import DataLoader, Dataset
 from torch.utils.data.dataset import Subset
 
@@ -156,6 +159,48 @@ def compute_metrics(
         dist = dists.Categorical(torch.Tensor(probs))
     nll = -dist.log_prob(torch.Tensor(targets)).mean().numpy()
     metrics = {"acc": acc, "nll": nll, "ece": ece}
+    return metrics
+
+
+@torch.no_grad()
+def compute_metrics_regression(
+    model: Union[SFR, BaseLaplace, torch.nn.Module],
+    data_loader: DataLoader,
+    pred_type: str = "nn",
+    device: str = "cpu",
+) -> dict:
+    mse, nlpd = [], []
+    for x, y in data_loader:
+        if isinstance(model, SFR):
+            y_mean, y_var = model(x.to(device), pred_type=pred_type)
+        elif isinstance(model, BaseLaplace):
+            y_mean, f_var = model(x.to(device), pred_type=pred_type)
+            y_var = f_var + model.sigma_noise
+        elif isinstance(model, torch.nn.Module):
+            y_mean = model(x.to(device))
+            y_var = torch.ones_like(y_mean)
+            # TODO should this be ones???
+
+        y_mean = y_mean.detach().cpu()
+        y_std = y_var.sqrt()
+        y_std = y_std.detach().cpu()
+        if y.ndim == 1:
+            y = torch.unsqueeze(y, -1)
+        mse.append(torch.nn.MSELoss(reduction="mean")(y_mean, y))
+        nlpd.append(
+            torch.sum(
+                -torch.distributions.Normal(loc=y_mean, scale=y_std).log_prob(y), -1
+            )
+        )
+
+    nlpd = torch.concat(nlpd, 0)
+    # print(f"nlpd 1 {nlpd.shape}")
+    nlpd = torch.mean(nlpd, 0)
+    # print(f"nlpd {nlpd.shape}")
+    mse = torch.mean(torch.stack(mse, 0), 0)
+    # print(f"mse {mse.shape}")
+
+    metrics = {"mse": mse, "nll": nlpd}
     return metrics
 
 

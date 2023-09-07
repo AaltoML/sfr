@@ -1,0 +1,13 @@
+_target_: experiments.sl.utils.init_SFR_with_gaussian_prior
+_convert_: all
+prior_precision: 0.008
+likelihood:
+  _target_: src.likelihoods.CategoricalLh
+  # EPS: 0.001 # TODO default is 0.01
+  EPS: 0.0 # TODO default is 0.01
+output_dim: ${output_dim}
+# num_inducing: 128
+num_inducing: 256
+dual_batch_size: 1000
+jitter: 1e-4
+device: ${device} # TODO should this always be cpu??

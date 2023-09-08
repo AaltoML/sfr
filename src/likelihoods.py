@@ -43,11 +43,27 @@ class Gaussian(Likelihood):
             f_var = torch.zeros_like(f_mean)
         return f_mean, f_var + self.sigma_noise**2
 
-    def log_prob(self, f: FuncData, y: OutputData):
-        log_prob = torch.distributions.Normal(loc=f, scale=self.sigma_noise).log_prob(y)
+    def log_prob(self, f: FuncData, y: OutputData, f_var=None):
+        y_var = torch.ones_like(f) * self.sigma_noise**2
+        # print(f"y_var {y_var.shape}")
+        # print(f"y {y.shape}")
+        # print(f"f_var {f_var.shape}")
+        # print(f"f {f.shape}")
+        if f_var is not None:
+            y_var += f_var
+        #     print(f"y_var+f_var {y_var.shape}")
+        # print("yo")
+        dist = torch.distributions.Normal(
+            loc=f, scale=torch.sqrt(y_var.clamp(10 ** (-32)))
+        )
+        # print(f"dist {dist}")
+        log_prob = dist.log_prob(y)
+        # print(f"log_prob {log_prob.shape}")
         if log_prob.ndim > 1:
             # sum over independent output dimensions
             log_prob = torch.sum(log_prob, -1)
+            # print(f"log_prob {log_prob.shape}")
+        # print(f"log_prob {log_prob.shape}")
         return log_prob
 
     def nn_loss(self, f: FuncData, y: OutputData):

@@ -10,7 +10,7 @@ name: "boston"
 random_seed: ${random_seed}
 double: False
 data_split:
-  - 45 # Train
+  - 55 # Train
   - 15 # Val
   - 15 # Test
-  - 25 # Update
+  - 15 # Update

@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+import os
 import random
 from typing import Optional, Union
 
@@ -17,6 +18,7 @@ from experiments.sl.bnn_predictive.experiments.scripts.imginference import (
 )
 from experiments.sl.bnn_predictive.preds.datasets import UCIClassificationDatasets
 from experiments.sl.bnn_predictive.preds.models import SiMLP
+from experiments.sl.datasets import load_UCIreg_dataset
 from laplace import BaseLaplace
 from netcal.metrics import ECE
 from src import SFR
@@ -399,19 +401,33 @@ def get_stationary_mlp(
     return network.to(device)
 
 
-class BostonDataset(torch.utils.data.Dataset):
-    def __init__(self, device: str = "cpu", name: str = "boston"):
+# class BostonDataset(torch.utils.data.Dataset):
+#     def __init__(self, device: str = "cpu", name: str = "boston"):
+#         self.name = name
+#         self.device = device
+
+#         import numpy as np
+#         import pandas as pd
+
+#         data_url = "http://lib.stat.cmu.edu/datasets/boston"
+#         raw_df = pd.read_csv(data_url, sep="\s+", skiprows=22, header=None)
+#         self.data = np.hstack([raw_df.values[::2, :], raw_df.values[1::2, :2]])
+#         self.targets = raw_df.values[1::2, 2]
+#         self.targets = self.targets.reshape(-1, 1)
+
+#     def __getitem__(self, index):
+#         return self.data[index], self.targets[index]
+
+
+#     def __len__(self):
+#         return self.data.shape[0]
+class UCIDataset(torch.utils.data.Dataset):
+    def __init__(self, data, targets, device: str = "cpu", name: str = "boston"):
         self.name = name
         self.device = device
 
-        import pandas as pd
-        import numpy as np
-
-        data_url = "http://lib.stat.cmu.edu/datasets/boston"
-        raw_df = pd.read_csv(data_url, sep="\s+", skiprows=22, header=None)
-        self.data = np.hstack([raw_df.values[::2, :], raw_df.values[1::2, :2]])
-        self.targets = raw_df.values[1::2, 2]
-        self.targets = self.targets.reshape(-1, 1)
+        self.data = data
+        self.targets = targets
 
     def __getitem__(self, index):
         return self.data[index], self.targets[index]
@@ -426,7 +442,17 @@ def get_boston_dataset(
     data_split: Optional[list] = [70, 15, 15, 0],
     **kwargs,
 ):
-    ds = BostonDataset()
+    file_path = os.path.dirname(os.path.realpath(__file__))
+    print(f"file_path {file_path}")
+
+    full_path = os.path.join(file_path, "data/boston")
+    print(f"full_path {full_path}")
+    X, Y = load_UCIreg_dataset(full_path=full_path, name="boston")
+    print(f"X {X.shape}")
+    print(f"Y {Y.shape}")
+
+    ds = UCIDataset(data=X, targets=Y)
+    # ds = BostonDataset()
     output_dim = 1
     ds_train, ds_val, ds_test, ds_update = split_dataset(
         dataset=ds, random_seed=random_seed, double=double, data_split=data_split

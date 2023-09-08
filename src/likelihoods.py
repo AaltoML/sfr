@@ -180,9 +180,16 @@ class CategoricalLh(Likelihood):
         else:
             return torch.nn.Softmax(dim=self.num_classes)(f)
 
-    def log_prob(self, f: FuncData, y: OutputData):
-        dist = Categorical(logits=f)
-        return dist.log_prob(y)
+    def log_prob(self, f: FuncData, y: OutputData, f_var=None, num_samples: int = 100):
+        if f_var:
+            dist = Normal(f_mean, torch.sqrt(f_var.clamp(10 ** (-32))))
+            logit_samples = dist.sample((num_samples,))
+            samples = self.inv_link(logit_samples)
+            log_p = torch.mean(samples, 0)
+        else:
+            dist = Categorical(logits=f)
+            log_p = dist.log_prob(y)
+        return log_p
 
     def residual(self, y, f):
         y_expand = torch.zeros_like(f)

@@ -1,16 +1,26 @@
 # @package _global_
 defaults:
   - override /network: si_mlp
+  # - override /network: sin_mlp
   - override /dataset: boston
   - override /sfr: regression
 
 # lr: 1e-4
 lr: 1e-3
-n_epochs: 10000
+n_epochs: 20000
+# n_epochs: 200
 
 early_stop:
-  patience: 1000
+  patience: 500
   min_prior_precision: 0
+
+sfr:
+  prior_precision: 1e-7
+  likelihood:
+    _target_: src.likelihoods.Gaussian
+    # sigma_noise: 1.0
+    sigma_noise: 0.1
+    # sigma_noise: 10.0
 
 # sfr:
 #   _target_: experiments.sl.utils.init_SFR_with_gaussian_prior

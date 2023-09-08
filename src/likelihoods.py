@@ -98,9 +98,21 @@ class BernoulliLh(Likelihood):
         var = p - torch.square(p)
         return mean, var
 
-    def log_prob(self, f: FuncData, y: OutputData):
-        dist = Bernoulli(logits=f)
-        return dist.log_prob(y)
+    def log_prob(self, f: FuncData, y: OutputData, f_var=None, num_samples: int = 100):
+        if f_var:
+            dist = Normal(f, torch.sqrt(f_var.clamp(10 ** (-32))))
+            logit_samples = dist.sample((num_samples,))
+            samples = self.inv_link(logit_samples)
+            prob_samples = torch.mean(samples, 0)
+            print(f"prob_samples {prob_samples.shape}")
+            print(f"y {y.shape}")
+            log_prob_samples = Bernoulli(probs=prob_samples).log_prob(y)
+            print(f"log_prob_samples {log_prob_samples}")
+            log_prob = torch.sum(log_prob_samples, 0)
+            print(f"log_prob {log_prob}")
+        else:
+            log_prob = Bernoulli(logits=f).log_prob(y)
+        return log_prob
 
     def prob(self, f_mean: FuncMean, f_var: FuncVar):
         return inv_probit(f_mean / torch.sqrt(1 + f_var))

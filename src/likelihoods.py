@@ -67,8 +67,13 @@ class Gaussian(Likelihood):
         return log_prob
 
     def nn_loss(self, f: FuncData, y: OutputData):
-        loss = 0.5 * torch.nn.MSELoss(reduction="mean")(f, y)
-        return loss
+        # print(f"f {f.shape}")
+        # print(f"y {y.shape}")
+        # loss = 0.5 * torch.nn.MSELoss(reduction="mean")(f, y)
+        # return loss
+        log_prob = self.log_prob(f=f, y=y)
+        # print(f"log_prob {log_prob.shape}")
+        return -log_prob.mean()
 
     def residual(self, y, f):
         return (y - f) / self.sigma_noise**2

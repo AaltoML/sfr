@@ -265,13 +265,13 @@ def main(cfg: DictConfig):
                     )
                 else:
                     train_metrics = compute_metrics_regression(
-                        model=sfr.network, data_loader=train_loader, device=cfg.device
+                        model=sfr, data_loader=train_loader, device=cfg.device, map=True
                     )
                     val_metrics = compute_metrics_regression(
-                        model=sfr.network, data_loader=val_loader, device=cfg.device
+                        model=sfr, data_loader=val_loader, device=cfg.device, map=True
                     )
                     test_metrics = compute_metrics_regression(
-                        model=sfr.network, data_loader=test_loader, device=cfg.device
+                        model=sfr, data_loader=test_loader, device=cfg.device, map=True
                     )
                 wandb.log({"train/": train_metrics})
                 wandb.log({"val/": val_metrics})
@@ -299,6 +299,7 @@ def main(cfg: DictConfig):
     def train_and_log(
         sfr: src.SFR,
         train_loader: DataLoader,
+        val_loader: DataLoader,
         name: str,
         inference_loader: Optional[DataLoader] = None,
     ):
@@ -334,13 +335,6 @@ def main(cfg: DictConfig):
         sfr.fit(train_loader=inference_loader)
         inference_time = time.time() - start_time
         logger.info("Finished fitting SFR")
-
-        # Log SFR
-        print(f"test_loader_double {test_loader_double.dataset}")
-        print(f"test_loader_double {test_loader_double.dataset.data.dtype}")
-        print(f"test_loader_double {test_loader_double.dataset.targets.dtype}")
-        print(f"test_loader_double {next(iter(test_loader_double))[0].dtype}")
-        print(f"test_loader_double {next(iter(test_loader_double))[1].dtype}")
         log_sfr_metrics(
             sfr,
             name=name,
@@ -349,10 +343,46 @@ def main(cfg: DictConfig):
             device=cfg.device,
             time=inference_time,
         )
+
+        # # sfr.prior.prior_precision = prior_prec
+        # num_bo_trials = 10
+        # num_bo_trials = 50
+        # # num_bo_trials = 30
+        # sfr.optimize_prior_precision(
+        #     pred_type="gp",
+        #     val_loader=val_loader,
+        #     method="grid",
+        #     # method="bo",
+        #     prior_prec_min=1e-4,
+        #     prior_prec_max=1.0,
+        #     # prior_prec_min=1e-6,
+        #     # prior_prec_max=1e-3,
+        #     num_trials=num_bo_trials,
+        # )
+
+        # # Log SFR
+        # print(f"test_loader_double {test_loader_double.dataset}")
+        # print(f"test_loader_double {test_loader_double.dataset.data.dtype}")
+        # print(f"test_loader_double {test_loader_double.dataset.targets.dtype}")
+        # print(f"test_loader_double {next(iter(test_loader_double))[0].dtype}")
+        # print(f"test_loader_double {next(iter(test_loader_double))[1].dtype}")
+        # log_sfr_metrics(
+        #     sfr,
+        #     name=name + " tuning",
+        #     test_loader=test_loader_double,
+        #     table_logger=table_logger,
+        #     device=cfg.device,
+        #     time=inference_time,
+        # )
         return sfr
 
     # Train on D1 and log
-    sfr = train_and_log(sfr, train_loader=train_loader, name="Train D1")
+    sfr = train_and_log(
+        sfr,
+        train_loader=train_loader,
+        val_loader=val_loader_double,
+        name="Train D1",
+    )
 
     # Dual updates on D2 and log
     start_time = time.time()
@@ -366,16 +396,46 @@ def main(cfg: DictConfig):
         device=cfg.device,
         time=update_inference_time,
     )
+    # num_bo_trials = 50
+    # # num_bo_trials = 30
+    # sfr.optimize_prior_precision(
+    #     pred_type="gp",
+    #     val_loader=val_loader_double,
+    #     method="grid",
+    #     # method="bo",
+    #     prior_prec_min=1e-4,
+    #     prior_prec_max=1.0,
+    #     # prior_prec_min=1e-6,
+    #     # prior_prec_max=1e-3,
+    #     num_trials=num_bo_trials,
+    # )
+    # update_inference_time = time.time() - start_time
+    # log_sfr_metrics(
+    #     sfr,
+    #     name="Train D1 -> Update D2 + tuning",
+    #     test_loader=test_loader_double,
+    #     table_logger=table_logger,
+    #     device=cfg.device,
+    #     time=update_inference_time,
+    # )
 
     # Continue training on D1+D2 and log
     sfr = train_and_log(
-        sfr, train_loader=train_and_update_loader, name="Train D1 -> Train D1+D2"
+        sfr,
+        train_loader=train_and_update_loader,
+        val_loader=val_loader_double,
+        name="Train D1 -> Train D1+D2",
     )
 
     # Train on D1+D2 (from scratch) and log
     network = hydra.utils.instantiate(cfg.network, ds_train=ds_train)
     sfr = hydra.utils.instantiate(cfg.sfr, model=network)
-    sfr = train_and_log(sfr, train_loader=train_and_update_loader, name="Train D1+D2")
+    sfr = train_and_log(
+        sfr,
+        train_loader=train_and_update_loader,
+        val_loader=val_loader_double,
+        name="Train D1+D2",
+    )
 
     # Continue training on just D2 and log
     print("Continue training on just D2 and log")
@@ -417,7 +477,7 @@ def log_map_metrics(
 
     if isinstance(sfr.likelihood, src.likelihoods.Gaussian):
         map_metrics = compute_metrics_regression(
-            model=sfr.network, data_loader=test_loader, device=device
+            model=sfr, data_loader=test_loader, device=device, map=True
         )
     else:
         map_metrics = compute_metrics(

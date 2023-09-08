@@ -168,6 +168,8 @@ def main(cfg: DictConfig):
         double=False,
         train_update_split=cfg.train_update_split,
     )
+    print(f"num_data: {ds_train.data.shape[0]}")
+    print(f"D: {ds_train.data.shape[1]}")
     train_loader = DataLoader(ds_train, batch_size=cfg.batch_size, shuffle=True)
     val_loader = DataLoader(ds_val, batch_size=cfg.batch_size, shuffle=False)
     test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)
@@ -201,6 +203,9 @@ def main(cfg: DictConfig):
         likelihood = "classification"
     test_loader_double = make_data_loader_double(
         data_loader=test_loader, likelihood=likelihood
+    )
+    val_loader_double = make_data_loader_double(
+        data_loader=val_loader, likelihood=likelihood
     )
     print(next(iter(test_loader_double))[0].dtype)
     print(next(iter(test_loader_double))[1].dtype)

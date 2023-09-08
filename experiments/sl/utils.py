@@ -168,17 +168,19 @@ def compute_metrics_regression(
     data_loader: DataLoader,
     pred_type: str = "nn",
     device: str = "cpu",
+    map: bool = False,
 ) -> dict:
     mse, nlpd = [], []
     for x, y in data_loader:
-        if isinstance(model, SFR):
-            y_mean, y_var = model(x.to(device), pred_type=pred_type)
-        elif isinstance(model, BaseLaplace):
-            y_mean, f_var = model(x.to(device), pred_type=pred_type)
-            y_var = f_var + model.sigma_noise
-        elif isinstance(model, torch.nn.Module):
-            y_mean = model(x.to(device))
-            y_var = torch.ones_like(y_mean)
+        if not map:
+            if isinstance(model, SFR):
+                y_mean, y_var = model(x.to(device), pred_type=pred_type)
+            elif isinstance(model, BaseLaplace):
+                y_mean, f_var = model(x.to(device), pred_type=pred_type)
+                y_var = f_var + model.sigma_noise**2
+        else:
+            y_mean = model.network(x.to(device))
+            y_var = torch.ones_like(y_mean) * model.likelihood.sigma_noise**2
             # TODO should this be ones???
 
         y_mean = y_mean.detach().cpu()
@@ -194,11 +196,9 @@ def compute_metrics_regression(
         )
 
     nlpd = torch.concat(nlpd, 0)
-    # print(f"nlpd 1 {nlpd.shape}")
     nlpd = torch.mean(nlpd, 0)
-    # print(f"nlpd {nlpd.shape}")
-    mse = torch.mean(torch.stack(mse, 0), 0)
-    # print(f"mse {mse.shape}")
+    mse = torch.stack(mse, 0)
+    mse = torch.mean(mse, 0)
 
     metrics = {"mse": mse, "nll": nlpd}
     return metrics

@@ -237,6 +237,7 @@ def main(cfg: DictConfig):
         )
 
         best_nll = float("inf")
+        best_loss = float("inf")
         for epoch in tqdm(list(range(cfg.n_epochs))):
             for X, y in data_loader:
                 X = X.to(torch.float).to(cfg.device)
@@ -277,12 +278,20 @@ def main(cfg: DictConfig):
                 wandb.log({"test/": test_metrics})
                 wandb.log({"epoch": epoch})
 
-                if val_metrics["nll"] < best_nll:
+                # if val_metrics["nll"] < best_nll:
+                #     checkpoint(sfr=sfr, optimizer=optimizer, save_dir=run.dir)
+                #     best_nll = val_metrics["nll"]
+                #     wandb.log({"best_test/": test_metrics})
+                #     wandb.log({"best_val/": val_metrics})
+                # if early_stopper(val_metrics["nll"]):  # (val_loss):
+                #     logger.info("Early stopping criteria met, stopping training...")
+                #     break
+                if val_loss < best_loss:
                     checkpoint(sfr=sfr, optimizer=optimizer, save_dir=run.dir)
-                    best_nll = val_metrics["nll"]
+                    best_loss = val_loss
                     wandb.log({"best_test/": test_metrics})
                     wandb.log({"best_val/": val_metrics})
-                if early_stopper(val_metrics["nll"]):  # (val_loss):
+                if early_stopper(val_loss):  # (val_loss):
                     logger.info("Early stopping criteria met, stopping training...")
                     break
         return sfr

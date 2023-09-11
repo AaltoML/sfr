@@ -375,6 +375,25 @@ def get_uci_network(name, output_dim, ds_train, device: str):
     return network
 
 
+def get_boston_network(name, output_dim, ds_train, device: str):
+    try:
+        input_size = ds_train.data.shape[1]
+    except:
+        try:
+            input_size = ds_train.dataset.data.shape[1]
+        except:
+            input_size = ds_train[0][0].shape[0]
+    network = SiMLP(
+        input_size=input_size,
+        output_size=output_dim,
+        n_layers=2,
+        n_units=128,
+        activation="tanh",
+    ).to(device)
+    network.apply(orthogonal_init)
+    return network
+
+
 class Sin(torch.nn.Module):
     def forward(self, x):
         return torch.sin(x)

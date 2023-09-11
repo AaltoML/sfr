@@ -489,3 +489,23 @@ def split_dataset(
         ds.targets = y
         datasets.append(ds)
     return datasets
+
+
+def orthogonal_init(m):
+    """Orthogonal layer initialization."""
+    if isinstance(m, nn.Linear):
+        nn.init.orthogonal_(m.weight.data)
+        if m.bias is not None:
+            nn.init.zeros_(m.bias)
+    # elif isinstance(m, EnsembleLinear):
+    #     for w in m.weight.data:
+    #         nn.init.orthogonal_(w)
+    #     if m.bias is not None:
+    #         for b in m.bias.data:
+    #             nn.init.zeros_(b)
+    elif isinstance(m, (nn.Conv3d, nn.Conv2d, nn.ConvTranspose2d)):
+        gain = nn.init.calculate_gain("relu")
+        nn.init.orthogonal_(m.weight.data, gain)
+        # nn.init.kaiming_uniform_(m.weight.data, mode='fan_in', nonlinearity='relu')
+        if m.bias is not None:
+            nn.init.zeros_(m.bias)

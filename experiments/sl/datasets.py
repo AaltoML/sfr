@@ -59,7 +59,7 @@ def load_UCI_dataset(full_path):
     return X.values, y, cat_ix, num_ix
     
 # UCI regression dataset loading function
-def load_UCIreg_dataset(full_path, name):
+def load_UCIreg_dataset(full_path, name, normalize=True):
     # load the dataset as a numpy array
     if name == 'boston':
         df = pd.read_csv(r""+full_path+'.csv')
@@ -79,6 +79,13 @@ def load_UCIreg_dataset(full_path, name):
         data = np.array(loadmat(full_path+'.mat')['data'])
         Xo = data[:, :-1]
         Yo = data[:, -1].reshape(-1,1)
+
+    if normalize==True:
+        X_scaler = StandardScaler().fit(Xo)
+        Y_scaler = StandardScaler().fit(Yo)
+        Xo = X_scaler.transform(Xo)
+        Yo = Y_scaler.transform(Yo)
+        
     return Xo, Yo
 
 def load_dataset(name, datapath, seed):

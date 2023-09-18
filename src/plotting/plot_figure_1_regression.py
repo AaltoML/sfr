@@ -203,7 +203,7 @@ def plot(
 
     if showSVGP == True:
         # Predict y
-        f_mean, f_var = sfr.predict(X_test)
+        f_mean, f_var = sfr.predict_f(X_test)
 
         # Mean
         ax.plot(X_test, f_mean[:, 0], "-", color="C0", label="Mean", zorder=1)

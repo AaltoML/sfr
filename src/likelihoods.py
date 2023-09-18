@@ -71,7 +71,7 @@ class Gaussian(Likelihood):
         if log_prob.ndim > 1:
             # sum over independent output dimensions
             log_prob = torch.sum(log_prob, -1)
-            # print(f"log_prob {log_prob.shape}")
+        #     print(f"log_prob prod over output {log_prob.shape}")
         # print(f"log_prob {log_prob.shape}")
         return log_prob
 
@@ -82,7 +82,9 @@ class Gaussian(Likelihood):
         # return loss
         log_prob = self.log_prob(f=f, y=y)
         # print(f"log_prob {log_prob.shape}")
-        return -log_prob.mean()
+        neg_log_prob = -log_prob.mean()
+        # print(f"neg_log_prob {neg_log_prob.shape}")
+        return neg_log_prob
 
     def residual(self, y, f):
         return (y - f) / self.sigma_noise**2

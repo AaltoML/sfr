@@ -459,6 +459,7 @@ def get_boston_dataset(
     random_seed: int,
     double: bool = False,
     data_split: Optional[list] = [70, 15, 15, 0],
+    order_dim: Optional[int] = None,  # if int order along X[:, order_dim]
     **kwargs,
 ):
     file_path = os.path.dirname(os.path.realpath(__file__))
@@ -472,11 +473,47 @@ def get_boston_dataset(
 
     ds = UCIDataset(data=X, targets=Y)
     # ds = BostonDataset()
-    output_dim = 1
-    ds_train, ds_val, ds_test, ds_update = split_dataset(
-        dataset=ds, random_seed=random_seed, double=double, data_split=data_split
+
+    data_split_1 = [data_split[0] + data_split[1], data_split[2] + data_split[3]]
+    # Order data set along input dimension
+    if order_dim is not None:
+        idxs = np.argsort(ds.data, 0)[:, 0]
+        ds.data = ds.data[idxs]  # order inputs
+        ds.targets = ds.targets[idxs]  # order outputs
+        split_idx = round(data_split_1[0] / 100 * len(idxs))
+        ds_train = UCIDataset(
+            data=ds.data[0:split_idx], targets=ds.targets[0:split_idx]
+        )
+        ds_new = UCIDataset(
+            data=ds.data[split_idx:-1], targets=ds.targets[split_idx:-1]
+        )
+    else:
+        print(f"data_split_1 {data_split_1}")
+        ds_train, ds_new = split_dataset(
+            dataset=ds, random_seed=random_seed, double=double, data_split=data_split_1
+        )
+
+    print(f"data_split[0:2] {data_split[0:2]}")
+    ds_train, ds_val = split_dataset(
+        dataset=ds_train,
+        random_seed=random_seed,
+        double=double,
+        data_split=data_split[0:2],
     )
+    print(f"data_split[2:] {data_split[2:]}")
+    ds_test, ds_update = split_dataset(
+        dataset=ds_new,
+        random_seed=random_seed,
+        double=double,
+        data_split=data_split[2:],
+    )
+
+    output_dim = 1
+    # ds_train, ds_val, ds_test, ds_update = split_dataset(
+    #     dataset=ds, random_seed=random_seed, double=double, data_split=data_split
+    # )
     ds_train.output_dim = output_dim
+    # breakpoint()
     return ds_train, ds_val, ds_test, ds_update
 
 

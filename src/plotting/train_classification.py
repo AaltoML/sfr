@@ -8,6 +8,7 @@ logger = logging.getLogger(__name__)
 import src
 import torch
 import torch.nn as nn
+from experiments.sl.utils import compute_metrics
 from src import SFR
 from src.custom_types import Data
 
@@ -42,23 +43,30 @@ def train(
             optimizer.step()
             loss_history.append(loss.detach().numpy())
 
-            logger.info(
-                "Epoch: {} | Batch: {} | Loss: {}".format(epoch_idx, batch_idx, loss)
-            )
+            if epoch_idx % 100 == 0:
+                logger.info(
+                    "Epoch: {} | Batch: {} | Loss: {}".format(
+                        epoch_idx, batch_idx, loss
+                    )
+                )
 
     print("setting data")
-    sfr.set_data((X_train, Y_train))
+    torch.set_default_dtype(torch.float64)
+    sfr.double()
+    sfr.eval()
+    sfr.fit(data_loader)
+    # sfr.set_data((X_train, Y_train))
     print("FINISHED setting data")
     return {"loss": loss_history}
 
 
 if __name__ == "__main__":
     import os
-    import numpy as np
+
     import matplotlib.pyplot as plt
+    import numpy as np
 
     # import torch._dynamo as dynamo
-
     # torch._dynamo.config.verbose = True
     # torch.backends.cudnn.benchmark = True
     # torch._dynamo.config.verbose = True
@@ -72,6 +80,7 @@ if __name__ == "__main__":
     plot_updates = True
 
     torch.set_default_dtype(torch.float64)
+    # torch.set_default_dtype(torch.float)
 
     def func(x, noise=True):
         ys, y2s = [], []
@@ -97,6 +106,7 @@ if __name__ == "__main__":
 
     prior_precision = 0.0001
     prior_precision = 0.0002
+    prior_precision = 0.001
     # prior_precision = 0.05
     width = 64
     network = torch.nn.Sequential(
@@ -119,6 +129,28 @@ if __name__ == "__main__":
     #     torch.nn.Sigmoid(),
     #     torch.nn.Linear(64, 2),
     # )
+
+    class Sin(torch.nn.Module):
+        def forward(self, x):
+            return torch.sin(x)
+
+    network = torch.nn.Sequential(
+        torch.nn.Linear(1, 64),
+        # torch.nn.ReLU(),
+        # torch.nn.Sigmoid(),
+        torch.nn.Tanh(),
+        torch.nn.Linear(64, 16),
+        # torch.nn.Tanh(),
+        # torch.nn.ReLU(),
+        # torch.nn.Sigmoid(),
+        # torch.nn.Linear(64, 8),
+        Sin(),
+        # torch.nn.Tanh(),
+        # torch.nn.Tanh(),
+        torch.nn.Linear(16, 2),
+        # torch.nn.Linear(8, 1),
+    )
+
     print("network: {}".format(network))
     # noise_var = torch.nn.parameter.Parameter(torch.Tensor([0]), requires_grad=True)
 
@@ -129,43 +161,49 @@ if __name__ == "__main__":
     # print("X_train {}".format(X_train.shape))
     # X_train = torch.concat([X_train_clipped_1, X_train_clipped_2], 0)
     print("X_train {}".format(X_train.shape))
-    # X_train = torch.linspace(-1, 1, 50, dtype=torch.float64).reshape(-1, 1)
+    # X_train = torch.linspace(-1, 1, 50).reshape(-1, 1)
     # Y_train = func(X_train, noise=True)
     Y_train = func(X_train, noise=True)
     print("Y_train {}".format(Y_train.shape))
     data = (X_train, Y_train)
     print("X, Y: {}, {}".format(X_train.shape, Y_train.shape))
-    # X_test = torch.linspace(-1.8, 1.8, 200, dtype=torch.float64).reshape(-1, 1)
-    X_test_short = torch.linspace(0.0, 2.05, 110, dtype=torch.float64).reshape(-1, 1)
-    X_test = torch.linspace(-0.2, 2.2, 200, dtype=torch.float64).reshape(-1, 1)
-    X_test = torch.linspace(-1.0, 2.2, 200, dtype=torch.float64).reshape(-1, 1)
-    # X_test = torch.linspace(-6.0, 2.2, 200, dtype=torch.float64).reshape(-1, 1)
-    X_test = torch.linspace(-2.0, 3.5, 300, dtype=torch.float64).reshape(-1, 1)
-    X_test = torch.linspace(-0.7, 3.5, 300, dtype=torch.float64).reshape(-1, 1)
-    # X_test = torch.linspace(-0.05, 2.2, 300, dtype=torch.float64).reshape(-1, 1)
-    # X_test = torch.linspace(-8, 8, 200, dtype=torch.float64).reshape(-1, 1)
-    # X_test = torch.linspace(-2, 2, 100, dtype=torch.float64).reshape(-1, 1)
+    # X_test = torch.linspace(-1.8, 1.8, 200).reshape(-1, 1)
+    X_test_short = torch.linspace(0.0, 2.05, 110).reshape(-1, 1)
+    X_test = torch.linspace(-0.2, 2.2, 200).reshape(-1, 1)
+    X_test = torch.linspace(-1.0, 2.2, 200).reshape(-1, 1)
+    # X_test = torch.linspace(-6.0, 2.2, 200).reshape(-1, 1)
+    X_test = torch.linspace(-2.0, 3.5, 300).reshape(-1, 1)
+    X_test = torch.linspace(-0.7, 3.5, 300).reshape(-1, 1)
+    X_test = X_test.to(torch.double)
+    # X_test = torch.linspace(-0.05, 2.2, 300).reshape(-1, 1)
+    # X_test = torch.linspace(-8, 8, 200).reshape(-1, 1)
+    # X_test = torch.linspace(-2, 2, 100).reshape(-1, 1)
     print("X_test: {}".format(X_test.shape))
-    print("f: {}".format(network(X_test).shape))
+    # print("f: {}".format(network(X_test).shape))
 
-    X_new = torch.linspace(-0.5, -0.2, 20, dtype=torch.float64).reshape(-1, 1)
+    X_new = torch.linspace(-0.5, -0.2, 20).reshape(-1, 1)
+    X_new = X_new.to(torch.double)
     Y_new = func(X_new, noise=True)
     # plt.scatter(X_train, Y_train[:, 0])
     plt.scatter(X_train, Y_train)
     plt.savefig(os.path.join(save_dir, "classification_data.pdf"))
 
-    # X_new_2 = torch.linspace(3.0, 4.0, 20, dtype=torch.float64).reshape(-1, 1)
+    # X_new_2 = torch.linspace(3.0, 4.0, 20).reshape(-1, 1)
     # Y_new_2 = func(X_new_2, noise=True)
-    X_new_2 = torch.linspace(1.6, 1.8, 20, dtype=torch.float64).reshape(-1, 1)
+    X_new_2 = torch.linspace(1.6, 1.8, 20).reshape(-1, 1)
+    X_new_2 = X_new_2.to(torch.double)
     Y_new_2 = func(X_new_2, noise=True)
 
-    X_new_3 = torch.linspace(-6.0, -5.0, 20, dtype=torch.float64).reshape(-1, 1)
+    X_new_3 = torch.linspace(-6.0, -5.0, 20).reshape(-1, 1)
+    X_new_3 = X_new_3.to(torch.double)
     Y_new_3 = func(X_new_3, noise=True)
 
     batch_size = X_train.shape[0]
 
     # likelihood = src.likelihoods.BernoulliLh()
     likelihood = src.likelihoods.CategoricalLh()
+    likelihood = src.likelihoods.CategoricalLh(EPS=0.01)
+    likelihood = src.likelihoods.CategoricalLh(EPS=0.001)
     # likelihood = src.likelihoods.Gaussian()
     prior = src.priors.Gaussian(
         params=network.parameters, prior_precision=prior_precision
@@ -178,19 +216,72 @@ if __name__ == "__main__":
         output_dim=2,
         # num_inducing=X_train.shape[0],
         # num_inducing=X_train.shape[0] - 10,
-        # num_inducing=50,
-        num_inducing=30,
-        # jitter=1e-6,
-        jitter=1e-4,
+        num_inducing=50,
+        # num_inducing=30,
+        jitter=1e-6,
+        # jitter=1e-4,
     )
 
     metrics = train(
         sfr=sfr,
         data=data,
-        num_epochs=3500,
+        num_epochs=10000,
+        # num_epochs=3500,
         batch_size=batch_size,
         learning_rate=1e-2,
     )
+
+    data_float = (X_train.to(torch.float), Y_train.to(torch.long))
+
+    @torch.no_grad()
+    def map_pred_fn_float(x, idx=None):
+        sfr.float()
+        f = sfr.network(x)
+        return sfr.likelihood.inv_link(f)
+
+    @torch.no_grad()
+    def map_pred_fn_double(x, idx=None):
+        sfr.double()
+        f = sfr.network(x)
+        return sfr.likelihood.inv_link(f)
+
+    train_loader_float = torch.utils.data.DataLoader(
+        torch.utils.data.TensorDataset(*data_float), batch_size=batch_size
+    )
+    device = "cpu"
+    map_metrics = compute_metrics(
+        pred_fn=map_pred_fn_float, data_loader=train_loader_float, device=device
+    )
+    print(f"map_metrics float {map_metrics}")
+    data_double = (X_train.to(torch.double), Y_train.to(torch.long))
+    train_loader_double = torch.utils.data.DataLoader(
+        torch.utils.data.TensorDataset(*data_double), batch_size=batch_size
+    )
+    map_metrics = compute_metrics(
+        pred_fn=map_pred_fn_double, data_loader=train_loader_double, device=device
+    )
+    print(f"map_metrics double {map_metrics}")
+
+    def sfr_pred(
+        model: src.SFR,
+        pred_type: str = "gp",  # "gp" or "nn"
+        num_samples: int = 100,
+        device: str = "cuda",
+    ):
+        @torch.no_grad()
+        def pred_fn(x, idx=None):
+            return model(
+                x.to(device), idx=idx, pred_type=pred_type, num_samples=num_samples
+            )[0]
+
+        return pred_fn
+
+    sfr_metrics = compute_metrics(
+        pred_fn=sfr_pred(model=sfr, pred_type="gp", num_samples=100, device=device),
+        data_loader=train_loader_double,
+        device=device,
+    )
+    print(f"sfr_metrics {sfr_metrics}")
 
     # f_mean, f_var = sfr.predict_f(X_test_short)
     f_mean, f_var = sfr.predict_f(X_test)
@@ -205,10 +296,24 @@ if __name__ == "__main__":
         print("MEAN NEW_2 {}".format(f_mean_new.shape))
         print("VAR NEW_2 {}".format(f_var_new.shape))
 
+        sfr_metrics = compute_metrics(
+            pred_fn=sfr_pred(model=sfr, pred_type="gp", num_samples=100, device=device),
+            data_loader=train_loader_double,
+            device=device,
+        )
+        print(f"sfr_metrics {sfr_metrics}")
+
         sfr.update(x=X_new_2, y=Y_new_2)
         f_mean_new_2, f_var_new_2 = sfr.predict_f(X_test)
         print("MEAN NEW_2 {}".format(f_mean_new_2.shape))
         print("VAR NEW_2 {}".format(f_var_new_2.shape))
+
+        sfr_metrics = compute_metrics(
+            pred_fn=sfr_pred(model=sfr, pred_type="gp", num_samples=100, device=device),
+            data_loader=train_loader_double,
+            device=device,
+        )
+        print(f"sfr_metrics {sfr_metrics}")
 
     def plot_output(i):
         fig = plt.subplots(1, 1)

@@ -438,28 +438,81 @@ class SFR(nn.Module):
             self.prior_precision = prior_prec
             # self.update_pred_fn(prior_prec)
         try:
-            py, targets = [], []
-            for idx, (x, y) in enumerate(data_loader):
-                p = self(
-                    x=x.to(self.device),
-                    idx=idx,
-                    pred_type=pred_type,
-                    num_samples=n_samples,
-                )[0]
-                py.append(p)
-                targets.append(y.to(self.device))
-            targets = torch.cat(targets, dim=0).cpu().numpy()
-            probs = torch.cat(py).cpu().numpy()
+            if isinstance(self.likelihood, CategoricalLh) or isinstance(
+                self.likelihood, BernoulliLh
+            ):
+                print("trying classification nlpd")
+                py, targets = [], []
+                for idx, (x, y) in enumerate(data_loader):
+                    p = self(
+                        x=x.to(self.device),
+                        idx=idx,
+                        pred_type=pred_type,
+                        num_samples=n_samples,
+                    )[0]
+                    py.append(p)
+                    # y_means.append(y_mean)
+                    # y_vars.append(y_vars)
+                    targets.append(y.to(self.device))
+                targets = torch.cat(targets, dim=0).cpu().numpy()
+                probs = torch.cat(py).cpu().numpy()
 
-            if isinstance(self.likelihood, BernoulliLh):
-                dist = dists.Bernoulli(torch.Tensor(probs[:, 0]))
-            elif isinstance(self.likelihood, CategoricalLh):
-                dist = dists.Categorical(torch.Tensor(probs))
-            else:
-                raise NotImplementedError
-            nll = -dist.log_prob(torch.Tensor(targets)).mean().numpy()
+                if isinstance(self.likelihood, BernoulliLh):
+                    dist = dists.Bernoulli(torch.Tensor(probs[:, 0]))
+                elif isinstance(self.likelihood, CategoricalLh):
+                    dist = dists.Categorical(torch.Tensor(probs))
+                else:
+                    raise NotImplementedError
+                nll = -dist.log_prob(torch.Tensor(targets)).mean().numpy()
+            elif isinstance(self.likelihood, src.likelihoods.Gaussian):
+                # print("trying gaussian nlpd")
+                nlls = []
+                for idx, (x, y) in enumerate(data_loader):
+                    f_mean, f_var = self.predict_f(x.to(self.device), full_cov=False)
+                    # print(f"f_mean {f_mean.shape}")
+                    # print(f"f_var {f_var.shape}")
+                    # print(f"x {x.shape}")
+                    # print(f"y {y.shape}")
+                    if pred_type in "nn":
+                        f_mean = self.network(x)
+                    nll = -self.likelihood.log_prob(
+                        f=f_mean, y=y.to(self.device), f_var=f_var
+                    )
+                    # print(f"nll {nll.shape}")
+                    nlls.append(nll)
+                # print(f"nlls {nlls}")
+                nlls = torch.concat(nlls, 0)
+                # print(f"nlls {nlls.shape}")
+                # nll = torch.mean(nlls, 0).numpy()
+                nll = torch.mean(nlls, 0)
+                # print(f"nll {nll.shape}")
+                print(f"nll {nll}")
+                # print(f"nll {type(nll)}")
+
         except RuntimeError:
             nll = torch.inf
+
+        # print("trying gaussian nlpd")
+        # nlls = []
+        # for idx, (x, y) in enumerate(data_loader):
+        #     f_mean, f_var = self.predict_f(x, full_cov=False)
+        #     print(f"f_mean {f_mean.shape}")
+        #     print(f"f_var {f_var.shape}")
+        #     print(f"x {x.shape}")
+        #     print(f"y {y.shape}")
+        #     if pred_type in "nn":
+        #         f_mean = self.network(x)
+        #     nll = -self.likelihood.log_prob(f=f_mean, y=y, f_var=f_var)
+        #     print(f"nll {nll.shape}")
+        #     nlls.append(nll)
+        # print(f"nlls {nlls}")
+        # nlls = torch.concat(nlls, 0)
+        # print(f"nlls {nlls.shape}")
+        # nll = torch.mean(nlls, 0).numpy()
+        # print(f"nll {nll.shape}")
+        # print(f"nll {nll}")
+        print(f"nll yo {nll}")
+
         return nll
 
     @property

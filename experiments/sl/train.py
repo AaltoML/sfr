@@ -25,13 +25,17 @@ from torch.utils.data import DataLoader
 from tqdm import tqdm
 
 
-def checkpoint(sfr: src.SFR, optimizer: torch.optim.Optimizer, save_dir: str):
-    logger.info("Saving SFR and optimiser...")
+def checkpoint(
+    sfr: src.SFR, optimizer: torch.optim.Optimizer, save_dir: str, verbose: bool = False
+):
+    if verbose:
+        logger.info("Saving SFR and optimiser...")
     state = {"model": sfr.state_dict(), "optimizer": optimizer.state_dict()}
     fname = "best_ckpt_dict.pt"
     save_name = os.path.join(save_dir, fname)
     torch.save(state, save_name)
-    logger.info("Finished saving model and optimiser etc")
+    if verbose:
+        logger.info("Finished saving model and optimiser etc")
     return save_name
 
 

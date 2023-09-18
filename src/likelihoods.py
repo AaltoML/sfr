@@ -35,7 +35,15 @@ class Likelihood:
 
 class Gaussian(Likelihood):
     def __init__(self, sigma_noise: Union[float, torch.nn.Parameter] = 1.0):
-        self.sigma_noise = sigma_noise
+        if not isinstance(sigma_noise, torch.Tensor):
+            sigma_noise = torch.tensor(sigma_noise)
+
+        # self.log_sigma_noise = sigma_noise
+        self.log_sigma_noise = sigma_noise
+
+    @property
+    def sigma_noise(self):
+        return torch.exp(self.log_sigma_noise)
 
     def __call__(
         self, f_mean: Union[FuncData, FuncMean], f_var: Optional[FuncVar] = None

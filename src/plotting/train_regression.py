@@ -7,8 +7,11 @@ logger = logging.getLogger(__name__)
 
 import src
 import torch
+from experiments.sl.train import checkpoint
+from experiments.sl.utils import compute_metrics_regression, EarlyStopper
 from src import SFR
 from src.custom_types import Data
+from torch.utils.data import DataLoader, Dataset
 
 
 def train(
@@ -23,8 +26,21 @@ def train(
     )
 
     sfr.train()
-    optimizer = torch.optim.Adam([{"params": sfr.parameters()}], lr=learning_rate)
+    optimizer = torch.optim.Adam(
+        # [{"params": sfr.parameters()}],
+        [
+            {"params": sfr.parameters()},
+            {"params": sfr.likelihood.sigma_noise},
+            # {"params": sfr.prior.prior_precision},
+        ],
+        lr=learning_rate,
+    )
+
+    early_stopper = EarlyStopper(patience=100, min_prior_precision=0)
+
     loss_history = []
+    best_nll = float("inf")
+    best_loss = float("inf")
     for epoch_idx in range(num_epochs):
         for batch_idx, batch in enumerate(data_loader):
             x, y = batch
@@ -35,11 +51,35 @@ def train(
             optimizer.step()
             loss_history.append(loss.detach().numpy())
 
-            logger.info(
-                "Epoch: {} | Batch: {} | Loss: {}".format(epoch_idx, batch_idx, loss)
-            )
+            if epoch_idx % 100 == 0:
+                logger.info(
+                    "Epoch: {} | Batch: {} | Loss: {}".format(
+                        epoch_idx, batch_idx, loss
+                    )
+                )
 
-    sfr.set_data(data)
+    #         if val_loss < best_loss:
+    #             best_ckpt_fname = checkpoint(
+    #                 sfr=sfr, optimizer=optimizer, save_dir=run.dir
+    #             )
+    #             best_loss = val_loss
+    #             # wandb.log({"best_test/": test_metrics})
+    #             # wandb.log({"best_val/": val_metrics})
+    #         if early_stopper(val_loss):  # (val_loss):
+    #             logger.info("Early stopping criteria met, stopping training...")
+    #             break
+    # # Load checkpoint
+    # ckpt = torch.load(best_ckpt_fname)
+    # print(f"ckpt {ckpt}")
+    # print(f"sfr {[p for p in sfr.parameters()]}")
+    # sfr.load_state_dict(ckpt["model"])
+    # print(f"sfr loaded {[p for p in sfr.parameters()]}")
+
+    torch.set_default_dtype(torch.float64)
+    sfr.double()
+    sfr.eval()
+    sfr.fit(data_loader)
+    # sfr.set_data(data)
     return {"loss": loss_history}
 
 
@@ -48,6 +88,7 @@ if __name__ == "__main__":
 
     torch.manual_seed(42)
     torch.set_default_dtype(torch.float64)
+    # torch.set_default_dtype(torch.float)
 
     updates = False
     updates = True
@@ -63,15 +104,15 @@ if __name__ == "__main__":
         f2 = torch.sin(x) / x + torch.cos(x)  # + x**2 +np.log(5*x + 0.00001)  + 0.5
         f3 = torch.cos(x * 5) + torch.sin(x * 1)  # + x**2 +np.log(5*x + 0.00001)  + 0.5
         if noise == True:
-            # y1 = f1 + torch.randn(size=(x.shape)) * 0.2
-            # y2 = f2 + torch.randn(size=(x.shape)) * 0.2
-            # y3 = f3 + torch.randn(size=(x.shape)) * 0.2
+            y1 = f1 + torch.randn(size=(x.shape)) * 0.2
+            y2 = f2 + torch.randn(size=(x.shape)) * 0.2
+            y3 = f3 + torch.randn(size=(x.shape)) * 0.2
             # y1 = f1 + torch.randn(size=(x.shape)) * 0.1
             # y2 = f2 + torch.randn(size=(x.shape)) * 0.1
             # y3 = f3 + torch.randn(size=(x.shape)) * 0.1
-            y1 = f1 + torch.randn(size=(x.shape)) * 0.0
-            y2 = f2 + torch.randn(size=(x.shape)) * 0.0
-            y3 = f3 + torch.randn(size=(x.shape)) * 0.0
+            # y1 = f1 + torch.randn(size=(x.shape)) * 0.0
+            # y2 = f2 + torch.randn(size=(x.shape)) * 0.0
+            # y3 = f3 + torch.randn(size=(x.shape)) * 0.0
             return torch.stack([y1[:, 0], y2[:, 0], y3[:, 0]], -1)
         else:
             return torch.stack([f1[:, 0], f2[:, 0], f3[:, 0]], -1)
@@ -81,6 +122,7 @@ if __name__ == "__main__":
     # prior_precision = 0.00001
     # prior_precision = 0.000005
     prior_precision = 0.001
+    prior_precision = 0.002
     # prior_precision = 1.0
     # prior_precision = 0.01
     # network = torch.nn.Sequential(
@@ -134,34 +176,51 @@ if __name__ == "__main__":
     # print("X_train {}".format(X_train.shape))
     X_train = torch.concat([X_train_clipped_1, X_train_clipped_2], 0)
     print("X_train {}".format(X_train.shape))
-    # X_train = torch.linspace(-1, 1, 50, dtype=torch.float64).reshape(-1, 1)
+    # X_train = torch.linspace(-1, 1, 50).reshape(-1, 1)
     # Y_train = func(X_train, noise=True)
     Y_train = func(X_train, noise=True)
+    # data = (X_train[0:150, :], Y_train[0:150, :])
     data = (X_train, Y_train)
-    print("X, Y: {}, {}".format(X_train.shape, Y_train.shape))
-    # X_test = torch.linspace(-1.8, 1.8, 200, dtype=torch.float64).reshape(-1, 1)
-    X_test_short = torch.linspace(0.0, 2.05, 110, dtype=torch.float64).reshape(-1, 1)
-    X_test = torch.linspace(-0.2, 2.2, 200, dtype=torch.float64).reshape(-1, 1)
-    X_test = torch.linspace(-1.0, 2.2, 200, dtype=torch.float64).reshape(-1, 1)
-    # X_test = torch.linspace(-6.0, 2.2, 200, dtype=torch.float64).reshape(-1, 1)
-    X_test = torch.linspace(-2.0, 3.5, 300, dtype=torch.float64).reshape(-1, 1)
-    X_test = torch.linspace(-0.7, 3.5, 300, dtype=torch.float64).reshape(-1, 1)
-    X_test = torch.linspace(-8, 8, 200, dtype=torch.float64).reshape(-1, 1)
-    # X_test = torch.linspace(-2, 2, 100, dtype=torch.float64).reshape(-1, 1)
-    print("X_test: {}".format(X_test.shape))
-    print("f: {}".format(network(X_test).shape))
-    X_test_short = X_test
 
-    # X_new = torch.linspace(-0.5, -0.2, 20, dtype=torch.float64).reshape(-1, 1)
-    X_new = torch.linspace(-5.0, -2.0, 20, dtype=torch.float64).reshape(-1, 1)
+    # split_dataset(dataset=data, random_seed=42, double=True, data_split=[70, 30])
+
+    print("X, Y: {}, {}".format(X_train.shape, Y_train.shape))
+    print("X, Y: {}, {}".format(X_train.dtype, Y_train.dtype))
+    # X_test = torch.linspace(-1.8, 1.8, 200).reshape(-1, 1)
+    X_test_short = torch.linspace(0.0, 2.05, 110).reshape(-1, 1)
+    X_test = torch.linspace(-0.2, 2.2, 200).reshape(-1, 1)
+    X_test = torch.linspace(-1.0, 2.2, 200).reshape(-1, 1)
+    # X_test = torch.linspace(-6.0, 2.2, 200).reshape(-1, 1)
+    X_test = torch.linspace(-2.0, 3.5, 300).reshape(-1, 1)
+    X_test = torch.linspace(-0.7, 3.5, 300).reshape(-1, 1)
+    X_test = torch.linspace(-8, 8, 200).reshape(-1, 1)
+    # X_test = torch.linspace(-2, 2, 100).reshape(-1, 1)
+    # X_test.float()
+    print("X_test: {}".format(X_test.shape))
+    # print("f: {}".format(network(X_test).shape))
+    X_test_short = X_test
+    X_test_short = X_test_short.to(torch.double)
+    X_test = X_test.to(torch.double)
+
+    # X_new = torch.linspace(-0.5, -0.2, 20).reshape(-1, 1)
+    X_new = torch.linspace(-5.0, -2.0, 20).reshape(-1, 1)
+    # X_new.float()
+    # X_new.double()
+    X_new = X_new.to(torch.double)
     Y_new = func(X_new, noise=True)
 
-    # X_new_2 = torch.linspace(3.0, 4.0, 20, dtype=torch.float64).reshape(-1, 1)
+    # X_new_2 = torch.linspace(3.0, 4.0, 20).reshape(-1, 1)
     # Y_new_2 = func(X_new_2, noise=True)
-    X_new_2 = torch.linspace(1.6, 1.8, 20, dtype=torch.float64).reshape(-1, 1)
+    X_new_2 = torch.linspace(1.6, 1.8, 20).reshape(-1, 1)
+    # X_new_2.float()
+    # X_new_2.double()
+    X_new_2 = X_new_2.to(torch.double)
     Y_new_2 = func(X_new_2, noise=True)
 
-    X_new_3 = torch.linspace(-6.0, -5.0, 20, dtype=torch.float64).reshape(-1, 1)
+    X_new_3 = torch.linspace(-6.0, -5.0, 20).reshape(-1, 1)
+    # X_new_3.float()
+    # X_new_3.double()
+    X_new_3 = X_new_3.to(torch.double)
     Y_new_3 = func(X_new_3, noise=True)
 
     batch_size = X_train.shape[0]
@@ -171,8 +230,12 @@ if __name__ == "__main__":
     likelihood = src.likelihoods.Gaussian(sigma_noise=1)
     # likelihood = src.likelihoods.Gaussian(sigma_noise=2)
     # likelihood = src.likelihoods.Gaussian(sigma_noise=0.1)
+    likelihood = src.likelihoods.Gaussian(
+        sigma_noise=torch.tensor([0.2], requires_grad=True)
+    )
     # likelihood = src.likelihoods.Gaussian(sigma_noise=2)
     # likelihood = src.likelihoods.Gaussian(sigma_noise=0.8)
+    prior_precision = torch.tensor(prior_precision, requires_grad=False)
     prior = src.priors.Gaussian(
         params=network.parameters, prior_precision=prior_precision
     )
@@ -187,19 +250,73 @@ if __name__ == "__main__":
         dual_batch_size=None,
         # dual_batch_size=32,
         # num_inducing=20,
-        # jitter=1e-6,
-        jitter=1e-4,
+        jitter=1e-6,
+        # jitter=1e-4,
     )
+    sfr.train()
     metrics = train(
         sfr=sfr,
         data=data,
-        num_epochs=2500,
+        # num_epochs=2500,
+        num_epochs=30000,
         # num_epochs=1,
         batch_size=batch_size,
         learning_rate=1e-2,
     )
-    sfr.Z = torch.linspace(-6, 4, num_inducing, dtype=torch.float64).reshape(-1, 1)
+    sfr.eval()
+    sfr.double()
+    print(f"X_test_short {X_test_short.dtype}")
+    print(f"SIGMA NOISE: {sfr.likelihood.sigma_noise}")
+
+    sfr.Z = torch.linspace(-6, 6, num_inducing).reshape(-1, 1)
     sfr._build_sfr()
+
+    # ds_train = torch.utils.data.TensorDataset(X_train.double(), Y_train.double())
+    ds_test = torch.utils.data.TensorDataset(
+        # torch.concat([X_train.double(), X_new.double()], 0),
+        # torch.concat([Y_train.double(), Y_new.double()], 0),
+        X_new.double(),
+        Y_new.double(),
+    )
+    batch_size = X_train.shape[0]
+    device = "cpu"
+    train_loader = DataLoader(ds_test, batch_size=batch_size, shuffle=True)
+
+    data_float = torch.utils.data.TensorDataset(
+        # torch.concat([X_train.float(), X_new.float()], 0),
+        # torch.concat([Y_train.float(), Y_new.float()], 0),
+        X_new.float(),
+        Y_new.float(),
+    )
+    # data_float = (X_train.to(torch.float), Y_train.to(torch.float))
+    train_loader_float = torch.utils.data.DataLoader(data_float, batch_size=batch_size)
+    map_metrics = compute_metrics_regression(
+        model=sfr.float(), data_loader=train_loader_float, device=device, map=True
+    )
+    print(f"map_metrics float {map_metrics}")
+
+    # data_double = (X_train.to(torch.double), Y_train.to(torch.double))
+    data_double = torch.utils.data.TensorDataset(
+        # torch.concat([X_train.double(), X_new.double()], 0),
+        # torch.concat([Y_train.double(), Y_new.double()], 0),
+        X_new.double(),
+        Y_new.double(),
+    )
+    train_loader_double = torch.utils.data.DataLoader(
+        data_double, batch_size=batch_size
+    )
+    map_metrics_double = compute_metrics_regression(
+        model=sfr.double(), data_loader=train_loader_double, device=device, map=True
+    )
+    print(f"map_metrics double {map_metrics_double}")
+    sfr_metrics = compute_metrics_regression(
+        model=sfr,
+        pred_type="gp",
+        # pred_type="nn",
+        data_loader=train_loader,
+        device=device,
+    )
+    print(f"sfr_metrics {sfr_metrics}")
 
     f_mean, f_var = sfr.predict_f(X_test_short)
     print("MEAN {}".format(f_mean.shape))
@@ -213,12 +330,26 @@ if __name__ == "__main__":
         f_mean_new, f_var_new = sfr.predict_f(X_test)
         print("MEAN NEW_2 {}".format(f_mean_new.shape))
         print("VAR NEW_2 {}".format(f_var_new.shape))
+        sfr_metrics = compute_metrics_regression(
+            model=sfr,
+            pred_type="gp",
+            data_loader=train_loader,
+            device=device,
+        )
+        print(f"sfr_metrics_update {sfr_metrics}")
 
         # sfr.update_full(x=X_new_2, y=Y_new_2)
         sfr.update(x=X_new_2, y=Y_new_2)
         f_mean_new_2, f_var_new_2 = sfr.predict_f(X_test)
         print("MEAN NEW_2 {}".format(f_mean_new_2.shape))
         print("VAR NEW_2 {}".format(f_var_new_2.shape))
+        sfr_metrics = compute_metrics_regression(
+            model=sfr,
+            pred_type="gp",
+            data_loader=train_loader,
+            device=device,
+        )
+        print(f"sfr_metrics_update_2 {sfr_metrics}")
 
     import matplotlib.pyplot as plt
 

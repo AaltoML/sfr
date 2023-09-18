@@ -376,6 +376,7 @@ class SFR(nn.Module):
                     n_samples=n_samples,
                     prior_prec=prior_prec,
                 )
+                nll = nll.detach().numpy()
                 logger.info(f"Prior prec {prior_prec} nll: {nll}")
                 nlls.append(nll)
                 prior_precs.append(prior_prec)
@@ -385,12 +386,13 @@ class SFR(nn.Module):
             from ax.service.managed_loop import optimize
 
             def nlpd_objective(params):
-                return self.nlpd(
+                nll = self.nlpd(
                     data_loader=val_loader,
                     pred_type=pred_type,
                     n_samples=n_samples,
                     prior_prec=params["prior_prec"],
                 )
+                return nll.detach().numpy()
 
             best_parameters, values, experiment, model = optimize(
                 parameters=[

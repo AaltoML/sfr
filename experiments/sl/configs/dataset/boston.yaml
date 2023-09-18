@@ -8,9 +8,13 @@
 _target_: experiments.sl.utils.get_boston_dataset
 name: "boston"
 random_seed: ${random_seed}
-double: False
+# double: False
+double: True
 data_split:
   - 55 # Train
+  # - 69 # Train
   - 15 # Val
   - 15 # Test
+  # - 1 # Update
   - 15 # Update
+order_dim: 0

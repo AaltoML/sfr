@@ -494,7 +494,7 @@ def get_boston_dataset(
 
     full_path = os.path.join(file_path, "data/boston")
     print(f"full_path {full_path}")
-    X, Y = load_UCIreg_dataset(full_path=full_path, name="boston")
+    X, Y = load_UCIreg_dataset(full_path=full_path, name="boston", normalize=True)
     print(f"X {X.shape}")
     print(f"Y {Y.shape}")
 

@@ -1,60 +1,101 @@
-% This file was created with tikzplotlib v0.10.1.
-\begin{tikzpicture}[
-scale=0.5
-]
+% This file was created by tikzplotlib v0.9.8.
+\begin{tikzpicture}[scale=0.5]
 
-\definecolor{darkgray176}{RGB}{176,176,176}
-\definecolor{darkorange25512714}{RGB}{255,127,14}
-\definecolor{steelblue31119180}{RGB}{31,119,180}
+\definecolor{color0}{rgb}{0.274509803921569,0.509803921568627,0.705882352941177}
+\definecolor{color1}{rgb}{1,0.549019607843137,0}
 
 \begin{axis}[
+height=\figureheight,
 tick align=outside,
 tick pos=left,
-title={\sc australian},
-x grid style={darkgray176},
-xmin=-8.8, xmax=536.8,
+title={\sc{Australian}},
+width=\figurewidth,
+x grid style={white!69.0196078431373!black},
+xmin=-5, xmax=105,
 xtick style={color=black},
-xtick={-100,0,100,200,300,400,500,600},
-xticklabels={0,16,32,64,128,256,512,},
-y grid style={darkgray176},
-ymin=0.3021, ymax=0.5859,
-ytick style={color=black}
+xtick={-20,0,20,40,60,80,100,120},
+xticklabels={\ensuremath{-}20,0,20,40,60,80,100,120},
+y grid style={white!69.0196078431373!black},
+ymin=0.293618057042495, ymax=0.718102694333381,
+ytick style={color=black},
+ytick={0.2,0.4,0.6,0.8},
+yticklabels={0.2,0.4,0.6,0.8}
 ]
-\addplot [line width=2pt, darkorange25512714]
+\path [draw=color0, fill=color0, opacity=0.1]
+(axis cs:1,0.551667007775037)
+--(axis cs:1,0.394871369856918)
+--(axis cs:2,0.356818089006717)
+--(axis cs:5,0.325282883209023)
+--(axis cs:10,0.315017116932386)
+--(axis cs:15,0.318190775561941)
+--(axis cs:20,0.315173436351568)
+--(axis cs:40,0.316824771925122)
+--(axis cs:60,0.313980751125033)
+--(axis cs:80,0.312912813282989)
+--(axis cs:100,0.315163904006588)
+--(axis cs:100,0.387714527539309)
+--(axis cs:100,0.387714527539309)
+--(axis cs:80,0.391337690954981)
+--(axis cs:60,0.38348557249058)
+--(axis cs:40,0.385913440494826)
+--(axis cs:20,0.38626921460719)
+--(axis cs:15,0.384456222562076)
+--(axis cs:10,0.384020394527795)
+--(axis cs:5,0.384817186909285)
+--(axis cs:2,0.422463140257074)
+--(axis cs:1,0.551667007775037)
+--cycle;
+
+\path [draw=color1, fill=color1, opacity=0.1]
+(axis cs:1,0.698807938092886)
+--(axis cs:1,0.662510632062247)
+--(axis cs:2,0.657078817702754)
+--(axis cs:5,0.517882131251046)
+--(axis cs:10,0.40135987267536)
+--(axis cs:15,0.393191142351973)
+--(axis cs:20,0.371626166919784)
+--(axis cs:40,0.35299934681048)
+--(axis cs:60,0.324006125784774)
+--(axis cs:80,0.327733599897042)
+--(axis cs:100,0.315157958626014)
+--(axis cs:100,0.388343247321801)
+--(axis cs:100,0.388343247321801)
+--(axis cs:80,0.39632234172613)
+--(axis cs:60,0.39462009153726)
+--(axis cs:40,0.403204497924365)
+--(axis cs:20,0.453648844608426)
+--(axis cs:15,0.468843614804632)
+--(axis cs:10,0.622775822605122)
+--(axis cs:5,0.646032048907283)
+--(axis cs:2,0.691617433808421)
+--(axis cs:1,0.698807938092886)
+--cycle;
+
+\addplot [semithick, color0]
 table {%
-16 0.331
-32 0.325
-64 0.324
-128 0.325
-256 0.324
-512 0.324
+1 0.473269188815977
+2 0.389640614631896
+5 0.355050035059154
+10 0.349518755730091
+15 0.351323499062008
+20 0.350721325479379
+40 0.351369106209974
+60 0.348733161807807
+80 0.352125252118985
+100 0.351439215772948
 };
-\addplot [line width=2pt, steelblue31119180]
+\addplot [semithick, color1]
 table {%
-16 0.319
-32 0.315
-64 0.315
-128 0.315
-256 0.315
-512 0.315
-};
-\addplot [thick, darkorange25512714]
-table {%
-16 0.573
-32 0.51
-64 0.439
-128 0.381
-256 0.342
-512 0.325
-};
-\addplot [thick, steelblue31119180]
-table {%
-16 0.335
-32 0.334
-64 0.331
-128 0.324
-256 0.318
-512 0.315
+1 0.680659285077567
+2 0.674348125755587
+5 0.581957090079165
+10 0.512067847640241
+15 0.431017378578302
+20 0.412637505764105
+40 0.378101922367423
+60 0.359313108661017
+80 0.362027970811586
+100 0.351750602973907
 };
 \end{axis}
 

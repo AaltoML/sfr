@@ -62,7 +62,9 @@ class Gaussian(Likelihood):
         #     print(f"y_var+f_var {y_var.shape}")
         # print("yo")
         dist = torch.distributions.Normal(
-            loc=f, scale=torch.sqrt(y_var.clamp(10 ** (-32)))
+            loc=f,
+            scale=torch.sqrt(y_var)
+            # loc=f, scale=torch.sqrt(y_var.clamp(10 ** (-32)))
         )
         # print(f"dist {dist}")
         log_prob = dist.log_prob(y)

@@ -489,14 +489,20 @@ def split_dataset(
     if random_seed:
         random.seed(random_seed)
     num_data = len(dataset)
+    print(f"num_data {num_data}")
     idxs = np.random.permutation(num_data)
     datasets = []
     idx_start = 0
     for split in data_split:
         idx_end = idx_start + int(num_data * split / 100)
         idxs_ = idxs[idx_start:idx_end]
-        X = torch.from_numpy(dataset.data[idxs_])
-        y = torch.from_numpy(dataset.targets[idxs_])
+        print(f"idxs_ {np.sort(idxs_)}")
+        if isinstance(dataset.data, torch.Tensor):
+            X = dataset.data[idxs_]
+            y = dataset.targets[idxs_]
+        else:
+            X = torch.from_numpy(dataset.data[idxs_])
+            y = torch.from_numpy(dataset.targets[idxs_])
         if double:
             X = X.to(torch.double)
             y = y.to(torch.double)
@@ -507,6 +513,7 @@ def split_dataset(
         ds.data = X
         ds.targets = y
         datasets.append(ds)
+        idx_start = idx_end
     return datasets
 
 

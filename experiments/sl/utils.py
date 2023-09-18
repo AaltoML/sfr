@@ -408,8 +408,8 @@ def get_stationary_mlp(
         input_size = ds_train.dataset.data.shape[1]
     network = torch.nn.Sequential(
         torch.nn.Linear(input_size, hidden_size),
-        # torch.nn.Tanh(),
-        # torch.nn.Linear(input_size, hidden_size),
+        torch.nn.Tanh(),
+        torch.nn.Linear(hidden_size, hidden_size),
         torch.nn.Tanh(),
         torch.nn.Linear(hidden_size, 16),
         Sin(),

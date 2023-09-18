@@ -3,11 +3,11 @@ import os
 import random
 from typing import Optional, Union
 
-# from sklearn.datasets import load_boston
 import numpy as np
 import src
 import torch
 import torch.distributions as dists
+import torch.nn as nn
 from experiments.sl.bnn_predictive.experiments.scripts.imgclassification import (
     get_dataset,
     get_model,
@@ -172,35 +172,62 @@ def compute_metrics_regression(
     device: str = "cpu",
     map: bool = False,
 ) -> dict:
-    mse, nlpd = [], []
+    nlpd = []
+    num_data = len(data_loader.dataset)
+    mse = 0
     for x, y in data_loader:
         if not map:
             if isinstance(model, SFR):
+                # print("Calculating SFR NLPD")
                 y_mean, y_var = model(x.to(device), pred_type=pred_type)
+                # y_var -= model.likelihood.sigma_noise**2
             elif isinstance(model, BaseLaplace):
+                # print("Calculating LA NLPD")
                 y_mean, f_var = model(x.to(device), pred_type=pred_type)
                 y_var = f_var + model.sigma_noise**2
         else:
+            # print("Calculating MAP NLPD")
             y_mean = model.network(x.to(device))
             y_var = torch.ones_like(y_mean) * model.likelihood.sigma_noise**2
             # TODO should this be ones???
 
-        y_mean = y_mean.detach().cpu()
+        # y_mean = y_mean.detach().cpu()
+        # y_std = y_var.sqrt()
+        # y_std = y_std.detach().cpu()
+        y_mean = y_mean
         y_std = y_var.sqrt()
-        y_std = y_std.detach().cpu()
         if y.ndim == 1:
             y = torch.unsqueeze(y, -1)
-        mse.append(torch.nn.MSELoss(reduction="mean")(y_mean, y))
+        mse += torch.nn.MSELoss(reduction="sum")(y_mean, y)
+        # log_prob = -torch.distributions.Normal(loc=y_mean, scale=y_std).log_prob(y)
+        # print(f"log_prob {log_prob.shape}")
+        # log_prob = torch.mean(
+        #     -torch.distributions.Normal(loc=y_mean, scale=y_std).log_prob(y), -1
+        # )
+        # print(f"log_prob prod {log_prob.shape}")
+        # print(f"y_mean {y_mean.shape}")
+        # print(f"y_std {y_std.shape}")
+        # print(f"y {y.shape}")
         nlpd.append(
-            torch.sum(
-                -torch.distributions.Normal(loc=y_mean, scale=y_std).log_prob(y), -1
+            torch.mean(  # TODO should this be sum?
+                -torch.distributions.Normal(
+                    loc=torch.zeros_like(y_mean), scale=y_std
+                ).log_prob(y_mean - y),
+                -1
+                # -torch.distributions.Normal(loc=y_mean, scale=y_std).log_prob(y), -1
             )
         )
 
     nlpd = torch.concat(nlpd, 0)
+    # print(f"nlpd {nlpd.shape}")
     nlpd = torch.mean(nlpd, 0)
-    mse = torch.stack(mse, 0)
-    mse = torch.mean(mse, 0)
+    # print(f"nlpd {nlpd.shape}")
+    # print(f"mse {len(mse)}")
+    # mse = torch.stack(mse, 0)
+    mse = mse / num_data
+    # print(f"mse {mse.shape}")
+    # mse = torch.mean(mse, 0)
+    # print(f"mse {mse.shape}")
 
     metrics = {"mse": mse, "nll": nlpd}
     return metrics

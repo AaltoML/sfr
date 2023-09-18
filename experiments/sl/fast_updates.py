@@ -158,14 +158,16 @@ def main(cfg: DictConfig):
 
     table_logger = TableLogger(cfg)
 
-    torch.set_default_dtype(torch.float)
+    # torch.set_default_dtype(torch.float)
+    torch.set_default_dtype(torch.double)
 
     # Load train/val/test/update data sets
     ds_train, ds_val, ds_test, ds_update = hydra.utils.instantiate(
         cfg.dataset,
         dir=os.path.join(get_original_cwd(), "data"),
         # double=cfg.double_inference,
-        double=False,
+        # double=False,
+        double=True,
         train_update_split=cfg.train_update_split,
     )
     print(f"num_data: {ds_train.data.shape[0]}")
@@ -196,22 +198,39 @@ def main(cfg: DictConfig):
 
     # Instantiate SFR
     sfr = hydra.utils.instantiate(cfg.sfr, model=network)
+    sfr.double()
     print(f"made sfr {sfr}")
     if isinstance(sfr.likelihood, src.likelihoods.Gaussian):
         likelihood = "regresssion"
     else:
         likelihood = "classification"
-    test_loader_double = make_data_loader_double(
+    train_loader = make_data_loader_double(
+        data_loader=train_loader, likelihood=likelihood
+    )
+    val_loader = make_data_loader_double(data_loader=val_loader, likelihood=likelihood)
+    test_loader = make_data_loader_double(
         data_loader=test_loader, likelihood=likelihood
     )
-    val_loader_double = make_data_loader_double(
-        data_loader=val_loader, likelihood=likelihood
-    )
-    print(next(iter(test_loader_double))[0].dtype)
-    print(next(iter(test_loader_double))[1].dtype)
-    update_loader_double = make_data_loader_double(
+    update_loader = make_data_loader_double(
         data_loader=update_loader, likelihood=likelihood
     )
+    # train_and_update_loader = make_data_loader_double(
+    #     data_loader=train_and_update_loader, likelihood=likelihood
+    # )
+    # train_loader_double = make_data_loader_double(
+    #     data_loader=train_loader, likelihood=likelihood
+    # )
+    # test_loader_double = make_data_loader_double(
+    #     data_loader=test_loader, likelihood=likelihood
+    # )
+    # val_loader_double = make_data_loader_double(
+    #     data_loader=val_loader, likelihood=likelihood
+    # )
+    # print(next(iter(test_loader_double))[0].dtype)
+    # print(next(iter(test_loader_double))[1].dtype)
+    # update_loader_double = make_data_loader_double(
+    #     data_loader=update_loader, likelihood=likelihood
+    # )
 
     @torch.no_grad()
     def map_pred_fn(x, idx=None):
@@ -221,15 +240,23 @@ def main(cfg: DictConfig):
 
     @torch.no_grad()
     def loss_fn(data_loader: DataLoader):
-        cum_loss = 0
+        losses = []
         for X, y in data_loader:
             X, y = X.to(cfg.device), y.to(cfg.device)
             loss = sfr.loss(X, y)
-            cum_loss += loss
+            losses.append(loss)
+        losses = torch.stack(losses, 0)
+        cum_loss = torch.mean(losses, 0)
         return cum_loss
 
     def train_loop(sfr, data_loader: DataLoader):
-        optimizer = torch.optim.Adam([{"params": sfr.parameters()}], lr=cfg.lr)
+        optimizer = torch.optim.Adam(
+            [
+                {"params": sfr.parameters()},
+                {"params": sfr.likelihood.sigma_noise},
+            ],
+            lr=cfg.lr,
+        )
 
         early_stopper = EarlyStopper(
             patience=int(cfg.early_stop.patience / cfg.logging_epoch_freq),
@@ -240,11 +267,15 @@ def main(cfg: DictConfig):
         best_loss = float("inf")
         for epoch in tqdm(list(range(cfg.n_epochs))):
             for X, y in data_loader:
-                X = X.to(torch.float).to(cfg.device)
+                X = X.to(cfg.device)
+                # X = X.to(torch.float).to(cfg.device)
                 y = y.to(cfg.device)
                 # print(f"X {X.dtype}")
                 # print(f"y {y.dtype}")
+                # print(f"X {X.dtype}")
+                # print(f"y {y.dtype}")
                 loss = sfr.loss(X, y)
+                # print(f"loss {loss.dtype}")
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
@@ -303,24 +334,40 @@ def main(cfg: DictConfig):
         name: str,
         inference_loader: Optional[DataLoader] = None,
     ):
-        torch.set_default_dtype(torch.float)
+        # torch.set_default_dtype(torch.float)
+        print(f"yo {next(iter(train_loader))[0].dtype}")
+        print(f"yo {next(iter(train_loader))[1].dtype}")
+        print(f"yo {next(iter(val_loader))[0].dtype}")
+        print(f"yo {next(iter(val_loader))[1].dtype}")
+        # breakpoint()
 
         # Train NN
-        sfr.float()
+        # sfr.float()
         sfr.train()
         start_time = time.time()
         sfr = train_loop(sfr, data_loader=train_loader)
         train_time = time.time() - start_time
 
+        log_map_metrics(
+            sfr,
+            test_loader,
+            name=name,
+            table_logger=table_logger,
+            device=cfg.device,
+            time=train_time,
+        )
+
         # Make everything double for inference
-        torch.set_default_dtype(torch.double)
+        # torch.set_default_dtype(torch.double)
 
         # Log MAP before updates
-        sfr.double()
+        # sfr.double()
+        # sfr.network.double()
         sfr.eval()
         log_map_metrics(
             sfr,
-            test_loader_double,
+            test_loader,
+            # test_loader_double,
             name=name,
             table_logger=table_logger,
             device=cfg.device,
@@ -332,13 +379,15 @@ def main(cfg: DictConfig):
         if inference_loader is None:
             inference_loader = train_loader
         start_time = time.time()
-        sfr.fit(train_loader=inference_loader)
+        sfr.fit(train_loader=train_loader)
+        # sfr.fit(train_loader=inference_loader)
         inference_time = time.time() - start_time
         logger.info("Finished fitting SFR")
         log_sfr_metrics(
             sfr,
             name=name,
-            test_loader=test_loader_double,
+            test_loader=test_loader,
+            # test_loader=test_loader_double,
             table_logger=table_logger,
             device=cfg.device,
             time=inference_time,
@@ -380,44 +429,55 @@ def main(cfg: DictConfig):
     sfr = train_and_log(
         sfr,
         train_loader=train_loader,
-        val_loader=val_loader_double,
+        val_loader=val_loader,
+        # val_loader=val_loader_double,
+        # inference_loader=train_loader_double,
         name="Train D1",
     )
 
     # Dual updates on D2 and log
     start_time = time.time()
-    sfr.update(data_loader=update_loader_double)
+    # sfr.update(data_loader=update_loader_double)
+    sfr.update(data_loader=update_loader)
     update_inference_time = time.time() - start_time
     log_sfr_metrics(
         sfr,
         name="Train D1 -> Update D2",
-        test_loader=test_loader_double,
+        test_loader=test_loader,
+        # test_loader=test_loader_double,
         table_logger=table_logger,
         device=cfg.device,
         time=update_inference_time,
     )
-    # num_bo_trials = 50
-    # # num_bo_trials = 30
-    # sfr.optimize_prior_precision(
-    #     pred_type="gp",
-    #     val_loader=val_loader_double,
-    #     method="grid",
-    #     # method="bo",
-    #     prior_prec_min=1e-4,
-    #     prior_prec_max=1.0,
-    #     # prior_prec_min=1e-6,
-    #     # prior_prec_max=1e-3,
-    #     num_trials=num_bo_trials,
-    # )
-    # update_inference_time = time.time() - start_time
-    # log_sfr_metrics(
-    #     sfr,
-    #     name="Train D1 -> Update D2 + tuning",
-    #     test_loader=test_loader_double,
-    #     table_logger=table_logger,
-    #     device=cfg.device,
-    #     time=update_inference_time,
-    # )
+    breakpoint()
+    exit()
+    num_bo_trials = 50
+    # num_bo_trials = 30
+    sfr.optimize_prior_precision(
+        pred_type="gp",
+        # pred_type="nn",
+        # val_loader=val_loader_double,
+        val_loader=val_loader,
+        method="grid",
+        # method="bo",
+        # prior_prec_min=1e-4,
+        prior_prec_min=1e-9,
+        prior_prec_max=1.0,
+        # prior_prec_min=1e-6,
+        # prior_prec_max=1e-3,
+        num_trials=num_bo_trials,
+    )
+    update_inference_time = time.time() - start_time
+    log_sfr_metrics(
+        sfr,
+        name="Train D1 -> Update D2 + tuning",
+        test_loader=test_loader,
+        # test_loader=test_loader_double,
+        table_logger=table_logger,
+        device=cfg.device,
+        time=update_inference_time,
+    )
+    exit()
 
     # Continue training on D1+D2 and log
     sfr = train_and_log(
@@ -448,6 +508,7 @@ def main(cfg: DictConfig):
     _ = train_and_log(
         sfr_copy,
         train_loader=update_loader,
+        val_loader=val_loader_double,
         name="Train D1 -> Train D2",
         inference_loader=train_and_update_loader,
     )
@@ -522,12 +583,20 @@ def log_sfr_metrics(
 
     if isinstance(sfr.likelihood, src.likelihoods.Gaussian):
         gp_metrics = compute_metrics_regression(
-            model=sfr, pred_type="gp", data_loader=test_loader, device=device
+            model=sfr,
+            pred_type="gp",
+            # pred_type="nn",
+            data_loader=test_loader,
+            device=device,
         )
     else:
         gp_metrics = compute_metrics(
             pred_fn=sfr_pred(
-                model=sfr, pred_type="gp", num_samples=num_samples, device=device
+                model=sfr,
+                pred_type="gp",
+                # pred_type="nn",
+                num_samples=num_samples,
+                device=device,
             ),
             data_loader=test_loader,
             device=device,

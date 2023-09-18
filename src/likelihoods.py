@@ -5,7 +5,6 @@ from typing import Optional, Union
 import numpy as np
 import torch
 import torch.nn as nn
-from netcal.metrics import ECE
 from src.custom_types import FuncData, FuncMean, FuncVar, OutputData
 from torch.distributions import Bernoulli, Categorical, Normal
 

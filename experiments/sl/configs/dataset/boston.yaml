@@ -11,10 +11,12 @@ random_seed: ${random_seed}
 # double: False
 double: True
 data_split:
-  - 55 # Train
+  # - 55 # Train
+  - 35 # Train
   # - 69 # Train
   - 15 # Val
   - 15 # Test
   # - 1 # Update
-  - 15 # Update
+  # - 15 # Update
+  - 35 # Update
 order_dim: 0

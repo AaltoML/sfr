@@ -173,11 +173,20 @@ def main(cfg: DictConfig):
         double=True,
         # train_update_split=cfg.train_update_split,
     )
-    print(f"num_data: {ds_train.data.shape[0]}")
-    print(f"D: {ds_train.data.shape[1]}")
+    output_dim = ds_train.output_dim
+    ds_train = ConcatDataset([ds_train, ds_val])
+    ds_train.output_dim = output_dim
+
+    # print(f"ds_train {ds_train}")
+    # print(f"ds_train {ds_train[0]}")
+    # print(f"ds_train {type(ds_train[0:-1][0])}")
+    # print(f"ds_train {ds_train[0:-1][0].shape}")
+    # print(f"num_data: {ds_train.data.shape[0]}")
+    # print(f"D: {ds_train.data.shape[1]}")
     train_loader = DataLoader(ds_train, batch_size=cfg.batch_size, shuffle=True)
     val_loader = DataLoader(ds_val, batch_size=cfg.batch_size, shuffle=False)
-    test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=True)
+    test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=False)
+    update_loader = DataLoader(ds_update, batch_size=cfg.batch_size, shuffle=True)
     update_loader = DataLoader(ds_update, batch_size=cfg.batch_size, shuffle=True)
     train_and_update_loader = DataLoader(
         ConcatDataset([ds_train, ds_update]), batch_size=cfg.batch_size, shuffle=True
@@ -211,16 +220,16 @@ def main(cfg: DictConfig):
         likelihood = "regresssion"
     else:
         likelihood = "classification"
-    train_loader = make_data_loader_double(
-        data_loader=train_loader, likelihood=likelihood
-    )
-    val_loader = make_data_loader_double(data_loader=val_loader, likelihood=likelihood)
-    test_loader = make_data_loader_double(
-        data_loader=test_loader, likelihood=likelihood
-    )
-    update_loader = make_data_loader_double(
-        data_loader=update_loader, likelihood=likelihood
-    )
+    # train_loader = make_data_loader_double(
+    #     data_loader=train_loader, likelihood=likelihood
+    # )
+    # val_loader = make_data_loader_double(data_loader=val_loader, likelihood=likelihood)
+    # test_loader = make_data_loader_double(
+    #     data_loader=test_loader, likelihood=likelihood
+    # )
+    # update_loader = make_data_loader_double(
+    #     data_loader=update_loader, likelihood=likelihood
+    # )
     # train_and_update_loader = make_data_loader_double(
     #     data_loader=train_and_update_loader, likelihood=likelihood
     # )
@@ -239,6 +248,18 @@ def main(cfg: DictConfig):
     #     data_loader=update_loader, likelihood=likelihood
     # )
 
+    # Sample Z from train and update
+    ds_train_and_update = ConcatDataset([ds_train, ds_update])
+    indices = torch.randperm(len(ds_train_and_update))[: sfr.num_inducing]
+    print(f"indices {indices.shape}")
+    print(f"indices {indices}")
+    # breakpoint()
+    Z_ds = torch.utils.data.Subset(ds_train_and_update, indices)
+    Z_ds = DataLoader(Z_ds, batch_size=len(Z_ds))
+    Z = next(iter(Z_ds))[0].to(sfr.device)
+    print(f"Z {Z.shape}")
+    sfr.Z = Z.to(sfr.device)
+
     @torch.no_grad()
     def map_pred_fn(x, idx=None):
         f = sfr.network(x.to(cfg.device))
@@ -256,7 +277,7 @@ def main(cfg: DictConfig):
         cum_loss = torch.mean(losses, 0)
         return cum_loss
 
-    def train_loop(sfr, data_loader: DataLoader):
+    def train_loop(sfr, data_loader: DataLoader, val_loader: DataLoader):
         optimizer = torch.optim.Adam(
             [
                 {"params": sfr.parameters()},
@@ -349,10 +370,17 @@ def main(cfg: DictConfig):
     def train_and_log(
         sfr: src.SFR,
         train_loader: DataLoader,
-        val_loader: DataLoader,
+        # val_loader: DataLoader,
         name: str,
         inference_loader: Optional[DataLoader] = None,
+        train_val_split: float = 0.7,
     ):
+        ds_train, ds_val = torch.utils.data.random_split(
+            train_loader.dataset, [train_val_split, 1 - train_val_split]
+        )
+        train_loader = DataLoader(ds_train, batch_size=cfg.batch_size, shuffle=True)
+        val_loader = DataLoader(ds_val, batch_size=cfg.batch_size, shuffle=True)
+
         # torch.set_default_dtype(torch.float)
         print(f"yo {next(iter(train_loader))[0].dtype}")
         print(f"yo {next(iter(train_loader))[1].dtype}")
@@ -364,23 +392,23 @@ def main(cfg: DictConfig):
         # sfr.float()
         sfr.train()
         start_time = time.time()
-        sfr = train_loop(sfr, data_loader=train_loader)
+        sfr = train_loop(sfr, data_loader=train_loader, val_loader=val_loader)
         train_time = time.time() - start_time
 
-        log_map_metrics(
-            sfr,
-            test_loader,
-            name=name,
-            table_logger=table_logger,
-            device=cfg.device,
-            time=train_time,
-        )
+        # log_map_metrics(
+        #     sfr,
+        #     test_loader,
+        #     name=name,
+        #     table_logger=table_logger,
+        #     device=cfg.device,
+        #     time=train_time,
+        # )
 
         # Make everything double for inference
         # torch.set_default_dtype(torch.double)
 
         # Log MAP before updates
-        # sfr.double()
+        sfr.double()
         # sfr.network.double()
         sfr.eval()
         log_map_metrics(
@@ -394,7 +422,6 @@ def main(cfg: DictConfig):
         )
 
         # TODO sample Z from train+update
-        #
 
         # Fit SFR
         logger.info("Fitting SFR...")
@@ -402,27 +429,22 @@ def main(cfg: DictConfig):
             inference_loader = train_loader
         start_time = time.time()
 
-        Z = torch.concat([ds_train.data, ds_update.data], 0)
-        print(f"Z {Z.shape}")
-        indices = torch.randperm(Z.shape[0])[: sfr.num_inducing]
-        sfr.Z = Z[indices.to(sfr.device)].to(sfr.device)
+        # Z = ds_train_and_update[indices.numpy()][0]
+        # print(f"Z {Z.shape}")
+        # sfr.Z = Z.to(sfr.device)
+        # # Z = torch.concat([ds_train.data, ds_update.data], 0)
+
+        # # Z = torch.concat([ds_train.data, ds_update.data], 0)
+        # print(f"sfr.Z {sfr.Z.shape}")
+        # # indices = torch.randperm(Z.shape[0])[: sfr.num_inducing]
+        # # sfr.Z = Z[indices.to(sfr.device)].to(sfr.device)
+        sfr.Z = Z
         all_train = DataLoader(
             train_loader.dataset, batch_size=len(train_loader.dataset)
         )
         sfr.train_data = next(iter(all_train))
-
-        # Z = torch.concat([ds_train.data, ds_update.data], 0)
-        # print(f"Z {Z.shape}")
-        # # breakpoint()
-        # indices = torch.randperm(Z.shape[0])[: sfr.num_inducing]
-        # sfr.Z = Z[indices.to(sfr.device)].to(sfr.device)
-        # # print(f"train_loader.dataset[0] {train_loader.dataset[0].shape}")
-        # #
-        # sfr.train_data = (
-        #     train_loader.dataset.data.double(),
-        #     train_loader.dataset.targets.double(),
-        # )
         sfr._build_sfr()
+
         # breakpoint()
         # sfr.fit(train_loader=train_loader)
         # sfr.fit(train_loader=inference_loader)
@@ -474,11 +496,20 @@ def main(cfg: DictConfig):
     sfr = train_and_log(
         sfr,
         train_loader=train_loader,
-        val_loader=val_loader,
+        # val_loader=val_loader,
         # val_loader=val_loader_double,
         # inference_loader=train_loader_double,
         name="Train D1",
     )
+
+    # Make a copy of SFR
+    network_ = hydra.utils.instantiate(cfg.network, ds_train=ds_train)
+    network_.double()
+    # sfr.float()
+    # sfr.network.float()
+    network_.load_state_dict(sfr.network.state_dict())  # copy weights and stuff
+    sfr_copy = hydra.utils.instantiate(cfg.sfr, model=network_)
+    sfr_copy.double()
 
     # def plot(i):
     #     min = ds_train.data[:, i].min()
@@ -553,34 +584,36 @@ def main(cfg: DictConfig):
     sfr = train_and_log(
         sfr,
         train_loader=train_and_update_loader,
-        val_loader=val_loader,
+        # val_loader=val_loader,
         # val_loader=val_loader_double,
         name="Train D1 -> Train D1+D2",
     )
 
     # Train on D1+D2 (from scratch) and log
-    network = hydra.utils.instantiate(cfg.network, ds_train=ds_train)
-    sfr = hydra.utils.instantiate(cfg.sfr, model=network)
-    sfr = train_and_log(
-        sfr,
+    network_new = hydra.utils.instantiate(cfg.network, ds_train=ds_train)
+    network_new.double()
+    sfr_new = hydra.utils.instantiate(cfg.sfr, model=network_new)
+    sfr_new.double()
+    sfr_new = train_and_log(
+        sfr_new,
         train_loader=train_and_update_loader,
-        val_loader=val_loader,
+        # val_loader=val_loader,
         # val_loader=val_loader_double,
         name="Train D1+D2",
     )
 
     # Continue training on just D2 and log
     print("Continue training on just D2 and log")
-    torch.set_default_dtype(torch.float)
-    network = hydra.utils.instantiate(cfg.network, ds_train=ds_train)
-    sfr.float()
-    sfr.network.float()
-    network.load_state_dict(sfr.network.state_dict())  # copy weights and stuff
-    sfr_copy = hydra.utils.instantiate(cfg.sfr, model=network)
+    # torch.set_default_dtype(torch.float)
+    # network = hydra.utils.instantiate(cfg.network, ds_train=ds_train)
+    # # sfr.float()
+    # # sfr.network.float()
+    # network.load_state_dict(sfr.network.state_dict())  # copy weights and stuff
+    # sfr_copy = hydra.utils.instantiate(cfg.sfr, model=network)
     _ = train_and_log(
         sfr_copy,
         train_loader=update_loader,
-        val_loader=val_loader,
+        # val_loader=val_loader,
         # val_loader=val_loader_double,
         name="Train D1 -> Train D2",
         inference_loader=train_and_update_loader,
@@ -597,6 +630,7 @@ def main(cfg: DictConfig):
     # with open("uci_table.tex", "w") as file:
     #     file.write(df_latex)
     #     wandb.save("uci_table.tex")
+    return table_logger
 
 
 def log_map_metrics(

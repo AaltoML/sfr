@@ -15,14 +15,15 @@ n_epochs: 80000
 batch_size: 50
 
 early_stop:
-  # patience: 100
   patience: 1000
+  # patience: 10000
   min_prior_precision: 0
 
 sfr:
   # prior_precision: 1e-8
   # prior_precision: 1e-6
-  prior_precision: 1e-4
+  # prior_precision: 1e-4
+  prior_precision: 1e-3
   # prior_precision: 1e-1
   # prior_precision: 1e-10
   # prior_precision: 1e-12

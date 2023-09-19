@@ -174,8 +174,10 @@ def compute_metrics_regression(
 ) -> dict:
     nlpd = []
     num_data = len(data_loader.dataset)
-    mse = 0
+    mse = 0.0
+    nlpd = 0.0
     for x, y in data_loader:
+        input_dim = x.shape[-1]
         if not map:
             if isinstance(model, SFR):
                 # print("Calculating SFR NLPD")
@@ -199,6 +201,7 @@ def compute_metrics_regression(
         if y.ndim == 1:
             y = torch.unsqueeze(y, -1)
         mse += torch.nn.MSELoss(reduction="sum")(y_mean, y)
+        # print(f"mse {mse.shape}")
         # log_prob = -torch.distributions.Normal(loc=y_mean, scale=y_std).log_prob(y)
         # print(f"log_prob {log_prob.shape}")
         # log_prob = torch.mean(

@@ -69,9 +69,9 @@ class Gaussian(Likelihood):
         # print(f"dist {dist}")
         log_prob = dist.log_prob(y)
         # print(f"log_prob {log_prob.shape}")
-        if log_prob.ndim > 1:
-            # sum over independent output dimensions
-            log_prob = torch.sum(log_prob, -1)
+        # if log_prob.ndim > 1:
+        #     # sum over independent output dimensions
+        #     log_prob = torch.sum(log_prob, -1)
         #     print(f"log_prob prod over output {log_prob.shape}")
         # print(f"log_prob {log_prob.shape}")
         return log_prob

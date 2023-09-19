@@ -45,21 +45,21 @@ class TableLogger:
             "time": [],
             "method": [],
         }
-        self.tbl = wandb.Table(
-            columns=[
-                "dataset",
-                "model",
-                "seed",
-                "num_inducing",
-                "acc",
-                "nlpd",
-                "ece",
-                "mse",
-                "prior_prec",
-                "time",
-                "method",
-            ]
-        )
+        # self.tbl = wandb.Table(
+        #     columns=[
+        #         "dataset",
+        #         "model",
+        #         "seed",
+        #         "num_inducing",
+        #         "acc",
+        #         "nlpd",
+        #         "ece",
+        #         "mse",
+        #         "prior_prec",
+        #         "time",
+        #         "method",
+        #     ]
+        # )
 
     def add_data(
         self,
@@ -96,20 +96,22 @@ class TableLogger:
         self.data["prior_prec"].append(prior_prec)
         self.data["time"].append(time)
         self.data["method"].append(method)
-        self.tbl.add_data(
-            self.cfg.dataset.name,
-            model_name,
-            self.cfg.random_seed,
-            num_inducing,
-            self.data["acc"],
-            self.data["nlpd"],
-            self.data["ece"],
-            self.data["mse"],
-            prior_prec,
-            time,
-            method,
-        )
-        wandb.log({"Metrics": wandb.Table(data=pd.DataFrame(self.data))})
+        # self.tbl.add_data(
+        #     self.cfg.dataset.name,
+        #     model_name,
+        #     self.cfg.random_seed,
+        #     num_inducing,
+        #     self.data["acc"],
+        #     self.data["nlpd"],
+        #     self.data["ece"],
+        #     self.data["mse"],
+        #     prior_prec,
+        #     time,
+        #     method,
+        # )
+        # wandb.log({"Metrics": self.tbl})
+        if self.cfg.wandb.use_wandb:
+            wandb.log({"Metrics": wandb.Table(data=pd.DataFrame(self.data))})
 
 
 def make_ds_double(ds: Dataset, likelihood: str = "classification") -> Dataset:
@@ -185,14 +187,18 @@ def main(cfg: DictConfig):
     cfg.output_dim = ds_train.output_dim
     print(f"cfg.output_dim {cfg.output_dim}")
     print(OmegaConf.to_yaml(cfg))
-    run = wandb.init(
-        project=cfg.wandb.project,
-        name=cfg.wandb.run_name,
-        group=cfg.wandb.group,
-        tags=cfg.wandb.tags,
-        config=OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True),
-        dir=get_original_cwd(),  # don't nest wandb inside hydra dir
-    )
+    if cfg.wandb.use_wandb:
+        run = wandb.init(
+            project=cfg.wandb.project,
+            name=cfg.wandb.run_name,
+            group=cfg.wandb.group,
+            tags=cfg.wandb.tags,
+            config=OmegaConf.to_container(cfg, resolve=True, throw_on_missing=True),
+            dir=get_original_cwd(),  # don't nest wandb inside hydra dir
+        )
+        run_dir = run.dir
+    else:
+        run_dir = "./"
 
     # Instantiate the neural network
     network = hydra.utils.instantiate(cfg.network, ds_train=ds_train)
@@ -281,11 +287,12 @@ def main(cfg: DictConfig):
                 optimizer.zero_grad()
                 loss.backward()
                 optimizer.step()
-                wandb.log({"loss": loss})
-                wandb.log({"log_sigma_noise": sfr.likelihood.sigma_noise})
+                if cfg.wandb.use_wandb:
+                    wandb.log({"loss": loss})
+                    wandb.log({"log_sigma_noise": sfr.likelihood.sigma_noise})
 
-            if epoch % cfg.logging_epoch_freq == 0:
-                val_loss = loss_fn(val_loader)
+            val_loss = loss_fn(val_loader)
+            if epoch % cfg.logging_epoch_freq == 0 and cfg.wandb.use_wandb:
                 wandb.log({"val_loss": val_loss})
                 if likelihood == "classification":
                     train_metrics = compute_metrics(
@@ -320,16 +327,16 @@ def main(cfg: DictConfig):
                 # if early_stopper(val_metrics["nll"]):  # (val_loss):
                 #     logger.info("Early stopping criteria met, stopping training...")
                 #     break
-                if val_loss < best_loss:
-                    best_ckpt_fname = checkpoint(
-                        sfr=sfr, optimizer=optimizer, save_dir=run.dir
-                    )
-                    best_loss = val_loss
-                    wandb.log({"best_test/": test_metrics})
-                    wandb.log({"best_val/": val_metrics})
-                if early_stopper(val_loss):  # (val_loss):
-                    logger.info("Early stopping criteria met, stopping training...")
-                    break
+            if val_loss < best_loss:
+                best_ckpt_fname = checkpoint(
+                    sfr=sfr, optimizer=optimizer, save_dir=run_dir
+                )
+                best_loss = val_loss
+                # wandb.log({"best_test/": test_metrics})
+                # wandb.log({"best_val/": val_metrics})
+            if early_stopper(val_loss):  # (val_loss):
+                logger.info("Early stopping criteria met, stopping training...")
+                break
 
         # Load checkpoint
         ckpt = torch.load(best_ckpt_fname)

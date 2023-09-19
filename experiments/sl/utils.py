@@ -208,23 +208,33 @@ def compute_metrics_regression(
         # print(f"y_mean {y_mean.shape}")
         # print(f"y_std {y_std.shape}")
         # print(f"y {y.shape}")
-        nlpd.append(
-            torch.mean(  # TODO should this be sum?
-                -torch.distributions.Normal(
-                    loc=torch.zeros_like(y_mean), scale=y_std
-                ).log_prob(y_mean - y),
-                -1
-                # -torch.distributions.Normal(loc=y_mean, scale=y_std).log_prob(y), -1
-            )
+        # nlpd.append(
+        #     torch.sum(  # TODO should this be sum?
+        #         -torch.distributions.Normal(
+        #             loc=torch.zeros_like(y_mean), scale=y_std
+        #         ).log_prob(y_mean - y),
+        #         -1
+        #         # -torch.distributions.Normal(loc=y_mean, scale=y_std).log_prob(y), -1
+        #     )
+        # )
+        nlpd -= torch.sum(
+            torch.distributions.Normal(
+                loc=torch.zeros_like(y_mean), scale=y_std
+            ).log_prob(y_mean - y)
         )
+        # nlpd += torch.distributions.Normal(
+        #     loc=torch.zeros_like(y_mean), scale=y_std
+        # ).log_prob(y_mean - y)
+        # print(f"nlpd {nlpd.shape}")
 
-    nlpd = torch.concat(nlpd, 0)
+    # nlpd = torch.concat(nlpd, 0)
     # print(f"nlpd {nlpd.shape}")
-    nlpd = torch.mean(nlpd, 0)
+    # nlpd = torch.mean(nlpd, 0)
+    nlpd = nlpd / (num_data * input_dim)
     # print(f"nlpd {nlpd.shape}")
     # print(f"mse {len(mse)}")
     # mse = torch.stack(mse, 0)
-    mse = mse / num_data
+    mse = mse / (num_data * input_dim)
     # print(f"mse {mse.shape}")
     # mse = torch.mean(mse, 0)
     # print(f"mse {mse.shape}")

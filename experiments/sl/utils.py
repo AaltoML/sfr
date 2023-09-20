@@ -430,7 +430,7 @@ def get_boston_network(name, output_dim, ds_train, device: str):
         n_units=128,
         activation="tanh",
     ).to(device)
-    network.apply(orthogonal_init)
+    # network.apply(orthogonal_init)
     return network
 
 

@@ -177,6 +177,8 @@ def compute_metrics_regression(
     mse = 0.0
     nlpd = 0.0
     for x, y in data_loader:
+        x = x.to(device)
+        y = y.to(device)
         input_dim = x.shape[-1]
         if not map:
             if isinstance(model, SFR):

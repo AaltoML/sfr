@@ -30,7 +30,7 @@ def train(
         # [{"params": sfr.parameters()}],
         [
             {"params": sfr.parameters()},
-            {"params": sfr.likelihood.sigma_noise},
+            {"params": sfr.likelihood.log_sigma_noise},
             # {"params": sfr.prior.prior_precision},
         ],
         lr=learning_rate,

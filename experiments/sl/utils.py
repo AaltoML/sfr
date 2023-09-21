@@ -244,7 +244,7 @@ def compute_metrics_regression(
     # mse = torch.mean(mse, 0)
     # print(f"mse {mse.shape}")
 
-    metrics = {"mse": mse, "nll": nlpd}
+    metrics = {"mse": mse.cpu().numpy(), "nll": nlpd.cpu().numpy()}
     return metrics
 
 

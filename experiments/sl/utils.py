@@ -504,6 +504,7 @@ def get_boston_dataset(
     double: bool = False,
     data_split: Optional[list] = [70, 15, 15, 0],
     order_dim: Optional[int] = None,  # if int order along X[:, order_dim]
+    device: str = "cpu",
     **kwargs,
 ):
     file_path = os.path.dirname(os.path.realpath(__file__))
@@ -566,6 +567,7 @@ def split_dataset(
     random_seed: int,
     double: bool = False,
     data_split: Optional[list] = [70, 30],
+    device: str = "cpu",
 ):
     if random_seed:
         random.seed(random_seed)
@@ -590,6 +592,8 @@ def split_dataset(
         else:
             X = X.to(torch.float)
             y = y.to(torch.float)
+        X = X.to(device)
+        y = y.to(device)
         ds = torch.utils.data.TensorDataset(X, y)
         ds.data = X
         ds.targets = y

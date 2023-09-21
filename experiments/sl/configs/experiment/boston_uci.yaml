@@ -15,8 +15,7 @@ n_epochs: 80000
 batch_size: 50
 
 early_stop:
-  patience: 1000
-  # patience: 10000
+  patience: 100
   min_prior_precision: 0
 
 sfr:

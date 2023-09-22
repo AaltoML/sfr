@@ -1,15 +1,9 @@
-# _target_: experiments.sl.utils.BostonDataset
-# # _partial_: true
-# name: "boston"
-# # random_seed: ${random_seed}
-# # dir: ???
-# # double: False
-
-_target_: experiments.sl.utils.get_boston_dataset
+# _target_: experiments.sl.utils.get_boston_dataset
+_target_: experiments.sl.utils.get_UCIreg_dataset
 name: "boston"
 random_seed: ${random_seed}
-# double: False
 double: True
+normalize: True
 data_split:
   # - 55 # Train
   - 35 # Train

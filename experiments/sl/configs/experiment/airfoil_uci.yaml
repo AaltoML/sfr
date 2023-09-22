@@ -1,0 +1,55 @@
+# @package _global_
+defaults:
+  # - override /network: si_mlp
+  # - override /network: small_mlp
+  - override /network: boston_mlp
+  # - override /network: sin_mlp
+  - override /dataset: airfoil
+  - override /sfr: regression
+
+# lr: 1e-4
+lr: 1e-3
+n_epochs: 80000
+# n_epochs: 200
+
+batch_size: 50
+
+early_stop:
+  patience: 100
+  min_prior_precision: 0
+
+sfr:
+  # prior_precision: 1e-8
+  # prior_precision: 1e-6
+  # prior_precision: 1e-4
+  prior_precision: 1e-3
+  # prior_precision: 1e-1
+  # prior_precision: 1e-10
+  # prior_precision: 1e-12
+  likelihood:
+    _target_: src.likelihoods.Gaussian
+    # sigma_noise: 1.0
+    sigma_noise:
+      _target_: torch.tensor
+      data: 1.0
+      device: ${device}
+      # data: 10.0
+      requires_grad: true
+    # sigma_noise: 0.1
+    # sigma_noise: 2.0
+    # sigma_noise: 0.5
+    # sigma_noise: 10.0
+
+# sfr:
+#   _target_: experiments.sl.utils.init_SFR_with_gaussian_prior
+#   _convert_: all
+#   # network: ???
+#   prior_precision: 1e-4
+#   likelihood:
+#     _target_: src.likelihoods.Gaussian
+#     sigma_noise: 1.0
+#   output_dim: ${output_dim}
+#   num_inducing: 128
+#   dual_batch_size: 1000
+#   jitter: 1e-4
+#   device: ${device} # TODO should this always be cpu??

@@ -457,7 +457,7 @@ def main(cfg: DictConfig):
             # test_loader=test_loader_double,
             table_logger=table_logger,
             device=cfg.device,
-            time=inference_time,
+            time=inference_time + train_time,
         )
 
         # # sfr.prior.prior_precision = prior_prec

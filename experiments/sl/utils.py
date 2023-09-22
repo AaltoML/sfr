@@ -501,20 +501,30 @@ class UCIDataset(torch.utils.data.Dataset):
         return self.data.shape[0]
 
 
-def get_boston_dataset(
+def get_UCIreg_dataset(
+    name: str,  # ["boston", "concrete", "airfoil", "elevators"]
     random_seed: int,
     double: bool = False,
     data_split: Optional[list] = [70, 15, 15, 0],
     order_dim: Optional[int] = None,  # if int order along X[:, order_dim]
+    normalize=True,
     device: str = "cpu",
     **kwargs,
 ):
+    # def get_boston_dataset(
+    #     random_seed: int,
+    #     double: bool = False,
+    #     data_split: Optional[list] = [70, 15, 15, 0],
+    #     order_dim: Optional[int] = None,  # if int order along X[:, order_dim]
+    #     device: str = "cpu",
+    #     **kwargs,
+    # ):
     file_path = os.path.dirname(os.path.realpath(__file__))
     print(f"file_path {file_path}")
 
-    full_path = os.path.join(file_path, "data/boston")
+    full_path = os.path.join(file_path, "data/uci_regression/" + name)
     print(f"full_path {full_path}")
-    X, Y = load_UCIreg_dataset(full_path=full_path, name="boston", normalize=True)
+    X, Y = load_UCIreg_dataset(full_path=full_path, name=name, normalize=normalize)
     print(f"X {X.shape}")
     print(f"Y {Y.shape}")
 

@@ -20,7 +20,7 @@ sfr:
     # sigma_noise: 1.0
     sigma_noise:
       _target_: torch.tensor
-      data: 1.0
+      data: 0.0
       device: ${device}
       # data: 10.0
       requires_grad: true

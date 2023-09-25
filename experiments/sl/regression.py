@@ -135,13 +135,14 @@ def main(cfg: DictConfig):
     table_logger = TableLogger(cfg)
 
     # torch.set_default_dtype(torch.float)
-    torch.set_default_dtype(torch.double)
+    if cfg.double_train:
+        torch.set_default_dtype(torch.double)
 
     # Load train/val/test/update data sets
     ds_train, ds_val, ds_test, ds_update = hydra.utils.instantiate(
         cfg.dataset,
         dir=os.path.join(get_original_cwd(), "data"),
-        double=True,
+        double=cfg.double_train,
     )
 
     # Why do I have to see this abominations?
@@ -304,7 +305,8 @@ def main(cfg: DictConfig):
         sfr = train_loop(sfr, data_loader=train_loader, val_loader=val_loader)
         train_time = time.time() - start_time
         
-        if cfg.double:
+        if cfg.double_inference:
+            torch.set_default_dtype(torch.double)
             sfr.double()
 
         sfr.eval()
@@ -336,7 +338,6 @@ def main(cfg: DictConfig):
             sfr,
             name=name,
             test_loader=test_loader,
-            # test_loader=test_loader_double,
             table_logger=table_logger,
             device=cfg.device,
             time=inference_time + train_time,

@@ -16,13 +16,14 @@ defaults:
 train_update_split: 0.5
 
 device: "cuda"
+double_train: true
+double_inference: True
+
 # device: "cpu"
 output_dim: ???
 batch_size: 512
 lr: 1e-4
 n_epochs: 10000
-double: False
-double_inference: True # True for UCI and False for MNIST/FMNIST/CIFAR10
 
 logging_epoch_freq: 2
 random_seed: 117

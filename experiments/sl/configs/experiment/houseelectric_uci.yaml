@@ -5,12 +5,12 @@ defaults:
   - override /sfr: regression
 
 lr: 1e-3
-n_epochs: 80000
+n_epochs: 100
 
-batch_size: 50
+batch_size: 512
 
 early_stop:
-  patience: 100
+  patience: 10
   min_prior_precision: 0
 
 sfr:

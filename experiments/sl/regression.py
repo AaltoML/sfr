@@ -244,7 +244,8 @@ def main(cfg: DictConfig):
                 optimizer.step()
                 if cfg.wandb.use_wandb:
                     wandb.log({"loss": loss})
-                    wandb.log({"log_sigma_noise": sfr.likelihood.sigma_noise})
+                    wandb.log({"log_sigma_noise": sfr.likelihood.log_sigma_noise})
+                    wandb.log({"sigma_noise": sfr.likelihood.sigma_noise})
 
             val_loss = loss_fn(val_loader, model=sfr)
             if epoch % cfg.logging_epoch_freq == 0 and cfg.wandb.use_wandb:

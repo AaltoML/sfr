@@ -18,9 +18,9 @@ sfr:
   likelihood:
     _target_: src.likelihoods.Gaussian
     # sigma_noise: 1.0
-    sigma_noise:
+    log_sigma_noise:
       _target_: torch.tensor
-      data: 0.0
+      data: 0.00001
       device: ${device}
       # data: 10.0
-      requires_grad: true
+      requires_grad: false

@@ -174,6 +174,13 @@ def main(cfg: DictConfig):
         # train_update_split=cfg.train_update_split,
     )
     output_dim = ds_train.output_dim
+    # breakpoint()
+    logger.info(f"D: {len(ds_train)}")
+    logger.info(f"F: {ds_train.output_dim}")
+    try:
+        logger.info(f"D: {ds_train.data.shape[-1]}")
+    except:
+        pass
     ds_train = ConcatDataset([ds_train, ds_val])
     ds_train.output_dim = output_dim
 
@@ -186,7 +193,7 @@ def main(cfg: DictConfig):
     train_loader = DataLoader(ds_train, batch_size=cfg.batch_size, shuffle=True)
     val_loader = DataLoader(ds_val, batch_size=cfg.batch_size, shuffle=False)
     test_loader = DataLoader(ds_test, batch_size=cfg.batch_size, shuffle=False)
-    update_loader = DataLoader(ds_update, batch_size=cfg.batch_size, shuffle=True)
+    # update_loader = DataLoader(ds_update, batch_size=cfg.batch_size, shuffle=True)
     update_loader = DataLoader(ds_update, batch_size=cfg.batch_size, shuffle=True)
     train_and_update_loader = DataLoader(
         ConcatDataset([ds_train, ds_update]), batch_size=cfg.batch_size, shuffle=True
@@ -261,17 +268,13 @@ def main(cfg: DictConfig):
     sfr.Z = Z.to(sfr.device)
 
     @torch.no_grad()
-    def map_pred_fn(x, idx=None):
-        f = sfr.network(x.to(cfg.device))
-        return sfr.likelihood.inv_link(f)
-        # return torch.softmax(sfr.network(x.to(cfg.device)), dim=-1)
-
-    @torch.no_grad()
-    def loss_fn(data_loader: DataLoader):
+    def loss_fn(data_loader: DataLoader, model: src.SFR = None):
+        if model is None:
+            model = sfr
         losses = []
         for X, y in data_loader:
             X, y = X.to(cfg.device), y.to(cfg.device)
-            loss = sfr.loss(X, y)
+            loss = model.loss(X, y)
             losses.append(loss)
         losses = torch.stack(losses, 0)
         cum_loss = torch.mean(losses, 0)
@@ -291,6 +294,12 @@ def main(cfg: DictConfig):
             patience=int(cfg.early_stop.patience / cfg.logging_epoch_freq),
             min_prior_precision=cfg.early_stop.min_prior_precision,
         )
+
+        @torch.no_grad()
+        def map_pred_fn(x, idx=None):
+            f = sfr.network(x.to(cfg.device))
+            return sfr.likelihood.inv_link(f)
+            # return torch.softmax(sfr.network(x.to(cfg.device)), dim=-1)
 
         best_nll = float("inf")
         best_loss = float("inf")
@@ -312,7 +321,7 @@ def main(cfg: DictConfig):
                     wandb.log({"loss": loss})
                     wandb.log({"log_sigma_noise": sfr.likelihood.sigma_noise})
 
-            val_loss = loss_fn(val_loader)
+            val_loss = loss_fn(val_loader, model=sfr)
             if epoch % cfg.logging_epoch_freq == 0 and cfg.wandb.use_wandb:
                 wandb.log({"val_loss": val_loss})
                 if likelihood == "classification":
@@ -421,8 +430,6 @@ def main(cfg: DictConfig):
             time=train_time,
         )
 
-        # TODO sample Z from train+update
-
         # Fit SFR
         logger.info("Fitting SFR...")
         if inference_loader is None:
@@ -440,7 +447,7 @@ def main(cfg: DictConfig):
         # # sfr.Z = Z[indices.to(sfr.device)].to(sfr.device)
         sfr.Z = Z
         all_train = DataLoader(
-            train_loader.dataset, batch_size=len(train_loader.dataset)
+            inference_loader.dataset, batch_size=len(inference_loader.dataset)
         )
         sfr.train_data = next(iter(all_train))
         sfr._build_sfr()

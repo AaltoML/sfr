@@ -21,8 +21,7 @@ early_stop:
 sfr:
   # prior_precision: 1e-8
   # prior_precision: 1e-6
-  # prior_precision: 1e-4
-  prior_precision: 1e-3
+  prior_precision: 1e-4
   # prior_precision: 1e-1
   # prior_precision: 1e-10
   # prior_precision: 1e-12

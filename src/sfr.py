@@ -83,30 +83,17 @@ class SFR(nn.Module):
         else:
             return self.likelihood(f_mean=f_mean, f_var=f_var)
 
-    # def forward(self, x: InputData):
-    #     return self.predict(x=x)
-
-    # @torch.no_grad()
-    # def predict(self, x: TestInput) -> Tuple[FuncMean, FuncVar]:
-    #     f_mean, f_var = self.predict_f(x, full_cov=False)
-    #     return self.likelihood(f_mean=f_mean, f_var=f_var)
-
     @torch.no_grad()
     def predict_f(
         self, x, full_cov: Optional[bool] = False
     ) -> Tuple[FuncMean, FuncVar]:
         Kxx = self.kernel(x, x, full_cov=full_cov).detach().cpu()
         Kxz = self.kernel(x, self.Z).detach().cpu()
-        # print(f"Kxx {Kxx}")
-        # print(f"Kxz {Kxz}")
-        # alpha_u = alpha_u.detach().cpu()
+
 
         f_mean = (Kxz @ self.alpha_u[..., None])[..., 0].T / (
             self.prior_precision * self.num_data
         )
-        # f_mean = (Kxz @ self.alpha_u[..., None])[..., 0].T
-        # print(f"f_mean {f_mean}")
-
         if full_cov:
             raise NotImplementedError
             # TODO tmp could be computed before
@@ -119,19 +106,15 @@ class SFR(nn.Module):
             return f_mean, f_cov
         else:
             Kzx = torch.transpose(Kxz, -1, -2)
-            # print(f"Kzx {Kzx}")
             Am = torch.linalg.solve_triangular(
                 torch.transpose(self.Lm, -1, -2), Kzx, upper=False
             )
-            # print(f"Am {Am}")
             Ab = torch.linalg.solve_triangular(
                 torch.transpose(self.Lb, -1, -2), Kzx, upper=False
             )
-            # print(f"Ab {Ab}")
             f_var = (
                 Kxx - torch.sum(torch.square(Am), -2) + torch.sum(torch.square(Ab), -2)
             ) / (self.prior_precision * self.num_data)
-            # print(f"f_var {f_var}")
             return f_mean.to(self.device), f_var.T.to(self.device)
 
     @torch.no_grad()
@@ -226,7 +209,6 @@ class SFR(nn.Module):
         self.alpha_u = self.alpha_u.detach().cpu()
         self.beta_u = self.beta_u.detach().cpu()
         self.y_tilde_u = self.y_tilde_u.detach().cpu()
-        # print(f"beta_u {beta_u}")
         logger.info("Finished projecting dual params onto inducing points")
 
         # Calcualte kernel
@@ -297,16 +279,10 @@ class SFR(nn.Module):
             jitter=self.jitter,
             device=self.device,
         )
-        # print(f"beta_u {beta_u}")
         logger.info("Finished projecting new dual params onto inducing points")
 
-        # beta_u_new = beta_u_new * num_new_data
 
         logger.info("Adding new and old dual params ")
-        print(f"beta_u_new {beta_u_new.device}")
-        print(f"y_tilde_u_new {y_tilde_u_new.device}")
-        print(f"self.beta_u {self.beta_u.device}")
-        print(f"self.y_tilde_u {self.y_tilde_u.device}")
         self.beta_u += beta_u_new.detach().cpu()
         self.y_tilde_u += y_tilde_u_new.detach().cpu()
         logger.info("Finished adding new and old dual params")
@@ -318,15 +294,12 @@ class SFR(nn.Module):
             output_dim=self.output_dim,
             jitter=self.jitter,
         )
-        print(f"alpha_u {self.alpha_u.device}")
         self.alpha_u = self.alpha_u.detach().cpu()
 
         logger.info("Caching tensors for faster predictions...")
         KzzplusBeta = (self.Kzz + self.beta_u) + self.Iz * self.jitter
-        print(f"KzzplusBeta {KzzplusBeta.device}")
         self.Lb = cholesky_add_jitter_until_psd(KzzplusBeta, jitter=self.jitter)
         logger.info("Finished caching tensors for faster predictions")
-        print(f"Lb {self.Lb.device}")
 
     def optimize_prior_precision(
         self,
@@ -430,7 +403,6 @@ class SFR(nn.Module):
             if isinstance(self.likelihood, CategoricalLh) or isinstance(
                 self.likelihood, BernoulliLh
             ):
-                print("trying classification nlpd")
                 py, targets = [], []
                 for idx, (x, y) in enumerate(data_loader):
                     p = self(
@@ -454,53 +426,20 @@ class SFR(nn.Module):
                     raise NotImplementedError
                 nll = -dist.log_prob(torch.Tensor(targets)).mean().numpy()
             elif isinstance(self.likelihood, src.likelihoods.Gaussian):
-                # print("trying gaussian nlpd")
                 nlls = []
                 for idx, (x, y) in enumerate(data_loader):
                     f_mean, f_var = self.predict_f(x.to(self.device), full_cov=False)
-                    # print(f"f_mean {f_mean.shape}")
-                    # print(f"f_var {f_var.shape}")
-                    # print(f"x {x.shape}")
-                    # print(f"y {y.shape}")
                     if pred_type in "nn":
                         f_mean = self.network(x)
                     nll = -self.likelihood.log_prob(
                         f=f_mean, y=y.to(self.device), f_var=f_var
                     )
-                    # print(f"nll {nll.shape}")
                     nlls.append(nll)
-                # print(f"nlls {nlls}")
                 nlls = torch.concat(nlls, 0)
-                # print(f"nlls {nlls.shape}")
-                # nll = torch.mean(nlls, 0).numpy()
                 nll = torch.mean(nlls, 0)
-                # print(f"nll {nll.shape}")
-                print(f"nll {nll}")
-                # print(f"nll {type(nll)}")
 
         except RuntimeError:
             nll = torch.inf
-
-        # print("trying gaussian nlpd")
-        # nlls = []
-        # for idx, (x, y) in enumerate(data_loader):
-        #     f_mean, f_var = self.predict_f(x, full_cov=False)
-        #     print(f"f_mean {f_mean.shape}")
-        #     print(f"f_var {f_var.shape}")
-        #     print(f"x {x.shape}")
-        #     print(f"y {y.shape}")
-        #     if pred_type in "nn":
-        #         f_mean = self.network(x)
-        #     nll = -self.likelihood.log_prob(f=f_mean, y=y, f_var=f_var)
-        #     print(f"nll {nll.shape}")
-        #     nlls.append(nll)
-        # print(f"nlls {nlls}")
-        # nlls = torch.concat(nlls, 0)
-        # print(f"nlls {nlls.shape}")
-        # nll = torch.mean(nlls, 0).numpy()
-        # print(f"nll {nll.shape}")
-        # print(f"nll {nll}")
-        print(f"nll yo {nll}")
 
         return nll
 
@@ -559,18 +498,11 @@ def project_dual_params_onto_inducing_points(
             batch_size = x_i.shape[0]
             end_idx = start_idx + batch_size
             Kui_c = kernel(Z, x_i, index=output_c).cpu()
-            print(f"Kui_c {Kui_c.shape}")
 
-            # alpha_batch = alpha[start_idx:end_idx, output_c]
-            # print(f"alpha_batch {alpha_batch.shape}")
             y_tilde_batch = y_tilde[start_idx:end_idx, output_c]
-            print(f"y_tilde_batch {y_tilde_batch.shape}")
             beta_diag_batch = beta_diag[start_idx:end_idx, output_c]
-            print(f"beta_diag_batch {beta_diag_batch.shape}")
             y_tilde_u_batch = torch.einsum("mb, b -> m", Kui_c, y_tilde_batch)
-            print(f"y_tilde_u_batch {y_tilde_u_batch.shape}")
             beta_batch = torch.einsum("mb, b, nb -> mn", Kui_c, beta_diag_batch, Kui_c)
-            print(f"beta_batch {beta_batch.shape}")
 
             # alpha_u_batch = calc_alpha_u(Kui_c, alpha=alpha_batch)
 
@@ -620,15 +552,11 @@ def calc_dual_params(
         if f.ndim == 1:
             f = f.unsqueeze(-1)
         beta_batch = calc_beta(likelihood=likelihood, F=f)
-        print(f"beta_batch {beta_batch.shape}")
         alpha_batch = calc_alpha(likelihood=likelihood, Y=y, F=f)
-        print(f"alpha_batch {alpha_batch.shape}")
         y_tilde_batch = calc_y_tilde(F=f, alpha=alpha_batch, beta=beta_batch)
-        # y_tilde_batch = y - y_tilde_batch
-        print(f"y_tilde_batch {y_tilde_batch.shape}")
+
 
         beta_diag_batch = torch.vmap(torch.diag)(beta_batch)
-        print(f"beta_diag_batch {beta_diag_batch.shape}")
 
         end_idx = start_idx + batch_size
         y_tilde[start_idx:end_idx] = y_tilde_batch

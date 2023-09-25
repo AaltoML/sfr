@@ -511,25 +511,12 @@ def get_UCIreg_dataset(
     device: str = "cpu",
     **kwargs,
 ):
-    # def get_boston_dataset(
-    #     random_seed: int,
-    #     double: bool = False,
-    #     data_split: Optional[list] = [70, 15, 15, 0],
-    #     order_dim: Optional[int] = None,  # if int order along X[:, order_dim]
-    #     device: str = "cpu",
-    #     **kwargs,
-    # ):
     file_path = os.path.dirname(os.path.realpath(__file__))
-    print(f"file_path {file_path}")
 
     full_path = os.path.join(file_path, "data/uci_regression/" + name)
-    print(f"full_path {full_path}")
     X, Y = load_UCIreg_dataset(full_path=full_path, name=name, normalize=normalize)
-    print(f"X {X.shape}")
-    print(f"Y {Y.shape}")
 
     ds = UCIDataset(data=X, targets=Y)
-    # ds = BostonDataset()
 
     data_split_1 = [data_split[0] + data_split[1], data_split[2] + data_split[3]]
     # Order data set along input dimension

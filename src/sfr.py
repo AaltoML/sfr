@@ -231,34 +231,23 @@ class SFR(nn.Module):
 
         # Calcualte kernel
         self.Kzz = self.kernel(self.Z, self.Z)
-        print(f"Kzz {self.Kzz.shape}")
         num_inducing = self.Kzz.shape[-1]
         self.Iz = (
             torch.eye(num_inducing, dtype=torch.float64)
             .to(self.Z.device)[None, ...]
             .repeat(self.output_dim, 1, 1)
         )
-        print(f"Iz {self.Iz.shape}")
         self.Kzz += self.Iz * self.jitter
         self.Kzz = self.Kzz.detach().cpu()
-        print(f"Kzz {self.Kzz.shape}")
-        # print(f"Kzz {Kzz}")
-        print(f"Iz {self.Iz.device}")
-        print(f"beta_u.device {self.beta_u.device}")
-        print(f"Kzz.device {self.Kzz.device}")
-        print(f"Iz.device {self.Iz.device}")
+
 
         assert self.beta_u.shape == self.Kzz.shape
 
         self.Iz = self.Iz.detach().cpu()
-        print(f"Iz {self.Iz.device}")
         KzzplusBeta = (self.Kzz + self.beta_u) + self.Iz * self.jitter
-        print(f"KzzplusBeta {KzzplusBeta.shape}")
 
         self.Lm = cholesky_add_jitter_until_psd(self.Kzz, jitter=self.jitter)
-        print(f"Lm.device {self.Lm.device}")
         self.Lb = cholesky_add_jitter_until_psd(KzzplusBeta, jitter=self.jitter)
-        print(f"Lb.device {self.Lb.device}")
 
     def loss(self, x: InputData, y: OutputData):
         f = self.network(x)

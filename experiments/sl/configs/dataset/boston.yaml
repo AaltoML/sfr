@@ -4,14 +4,22 @@ name: "boston"
 random_seed: ${random_seed}
 double: True
 normalize: True
+
 data_split:
-  # - 55 # Train
-  - 35 # Train
-  # - 69 # Train
-  - 15 # Val
-  - 15 # Test
-  # - 1 # Update
-  # - 15 # Update
-  - 35 # Update
+  # REGRESSION
+  - 70
+  - 15
+  - 15
+  - 0
+
+# data_split:
+#   # - 55 # Train
+#   - 35 # Train
+#   # - 69 # Train
+#   - 15 # Val
+#   - 15 # Test
+#   # - 1 # Update
+#   # - 15 # Update
+#   - 35 # Update
 order_dim: 0
 device: ${device}

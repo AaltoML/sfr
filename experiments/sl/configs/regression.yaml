@@ -7,7 +7,7 @@ defaults:
   # - override hydra/launcher: lumi
   # - override hydra/launcher: puhti
   # - override hydra/launcher: slurm
-  - override hydra/launcher: slurm_short
+  # - override hydra/launcher: slurm_short
   # Disable logging by Hydra
   # - override hydra/job_logging: none # stop hydra creating .log file
   # - override hydra/hydra_logging: none # saves .hydra/*.yaml files

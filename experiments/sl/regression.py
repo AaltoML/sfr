@@ -350,6 +350,7 @@ def main(cfg: DictConfig):
         train_loader=train_loader,
         name="train",
     )
+    wandb.finish()
 
     return table_logger
 

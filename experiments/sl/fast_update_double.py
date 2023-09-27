@@ -281,14 +281,10 @@ def main(cfg: DictConfig):
         return cum_loss
 
     def train_loop(sfr, data_loader: DataLoader, val_loader: DataLoader):
-        optimizer = torch.optim.Adam(
-            [
-                {"params": sfr.parameters()},
-                # {"params": sfr.likelihood.sigma_noise},
-                {"params": sfr.likelihood.log_sigma_noise},
-            ],
-            lr=cfg.lr,
-        )
+        params = [{"params": sfr.parameters()}]
+        if isinstance(sfr.likelihood, src.likelihoods.Gaussian):
+            params.append({"params": sfr.likelihood.log_sigma_noise})
+        optimizer = torch.optim.Adam(params, lr=cfg.lr)
 
         early_stopper = EarlyStopper(
             patience=int(cfg.early_stop.patience / cfg.logging_epoch_freq),
@@ -319,7 +315,8 @@ def main(cfg: DictConfig):
                 optimizer.step()
                 if cfg.wandb.use_wandb:
                     wandb.log({"loss": loss})
-                    wandb.log({"log_sigma_noise": sfr.likelihood.sigma_noise})
+                    if isinstance(sfr.likelihood, src.likelihoods.Gaussian):
+                        wandb.log({"log_sigma_noise": sfr.likelihood.sigma_noise})
 
             val_loss = loss_fn(val_loader, model=sfr)
             if epoch % cfg.logging_epoch_freq == 0 and cfg.wandb.use_wandb:

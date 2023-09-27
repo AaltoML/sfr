@@ -4,7 +4,7 @@ defaults:
   # - override /network: small_mlp
   - override /network: boston_mlp
   # - override /network: sin_mlp
-  - override /dataset: protein
+  - override /dataset: protein_fast_updates
   - override /sfr: regression
 
 # lr: 1e-4
@@ -15,10 +15,11 @@ n_epochs: 80000
 batch_size: 512
 
 early_stop:
-  patience: 50
+  patience: 100
   min_prior_precision: 0
 
 sfr:
+  num_inducing: 1024
   # prior_precision: 1e-8
   prior_precision: 1e-6
   # prior_precision: 1e-3

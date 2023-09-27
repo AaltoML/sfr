@@ -7,4 +7,4 @@ data_split:
   - 15
   - 15
   - 35
-order_dim: 0
+order_dim: 1

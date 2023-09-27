@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 import os
 import random
-from typing import Optional, Union
+from typing import Optional, Union, List
 
 import numpy as np
+import pandas as pd
+import scipy.io as sio
 import src
 import torch
 import torch.distributions as dists
@@ -21,8 +23,9 @@ from experiments.sl.bnn_predictive.preds.models import SiMLP
 from experiments.sl.datasets import load_UCIreg_dataset
 from laplace import BaseLaplace
 from netcal.metrics import ECE
+from sklearn.preprocessing import StandardScaler
 from src import SFR
-from torch.utils.data import DataLoader, Dataset
+from torch.utils.data import ConcatDataset, DataLoader, Dataset, TensorDataset
 from torch.utils.data.dataset import Subset
 
 
@@ -530,6 +533,7 @@ def get_UCIreg_dataset(
 
     ds = UCIDataset(data=X, targets=Y)
     # ds = BostonDataset()
+    # breakpoint()
 
     data_split_1 = [data_split[0] + data_split[1], data_split[2] + data_split[3]]
     # Order data set along input dimension
@@ -547,23 +551,63 @@ def get_UCIreg_dataset(
     else:
         print(f"data_split_1 {data_split_1}")
         ds_train, ds_new = split_dataset(
-            dataset=ds, random_seed=random_seed, double=double, data_split=data_split_1
+            dataset=ds, random_seed=random_seed, data_split=data_split_1
         )
 
     print(f"data_split[0:2] {data_split[0:2]}")
     ds_train, ds_val = split_dataset(
         dataset=ds_train,
         random_seed=random_seed,
-        double=double,
+        # double=double,
         data_split=data_split[0:2],
     )
     print(f"data_split[2:] {data_split[2:]}")
     ds_test, ds_update = split_dataset(
         dataset=ds_new,
         random_seed=random_seed,
-        double=double,
+        # double=double,
         data_split=data_split[2:],
     )
+    print(f"data_split[0:2] {data_split[0:2]}")
+    # # ds_train, ds_val, ds_update_1 = split_dataset(
+    # ds_train, ds_val, ds_test_1 = split_dataset(
+    #     dataset=ds_train,
+    #     random_seed=random_seed,
+    #     double=double,
+    #     data_split=data_split[0:2] + [data_split[2] / 2],
+    # )
+    # print(f"data_split[2:] {data_split[2:]}")
+    # # ds_test, ds_update_2 = split_dataset(
+    # ds_test_2, ds_update = split_dataset(
+    #     dataset=ds_new,
+    #     random_seed=random_seed,
+    #     double=double,
+    #     # data_split=data_split[2:],
+    #     data_split=[data_split[2] / 2] + data_split[3:4],
+    #     # data_split=data_split[2:3] + [data_split[2] / 2],
+    # )
+    # ds_test = ConcatDataset([ds_test_1, ds_test_2])
+    # # ds_update = ConcatDataset([ds_update_1, ds_update_2])
+
+    if double:
+        ds_train.data.to(torch.double)
+        ds_val.data.to(torch.double)
+        ds_test.data.to(torch.double)
+        ds_update.data.to(torch.double)
+        ds_train.targets.to(torch.double)
+        ds_val.targets.to(torch.double)
+        ds_test.targets.to(torch.double)
+        ds_update.targets.to(torch.double)
+        # Y = torch.tensor(Y, dtype=torch.double)
+    else:
+        ds_train.data.to(torch.float)
+        ds_val.data.to(torch.float)
+        ds_test.data.to(torch.float)
+        ds_update.data.to(torch.float)
+        ds_train.targets.to(torch.float)
+        ds_val.targets.to(torch.float)
+        ds_test.targets.to(torch.float)
+        ds_update.targets.to(torch.float)
 
     output_dim = 1
     # ds_train, ds_val, ds_test, ds_update = split_dataset(
@@ -577,7 +621,7 @@ def get_UCIreg_dataset(
 def split_dataset(
     dataset: torch.utils.data.Dataset,
     random_seed: int,
-    double: bool = False,
+    # double: bool = False,
     data_split: Optional[list] = [70, 30],
     device: str = "cpu",
 ):
@@ -598,12 +642,12 @@ def split_dataset(
         else:
             X = torch.from_numpy(dataset.data[idxs_])
             y = torch.from_numpy(dataset.targets[idxs_])
-        if double:
-            X = X.to(torch.double)
-            y = y.to(torch.double)
-        else:
-            X = X.to(torch.float)
-            y = y.to(torch.float)
+        # if double:
+        #     X = X.to(torch.double)
+        #     y = y.to(torch.double)
+        # else:
+        #     X = X.to(torch.float)
+        #     y = y.to(torch.float)
         X = X.to(device)
         y = y.to(device)
         ds = torch.utils.data.TensorDataset(X, y)
@@ -632,3 +676,244 @@ def orthogonal_init(m):
         # nn.init.kaiming_uniform_(m.weight.data, mode='fan_in', nonlinearity='relu')
         if m.bias is not None:
             nn.init.zeros_(m.bias)
+
+
+def get_airline_dataset(
+    random_seed: int,
+    double: bool = False,
+    data_split: Optional[list] = [70, 15, 15, 0],
+    order_dim: Optional[int] = None,  # if int order along X[:, order_dim]
+    normalize=True,
+    device: str = "cpu",
+    **kwargs,
+):
+    # Import the data
+    file_path = os.path.dirname(os.path.realpath(__file__))
+    print(f"file_path {file_path}")
+    # full_path = os.path.join(file_path, "data/airline.pickle")
+    full_path = os.path.join(file_path, "data/airline.mat")
+    mat_contents = sio.loadmat(full_path)
+    X = mat_contents["X"]
+    Y = mat_contents["Y"].T
+    print(f"full_path {full_path}")
+
+    # Convert time of day from hhmm to minutes since midnight
+    # data.ArrTime = 60 * np.floor(data.ArrTime / 100) + np.mod(data.ArrTime, 100)
+    # data.DepTime = 60 * np.floor(data.DepTime / 100) + np.mod(data.DepTime, 100)
+
+    # Normalize Y scale and offset
+    if normalize == True:
+        X_scaler = StandardScaler().fit(X)
+        Y_scaler = StandardScaler().fit(Y)
+        X = X_scaler.transform(X)
+        Y = Y_scaler.transform(Y)
+
+    data_split_1 = [data_split[0] + data_split[1], data_split[2] + data_split[3]]
+    # Order data set along input dimension
+    if order_dim is not None:
+        idxs = np.argsort(X, 0)[:, 0]
+        X = X[idxs]  # order inputs
+        Y = Y[idxs]  # order outputs
+        split_idx = round(data_split_1[0] / 100 * len(idxs))
+        ds_train = UCIDataset(data=X[0:split_idx], targets=Y[0:split_idx])
+        ds_new = UCIDataset(data=X[split_idx:-1], targets=Y[split_idx:-1])
+    else:
+        print(f"data_split_1 {data_split_1}")
+        ds_train, ds_new = split_dataset(
+            dataset=ds, random_seed=random_seed, data_split=data_split_1
+        )
+
+    print(f"data_split[0:2] {data_split[0:2]}")
+    ds_train, ds_val = split_dataset(
+        dataset=ds_train,
+        random_seed=random_seed,
+        # double=double,
+        data_split=data_split[0:2],
+    )
+    print(f"data_split[2:] {data_split[2:]}")
+    ds_test, ds_update = split_dataset(
+        dataset=ds_new,
+        random_seed=random_seed,
+        # double=double,
+        data_split=data_split[2:],
+    )
+    if double:
+        ds_train.data.to(torch.double)
+        ds_val.data.to(torch.double)
+        ds_test.data.to(torch.double)
+        ds_update.data.to(torch.double)
+        ds_train.targets.to(torch.double)
+        ds_val.targets.to(torch.double)
+        ds_test.targets.to(torch.double)
+        ds_update.targets.to(torch.double)
+        # Y = torch.tensor(Y, dtype=torch.double)
+    else:
+        ds_train.data.to(torch.float)
+        ds_val.data.to(torch.float)
+        ds_test.data.to(torch.float)
+        ds_update.data.to(torch.float)
+        ds_train.targets.to(torch.float)
+        ds_val.targets.to(torch.float)
+        ds_test.targets.to(torch.float)
+        ds_update.targets.to(torch.float)
+        # Y = torch.tensor(Y, dtype=torch.float)
+    print(f"data_split[0:2] {data_split[0:2]}")
+    # breakpoint()
+    output_dim = 1
+    ds_train.output_dim = output_dim
+    return ds_train, ds_val, ds_test, ds_update
+
+
+def get_uci_dataset_for_fast_updates(
+    name: str,
+    random_seed: int,
+    double: bool,
+    dir: str,
+    data_split: List[float] = [35, 15, 15, 35],
+    order_dim: Optional[int] = None,
+    **kwargs,
+):
+    ds_train = UCIClassificationDatasets(
+        name,
+        random_seed=random_seed,
+        root=dir,
+        stratify=True,
+        train=True,
+        double=double,
+    )
+    ds_test = UCIClassificationDatasets(
+        name,
+        random_seed=random_seed,
+        root=dir,
+        stratify=True,
+        train=False,
+        valid=False,
+        double=double,
+    )
+    ds_val = UCIClassificationDatasets(
+        name,
+        random_seed=random_seed,
+        root=dir,
+        stratify=True,
+        train=False,
+        valid=True,
+        double=double,
+    )
+    output_dim = ds_train.C
+    print(f"ds_train {len(ds_train)}")
+    print(f"ds_test {len(ds_test)}")
+    print(f"ds_val {len(ds_val)}")
+    ds_1 = ConcatDataset([ds_train, ds_test])
+    print(f"ds_1 {len(ds_1)}")
+    ds = ConcatDataset([ds_1, ds_val])
+    print(f"ds {len(ds)}")
+    loader = DataLoader(ds, batch_size=len(ds))
+    data = next(iter(loader))
+    X, Y = data
+    for i in range(X.shape[-1]):
+        print(f"dim {i} unique: {torch.unique(X[:, i]).shape}")
+    # breakpoint()
+
+    if double:
+        X = torch.tensor(X, dtype=torch.double)
+        Y = torch.tensor(Y, dtype=torch.long)
+    else:
+        X = torch.tensor(X, dtype=torch.float)
+        # Y = torch.tensor(Y, dtype=torch.float)
+
+    data_split_1 = [data_split[0] + data_split[1], data_split[2] + data_split[3]]
+    # Order data set along input dimension
+    if order_dim is not None:
+        idxs = np.argsort(X, 0)[:, 0]
+        X = X[idxs]  # order inputs
+        Y = Y[idxs]  # order outputs
+        split_idx = round(data_split_1[0] / 100 * len(idxs))
+        ds_train = UCIDataset(data=X[0:split_idx], targets=Y[0:split_idx])
+        ds_new = UCIDataset(data=X[split_idx:-1], targets=Y[split_idx:-1])
+    else:
+        print(f"data_split_1 {data_split_1}")
+        ds_train, ds_new = split_dataset(
+            dataset=ds, random_seed=random_seed, double=double, data_split=data_split_1
+        )
+
+    print(f"data_split[0:2] {data_split[0:2]}")
+    ds_train, ds_val = split_dataset(
+        dataset=ds_train,
+        random_seed=random_seed,
+        # double=double,
+        data_split=data_split[0:2],
+    )
+    print(f"data_split[2:] {data_split[2:]}")
+    ds_test, ds_update = split_dataset(
+        dataset=ds_new,
+        random_seed=random_seed,
+        # double=double,
+        data_split=data_split[2:],
+    )
+    if double:
+        ds_train.data.to(torch.double)
+        ds_val.data.to(torch.double)
+        ds_test.data.to(torch.double)
+        ds_update.data.to(torch.double)
+    print(f"data_split[0:2] {data_split[0:2]}")
+    # breakpoint()
+    ds_train.output_dim = output_dim
+    return ds_train, ds_val, ds_test, ds_update
+
+
+def get_uci_dataset_from_repo(
+    name: str,
+    random_seed: int,
+    double: bool,
+    data_split: List[float] = [35, 15, 15, 35],
+    order_dim: Optional[int] = None,
+    **kwargs,
+):
+    from uci_datasets import Dataset
+
+    ds = Dataset(name)
+    X = ds.x
+    Y = ds.y
+    for i in range(X.shape[-1]):
+        print(f"dim {i} unique: {np.unique(X[:, i]).shape}")
+    breakpoint()
+
+    data_split_1 = [data_split[0] + data_split[1], data_split[2] + data_split[3]]
+    # Order data set along input dimension
+    if order_dim is not None:
+        idxs = np.argsort(X, 0)[:, 0]
+        X = X[idxs]  # order inputs
+        Y = Y[idxs]  # order outputs
+        split_idx = round(data_split_1[0] / 100 * len(idxs))
+        ds_train = UCIDataset(data=X[0:split_idx], targets=Y[0:split_idx])
+        ds_new = UCIDataset(data=X[split_idx:-1], targets=Y[split_idx:-1])
+    else:
+        print(f"data_split_1 {data_split_1}")
+        ds_train, ds_new = split_dataset(
+            dataset=ds, random_seed=random_seed, double=double, data_split=data_split_1
+        )
+
+    print(f"data_split[0:2] {data_split[0:2]}")
+    ds_train, ds_val = split_dataset(
+        dataset=ds_train,
+        random_seed=random_seed,
+        # double=double,
+        data_split=data_split[0:2],
+    )
+    print(f"data_split[2:] {data_split[2:]}")
+    ds_test, ds_update = split_dataset(
+        dataset=ds_new,
+        random_seed=random_seed,
+        # double=double,
+        data_split=data_split[2:],
+    )
+    if double:
+        ds_train.data.to(torch.double)
+        ds_val.data.to(torch.double)
+        ds_test.data.to(torch.double)
+        ds_update.data.to(torch.double)
+    print(f"data_split[0:2] {data_split[0:2]}")
+
+    # breakpoint()
+    ds_train.output_dim = Y.shape[-1]
+    return ds_train, ds_val, ds_test, ds_update

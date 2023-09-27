@@ -9,7 +9,7 @@ lr: 1e-3
 n_epochs: 80000
 # n_epochs: 200
 
-batch_size: 512
+batch_size: 50
 
 early_stop:
   patience: 50

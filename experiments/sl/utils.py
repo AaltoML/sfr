@@ -876,7 +876,7 @@ def get_uci_dataset_from_repo(
     Y = ds.y
     for i in range(X.shape[-1]):
         print(f"dim {i} unique: {np.unique(X[:, i]).shape}")
-    breakpoint()
+    # breakpoint()
 
     data_split_1 = [data_split[0] + data_split[1], data_split[2] + data_split[3]]
     # Order data set along input dimension

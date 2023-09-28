@@ -6,10 +6,10 @@ normalize: True
 
 data_split:
   # REGRESSION
-  - 70
+  - 35
   - 15
   - 15
-  - 0
+  - 15
 
 # data_split:
 #   # - 55 # Train

@@ -1,0 +1,13 @@
+# _target_: experiments.sl.utils.get_boston_dataset
+_target_: experiments.sl.utils.get_UCIreg_dataset
+name: "boston"
+random_seed: ${random_seed}
+double: True
+normalize: True
+data_split:
+  - 35 # Train
+  - 15 # Val
+  - 15 # Test
+  - 35 # Update
+order_dim: 0
+device: ${device}

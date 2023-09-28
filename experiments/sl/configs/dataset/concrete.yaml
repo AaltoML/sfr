@@ -12,5 +12,5 @@ data_split:
   # - 1 # Update
   # - 15 # Update
   - 35 # Update
-order_dim: 0
+order_dim: 3
 device: ${device}

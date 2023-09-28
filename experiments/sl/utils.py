@@ -420,6 +420,25 @@ def get_uci_network(name, output_dim, ds_train, device: str):
     return network
 
 
+def get_large_uci_network(name, output_dim, ds_train, device: str):
+    try:
+        input_size = ds_train.data.shape[1]
+    except:
+        try:
+            input_size = ds_train.dataset.data.shape[1]
+        except:
+            input_size = ds_train[0][0].shape[0]
+    network = SiMLP(
+        input_size=input_size,
+        output_size=output_dim,
+        n_layers=3,
+        n_units=512,
+        activation="tanh",
+    ).to(device)
+    # network.apply(orthogonal_init)
+    return network
+
+
 def get_boston_network(name, output_dim, ds_train, device: str):
     try:
         input_size = ds_train.data.shape[1]
@@ -469,26 +488,6 @@ def get_stationary_mlp(
     return network.to(device)
 
 
-# class BostonDataset(torch.utils.data.Dataset):
-#     def __init__(self, device: str = "cpu", name: str = "boston"):
-#         self.name = name
-#         self.device = device
-
-#         import numpy as np
-#         import pandas as pd
-
-#         data_url = "http://lib.stat.cmu.edu/datasets/boston"
-#         raw_df = pd.read_csv(data_url, sep="\s+", skiprows=22, header=None)
-#         self.data = np.hstack([raw_df.values[::2, :], raw_df.values[1::2, :2]])
-#         self.targets = raw_df.values[1::2, 2]
-#         self.targets = self.targets.reshape(-1, 1)
-
-#     def __getitem__(self, index):
-#         return self.data[index], self.targets[index]
-
-
-#     def __len__(self):
-#         return self.data.shape[0]
 class UCIDataset(torch.utils.data.Dataset):
     def __init__(self, data, targets, device: str = "cpu", name: str = "boston"):
         self.name = name
@@ -514,26 +513,12 @@ def get_UCIreg_dataset(
     device: str = "cpu",
     **kwargs,
 ):
-    # def get_boston_dataset(
-    #     random_seed: int,
-    #     double: bool = False,
-    #     data_split: Optional[list] = [70, 15, 15, 0],
-    #     order_dim: Optional[int] = None,  # if int order along X[:, order_dim]
-    #     device: str = "cpu",
-    #     **kwargs,
-    # ):
     file_path = os.path.dirname(os.path.realpath(__file__))
-    print(f"file_path {file_path}")
 
     full_path = os.path.join(file_path, "data/uci_regression/" + name)
-    print(f"full_path {full_path}")
     X, Y = load_UCIreg_dataset(full_path=full_path, name=name, normalize=normalize)
-    print(f"X {X.shape}")
-    print(f"Y {Y.shape}")
 
     ds = UCIDataset(data=X, targets=Y)
-    # ds = BostonDataset()
-    # breakpoint()
 
     data_split_1 = [data_split[0] + data_split[1], data_split[2] + data_split[3]]
     # Order data set along input dimension

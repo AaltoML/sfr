@@ -1,18 +1,13 @@
 # @package _global_
 defaults:
-  # - override /network: si_mlp
-  # - override /network: small_mlp
-  - override /network: boston_mlp
-  # - override /network: sin_mlp
-  - override /dataset: boston
+  - override /network: large_uci_mlp
+  - override /dataset: song
   - override /sfr: regression
 
-# lr: 1e-4
 lr: 1e-3
 n_epochs: 80000
-# n_epochs: 200
 
-batch_size: 50
+batch_size: 512
 
 early_stop:
   patience: 100
@@ -22,11 +17,10 @@ sfr:
   prior_precision: 1e-3
   likelihood:
     _target_: src.likelihoods.Gaussian
-
+    # sigma_noise: 1.0
     log_sigma_noise:
       _target_: torch.tensor
-      data: 1.0
+      data: 0.00001
       device: ${device}
       # data: 10.0
-      requires_grad: true
-
+      requires_grad: false

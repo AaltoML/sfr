@@ -4,7 +4,7 @@ _convert_: all
 prior_precision: 1e-4
 likelihood:
   _target_: src.likelihoods.Gaussian
-  sigma_noise: 1.0
+  log_sigma_noise: 1.0
 output_dim: ${output_dim}
 num_inducing: 128
 dual_batch_size: 1000

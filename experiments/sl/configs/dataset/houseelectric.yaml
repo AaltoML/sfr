@@ -1,6 +1,6 @@
 # _target_: experiments.sl.utils.get_boston_dataset
 _target_: experiments.sl.utils.get_UCIreg_dataset
-name: "boston"
+name: "houseelectric"
 random_seed: ${random_seed}
 double: ${double_train}
 normalize: True

@@ -33,12 +33,10 @@ class Likelihood:
 
 
 class Gaussian(Likelihood):
-    def __init__(self, sigma_noise: Union[float, torch.nn.Parameter] = 1.0):
-        if not isinstance(sigma_noise, torch.Tensor):
-            sigma_noise = torch.tensor(sigma_noise)
-
-        # self.log_sigma_noise = sigma_noise
-        self.log_sigma_noise = sigma_noise
+    def __init__(self, log_sigma_noise: Union[float, torch.nn.Parameter]):
+        if not isinstance(log_sigma_noise, torch.Tensor):
+            log_sigma_noise = torch.tensor(log_sigma_noise)
+        self.log_sigma_noise = log_sigma_noise
 
     @property
     def sigma_noise(self):
@@ -53,39 +51,23 @@ class Gaussian(Likelihood):
 
     def log_prob(self, f: FuncData, y: OutputData, f_var=None):
         y_var = torch.ones_like(f) * self.sigma_noise**2
-        # print(f"y_var {y_var.shape}")
-        # print(f"y {y.shape}")
-        # print(f"f_var {f_var.shape}")
-        # print(f"f {f.shape}")
+
         if f_var is not None:
             y_var += f_var
-        #     print(f"y_var+f_var {y_var.shape}")
-        # print("yo")
+
         dist = torch.distributions.Normal(
-            # loc=f,
-            # scale=torch.sqrt(y_var),
+
             loc=f,
             scale=torch.sqrt(y_var.clamp(10 ** (-32))),
         )
-        # print(f"dist {dist}")
+
         log_prob = dist.log_prob(y)
-        # print(f"log_prob {log_prob.shape}")
-        # if log_prob.ndim > 1:
-        #     # sum over independent output dimensions
-        #     log_prob = torch.sum(log_prob, -1)
-        #     print(f"log_prob prod over output {log_prob.shape}")
-        # print(f"log_prob {log_prob.shape}")
         return log_prob
 
     def nn_loss(self, f: FuncData, y: OutputData):
-        # print(f"f {f.shape}")
-        # print(f"y {y.shape}")
-        # loss = 0.5 * torch.nn.MSELoss(reduction="mean")(f, y)
-        # return loss
+
         log_prob = self.log_prob(f=f, y=y)
-        # print(f"log_prob {log_prob.shape}")
         neg_log_prob = -log_prob.mean()
-        # print(f"neg_log_prob {neg_log_prob.shape}")
         return neg_log_prob
 
     def residual(self, y, f):

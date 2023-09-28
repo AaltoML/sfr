@@ -9,6 +9,8 @@ import torchvision.transforms as transforms
 from PIL import Image
 from scipy.io import loadmat
 
+from uci_datasets import Dataset as UCILargeDataset
+
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import OneHotEncoder
 from sklearn.preprocessing import StandardScaler
@@ -75,11 +77,14 @@ def load_UCIreg_dataset(full_path, name, normalize=True):
         Yo = df['Sound'].to_numpy().reshape((-1,1))
     elif name == 'elevators':
         # Load all the data
-
         data = np.array(loadmat(full_path+'.mat')['data'])
         Xo = data[:, :-1]
         Yo = data[:, -1].reshape(-1,1)
-
+    elif name in ["song", "houseelectric"]:
+        data = UCILargeDataset(name)
+        x_train, y_train, x_test, y_test = data.get_split(split=0)
+        Xo = np.vstack((x_train, x_test))
+        Yo = np.vstack((y_train, y_test))
     if normalize==True:
         X_scaler = StandardScaler().fit(Xo)
         Y_scaler = StandardScaler().fit(Yo)

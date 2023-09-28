@@ -1,7 +1,7 @@
 _target_: experiments.sl.utils.get_UCIreg_dataset
 name: "houseelectric"
 random_seed: ${random_seed}
-double: ${double_train}
+double: True
 normalize: True
 
 data_split:

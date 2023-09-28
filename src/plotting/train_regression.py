@@ -8,10 +8,23 @@ logger = logging.getLogger(__name__)
 import src
 import torch
 from experiments.sl.train import checkpoint
-from experiments.sl.utils import compute_metrics_regression, EarlyStopper
+from experiments.sl.utils import compute_metrics_regression, EarlyStopper, split_dataset
+from sklearn.preprocessing import StandardScaler
 from src import SFR
 from src.custom_types import Data
 from torch.utils.data import DataLoader, Dataset
+
+
+@torch.no_grad()
+def loss_fn(data_loader: DataLoader):
+    losses = []
+    for X, y in data_loader:
+        # X, y = X.to(cfg.device), y.to(cfg.device)
+        loss = sfr.loss(X, y)
+        losses.append(loss)
+    losses = torch.stack(losses, 0)
+    cum_loss = torch.mean(losses, 0)
+    return cum_loss
 
 
 def train(
@@ -51,29 +64,28 @@ def train(
             optimizer.step()
             loss_history.append(loss.detach().numpy())
 
-            if epoch_idx % 100 == 0:
-                logger.info(
-                    "Epoch: {} | Batch: {} | Loss: {}".format(
-                        epoch_idx, batch_idx, loss
-                    )
-                )
+        val_loss = loss_fn(val_loader)
+        if epoch_idx % 100 == 0:
+            logger.info(
+                "Epoch: {} | Batch: {} | Loss: {}".format(epoch_idx, batch_idx, loss)
+            )
 
-    #         if val_loss < best_loss:
-    #             best_ckpt_fname = checkpoint(
-    #                 sfr=sfr, optimizer=optimizer, save_dir=run.dir
-    #             )
-    #             best_loss = val_loss
-    #             # wandb.log({"best_test/": test_metrics})
-    #             # wandb.log({"best_val/": val_metrics})
-    #         if early_stopper(val_loss):  # (val_loss):
-    #             logger.info("Early stopping criteria met, stopping training...")
-    #             break
-    # # Load checkpoint
-    # ckpt = torch.load(best_ckpt_fname)
-    # print(f"ckpt {ckpt}")
-    # print(f"sfr {[p for p in sfr.parameters()]}")
-    # sfr.load_state_dict(ckpt["model"])
-    # print(f"sfr loaded {[p for p in sfr.parameters()]}")
+        if val_loss < best_loss:
+            best_ckpt_fname = checkpoint(
+                sfr=sfr, optimizer=optimizer, save_dir="./ckpts"
+            )  # run.dir)
+            best_loss = val_loss
+            # wandb.log({"best_test/": test_metrics})
+            # wandb.log({"best_val/": val_metrics})
+        if early_stopper(val_loss):  # (val_loss):
+            logger.info("Early stopping criteria met, stopping training...")
+            break
+    # Load checkpoint
+    ckpt = torch.load(best_ckpt_fname)
+    print(f"ckpt {ckpt}")
+    print(f"sfr {[p for p in sfr.parameters()]}")
+    sfr.load_state_dict(ckpt["model"])
+    print(f"sfr loaded {[p for p in sfr.parameters()]}")
 
     torch.set_default_dtype(torch.float64)
     sfr.double()
@@ -182,7 +194,26 @@ if __name__ == "__main__":
     # data = (X_train[0:150, :], Y_train[0:150, :])
     data = (X_train, Y_train)
 
+    ds = torch.utils.data.TensorDataset(*data)
+    ds.data = X_train
+    ds.targets = Y_train
+    data, ds_val = split_dataset(
+        dataset=ds,
+        double=True,
+        data_split=[70, 30],
+        random_seed=42,
+    )
+    val_loader = DataLoader(ds_val, batch_size=X_train.shape[0], shuffle=False)
+
+    normalize = True
     # split_dataset(dataset=data, random_seed=42, double=True, data_split=[70, 30])
+    if normalize == True:
+        X_scaler = StandardScaler().fit(X_train)
+        Y_scaler = StandardScaler().fit(Y_train)
+        X_train = torch.from_numpy(X_scaler.transform(X_train))
+        Y_train = torch.from_numpy(Y_scaler.transform(Y_train))
+        data = (X_train, Y_train)
+    breakpoint()
 
     print("X, Y: {}, {}".format(X_train.shape, Y_train.shape))
     print("X, Y: {}, {}".format(X_train.dtype, Y_train.dtype))
@@ -204,24 +235,30 @@ if __name__ == "__main__":
 
     # X_new = torch.linspace(-0.5, -0.2, 20).reshape(-1, 1)
     X_new = torch.linspace(-5.0, -2.0, 20).reshape(-1, 1)
+    X_new = torch.from_numpy(X_scaler.transform(X_new))
     # X_new.float()
     # X_new.double()
     X_new = X_new.to(torch.double)
     Y_new = func(X_new, noise=True)
+    Y_new = torch.from_numpy(Y_scaler.transform(Y_new))
 
     # X_new_2 = torch.linspace(3.0, 4.0, 20).reshape(-1, 1)
     # Y_new_2 = func(X_new_2, noise=True)
     X_new_2 = torch.linspace(1.6, 1.8, 20).reshape(-1, 1)
+    X_new_2 = torch.from_numpy(X_scaler.transform(X_new_2))
     # X_new_2.float()
     # X_new_2.double()
     X_new_2 = X_new_2.to(torch.double)
     Y_new_2 = func(X_new_2, noise=True)
+    Y_new_2 = torch.from_numpy(Y_scaler.transform(Y_new_2))
 
     X_new_3 = torch.linspace(-6.0, -5.0, 20).reshape(-1, 1)
+    X_new_3 = torch.from_numpy(X_scaler.transform(X_new_3))
     # X_new_3.float()
     # X_new_3.double()
     X_new_3 = X_new_3.to(torch.double)
     Y_new_3 = func(X_new_3, noise=True)
+    Y_new_3 = torch.from_numpy(Y_scaler.transform(Y_new_3))
 
     batch_size = X_train.shape[0]
 

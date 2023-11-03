@@ -1,16 +1,4 @@
 .DS_Store
-bnn-predictive/experiments/results/
-bnn-predictive/conda
-bnn-predictive/data/FMNIST
-experiments/sl/uci/results
-*experiments/sl/bnn_predictive/data/FMNIST/
-experiments/FMNIST/
-experiments/MNIST/
-experiments/sl/data/MNIST/
-experiments/sl/output/
-src/plotting/raw.githubusercontent.com/
-src/plotting/figs/
-src/figs/
 
 .idea
 *.log

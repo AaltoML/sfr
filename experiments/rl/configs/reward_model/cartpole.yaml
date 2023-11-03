@@ -1,3 +1,0 @@
-_target_: experiments.rl.models.rewards.CartpoleRewardModel
-action_penalty: 1.0
-sparse_threshold: 0.6

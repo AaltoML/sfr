@@ -1,38 +1,17 @@
 # Sparse Function-space Representation of Neural Networks
-Code accompanying NeurIPS 2023 submission Sparse Function-space Representation of Neural Networks.
+PyTorch implementation of Sparse Function-space Representation of Neural Networks.
 
 ## Install
 
-### Option 1: using make
 Make a virtual environment and install the dependencies with:
-```sh
-make .venv/bin/activate
-```
-Activate the environment with:
 ``` sh
-source .venv/bin/activate
-```
-The [Makefile](Makefile) just runs:
-``` sh
-python -m venv $(VENV)
-python -m pip install --upgrade pip
-pip install laplace-torch==0.1a2
+python -m venv sfr-venv
+source sfr-venv/bin/activate
 pip install -e ".[experiments, dev]"
 ```
 
-### Option 2: pip install
-Alternatively, manually install the dependencies with:
-``` sh
-pip install laplace-torch==0.1a2
-pip install -r requirements.txt
-```
-We install `laplace-torch` separately due to version conflicts with `backpacpk-for-pytorch`.
-
 ## Useage
-See the [notebooks](./src/notebooks) for how to use our code for both regression and classification.
-
-### Reproducing experiments
-See [experiments/README.md](experiments/README.md) for details of how to reproduce the experiments in the paper.
+See the [notebooks](./notebooks) for how to use our code for both regression and classification.
 
 ### Example
 Here's a short example:
@@ -70,7 +49,7 @@ network = torch.nn.Sequential(
 )
 
 # Instantiate SFR (handles NN training/prediction as they're coupled via the prior/likelihood)
-sfr = src.sfr.SFR(
+sfr = src.SFR(
     network=network,
     prior=src.priors.Gaussian(params=network.parameters, delta=delta),
     likelihood=src.likelihoods.Gaussian(sigma_noise=2),

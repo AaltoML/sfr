@@ -1,2 +1,0 @@
-- There is an error with the flag for putting everything in double during training and inference
-  - Probably hardcoded somewhere (TOCHECK)

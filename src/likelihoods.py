@@ -56,7 +56,6 @@ class Gaussian(Likelihood):
             y_var += f_var
 
         dist = torch.distributions.Normal(
-
             loc=f,
             scale=torch.sqrt(y_var.clamp(10 ** (-32))),
         )
@@ -65,7 +64,6 @@ class Gaussian(Likelihood):
         return log_prob
 
     def nn_loss(self, f: FuncData, y: OutputData):
-
         log_prob = self.log_prob(f=f, y=y)
         neg_log_prob = -log_prob.mean()
         return neg_log_prob

@@ -1,4 +1,0 @@
-_target_: experiments.sl.utils.get_large_uci_network
-name: "LargeUCIMLP"
-output_dim: ${output_dim}
-device: ${device}

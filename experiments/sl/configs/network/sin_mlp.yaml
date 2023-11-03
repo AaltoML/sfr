@@ -1,4 +1,0 @@
-_target_: experiments.sl.utils.get_stationary_mlp
-output_dim: ${output_dim}
-hidden_size: 50
-device: ${device}

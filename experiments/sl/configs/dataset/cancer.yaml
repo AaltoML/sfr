@@ -1,5 +1,0 @@
-_target_: experiments.sl.utils.get_uci_dataset
-name: "breast_cancer"
-random_seed: ${random_seed}
-# dir: ???
-double: False

@@ -54,6 +54,7 @@ install_requires = [
     "matplotlib==3.5.1",
     "numpy==1.24.2",
     "ax-platform",
+    # "laplace-torch",
 ]
 extras_require = {
     "dev": [

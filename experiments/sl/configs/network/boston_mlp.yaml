@@ -1,4 +1,0 @@
-_target_: experiments.sl.utils.get_boston_network
-name: "BostonMLP"
-output_dim: ${output_dim}
-device: ${device}

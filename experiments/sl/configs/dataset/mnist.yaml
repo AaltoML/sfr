@@ -1,9 +1,0 @@
-_target_: experiments.sl.utils.get_image_dataset
-name: "MNIST"
-double: False
-# dir: ???
-device: ${device}
-debug: False
-val_from_test: True # True
-# val_from_test: False # True
-val_split: 0.5

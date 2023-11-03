@@ -90,19 +90,18 @@ class SFR(nn.Module):
         Kxx = self.kernel(x, x, full_cov=full_cov).detach().cpu()
         Kxz = self.kernel(x, self.Z).detach().cpu()
 
-
         f_mean = (Kxz @ self.alpha_u[..., None])[..., 0].T / (
             self.prior_precision * self.num_data
         )
         if full_cov:
-            raise NotImplementedError
+            # raise NotImplementedError
             # TODO tmp could be computed before
             tmp = torch.linalg.solve(self.Kzz, self.Iz) - torch.linalg.solve(
                 self.beta_u + self.Kzz, self.Iz
             )
-            f_cov = Kxx - torch.matmul(
-                torch.matmul(Kxz, tmp), torch.transpose(Kxz, -1, -2)
-            )
+            f_cov = (
+                Kxx - torch.matmul(torch.matmul(Kxz, tmp), torch.transpose(Kxz, -1, -2))
+            ) / (self.prior_precision * self.num_data)
             return f_mean, f_cov
         else:
             Kzx = torch.transpose(Kxz, -1, -2)
@@ -222,7 +221,6 @@ class SFR(nn.Module):
         self.Kzz += self.Iz * self.jitter
         self.Kzz = self.Kzz.detach().cpu()
 
-
         assert self.beta_u.shape == self.Kzz.shape
 
         self.Iz = self.Iz.detach().cpu()
@@ -280,7 +278,6 @@ class SFR(nn.Module):
             device=self.device,
         )
         logger.info("Finished projecting new dual params onto inducing points")
-
 
         logger.info("Adding new and old dual params ")
         self.beta_u += beta_u_new.detach().cpu()
@@ -554,7 +551,6 @@ def calc_dual_params(
         beta_batch = calc_beta(likelihood=likelihood, F=f)
         alpha_batch = calc_alpha(likelihood=likelihood, Y=y, F=f)
         y_tilde_batch = calc_y_tilde(F=f, alpha=alpha_batch, beta=beta_batch)
-
 
         beta_diag_batch = torch.vmap(torch.diag)(beta_batch)
 

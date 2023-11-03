@@ -1,3 +1,0 @@
-_target_: experiments.sl.utils.get_image_network
-name: "MLP"
-device: ${device}

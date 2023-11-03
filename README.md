@@ -1,6 +1,17 @@
 # Sparse Function-space Representation of Neural Networks
 PyTorch implementation of Sparse Function-space Representation of Neural Networks.
 
+
+<table>
+    <tr>
+        <td>
+            <strong>Sparse Function-space Representation of Neural Networks</strong><br>
+            Aidan Scannell*, Riccardo Mereu*, Paul Chang, Ella Tamir, Joni Pajarinen, Arno Solin<br>
+            <a href="https://arxiv.org/abs/2309.02195"><img alt="Paper" src="https://img.shields.io/badge/-Paper-gray"></a>
+            <a href="https://github.com/aidanscannell/sfr"><img alt="Code" src="https://img.shields.io/badge/-Code-gray" ></a></br>
+        </td>
+</table>
+
 ## Install
 
 Make a virtual environment and install the dependencies with:
@@ -81,10 +92,11 @@ y_mean, y_var = sfr.predict(X_test)
 
 ## Citation
 ```bibtex
-@article{XXX,
-    title={Sparse Function-space Representation of Neural Networks,
-    author={},
-    journal={},
-    year={2023}
+@inproceedings{scannellSparse2023,
+  title           = {Sparse Function-space Representation of Neural Networks},
+  maintitle       = {ICML 2023 Workshop on Duality Principles for Modern Machine Learning},
+  author          = {Aidan Scannell and Riccardo Mereu and Paul Chang and Ella Tami and Joni Pajarinen and Arno Solin},
+  year            = {2023},
+  month           = {7},
 }
 ```

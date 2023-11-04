@@ -10,7 +10,7 @@ PyTorch implementation of Sparse Function-space Representation of Neural Network
             <strong>ICML 2023 Workshop on Duality Principles for Modern Machine Learning</strong><br>
             <a href="https://arxiv.org/abs/2309.02195"><img alt="Paper" src="https://img.shields.io/badge/-Paper-gray"></a>
             <a href="https://github.com/aidanscannell/sfr"><img alt="Code" src="https://img.shields.io/badge/-Code-gray" ></a>
-            <a href="https://aaltoml.github.io/sfr"><img alt="Website" src="https://img.shields.io/badge/-Website-gray" ></a></br><br>
+            <a href="https://aaltoml.github.io/sfr"><img alt="Website" src="https://img.shields.io/badge/-Website-gray" ></a>
         </td>
 </table>
 

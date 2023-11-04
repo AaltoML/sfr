@@ -7,8 +7,10 @@ PyTorch implementation of Sparse Function-space Representation of Neural Network
         <td>
             <strong>Sparse Function-space Representation of Neural Networks</strong><br>
             Aidan Scannell*, Riccardo Mereu*, Paul Chang, Ella Tamir, Joni Pajarinen, Arno Solin<br>
+            <strong>ICML 2023 Workshop on Duality Principles for Modern Machine Learning</strong><br>
             <a href="https://arxiv.org/abs/2309.02195"><img alt="Paper" src="https://img.shields.io/badge/-Paper-gray"></a>
             <a href="https://github.com/aidanscannell/sfr"><img alt="Code" src="https://img.shields.io/badge/-Code-gray" ></a></br>
+            <a href="https://aaltoml.github.io/sfr"><img alt="Website" src="https://img.shields.io/badge/-Website-gray" ></a></br><br>
         </td>
 </table>
 

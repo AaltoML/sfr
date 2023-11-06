@@ -7,7 +7,7 @@ layout: post
 title:  "SFR: Sparse Function-space Representation of Neural Networks"
 date:   2023-11-04 14:36:41 +0200
 categories: jekyll update
-author: "<a href='https://www.aidanscannell.com/'>Aidan Scannell</a><sup>*</sup>, Riccardo Mereu<sup>*</sup>, <a href='https://edchangy11.github.io/'>Paul Chang</a>, Ella Tamir, <a href='https://rl.aalto.fi/'>Joni Pajarinen</a>, <a href='https://users.aalto.fi/~asolin/'>Arno Solin</a>"
+author: "<a href='https://www.aidanscannell.com/'>Aidan Scannell</a><sup>*</sup>, <a href='https://github.com/rm-wu'>Riccardo Mereu</a><sup>*</sup>, <a href='https://edchangy11.github.io/'>Paul Chang</a>, Ella Tamir, <a href='https://rl.aalto.fi/'>Joni Pajarinen</a>, <a href='https://users.aalto.fi/~asolin/'>Arno Solin</a>"
 ---
 <a href="https://arxiv.org/abs/2309.02195"><img alt="Workshop Paper" src="https://img.shields.io/badge/-Paper-gray?logo=arxiv"></a>
 <a href="https://github.com/AaltoML/sfr"><img alt="Code" src="https://img.shields.io/badge/-Code-gray?logo=github" ></a>

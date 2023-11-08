@@ -4,7 +4,6 @@ from typing import Optional, Union
 
 import numpy as np
 import torch
-import torch.nn as nn
 from custom_types import FuncData, FuncMean, FuncVar, OutputData
 from torch.distributions import Bernoulli, Categorical, Normal
 
@@ -180,7 +179,7 @@ class CategoricalLh(Likelihood):
 
     def log_prob(self, f: FuncData, y: OutputData, f_var=None, num_samples: int = 100):
         if f_var:
-            dist = Normal(f_mean, torch.sqrt(f_var.clamp(10 ** (-32))))
+            dist = Normal(f, torch.sqrt(f_var.clamp(10 ** (-32))))
             logit_samples = dist.sample((num_samples,))
             samples = self.inv_link(logit_samples)
             log_p = torch.mean(samples, 0)

@@ -16,11 +16,42 @@ PyTorch implementation of Sparse Function-space Representation of Neural Network
 
 ## Install
 
-Make a virtual environment and install the dependencies with:
+<!-- Make a virtual environment and install the dependencies with: -->
+<!-- ``` sh -->
+<!-- python -m venv sfr-venv -->
+<!-- source sfr-venv/bin/activate -->
+<!-- pip install -e ".[experiments, dev]" -->
+<!-- ``` -->
+
+### CPU
+Create an environment with:
+```sh
+mamba env create -f env_cpu.yaml
+```
+Activate the environment with:
 ``` sh
-python -m venv sfr-venv
-source sfr-venv/bin/activate
-pip install -e ".[experiments, dev]"
+source activate sfr-mbrl
+```
+
+### NVIDIA GPU
+Create an environment with:
+```sh
+mamba env create -f env_nvidia.yaml
+```
+Activate the environment with:
+``` sh
+source activate sfr-mbrl
+```
+
+### AMD GPU
+Install on LUMI with:
+``` sh
+SFR_CONTAINER_DIR=/scratch/project_462000217/aidan/sfr-mbrl/container
+mkdir  $SFR_CONTAINER_DIR
+module load LUMI/22.08
+module load lumi-container-wrapper
+conda-containerize new --mamba --prefix $SFR_CONTAINER_DIR env_nvidia.yaml
+conda-containerize update $SFR_CONTAINER_DIR --post-install post-install-amd.txt
 ```
 
 ## Useage

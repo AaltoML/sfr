@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import logging
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 import torch
@@ -24,7 +24,7 @@ from custom_types import (
 )
 import priors
 import likelihoods
-from torch.func import functional_call, jacrev, jvp, vjp, vmap
+from torch.func import functional_call, jacrev, vmap
 from torch.utils.data import DataLoader, TensorDataset
 
 logging.basicConfig(level=logging.INFO)
@@ -389,8 +389,8 @@ class SFR(nn.Module):
             self.prior_precision = prior_prec
             # self.update_pred_fn(prior_prec)
         try:
-            if isinstance(self.likelihood, CategoricalLh) or isinstance(
-                self.likelihood, BernoulliLh
+            if isinstance(self.likelihood, likelihoods.CategoricalLh) or isinstance(
+                self.likelihood, likelihoods.BernoulliLh
             ):
                 py, targets = [], []
                 for idx, (x, y) in enumerate(data_loader):
@@ -407,9 +407,9 @@ class SFR(nn.Module):
                 targets = torch.cat(targets, dim=0).cpu().numpy()
                 probs = torch.cat(py).cpu().numpy()
 
-                if isinstance(self.likelihood, BernoulliLh):
+                if isinstance(self.likelihood, likelihoods.BernoulliLh):
                     dist = dists.Bernoulli(torch.Tensor(probs[:, 0]))
-                elif isinstance(self.likelihood, CategoricalLh):
+                elif isinstance(self.likelihood, likelihoods.CategoricalLh):
                     dist = dists.Categorical(torch.Tensor(probs))
                 else:
                     raise NotImplementedError
@@ -652,32 +652,6 @@ def build_ntk(
             else:
                 return result
 
-    # @torch.compile(backend="eager")
-    def single_output_ntk(
-        X1: InputData, X2: InputData, i: int, full_cov: Optional[bool] = True
-    ):
-        def func_X1(params):
-            return fnet_single(params, X1, i=i)
-
-        def func_X2(params):
-            return fnet_single(params, X2, i=i)
-
-        output, vjp_fn = vjp(func_X1, params)
-
-        def get_ntk_slice(vec):
-            # This computes vec @ J(x2).T
-            # `vec` is some unit vector (a single slice of the Identity matrix)
-            vjps = vjp_fn(vec)
-            # This computes J(X1) @ vjps
-            _, jvps = jvp(func_X2, (params,), vjps)
-            return jvps
-
-        # Here's our identity matrix
-        basis = torch.eye(
-            output.numel(), dtype=output.dtype, device=output.device
-        ).view(output.numel(), -1)
-        return 1 / (prior_precision * num_data) * vmap(get_ntk_slice)(basis)
-
     @torch.no_grad()
     def ntk(X1: InputData, X2: Optional[InputData], full_cov: Optional[bool] = True):
         if X2 is None:
@@ -711,7 +685,7 @@ def cholesky_add_jitter_until_psd(x, jitter: float = 1e-5, jitter_factor=4):
     try:
         L = torch.linalg.cholesky(x, upper=True)
         return L
-    except:
+    except RuntimeError:
         logger.info(f"Cholesky failed so adding more jitter={jitter}")
         Iz = torch.eye(x.shape[-1]).to(x.device)
         jitter = jitter_factor * jitter

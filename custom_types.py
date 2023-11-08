@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-from typing import Any, Callable, Iterator, NamedTuple, Optional, Tuple, Union
+from typing import Callable, Optional, Tuple
 
 import torch
 from jaxtyping import Float
@@ -29,8 +29,8 @@ InducingPoints = Float[torch.Tensor, "num_inducing input_dim"]
 
 FullCov = Optional[bool]
 Index = Optional[int]
-NTK = Callable[[InputData, InputData, FullCov, Index], Float[torch.Tensor, ""]]
-NTK_single = Callable[[InputData, InputData, int, FullCov], Float[torch.Tensor, ""]]
+NTK = Callable[[InputData, InputData, FullCov, Index], torch.Tensor]
+NTK_single = Callable[[InputData, InputData, int, FullCov], torch.Tensor]
 
 TestInput = Float[torch.Tensor, "num_test input_dim"]
 

@@ -2,17 +2,12 @@
 import logging
 from typing import List, Optional, Tuple
 
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 import numpy as np
-import src
 import torch
 import torch.distributions as dists
 import torch.nn as nn
-from scipy.linalg import cho_factor, cho_solve
-from src.custom_types import (
+from custom_types import (
+    NTK,
     Alpha,
     AlphaInducing,
     Beta,
@@ -22,28 +17,26 @@ from src.custom_types import (
     FuncData,
     FuncMean,
     FuncVar,
-    InducingPoints,
     InputData,
     Lambda,
-    NTK,
-    NTK_single,
     OutputData,
-    OutputMean,
-    OutputVar,
     TestInput,
 )
-from src.likelihoods import BernoulliLh, CategoricalLh, Likelihood
-from src.priors import Prior
+import priors
+import likelihoods
 from torch.func import functional_call, jacrev, jvp, vjp, vmap
 from torch.utils.data import DataLoader, TensorDataset
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 class SFR(nn.Module):
     def __init__(
         self,
         network: torch.nn.Module,
-        prior: Prior,
-        likelihood: Likelihood,
+        prior: priors.Prior,
+        likelihood: likelihoods.Likelihood,
         output_dim: int,
         num_inducing: int = 30,
         dual_batch_size: Optional[int] = None,
@@ -61,7 +54,7 @@ class SFR(nn.Module):
         self.device = device
         # self.computed_Kss_Ksz = False
 
-        if isinstance(self.prior, src.priors.Gaussian):
+        if isinstance(self.prior, priors.Gaussian):
             self._prior_precision = self.prior.prior_precision
         else:
             raise NotImplementedError(
@@ -71,14 +64,13 @@ class SFR(nn.Module):
     def __call__(
         self,
         x: InputData,
-        idx=None,
         pred_type: str = "gp",  # "gp" or "nn"
         num_samples: int = 100,
     ):
         f_mean, f_var = self.predict_f(x, full_cov=False)
         if pred_type in "nn":
             f_mean = self.network(x)
-        if isinstance(self.likelihood, src.likelihoods.CategoricalLh):
+        if isinstance(self.likelihood, likelihoods.CategoricalLh):
             return self.likelihood(f_mean=f_mean, f_var=f_var, num_samples=num_samples)
         else:
             return self.likelihood(f_mean=f_mean, f_var=f_var)
@@ -136,7 +128,7 @@ class SFR(nn.Module):
             train_data[0] = train_data[0].to(torch.float64)
         if train_data[1].dtype == torch.float32:
             train_data[1] = train_data[1].to(torch.float64)
-        if isinstance(self.likelihood, src.likelihoods.CategoricalLh):
+        if isinstance(self.likelihood, likelihoods.CategoricalLh):
             print("making outputs long type")
             # train_data[1].to(torch.long)
             train_data[1] = train_data[1].long()
@@ -422,7 +414,7 @@ class SFR(nn.Module):
                 else:
                     raise NotImplementedError
                 nll = -dist.log_prob(torch.Tensor(targets)).mean().numpy()
-            elif isinstance(self.likelihood, src.likelihoods.Gaussian):
+            elif isinstance(self.likelihood, likelihoods.Gaussian):
                 nlls = []
                 for idx, (x, y) in enumerate(data_loader):
                     f_mean, f_var = self.predict_f(x.to(self.device), full_cov=False)
@@ -527,7 +519,7 @@ def project_dual_params_onto_inducing_points(
 
 def calc_dual_params(
     network: nn.Module,
-    likelihood: Likelihood,
+    likelihood: likelihoods.Likelihood,
     train_loader: DataLoader,
     output_dim: int,
     device: str = "cpu",
@@ -589,7 +581,7 @@ def calc_beta_u(kernel: NTK, Z, X: InputData, beta_diag: Beta) -> BetaInducing:
 
 
 @torch.no_grad()
-def calc_alpha(likelihood: Likelihood, Y: OutputData, F: FuncData) -> Alpha:
+def calc_alpha(likelihood: likelihoods.Likelihood, Y: OutputData, F: FuncData) -> Alpha:
     assert F.ndim == 2
     assert Y.shape[0] == F.shape[0]
     # nll = likelihood.nn_loss
@@ -600,7 +592,7 @@ def calc_alpha(likelihood: Likelihood, Y: OutputData, F: FuncData) -> Alpha:
 
 
 @torch.no_grad()
-def calc_beta(likelihood: Likelihood, F: FuncData) -> Beta:
+def calc_beta(likelihood: likelihoods.Likelihood, F: FuncData) -> Beta:
     assert F.ndim == 2
     return likelihood.Hessian(f=F)
 

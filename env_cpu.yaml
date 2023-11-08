@@ -1,0 +1,16 @@
+name: sfr
+channels:
+  - pytorch
+  - conda-forge
+dependencies:
+  - pytorch=2.0
+  - torchvision=0.15
+  - wandb=0.15
+  - hydra-core=1.3
+  - hydra-submitit-launcher=1.2
+  - ax-platform=0.3 # Used to tune prior precision with Bayesian Optimization
+  - jupyter
+  - pip
+  - pip:
+      - jaxtyping==0.2.23  # Types with shapes for tensors
+      - netcal==1.3.5  # needed for computing ECE

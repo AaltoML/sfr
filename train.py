@@ -45,11 +45,11 @@ class TrainConfig:
     lr: float = 1e-4
     n_epochs: int = 10000
     # Early stopping on validation loss
-    early_stop_patience: int = 1000
+    early_stop_patience: int = 5
     early_stop_min_delta: float = 0.0
 
     # Experiment config
-    logging_epoch_freq: int = 100
+    logging_epoch_freq: int = 2
     seed: int = 42
     device: str = "cuda"  # "cpu" or "cuda" etc
 
@@ -180,12 +180,12 @@ def train(cfg: TrainConfig):
         model.train()
         return metrics
 
-    # Train NN weights uthe se empirical regularized risk
-    best_loss = float("inf")
-    for epoch in tqdm(list(range(cfg.n_epochs))):
+    # Train NN weights with empirical regularized risk
+    # best_loss = float("inf")
+    for epoch_idx in tqdm(list(range(cfg.n_epochs)), total=cfg.n_epochs):
         with tqdm(train_loader, unit="batch") as tepoch:
             for data, target in tepoch:
-                tepoch.set_description(f"Epoch {epoch}")
+                tepoch.set_description(f"Epoch {epoch_idx}/{cfg.n_epochs}")
                 loss = model.loss(data.to(cfg.device), target.to(cfg.device))
                 optimizer.zero_grad()
                 loss.backward()
@@ -193,20 +193,20 @@ def train(cfg: TrainConfig):
                 tepoch.set_postfix(loss=loss.item())
 
                 if wandb.run is not None:
-                    wandb.log({"loss": loss})
+                    wandb.log({"train_loss": loss})
 
-        if epoch % cfg.logging_epoch_freq == 0:
-            val_metrics = evaluate(model, data_loader=val_loader)
-            val_loss = val_metrics["loss"]
-            if wandb.run is not None:
-                wandb.log({"val_loss": val_loss, "epoch": epoch})
+            if epoch_idx % cfg.logging_epoch_freq == 0:
+                val_metrics = evaluate(model, data_loader=val_loader)
+                val_loss = val_metrics["loss"]
+                if wandb.run is not None:
+                    wandb.log({"val_loss": val_loss, "epoch": epoch_idx})
 
-            if val_loss < best_loss:
+                # if val_loss < best_loss:
                 # checkpoint(model=model, optimizer=optimizer, save_dir=run.dir)
-                best_loss = val_loss
-            if early_stopper(val_loss):  # (val_loss):
-                logger.info("Early stopping criteria met, stopping training...")
-                break
+                # best_loss = val_loss
+                if early_stopper(val_loss):  # (val_loss):
+                    logger.info("Early stopping criteria met, stopping training...")
+                    break
 
     logger.info("Finished training")
 

@@ -179,13 +179,16 @@ def train(cfg: TrainConfig):
     def evaluate(model: sfr.SFR, data_loader: DataLoader, sfr_pred: bool = False):
         model.eval()
         probs, targets, val_losses = [], [], []
+        dtype = next(model.parameters()).dtype  # because change NN from float to double
         for data, target in data_loader:
+            data = data.to(dtype).to(cfg.device)
+            target = target.to(cfg.device)
             if sfr_pred:  # predict with SFR
                 probs.append(model(data.to(cfg.device))[0])
             else:  # predict with NN
-                probs.append(torch.softmax(model.network(data.to(cfg.device)), dim=-1))
-            targets.append(target.to(cfg.device))
-            val_losses.append(model.loss(data.to(cfg.device), target.to(cfg.device)))
+                probs.append(torch.softmax(model.network(data), dim=-1))
+            targets.append(target)
+            val_losses.append(model.loss(data, target))
 
         val_loss = torch.mean(torch.stack(val_losses, 0)).cpu().numpy().item()
         targets = torch.cat(targets, dim=0).cpu().numpy()

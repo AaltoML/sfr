@@ -67,6 +67,8 @@ class SFR(nn.Module):
         pred_type: str = "gp",  # "gp" or "nn"
         num_samples: int = 100,
     ):
+        if x.dtype == torch.float32:  # Make inputs double
+            x.to(torch.float64)
         f_mean, f_var = self.predict_f(x, full_cov=False)
         if pred_type in "nn":
             f_mean = self.network(x)
@@ -126,8 +128,15 @@ class SFR(nn.Module):
         3. Project dual parameters onto inducing points
         3. Caches quantities for faster predictions
         """
-        self.eval()
         X_train, Y_train = train_data
+        self.eval()
+        self.double()
+        if X_train.dtype == torch.float32:  # Make inputs double
+            X_train = X_train.double()
+        if Y_train.dtype == torch.float32:  # Make regression outpus double
+            Y_train = Y_train.double()
+        # if isinstance(self.likelihood, likelihoods.CategoricalLh):
+        #     train_data[1] = train_data[1].long()
         assert X_train.shape[0] == Y_train.shape[0]
         self._num_data = X_train.shape[0]
 
@@ -135,7 +144,7 @@ class SFR(nn.Module):
         if self.dual_batch_size is None:
             self.dual_batch_size = self.num_data
         train_loader = DataLoader(
-            TensorDataset(*(train_data)),
+            TensorDataset(X_train, Y_train),
             batch_size=self.dual_batch_size,
             shuffle=False,
         )
@@ -460,13 +469,14 @@ def project_dual_params_onto_inducing_points(
     device: str = "cpu",
 ):
     num_inducing = Z.shape[0]
-    alpha_u = torch.zeros((output_dim, num_inducing)).cpu()
-    y_tilde_u = torch.zeros((output_dim, num_inducing)).cpu()
-    beta_u = torch.zeros((output_dim, num_inducing, num_inducing)).cpu()
+    dtype = Z.dtype
+    alpha_u = torch.zeros((output_dim, num_inducing), dtype=dtype).cpu()
+    y_tilde_u = torch.zeros((output_dim, num_inducing), dtype=dtype).cpu()
+    beta_u = torch.zeros((output_dim, num_inducing, num_inducing), dtype=dtype).cpu()
 
     for output_c in range(output_dim):
         start_idx, end_idx = 0, 0
-        logging.info(f"Computing covariance for output dim {output_c}")
+        logging.info(f"Computing covariance for output dim {output_c+1}/{output_dim}")
         for batch in train_loader:
             x_i, y_i = batch[0], batch[1]
             x_i, y_i = x_i.to(device), y_i.to(device)
@@ -512,11 +522,12 @@ def calc_dual_params(
 ):
     num_data = len(train_loader.dataset)
     items_shape = (num_data, output_dim)
+    dtype = train_loader.dataset[0][0].dtype
 
     # rename lambda_1 is Lambda, lamba2 is beta
-    y_tilde = torch.zeros(items_shape).cpu()
-    beta_diag = torch.zeros(items_shape).cpu()
-    alpha = torch.zeros(items_shape).cpu()
+    y_tilde = torch.zeros(items_shape, dtype=dtype).cpu()
+    beta_diag = torch.zeros(items_shape, dtype=dtype).cpu()
+    alpha = torch.zeros(items_shape, dtype=dtype).cpu()
 
     # Calculate dual params at data. Actually calc beta_diag and y_tilde
     start_idx, end_idx = 0, 0

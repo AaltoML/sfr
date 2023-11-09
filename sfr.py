@@ -655,12 +655,15 @@ def build_ntk(
 
     @torch.no_grad()
     def ntk(X1: InputData, X2: Optional[InputData], full_cov: Optional[bool] = True):
+        dtype = X1.dtype
         if X2 is None:
             X2 = X1
         if full_cov:
-            K = torch.empty(output_dim, X1.shape[0], X2.shape[0]).to(X1.device)
+            K = torch.empty(output_dim, X1.shape[0], X2.shape[0], dtype=dtype).to(
+                X1.device
+            )
         else:
-            K = torch.empty(output_dim, X1.shape[0]).to(X1.device)
+            K = torch.empty(output_dim, X1.shape[0], dtype=dtype).to(X1.device)
         for i in range(output_dim):
             K[i, ...] = single_output_ntk_contraction(X1, X2, i=i, full_cov=full_cov)
         return K

@@ -15,7 +15,7 @@ jitter: 1e-4
 likelihood_eps: 0.0  # for numerical stability
 
 # Training config
-batch_size: 512
+batch_size: 64
 lr: 1e-4
 n_epochs: 10000
 # Early stopping on validation loss

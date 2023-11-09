@@ -44,7 +44,7 @@ class TrainConfig:
     likelihood_eps: float = 0.0  # for numerical stability
 
     # Training config
-    batch_size: int = 512
+    batch_size: int = 64
     lr: float = 1e-4
     n_epochs: int = 10000
     # Early stopping on validation loss

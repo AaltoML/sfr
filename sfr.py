@@ -134,7 +134,7 @@ class SFR(nn.Module):
         """
         X_train, Y_train = train_data
         self.eval()
-        self.double()
+        self.network.double()
         if X_train.dtype == torch.float32:  # Make inputs double
             X_train = X_train.double()
         if Y_train.dtype == torch.float32:  # Make regression outpus double

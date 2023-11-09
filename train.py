@@ -32,6 +32,7 @@ logger = logging.getLogger(__name__)
 class TrainConfig:
     # Dataset
     dataset: str = "FMNIST"  # "FMNIST"/"CIFAR10"/"MNIST"
+    train_val_split: float = 0.8
     debug: bool = False  # If true only use 500 data points
 
     # SFR config

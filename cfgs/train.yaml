@@ -5,6 +5,7 @@ defaults:
   - _self_
 
 dataset: "FMNIST"
+train_val_split: 0.8
 debug: False
 
 prior_precision: 0.0013

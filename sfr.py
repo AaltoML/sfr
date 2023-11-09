@@ -44,6 +44,7 @@ class SFR(nn.Module):
         device: str = "cpu",
     ):
         super().__init__()
+        network.to(device)
         self.network = network
         self.prior = prior
         self.likelihood = likelihood

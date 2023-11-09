@@ -98,6 +98,7 @@ def train(cfg: TrainConfig):
         )
 
     # Load the data with train/val/test split
+    save_dir = f"{get_original_cwd()}/data"
     if "FMNIST" in cfg.dataset:
         dataset_fn = torchvision.datasets.FashionMNIST
         normalize_transform = transforms.Normalize((0.2860,), (0.3530,))
@@ -117,9 +118,13 @@ def train(cfg: TrainConfig):
 
     transform = transforms.Compose([transforms.ToTensor(), normalize_transform])
     ds_train = dataset_fn(
-        f"data/{cfg.dataset}", download=True, train=True, transform=transform
+        f"{save_dir}/{cfg.dataset}", download=True, train=True, transform=transform
     )
     output_dim = len(ds_train.classes)
+    if ds_train.data.ndim == 3:
+        in_channels = 1
+    elif ds_train.data.ndim == 4:
+        in_channels = ds_train.data.shape[-1]
     num_data = 500 if cfg.debug else len(ds_train)
     idxs = np.random.permutation(num_data)
     split_idx = int(0.7 * num_data)
@@ -128,7 +133,7 @@ def train(cfg: TrainConfig):
         ds_test = Subset(ds_train, idxs[:split_idx])
     else:
         ds_test = dataset_fn(
-            f"data/{cfg.dataset}", download=True, train=False, transform=transform
+            f"{save_dir}/{cfg.dataset}", download=True, train=False, transform=transform
         )
     train_loader = DataLoader(
         Subset(ds_train, idxs[:split_idx]), batch_size=cfg.batch_size, shuffle=True
@@ -143,9 +148,8 @@ def train(cfg: TrainConfig):
     )
 
     # Instantiate SFR
-    # network = CNN()
     # TODO This doesn't use tanh...
-    network = utils.CIFAR10Net(in_channels=1, n_out=output_dim, use_tanh=True)
+    network = utils.CIFAR10Net(in_channels=in_channels, n_out=output_dim, use_tanh=True)
     prior = priors.Gaussian(
         params=network.parameters, prior_precision=cfg.prior_precision
     )
@@ -242,7 +246,7 @@ def train(cfg: TrainConfig):
     metric_logger.log(nn_metrics, name="NN")
 
     # Make everything double precision
-    # torch.set_default_dtype(torch.double)
+    torch.set_default_dtype(torch.double)
     # model.double()
 
     # Calculate posterior (dual parameters etc)

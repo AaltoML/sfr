@@ -13,7 +13,6 @@ from custom_types import (
     Beta,
     BetaDiag,
     BetaInducing,
-    Data,
     FuncData,
     FuncMean,
     FuncVar,
@@ -118,40 +117,33 @@ class SFR(nn.Module):
         )
         return f_mean
 
-    def fit(self, train_loader: DataLoader):
-        all_train = DataLoader(
-            train_loader.dataset, batch_size=len(train_loader.dataset)
-        )
-        train_data = next(iter(all_train))
-        # train_data = train_loader.dataset
-        # X = train_loader.dataset[0]
-        if train_data[0].dtype == torch.float32:
-            train_data[0] = train_data[0].to(torch.float64)
-        if train_data[1].dtype == torch.float32:
-            train_data[1] = train_data[1].to(torch.float64)
-        if isinstance(self.likelihood, likelihoods.CategoricalLh):
-            # print("making outputs long type")
-            # train_data[1].to(torch.long)
-            train_data[1] = train_data[1].long()
-        # data = (X_train.to(torch.float64), y_train)
-        self.set_data(train_data=train_data)
-
     @torch.no_grad()
-    def set_data(self, train_data: Data):
-        """Sets training data, samples inducing points, calcs dual parameters, builds predict fn"""
+    def fit(self, train_data: Tuple[torch.Tensor, torch.Tensor]):
+        """Fit local SFR approx at the networks parameters
+
+        1. Samples inducing points
+        2. Calculates dual parameters
+        3. Project dual parameters onto inducing points
+        3. Caches quantities for faster predictions
+        """
+        self.eval()
         X_train, Y_train = train_data
-        X_train = torch.clone(X_train)
-        Y_train = torch.clone(Y_train)
         assert X_train.shape[0] == Y_train.shape[0]
-        self.train_data = (X_train, Y_train)
-        num_data = Y_train.shape[0]
-        indices = torch.randperm(num_data)[: self.num_inducing]
+        self._num_data = X_train.shape[0]
+
+        # Create data loader to handle data batching (for memory)
+        if self.dual_batch_size is None:
+            self.dual_batch_size = self.num_data
+        train_loader = DataLoader(
+            TensorDataset(*(train_data)),
+            batch_size=self.dual_batch_size,
+            shuffle=False,
+        )
+
+        # Sample inducing points from data
+        indices = torch.randperm(self.num_data)[: self.num_inducing]
         self.Z = X_train[indices.to(X_train.device)].to(self.device)
 
-        self._build_sfr()
-
-    @torch.no_grad()
-    def _build_sfr(self):
         # Build kernel
         self.kernel = build_ntk(
             network=self.network,
@@ -161,14 +153,7 @@ class SFR(nn.Module):
             scaled=False,
         )
 
-        # Calculate dual parameters
-        if self.dual_batch_size is None:
-            self.dual_batch_size = self.num_data
-        train_loader = DataLoader(
-            TensorDataset(*(self.train_data)),
-            batch_size=self.dual_batch_size,
-            shuffle=False,
-        )
+        # Calculate dual parameters at data
         logger.info("Calculating dual params...")
         self.alpha, self.beta_diag, self.y_tilde = calc_dual_params(
             network=self.network,
@@ -203,7 +188,7 @@ class SFR(nn.Module):
         self.y_tilde_u = self.y_tilde_u.detach().cpu()
         logger.info("Finished projecting dual params onto inducing points")
 
-        # Calcualte kernel
+        # Calculate kernel
         self.Kzz = self.kernel(self.Z, self.Z)
         num_inducing = self.Kzz.shape[-1]
         self.Iz = (
@@ -457,8 +442,8 @@ class SFR(nn.Module):
             )
 
     @property
-    def num_data(self):
-        return self.train_data[0].shape[0]
+    def num_data(self) -> int:
+        return self._num_data
 
 
 def project_dual_params_onto_inducing_points(

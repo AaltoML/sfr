@@ -131,7 +131,7 @@ def train(cfg: TrainConfig):
     split_idx = int(cfg.train_val_split * num_data)
 
     if cfg.debug:
-        ds_test = (Subset(ds_train, idxs[split_idx + 1 :]),)
+        ds_test = Subset(ds_train, idxs[split_idx + 1 :])
     else:
         ds_test = dataset_fn(
             f"{save_dir}/{cfg.dataset}", download=True, train=False, transform=transform

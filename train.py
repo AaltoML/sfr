@@ -19,14 +19,6 @@ from torch.utils.data import DataLoader, Subset
 from torchvision import transforms
 from tqdm import tqdm
 
-import likelihoods
-import priors
-import sfr
-import utils
-
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 
 @dataclass
 class TrainConfig:
@@ -66,6 +58,14 @@ cs.store(name="train_config", node=TrainConfig)
 
 @hydra.main(version_base="1.3", config_path="./cfgs", config_name="train_config")
 def train(cfg: TrainConfig):
+    import likelihoods
+    import priors
+    import sfr
+    import utils
+
+    logging.basicConfig(level=logging.INFO)
+    logger = logging.getLogger(__name__)
+
     # Make experiment reproducible
     torch.cuda.manual_seed(cfg.seed)
     torch.manual_seed(cfg.seed)

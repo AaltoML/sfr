@@ -128,10 +128,10 @@ def train(cfg: TrainConfig):
         in_channels = ds_train.data.shape[-1]
     num_data = 500 if cfg.debug else len(ds_train)
     idxs = np.random.permutation(num_data)
-    split_idx = int(0.7 * num_data)
+    split_idx = int(cfg.train_val_split * num_data)
 
     if cfg.debug:
-        ds_test = Subset(ds_train, idxs[:split_idx])
+        ds_test = (Subset(ds_train, idxs[split_idx + 1 :]),)
     else:
         ds_test = dataset_fn(
             f"{save_dir}/{cfg.dataset}", download=True, train=False, transform=transform

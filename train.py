@@ -152,7 +152,8 @@ def train(cfg: TrainConfig):
 
     # Instantiate SFR
     # network = CNN()
-    network = utils.CIFAR10Net(in_channels=1, n_out=10, use_tanh=True)
+    # TODO This doesn't use tanh...
+    network = utils.CIFAR10Net(in_channels=1, n_out=output_dim, use_tanh=True)
     prior = priors.Gaussian(
         params=network.parameters, prior_precision=cfg.prior_precision
     )

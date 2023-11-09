@@ -5,17 +5,27 @@ import logging
 import time
 from dataclasses import dataclass
 
-import pandas as pd
 import hydra
 import numpy as np
 import omegaconf
-import wandb
+import pandas as pd
+import torch
+import torchvision
 from hydra.core.config_store import ConfigStore
 from hydra.utils import get_original_cwd
 from netcal.metrics import ECE
 from torch.utils.data import DataLoader, Subset
 from torchvision import transforms
 from tqdm import tqdm
+
+import likelihoods
+import priors
+import sfr
+import utils
+import wandb
+
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 
 @dataclass
@@ -56,16 +66,6 @@ cs.store(name="train_config", node=TrainConfig)
 
 @hydra.main(version_base="1.3", config_path="./cfgs", config_name="train")
 def train(cfg: TrainConfig):
-    import torch
-    import torchvision
-    import likelihoods
-    import priors
-    import sfr
-    import utils
-
-    logging.basicConfig(level=logging.INFO)
-    logger = logging.getLogger(__name__)
-
     # Make experiment reproducible
     torch.cuda.manual_seed(cfg.seed)
     torch.manual_seed(cfg.seed)

@@ -169,7 +169,7 @@ def train(cfg: TrainConfig):
             targets.append(target.to(cfg.device))
             val_losses.append(model.loss(data.to(cfg.device), target.to(cfg.device)))
 
-        val_loss = torch.mean(torch.stack(val_losses, 0)).numpy().item()
+        val_loss = torch.mean(torch.stack(val_losses, 0)).cpu().numpy().item()
         targets = torch.cat(targets, dim=0).cpu().numpy()
         probs = torch.cat(probs).cpu().numpy()
         acc = (probs.argmax(-1) == targets).mean()

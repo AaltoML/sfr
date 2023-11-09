@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import logging
-import random
+
+# import random
 import time
 from dataclasses import dataclass
 
@@ -34,7 +35,7 @@ class TrainConfig:
     debug: bool = False  # If true only use 500 data points
 
     # SFR config
-    prior_precision: float = 0.008
+    prior_precision: float = 0.0013
     num_inducing: int = 1000
     # dual_batch_size: int = 5000
     dual_batch_size: int = 1000
@@ -69,7 +70,7 @@ def train(cfg: TrainConfig):
     torch.cuda.manual_seed(cfg.seed)
     torch.manual_seed(cfg.seed)
     np.random.seed(cfg.seed)
-    random.seed(cfg.seed)
+    # random.seed(cfg.seed)
     eval('setattr(torch.backends.cudnn, "determinstic", True)')
     eval('setattr(torch.backends.cudnn, "benchmark", False)')
 
@@ -114,16 +115,7 @@ def train(cfg: TrainConfig):
     else:
         raise NotImplementedError("Only MNIST/FMNIST/CIFAR10 supported for cfg.dataset")
 
-    def to_double(sample):
-        return sample.to(torch.double)
-
-    transform = transforms.Compose(
-        [
-            transforms.ToTensor(),
-            normalize_transform,
-            # to_double,
-        ]
-    )
+    transform = transforms.Compose([transforms.ToTensor(), normalize_transform])
     ds_train = dataset_fn(
         f"data/{cfg.dataset}", download=True, train=True, transform=transform
     )

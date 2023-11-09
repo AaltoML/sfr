@@ -38,7 +38,7 @@ class SFR(nn.Module):
         likelihood: likelihoods.Likelihood,
         output_dim: int,
         num_inducing: int = 30,
-        dual_batch_size: Optional[int] = None,
+        dual_batch_size: Optional[int] = None,  # batch size use for daul param calc
         jitter: float = 1e-6,
         device: str = "cpu",
     ):
@@ -188,7 +188,7 @@ class SFR(nn.Module):
         self.y_tilde_u = self.y_tilde_u.detach().cpu()
         logger.info("Finished projecting dual params onto inducing points")
 
-        # Calculate kernel
+        # Calculate and cache quantities for predictions
         self.Kzz = self.kernel(self.Z, self.Z)
         num_inducing = self.Kzz.shape[-1]
         self.Iz = (

@@ -113,7 +113,17 @@ def train(cfg: TrainConfig):
         )
     else:
         raise NotImplementedError("Only MNIST/FMNIST/CIFAR10 supported for cfg.dataset")
-    transform = transforms.Compose([transforms.ToTensor(), normalize_transform])
+
+    def to_double(sample):
+        return sample.to(torch.double)
+
+    transform = transforms.Compose(
+        [
+            transforms.ToTensor(),
+            normalize_transform,
+            # to_double,
+        ]
+    )
     ds_train = dataset_fn(
         f"data/{cfg.dataset}", download=True, train=True, transform=transform
     )
@@ -233,13 +243,14 @@ def train(cfg: TrainConfig):
     metric_logger.log(nn_metrics, name="NN")
 
     # Make everything double precision
-    torch.set_default_dtype(torch.double)
-    model.double()
-    model.eval()
+    # torch.set_default_dtype(torch.double)
+    # model.double()
 
     # Calculate posterior (dual parameters etc)
     logger.info("Fitting SFR...")
-    model.fit(train_loader=train_loader)
+    train_data = next(iter(train_loader))  # Applies transforms to ds_train
+    # model.fit(train_loader=train_loader)
+    model.fit(train_data=train_data)
     logger.info("Finished fitting SFR")
 
     # Calculate SFR's metrics and log

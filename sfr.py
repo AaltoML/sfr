@@ -68,7 +68,7 @@ class SFR(nn.Module):
         num_samples: int = 100,
     ):
         if x.dtype == torch.float32:  # Make inputs double
-            x.to(torch.float64)
+            x = x.to(torch.float64)
         f_mean, f_var = self.predict_f(x, full_cov=False)
         if pred_type in "nn":
             f_mean = self.network(x)
@@ -81,6 +81,8 @@ class SFR(nn.Module):
     def predict_f(
         self, x, full_cov: Optional[bool] = False
     ) -> Tuple[FuncMean, FuncVar]:
+        if x.dtype == torch.float32:  # Make inputs double
+            x = x.to(torch.float64)
         Kxx = self.kernel(x, x, full_cov=full_cov).detach().cpu()
         Kxz = self.kernel(x, self.Z).detach().cpu()
 
@@ -112,6 +114,8 @@ class SFR(nn.Module):
 
     @torch.no_grad()
     def predict_mean(self, x: TestInput) -> FuncMean:
+        if x.dtype == torch.float32:  # Make inputs double
+            x = x.to(torch.float64)
         x = x.to(self.Z.device)
         Kxz = self.kernel(x, self.Z)
         f_mean = (Kxz @ self.alpha_u[..., None])[..., 0].T / (

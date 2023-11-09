@@ -39,7 +39,7 @@ class TrainConfig:
     prior_precision: float = 0.0013
     num_inducing: int = 2048
     # dual_batch_size: int = 5000
-    dual_batch_size: int = 1000
+    dual_batch_size: int = 1024
     jitter: float = 1e-6
     likelihood_eps: float = 0.0  # for numerical stability
 

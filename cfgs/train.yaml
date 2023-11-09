@@ -8,9 +8,9 @@ dataset: "FMNIST"
 debug: False
 
 prior_precision: 0.0013
-num_inducing: 1000
+num_inducing: 2048
 dual_batch_size: 1000
-jitter: 1e-6
+jitter: 1e-4
 likelihood_eps: 0.0  # for numerical stability
 
 # Training config

@@ -129,7 +129,7 @@ class SFR(nn.Module):
         if train_data[1].dtype == torch.float32:
             train_data[1] = train_data[1].to(torch.float64)
         if isinstance(self.likelihood, likelihoods.CategoricalLh):
-            print("making outputs long type")
+            # print("making outputs long type")
             # train_data[1].to(torch.long)
             train_data[1] = train_data[1].long()
         # data = (X_train.to(torch.float64), y_train)

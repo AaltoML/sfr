@@ -1,14 +1,19 @@
 #!/usr/bin/env python3
-from typing import Callable, Optional, Tuple
+from typing import Callable, Optional, Tuple, Union
 
 import torch
 from jaxtyping import Float
 
-InputData = Float[torch.Tensor, "num_data input_dim"]
-OutputData = Float[torch.Tensor, "num_data output_dim"]
+# InputData can be images
+InputData = Float[torch.Tensor, "num_data ..."]
+
+# OutputData can be classification or regression
+ClassificationData = Float[torch.Tensor, "num_data"]
+RegressionData = Float[torch.Tensor, "num_data output_dim"]
+OutputData = Union[RegressionData, ClassificationData]
 Data = Tuple[InputData, OutputData]
 
-Input = Float[torch.Tensor, "batch_size input_dim"]
+# Input = Float[torch.Tensor, "batch_size input_dim"]
 OutputMean = Float[torch.Tensor, "batch_size output_dim"]
 OutputVar = Float[torch.Tensor, "batch_size output_dim"]
 
@@ -24,7 +29,7 @@ AlphaInducing = Float[torch.Tensor, "output_dim num_inducing"]
 BetaInducing = Float[torch.Tensor, "output_dim num_inducing num_inducing"]
 
 FuncData = Float[torch.Tensor, "num_data output_dim"]
-InducingPoints = Float[torch.Tensor, "num_inducing input_dim"]
+InducingPoints = Float[torch.Tensor, "num_inducing ..."]
 
 
 FullCov = Optional[bool]
@@ -32,35 +37,4 @@ Index = Optional[int]
 NTK = Callable[[InputData, InputData, FullCov, Index], torch.Tensor]
 NTK_single = Callable[[InputData, InputData, int, FullCov], torch.Tensor]
 
-TestInput = Float[torch.Tensor, "num_test input_dim"]
-
-# from torchtyping import TensorType
-# InputData = TensorType["num_data", "input_dim"]
-# OutputData = TensorType["num_data", "output_dim"]
-# Data = Tuple[InputData, OutputData]
-
-# Input = TensorType["batch_size, input_dim"]
-# OutputMean = TensorType["batch_size, output_dim"]
-# OutputVar = TensorType["batch_size, output_dim"]
-
-# FuncData = TensorType["num_data", "output_dim"]
-# FuncMean = TensorType["num_data", "output_dim"]
-# FuncVar = TensorType["num_data", "output_dim"]
-
-# Alpha = TensorType["num_data", "output_dim"]
-# Beta = TensorType["num_data", "num_data", "output_dim"]
-# BetaDiag = TensorType["num_data", "output_dim"]
-# Lambda = TensorType["num_data", "output_dim"]
-# AlphaInducing = TensorType["output_dim", "num_inducing"]
-# BetaInducing = TensorType["output_dim", "num_inducing", "num_inducing"]
-
-# FuncData = TensorType["num_data", "output_dim"]
-# InducingPoints = TensorType["num_inducing", "input_dim"]
-
-
-# FullCov = Optional[bool]
-# Index = Optional[int]
-# NTK = Callable[[InputData, InputData, FullCov, Index], TensorType[""]]
-# NTK_single = Callable[[InputData, InputData, int, FullCov], TensorType[""]]
-
-# TestInput = TensorType["num_test", "input_dim"]
+TestInput = Float[torch.Tensor, "num_test ..."]

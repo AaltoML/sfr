@@ -36,7 +36,8 @@ class TrainConfig:
     # SFR config
     prior_precision: float = 0.008
     num_inducing: int = 1000
-    dual_batch_size: int = 5000
+    # dual_batch_size: int = 5000
+    dual_batch_size: int = 1000
     jitter: float = 1e-6
     likelihood_eps: float = 0.0  # for numerical stability
 

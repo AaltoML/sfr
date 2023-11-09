@@ -19,6 +19,7 @@ from custom_types import (
     InputData,
     Lambda,
     OutputData,
+    Data,
     TestInput,
 )
 import priors
@@ -138,7 +139,18 @@ class SFR(nn.Module):
             Y_train.append(target)
         X_train = torch.concat(X_train, 0)
         Y_train = torch.concat(Y_train, 0)
+        self.set_data(train_data=(X_train, Y_train))
 
+    @torch.no_grad()
+    def set_data(self, train_data: Data):
+        """Fit local SFR approx at the networks parameters
+
+        1. Samples inducing points
+        2. Calculates dual parameters
+        3. Project dual parameters onto inducing points
+        3. Caches quantities for faster predictions
+        """
+        X_train, Y_train = train_data
         self.network.eval()
 
         # Make the data/params double precision

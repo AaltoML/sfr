@@ -2,27 +2,26 @@
 import logging
 import random
 import time
-from collections import OrderedDict
 from dataclasses import dataclass
-from typing import List, Optional, Union
 
+import pandas as pd
 import hydra
 import numpy as np
 import omegaconf
 import torch
-import torch.nn as nn
 import torchvision
 import wandb
 from hydra.core.config_store import ConfigStore
 from hydra.utils import get_original_cwd
 from netcal.metrics import ECE
-from torch.utils.data import DataLoader
+from torch.utils.data import DataLoader, Subset
 from torchvision import transforms
 from tqdm import tqdm
 
 import likelihoods
 import priors
 import sfr
+import utils
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -30,12 +29,9 @@ logger = logging.getLogger(__name__)
 
 @dataclass
 class TrainConfig:
-    dataset: str = "FMNIST"
-
-    # Training config
-    batch_size: int = 512
-    lr: float = 1e-4
-    n_epochs: int = 10000
+    # Dataset
+    dataset: str = "FMNIST"  # "FMNIST"/"CIFAR10"/"MNIST"
+    debug: bool = False  # If true only use 500 data points
 
     # SFR config
     prior_precision: float = 0.008
@@ -44,6 +40,10 @@ class TrainConfig:
     jitter: float = 1e-6
     likelihood_eps: float = 0.0  # for numerical stability
 
+    # Training config
+    batch_size: int = 512
+    lr: float = 1e-4
+    n_epochs: int = 10000
     # Early stopping on validation loss
     early_stop_patience: int = 1000
     early_stop_min_delta: float = 0.0
@@ -52,129 +52,14 @@ class TrainConfig:
     logging_epoch_freq: int = 100
     seed: int = 42
     device: str = "cuda"  # "cpu" or "cuda" etc
-    debug: bool = False
 
     # W&B config
     use_wandb: bool = False
-    wandb_project_name: str = ""
-    wandb_group: Optional[str] = None
-    wandb_tags: Optional[List[str]] = None
+    wandb_project_name: str = "sfr"
 
 
 cs = ConfigStore.instance()
 cs.store(name="train_config", node=TrainConfig)
-
-
-class EarlyStopper:
-    def __init__(self, patience: int = 1, min_delta: float = 0):
-        self.patience = patience
-        self.min_delta = min_delta
-        self.counter = 0
-        self.min_val = np.inf
-
-    def __call__(self, val):
-        if val < self.min_val:
-            self.min_val = val
-            self.counter = 0
-        elif val > (self.min_val + self.min_delta):
-            self.counter += 1
-            if self.counter >= self.patience:
-                return True
-        return False
-
-
-class CIFAR10Net(nn.Module):
-    def __init__(self, in_channels: int = 3, n_out: int = 10, use_tanh: bool = False):
-        super().__init__()
-        self.output_size = n_out
-        activ = nn.Tanh if use_tanh else nn.ReLU
-
-        self.cnn_block = nn.Sequential(
-            OrderedDict(
-                [
-                    (
-                        "conv1",
-                        nn.Conv2d(
-                            in_channels=in_channels,
-                            out_channels=64,
-                            kernel_size=(5, 5),
-                            stride=(1, 1),
-                        ),
-                    ),
-                    ("relu1", nn.ReLU()),
-                    (
-                        "maxpool1",
-                        nn.Sequential(
-                            nn.ZeroPad2d((0, 1, 0, 1)),
-                            nn.MaxPool2d(kernel_size=3, stride=2),
-                        ),
-                    ),
-                    (
-                        "conv2",
-                        nn.Conv2d(
-                            in_channels=64,
-                            out_channels=96,
-                            kernel_size=(3, 3),
-                            stride=(1, 1),
-                        ),
-                    ),
-                    ("relu2", nn.ReLU()),
-                    (
-                        "maxpool2",
-                        nn.Sequential(
-                            nn.ZeroPad2d((0, 1, 0, 1)),
-                            nn.MaxPool2d(kernel_size=3, stride=2),
-                        ),
-                    ),
-                    (
-                        "conv3",
-                        nn.Conv2d(
-                            in_channels=96,
-                            out_channels=128,
-                            kernel_size=(3, 3),
-                            stride=(1, 1),
-                            padding=(1, 1),
-                        ),
-                    ),
-                    ("relu3", nn.ReLU()),
-                    (
-                        "maxpool3",
-                        nn.Sequential(
-                            nn.ZeroPad2d((1, 1, 1, 1)),
-                            nn.MaxPool2d(kernel_size=3, stride=2),
-                        ),
-                    ),
-                ]
-            )
-        )
-        self.lin_block = nn.Sequential(
-            OrderedDict(
-                [
-                    ("flatten", nn.Flatten()),
-                    ("dense1", nn.Linear(in_features=3 * 3 * 128, out_features=512)),
-                    ("activ1", activ()),
-                    ("dense2", nn.Linear(in_features=512, out_features=256)),
-                    ("activ2", activ()),
-                    (
-                        "dense3",
-                        nn.Linear(in_features=256, out_features=self.output_size),
-                    ),
-                ]
-            )
-        )
-        for module in self.modules():
-            if isinstance(module, nn.Conv2d):
-                nn.init.constant_(module.bias, 0.0)
-                nn.init.xavier_normal_(module.weight)
-
-            if isinstance(module, nn.Linear):
-                nn.init.constant_(module.bias, 0.0)
-                nn.init.xavier_uniform_(module.weight)
-
-    def forward(self, x):
-        x = self.cnn_block(x)
-        out = self.lin_block(x)
-        return out
 
 
 @hydra.main(version_base="1.3", config_path="./cfgs", config_name="train_config")
@@ -192,7 +77,7 @@ def train(cfg: TrainConfig):
         if torch.cuda.is_available():
             cfg.device = "cuda"
         else:
-            logger.info("cuda requested but not available")
+            logger.info("CUDA requested but not available")
             cfg.device = "cpu"
     logger.info("Using device: {}".format(cfg.device))
 
@@ -202,8 +87,8 @@ def train(cfg: TrainConfig):
         wandb.init(
             project=cfg.wandb_project_name,
             name=run_name,
-            group=cfg.wandb_group,
-            tags=cfg.wandb_tags,
+            group=cfg.dataset,
+            tags=[cfg.dataset, f"M={cfg.num_inducing}"],
             config=omegaconf.OmegaConf.to_container(
                 cfg, resolve=True, throw_on_missing=True
             ),
@@ -211,46 +96,46 @@ def train(cfg: TrainConfig):
         )
 
     # Load the data with train/val/test split
-    # build an array = np.asrray( [x for x in range(80000)])
-    indices = np.arange(0, 800)
-    # indices = np.arange(0, 80000)
-    np.random.shuffle(indices)  # shuffle the indicies
-    output_dim = 10
-
-    # Build the train loader using indices from 0 to 75000
+    if "FMNIST" in cfg.dataset:
+        dataset_fn = torchvision.datasets.FashionMNIST
+    elif "MNIST" in cfg.dataset:
+        dataset_fn = torchvision.datasets.MNIST
+    elif "CIFAR10" in cfg.dataset:
+        dataset_fn = torchvision.datasets.CIFAR10
+    else:
+        raise NotImplementedError("Only MNIST/FMNIST/CIFAR10 supported for cfg.dataset")
     transform = transforms.Compose(
-        [transforms.ToTensor(), transforms.Normalize((0.1307,), (0.3081,))]
+        [
+            transforms.ToTensor(),
+            # transforms.Normalize((0.1307,), (0.3081,)),
+        ]
+    )
+    ds_train = dataset_fn(
+        f"data/{cfg.dataset}", download=True, train=True, transform=transform
+    )
+    output_dim = len(ds_train.classes)
+    num_data = 500 if cfg.debug else len(ds_train)
+    idxs = np.random.permutation(num_data)
+    split_idx = int(0.7 * num_data)
+
+    ds_test = dataset_fn(
+        f"data/{cfg.dataset}", download=True, train=False, transform=transform
     )
     train_loader = torch.utils.data.DataLoader(
-        torchvision.datasets.MNIST(
-            "data/mnist", download=True, train=True, transform=transform
-        ),
-        batch_size=cfg.batch_size,
-        shuffle=False,
-        sampler=torch.utils.data.SubsetRandomSampler(indices[:100]),
-        # sampler=torch.utils.data.SubsetRandomSampler(indices[:75000]),
+        Subset(ds_train, idxs[:split_idx]), batch_size=cfg.batch_size, shuffle=True
     )
     val_loader = torch.utils.data.DataLoader(
-        torchvision.datasets.MNIST(
-            "data/mnist", download=True, train=True, transform=transform
-        ),
-        batch_size=cfg.batch_size,
-        shuffle=False,
-        sampler=torch.utils.data.SubsetRandomSampler(indices[100:200]),
-        # sampler=torch.utils.data.SubsetRandomSampler(indices[-5000:]),
-    )
-    test_loader = torch.utils.data.DataLoader(
-        torchvision.datasets.MNIST(
-            "data/mnist", download=True, train=False, transform=transform
-        ),
+        Subset(ds_train, idxs[split_idx + 1 :]),
         batch_size=cfg.batch_size,
         shuffle=True,
-        pin_memory=True,
+    )
+    test_loader = torch.utils.data.DataLoader(
+        ds_test, batch_size=cfg.batch_size, shuffle=True, pin_memory=True
     )
 
     # Instantiate SFR
     # network = CNN()
-    network = CIFAR10Net(in_channels=1, n_out=10, use_tanh=True)
+    network = utils.CIFAR10Net(in_channels=1, n_out=10, use_tanh=True)
     prior = priors.Gaussian(
         params=network.parameters, prior_precision=cfg.prior_precision
     )
@@ -267,29 +152,32 @@ def train(cfg: TrainConfig):
     )
     optimizer = torch.optim.Adam([{"params": model.parameters()}], lr=cfg.lr)
 
-    early_stopper = EarlyStopper(
+    early_stopper = utils.EarlyStopper(
         patience=int(cfg.early_stop_patience / cfg.logging_epoch_freq),
         min_delta=cfg.early_stop_min_delta,
     )
 
-    def evaluate(model: Union[sfr.SFR, nn.Module], test_loader: DataLoader):
+    @torch.no_grad()
+    def evaluate(model: sfr.SFR, data_loader: DataLoader, sfr_pred: bool = False):
         model.eval()
-        with torch.no_grad():
-            py, targets, val_losses = [], [], []
-            for x, y in test_loader:
-                # if isinstance
-                py.append(model.network(x=x.to(cfg.device)))
-                targets.append(y.to(cfg.device))
-                val_losses.append(model.loss(x.to(cfg.device), y.to(cfg.device)))
+        probs, targets, val_losses = [], [], []
+        for data, target in data_loader:
+            if sfr_pred:  # predict with SFR
+                probs.append(model(data.to(cfg.device))[0])
+            else:  # predict with NN
+                probs.append(torch.softmax(model.network(data.to(cfg.device)), dim=-1))
+            targets.append(target.to(cfg.device))
+            val_losses.append(model.loss(data.to(cfg.device), target.to(cfg.device)))
 
-            val_loss = torch.mean(torch.stack(val_losses, 0))
-            targets = torch.cat(targets, dim=0).cpu().numpy()
-            probs = torch.cat(py).cpu().numpy()
-            acc = (probs.argmax(-1) == targets).mean()
-            ece = ECE(bins=15).measure(probs, targets)
-            dist = torch.distributions.Categorical(torch.Tensor(probs))
-            nll = -dist.log_prob(torch.Tensor(targets)).mean().numpy()
-            metrics = {"loss": val_loss, "acc": acc, "nll": nll, "ece": ece}
+        val_loss = torch.mean(torch.stack(val_losses, 0)).numpy().item()
+        targets = torch.cat(targets, dim=0).cpu().numpy()
+        probs = torch.cat(probs).cpu().numpy()
+        acc = (probs.argmax(-1) == targets).mean()
+        ece = ECE(bins=15).measure(probs, targets)
+        dist = torch.distributions.Categorical(torch.Tensor(probs))
+        nll = -dist.log_prob(torch.Tensor(targets)).mean().numpy()
+        metrics = {"loss": val_loss, "acc": acc, "nll": nll, "ece": ece}
+        model.train()
         return metrics
 
     # Train NN weights uthe se empirical regularized risk
@@ -308,13 +196,8 @@ def train(cfg: TrainConfig):
                     wandb.log({"loss": loss})
 
         if epoch % cfg.logging_epoch_freq == 0:
-            metrics = evaluate(model, test_loader=val_loader)
-            # metrics = evaluate(model, test_loader=test_loader)
-            val_loss = metrics["loss"]
-            # val_losses = []
-            # for x, y in val_loader:
-            #     val_losses.append(model.loss(x.to(cfg.device), y.to(cfg.device)))
-            # val_loss = torch.mean(torch.stack(val_losses, 0))
+            val_metrics = evaluate(model, data_loader=val_loader)
+            val_loss = val_metrics["loss"]
             if wandb.run is not None:
                 wandb.log({"val_loss": val_loss, "epoch": epoch})
 
@@ -327,47 +210,40 @@ def train(cfg: TrainConfig):
 
     logger.info("Finished training")
 
+    class MetricLogger:
+        def __init__(self):
+            self.df = pd.DataFrame(columns=["Model", "loss", "acc", "nll", "ece"])
+
+        def log(self, metrics: dict, name: str):
+            logger.info(
+                f"{name} NLPD {metrics['nll']} | ACC: {metrics['acc']} | ECE: {metrics['ece']}"
+            )
+            metrics.update({"Model": name})
+            if wandb.run is not None:
+                self.df.loc[len(self.df.index)] = metrics
+                wandb.log({"Metrics": wandb.Table(data=self.df)})
+
+    # Calculate NN's metrics and log
+    nn_metrics = evaluate(model, data_loader=test_loader, sfr_pred=False)
+    metric_logger = MetricLogger()
+    metric_logger.log(nn_metrics, name="NN")
+
     # Make everything double precision
     torch.set_default_dtype(torch.double)
     model.double()
     model.eval()
 
-    def to_double(sample):
-        breakpoint()
-        X, y = sample
-        return X, y
-
+    # Calculate posterior (dual parameters etc)
     logger.info("Fitting SFR...")
     model.fit(train_loader=train_loader)
     logger.info("Finished fitting SFR")
 
-    @torch.no_grad()
-    def compute_metrics(
-        data_loader: DataLoader, pred_type: str = "nn", device: str = "cpu"
-    ) -> dict:
-        py, targets = [], []
-        for x, y in data_loader:
-            py.append(model(x=x.to(device), pred_type=pred_type))
-            targets.append(y.to(device))
-
-        targets = torch.cat(targets, dim=0).cpu().numpy()
-        probs = torch.cat(py).cpu().numpy()
-
-        acc = (probs.argmax(-1) == targets).mean()
-        ece = ECE(bins=15).measure(probs, targets)
-        dist = torch.distributions.Categorical(torch.Tensor(probs))
-        nll = -dist.log_prob(torch.Tensor(targets)).mean().numpy()
-        metrics = {"acc": acc, "nll": nll, "ece": ece}
-        return metrics
-
-    sfr_metrics = compute_metrics(test_loader, pred_type="gp", device=cfg.device)
-    logger.info(
-        f"SFR NLPD {sfr_metrics['nlpd']} | ACC: {sfr_metrics['acc']} | ECE: {sfr_metrics['ece']}"
-    )
-    if wandb.run is not None:
-        wandb.log(sfr_metrics)
+    # Calculate SFR's metrics and log
+    sfr_metrics = evaluate(model, data_loader=test_loader, sfr_pred=True)
+    metric_logger.log(sfr_metrics, name="SFR")
+    nn_metrics = evaluate(model, data_loader=test_loader, sfr_pred=False)
+    metric_logger.log(nn_metrics, name="NN double")
 
 
 if __name__ == "__main__":
     train()  # pyright: ignore
-    # train_on_cluster()  # pyright: ignore

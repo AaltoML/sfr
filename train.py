@@ -9,8 +9,6 @@ import pandas as pd
 import hydra
 import numpy as np
 import omegaconf
-import torch
-import torchvision
 import wandb
 from hydra.core.config_store import ConfigStore
 from hydra.utils import get_original_cwd
@@ -58,6 +56,8 @@ cs.store(name="train_config", node=TrainConfig)
 
 @hydra.main(version_base="1.3", config_path="./cfgs", config_name="train_config")
 def train(cfg: TrainConfig):
+    import torch
+    import torchvision
     import likelihoods
     import priors
     import sfr

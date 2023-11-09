@@ -45,7 +45,7 @@ class TrainConfig:
 
     # Training config
     batch_size: int = 64
-    lr: float = 1e-4
+    lr: float = 1e-3
     n_epochs: int = 10000
     # Early stopping on validation loss
     early_stop_patience: int = 5

@@ -16,7 +16,7 @@ likelihood_eps: 0.0  # for numerical stability
 
 # Training config
 batch_size: 64
-lr: 1e-4
+lr: 1e-3
 n_epochs: 10000
 # Early stopping on validation loss
 early_stop_patience: 5

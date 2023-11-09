@@ -98,18 +98,21 @@ def train(cfg: TrainConfig):
     # Load the data with train/val/test split
     if "FMNIST" in cfg.dataset:
         dataset_fn = torchvision.datasets.FashionMNIST
+        normalize_transform = transforms.Normalize((0.2860,), (0.3530,))
+        # Calculated with ds_train.train_data.float().mean()/255
     elif "MNIST" in cfg.dataset:
         dataset_fn = torchvision.datasets.MNIST
+        # Calculated with ds_train.train_data.float().mean()/255
+        normalize_transform = transforms.Normalize((0.1307,), (0.3081,))
     elif "CIFAR10" in cfg.dataset:
         dataset_fn = torchvision.datasets.CIFAR10
+        # Calculated with ds_train.data.mean(axis=(0,1,2))/255
+        normalize_transform = transforms.Normalize(
+            (0.49139968, 0.48215841, 0.44653091), (0.24703223, 0.24348513, 0.26158784)
+        )
     else:
         raise NotImplementedError("Only MNIST/FMNIST/CIFAR10 supported for cfg.dataset")
-    transform = transforms.Compose(
-        [
-            transforms.ToTensor(),
-            # transforms.Normalize((0.1307,), (0.3081,)),
-        ]
-    )
+    transform = transforms.Compose([transforms.ToTensor(), normalize_transform])
     ds_train = dataset_fn(
         f"data/{cfg.dataset}", download=True, train=True, transform=transform
     )

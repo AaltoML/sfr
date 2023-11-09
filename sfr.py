@@ -52,7 +52,6 @@ class SFR(nn.Module):
         self.dual_batch_size = dual_batch_size
         self.jitter = jitter
         self.device = device
-        # self.computed_Kss_Ksz = False
 
         if isinstance(self.prior, priors.Gaussian):
             self._prior_precision = self.prior.prior_precision
@@ -124,7 +123,7 @@ class SFR(nn.Module):
         return f_mean
 
     @torch.no_grad()
-    def fit(self, train_data: Tuple[torch.Tensor, torch.Tensor]):
+    def fit(self, train_loader: DataLoader):
         """Fit local SFR approx at the networks parameters
 
         1. Samples inducing points
@@ -132,8 +131,17 @@ class SFR(nn.Module):
         3. Project dual parameters onto inducing points
         3. Caches quantities for faster predictions
         """
-        X_train, Y_train = train_data
-        self.eval()
+        # Extract data from DataLoader
+        X_train, Y_train = [], []
+        for data, target in train_loader:
+            X_train.append(data)
+            Y_train.append(target)
+        X_train = torch.concat(X_train, 0)
+        Y_train = torch.concat(Y_train, 0)
+
+        self.network.eval()
+
+        # Make the data/params double precision
         self.network.double()
         if X_train.dtype == torch.float32:  # Make inputs double
             X_train = X_train.double()

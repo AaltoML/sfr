@@ -245,15 +245,9 @@ def train(cfg: TrainConfig):
     metric_logger = MetricLogger()
     metric_logger.log(nn_metrics, name="NN")
 
-    # Make everything double precision
-    torch.set_default_dtype(torch.double)
-    # model.double()
-
     # Calculate posterior (dual parameters etc)
     logger.info("Fitting SFR...")
-    train_data = next(iter(train_loader))  # Applies transforms to ds_train
-    # model.fit(train_loader=train_loader)
-    model.fit(train_data=train_data)
+    model.fit(train_loader=train_loader)
     logger.info("Finished fitting SFR")
 
     # Calculate SFR's metrics and log

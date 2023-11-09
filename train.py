@@ -132,18 +132,21 @@ def train(cfg: TrainConfig):
     idxs = np.random.permutation(num_data)
     split_idx = int(0.7 * num_data)
 
-    ds_test = dataset_fn(
-        f"data/{cfg.dataset}", download=True, train=False, transform=transform
-    )
-    train_loader = torch.utils.data.DataLoader(
+    if cfg.debug:
+        ds_test = Subset(ds_train, idxs[:split_idx])
+    else:
+        ds_test = dataset_fn(
+            f"data/{cfg.dataset}", download=True, train=False, transform=transform
+        )
+    train_loader = DataLoader(
         Subset(ds_train, idxs[:split_idx]), batch_size=cfg.batch_size, shuffle=True
     )
-    val_loader = torch.utils.data.DataLoader(
+    val_loader = DataLoader(
         Subset(ds_train, idxs[split_idx + 1 :]),
         batch_size=cfg.batch_size,
         shuffle=True,
     )
-    test_loader = torch.utils.data.DataLoader(
+    test_loader = DataLoader(
         ds_test, batch_size=cfg.batch_size, shuffle=True, pin_memory=True
     )
 

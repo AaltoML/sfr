@@ -53,6 +53,7 @@ class TrainConfig:
 
     # Experiment config
     logging_epoch_freq: int = 2
+    test_batch_size: int = 2048  # batch size for computing metrics
     seed: int = 42
     device: str = "cuda"  # "cpu" or "cuda" etc
 
@@ -126,7 +127,7 @@ def train(cfg: TrainConfig):
         in_channels = 1
     elif ds_train.data.ndim == 4:
         in_channels = ds_train.data.shape[-1]
-    num_data = 500 if cfg.debug else len(ds_train)
+    num_data = len(ds_train) if not cfg.debug else 500
     idxs = np.random.permutation(num_data)
     split_idx = int(cfg.train_val_split * num_data)
 
@@ -141,11 +142,11 @@ def train(cfg: TrainConfig):
     )
     val_loader = DataLoader(
         Subset(ds_train, idxs[split_idx + 1 :]),
-        batch_size=cfg.batch_size,
+        batch_size=cfg.test_batch_size,
         shuffle=True,
     )
     test_loader = DataLoader(
-        ds_test, batch_size=cfg.batch_size, shuffle=True, pin_memory=True
+        ds_test, batch_size=cfg.test_batch_size, shuffle=True, pin_memory=True
     )
 
     # Instantiate SFR
@@ -193,8 +194,8 @@ def train(cfg: TrainConfig):
         acc = (probs.argmax(-1) == targets).mean()
         ece = ECE(bins=15).measure(probs, targets)
         dist = torch.distributions.Categorical(torch.Tensor(probs))
-        nll = -dist.log_prob(torch.Tensor(targets)).mean().numpy()
-        metrics = {"loss": val_loss, "acc": acc, "nll": nll, "ece": ece}
+        nlpd = -dist.log_prob(torch.Tensor(targets)).mean().numpy()
+        metrics = {"loss": val_loss, "acc": acc, "nlpd": nlpd, "ece": ece}
         model.train()
         return metrics
 
@@ -230,11 +231,11 @@ def train(cfg: TrainConfig):
 
     class MetricLogger:
         def __init__(self):
-            self.df = pd.DataFrame(columns=["Model", "loss", "acc", "nll", "ece"])
+            self.df = pd.DataFrame(columns=["Model", "loss", "acc", "nlpd", "ece"])
 
         def log(self, metrics: dict, name: str):
             logger.info(
-                f"{name} NLPD {metrics['nll']} | ACC: {metrics['acc']} | ECE: {metrics['ece']}"
+                f"{name} NLPD {metrics['nlpd']} | ACC: {metrics['acc']} | ECE: {metrics['ece']}"
             )
             metrics.update({"Model": name})
             if wandb.run is not None:

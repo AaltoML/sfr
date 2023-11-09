@@ -1,4 +1,5 @@
 defaults:
+  - train_config
   # Use slurm on cluster or local?
   - override hydra/launcher: slurm
   # - _self_

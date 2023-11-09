@@ -54,7 +54,7 @@ cs = ConfigStore.instance()
 cs.store(name="train_config", node=TrainConfig)
 
 
-@hydra.main(version_base="1.3", config_path="./cfgs", config_name="train_config")
+@hydra.main(version_base="1.3", config_path="./cfgs", config_name="train")
 def train(cfg: TrainConfig):
     import torch
     import torchvision

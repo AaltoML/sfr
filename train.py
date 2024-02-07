@@ -77,7 +77,7 @@ def train(cfg: TrainConfig):
     eval('setattr(torch.backends.cudnn, "determinstic", True)')
     eval('setattr(torch.backends.cudnn, "benchmark", False)')
 
-    # torch.set_default_dtype(torch.double)
+    torch.set_default_dtype(torch.double)
 
     # Use GPU if requested and available
     if "cuda" in cfg.device:

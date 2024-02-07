@@ -31,6 +31,7 @@ device: "cuda"  # "cpu" or "cuda" etc
 # W&B config
 use_wandb: False
 wandb_project_name: "sfr"
+wandb_run_name: ${dataset}__${now:%Y-%m-%d_%H-%M-%S}
 
 hydra:
   run:

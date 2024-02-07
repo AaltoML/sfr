@@ -88,11 +88,10 @@ def train(cfg: TrainConfig):
     logger.info("Using device: {}".format(cfg.device))
 
     # Initialize W&B
-    run_name = f"{cfg.dataset}_{time.time()}"
     if cfg.use_wandb:
         wandb.init(
             project=cfg.wandb_project_name,
-            name=run_name,
+            name=cfg.wandb_run_name,
             group=cfg.dataset,
             tags=[cfg.dataset, f"M={cfg.num_inducing}"],
             config=omegaconf.OmegaConf.to_container(

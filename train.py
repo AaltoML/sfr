@@ -60,6 +60,7 @@ class TrainConfig:
     # W&B config
     use_wandb: bool = False
     wandb_project_name: str = "sfr"
+    wandb_run_name: str = f"FMNIST__{time.time()}"
 
 
 cs = ConfigStore.instance()

@@ -171,11 +171,7 @@ class CategoricalLh(Likelihood):
         return mean, var
 
     def prob(self, f):
-        if self.num_classes is None:
-            num_classes = f.shape[-1]
-            return torch.nn.Softmax(dim=num_classes)(f)
-        else:
-            return torch.nn.Softmax(dim=self.num_classes)(f)
+        return torch.nn.Softmax(dim=-1)(f)
 
     def log_prob(self, f: FuncData, y: OutputData, f_var=None, num_samples: int = 100):
         if f_var:

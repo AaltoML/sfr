@@ -76,7 +76,7 @@ def train(cfg: TrainConfig):
     eval('setattr(torch.backends.cudnn, "determinstic", True)')
     eval('setattr(torch.backends.cudnn, "benchmark", False)')
 
-    torch.set_default_dtype(torch.double)
+    # torch.set_default_dtype(torch.double)
 
     # Use GPU if requested and available
     if "cuda" in cfg.device:
@@ -245,7 +245,7 @@ def train(cfg: TrainConfig):
                 wandb.log({"Metrics": wandb.Table(data=self.df)})
 
     # Making everything double for inference
-    # torch.set_default_dtype(torch.double)
+    torch.set_default_dtype(torch.double)
 
     # Calculate NN's metrics and log
     nn_metrics = evaluate(model, data_loader=test_loader, sfr_pred=False)

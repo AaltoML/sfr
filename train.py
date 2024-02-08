@@ -49,6 +49,7 @@ class TrainConfig:
     # Early stopping on validation loss
     early_stop_patience: int = 5
     early_stop_min_delta: float = 0.0
+    optimize_prior_prec: bool = False  # if True use BayesOpt to tune prior precision
 
     # Experiment config
     logging_epoch_freq: int = 2
@@ -273,6 +274,25 @@ def train(cfg: TrainConfig):
     metric_logger.log(sfr_metrics, name="SFR")
     nn_metrics = evaluate(model, data_loader=test_loader, sfr_pred=False)
     metric_logger.log(nn_metrics, name="NN double")
+
+    if cfg.optimize_prior_prec:
+        model.optimize_prior_precision(
+            pred_type="gp",
+            method="bo",
+            val_loader=val_loader,
+            n_samples=100,
+            prior_prec_min=1e-8,
+            prior_prec_max=1.0,
+            num_trials=20,
+        )
+
+        if cfg.debug:
+            sfr_metrics = evaluate(model, data_loader=train_loader, sfr_pred=True)
+            metric_logger.log(sfr_metrics, name="SFR-train-bo")
+
+        # Calculate SFR's metrics and log
+        sfr_metrics = evaluate(model, data_loader=test_loader, sfr_pred=True)
+        metric_logger.log(sfr_metrics, name="SFR-bo")
 
 
 if __name__ == "__main__":

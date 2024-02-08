@@ -1,0 +1,4 @@
+# @package _global_
+dataset: "CIFAR10"
+prior_precision: 0.0018
+lr: 1e-3

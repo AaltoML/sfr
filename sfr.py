@@ -362,7 +362,10 @@ class SFR(nn.Module):
                     n_samples=n_samples,
                     prior_prec=params["prior_prec"],
                 )
-                return nll.detach().numpy()
+                if isinstance(nll, torch.Tensor):
+                    return nll.detach().numpy()
+                else:
+                    return nll
 
             best_parameters, values, experiment, model = optimize(
                 parameters=[
@@ -412,16 +415,10 @@ class SFR(nn.Module):
                 self.likelihood, likelihoods.BernoulliLh
             ):
                 py, targets = [], []
-                for idx, (x, y) in enumerate(data_loader):
-                    p = self(
-                        x=x.to(self.device),
-                        idx=idx,
-                        pred_type=pred_type,
-                        num_samples=n_samples,
-                    )[0]
+                for x, y in data_loader:
+                    x = x.to(self.device)
+                    p, _ = self(x=x, pred_type=pred_type, num_samples=n_samples)
                     py.append(p)
-                    # y_means.append(y_mean)
-                    # y_vars.append(y_vars)
                     targets.append(y.to(self.device))
                 targets = torch.cat(targets, dim=0).cpu().numpy()
                 probs = torch.cat(py).cpu().numpy()
@@ -435,7 +432,7 @@ class SFR(nn.Module):
                 nll = -dist.log_prob(torch.Tensor(targets)).mean().numpy()
             elif isinstance(self.likelihood, likelihoods.Gaussian):
                 nlls = []
-                for idx, (x, y) in enumerate(data_loader):
+                for x, y in data_loader:
                     f_mean, f_var = self.predict_f(x.to(self.device), full_cov=False)
                     if pred_type in "nn":
                         f_mean = self.network(x)

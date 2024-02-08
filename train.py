@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 import logging
+import os
 import time
 from dataclasses import dataclass
 
@@ -231,8 +232,8 @@ def train(cfg: TrainConfig):
 
         # Load checkpoint
         ckpt = torch.load(ckpt_path)
-        # print(f"ckpt {ckpt}")
-        # print(f"sfr {[p for p in sfr.parameters()]}")
+        print(f"ckpt {ckpt}")
+        print(f"sfr {[p for p in sfr.parameters()]}")
         model.load_state_dict(ckpt["model"])
 
     logger.info("Finished training")

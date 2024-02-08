@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 import logging
-
-# import random
 import time
 from dataclasses import dataclass
 
@@ -11,6 +9,7 @@ import omegaconf
 import pandas as pd
 import torch
 import torchvision
+import wandb
 from hydra.core.config_store import ConfigStore
 from hydra.utils import get_original_cwd
 from netcal.metrics import ECE
@@ -22,7 +21,6 @@ import likelihoods
 import priors
 import sfr
 import utils
-import wandb
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -77,7 +75,7 @@ def train(cfg: TrainConfig):
     eval('setattr(torch.backends.cudnn, "determinstic", True)')
     eval('setattr(torch.backends.cudnn, "benchmark", False)')
 
-    torch.set_default_dtype(torch.double)
+    # torch.set_default_dtype(torch.double)
 
     # Use GPU if requested and available
     if "cuda" in cfg.device:
@@ -259,14 +257,14 @@ def train(cfg: TrainConfig):
     model.fit(train_loader=train_loader)
     logger.info("Finished fitting SFR")
 
+    sfr_metrics = evaluate(model, data_loader=train_loader, sfr_pred=True)
+    metric_logger.log(sfr_metrics, name="SFR-train")
+
     # Calculate SFR's metrics and log
     sfr_metrics = evaluate(model, data_loader=test_loader, sfr_pred=True)
     metric_logger.log(sfr_metrics, name="SFR")
     nn_metrics = evaluate(model, data_loader=test_loader, sfr_pred=False)
     metric_logger.log(nn_metrics, name="NN double")
-
-    sfr_metrics = evaluate(model, data_loader=train_loader, sfr_pred=True)
-    metric_logger.log(sfr_metrics, name="SFR-train")
 
 
 if __name__ == "__main__":

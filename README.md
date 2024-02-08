@@ -1,8 +1,18 @@
-# Sparse Function-space Representation of Neural Networks
-PyTorch implementation of Sparse Function-space Representation of Neural Networks.
+# SFR - Sparse Function-space Representation of Neural Networks
+PyTorch implementation of Sparse Function-space Representation (SFR) of Neural Networks.
 
 
 <table>
+    <tr>
+        <td>
+            <strong>Function-space Parameterization of Neural Networks for Sequential Learning</strong><br>
+            Aidan Scannell*, Riccardo Mereu*, Paul Chang, Ella Tamir, Joni Pajarinen, Arno Solin<br>
+            <strong>ICML 2023 Workshop on Duality Principles for Modern Machine Learning</strong><br>
+            <a href="https://arxiv.org/abs/2309.02195"><img alt="Paper" src="https://img.shields.io/badge/-Paper-gray"></a>
+            <a href="https://github.com/aidanscannell/sfr"><img alt="Code" src="https://img.shields.io/badge/-Code-gray" ></a>
+            <a href="https://aaltoml.github.io/sfr"><img alt="Website" src="https://img.shields.io/badge/-Website-gray" ></a>
+        </td>
+    </tr>
     <tr>
         <td>
             <strong>Sparse Function-space Representation of Neural Networks</strong><br>
@@ -12,46 +22,29 @@ PyTorch implementation of Sparse Function-space Representation of Neural Network
             <a href="https://github.com/aidanscannell/sfr"><img alt="Code" src="https://img.shields.io/badge/-Code-gray" ></a>
             <a href="https://aaltoml.github.io/sfr"><img alt="Website" src="https://img.shields.io/badge/-Website-gray" ></a>
         </td>
+    </tr>
 </table>
 
 ## Install
 
-<!-- Make a virtual environment and install the dependencies with: -->
-<!-- ``` sh -->
-<!-- python -m venv sfr-venv -->
-<!-- source sfr-venv/bin/activate -->
-<!-- pip install -e ".[experiments, dev]" -->
-<!-- ``` -->
-
 ### CPU
 Create an environment with:
 ```sh
-mamba env create -f env_cpu.yaml
+conda env create -f env_cpu.yaml
 ```
 Activate the environment with:
 ``` sh
-source activate sfr-mbrl
+source activate sfr
 ```
 
 ### NVIDIA GPU
 Create an environment with:
 ```sh
-mamba env create -f env_nvidia.yaml
+conda env create -f env_nvidia.yaml
 ```
 Activate the environment with:
 ``` sh
-source activate sfr-mbrl
-```
-
-### AMD GPU
-Install on LUMI with:
-``` sh
-SFR_CONTAINER_DIR=/scratch/project_462000217/aidan/sfr-mbrl/container
-mkdir  $SFR_CONTAINER_DIR
-module load LUMI/22.08
-module load lumi-container-wrapper
-conda-containerize new --mamba --prefix $SFR_CONTAINER_DIR env_nvidia.yaml
-conda-containerize update $SFR_CONTAINER_DIR --post-install post-install-amd.txt
+source activate sfr
 ```
 
 ## Useage

@@ -251,8 +251,8 @@ def train(cfg: TrainConfig):
                 self.df.loc[len(self.df.index)] = metrics
                 wandb.log({"Metrics": wandb.Table(data=self.df)})
 
-    # # Making everything double for inference
-    # torch.set_default_dtype(torch.double)
+    # Making everything double for inference
+    torch.set_default_dtype(torch.double)
 
     # Calculate NN's metrics and log
     nn_metrics = evaluate(model, data_loader=test_loader, sfr_pred=False)

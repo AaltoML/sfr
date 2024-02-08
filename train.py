@@ -230,11 +230,11 @@ def train(cfg: TrainConfig):
                     logger.info("Early stopping criteria met, stopping training...")
                     break
 
-        # Load checkpoint
-        ckpt = torch.load(ckpt_path)
-        print(f"ckpt {ckpt}")
-        print(f"sfr {[p for p in model.parameters()]}")
-        model.load_state_dict(ckpt["model"])
+    # Load checkpoint
+    ckpt = torch.load(ckpt_path)
+    print(f"ckpt {ckpt}")
+    print(f"sfr {[p for p in model.parameters()]}")
+    model.load_state_dict(ckpt["model"])
 
     logger.info("Finished training")
 

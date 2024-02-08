@@ -89,7 +89,7 @@ def train(cfg: TrainConfig):
 
     # Initialize W&B
     if cfg.use_wandb:
-        wandb.init(
+        run = wandb.init(
             project=cfg.wandb_project_name,
             name=cfg.wandb_run_name,
             group=cfg.dataset,

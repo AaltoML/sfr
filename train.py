@@ -200,7 +200,7 @@ def train(cfg: TrainConfig):
         return metrics
 
     # Train NN weights with empirical regularized risk
-    # best_loss = float("inf")
+    best_loss = float("inf")
     for epoch_idx in tqdm(list(range(cfg.n_epochs)), total=cfg.n_epochs):
         with tqdm(train_loader, unit="batch") as tepoch:
             for data, target in tepoch:

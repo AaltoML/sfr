@@ -99,6 +99,8 @@ def train(cfg: TrainConfig):
             ),
             dir=get_original_cwd(),  # don't nest wandb inside hydra dir
         )
+    save_dir = run.dir if cfg.use_wandb else "./"
+    ckpt_path = os.path.join(save_dir, "best_ckpt.pt")
 
     # Load the data with train/val/test split
     save_dir = f"{get_original_cwd()}/data"
@@ -223,7 +225,6 @@ def train(cfg: TrainConfig):
 
                 if val_loss < best_loss:
                     best_loss = val_loss
-                    ckpt_path = os.path.join(run.dir, "best_ckpt.pt")
                     torch.save({"model": model.state_dict()}, ckpt_path)
 
                 if early_stopper(val_loss):

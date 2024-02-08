@@ -220,12 +220,20 @@ def train(cfg: TrainConfig):
                 if wandb.run is not None:
                     wandb.log({"val_loss": val_loss, "epoch": epoch_idx})
 
-                # if val_loss < best_loss:
-                # checkpoint(model=model, optimizer=optimizer, save_dir=run.dir)
-                # best_loss = val_loss
-                if early_stopper(val_loss):  # (val_loss):
+                if val_loss < best_loss:
+                    best_loss = val_loss
+                    ckpt_path = os.path.join(run.dir, "best_ckpt.pt")
+                    torch.save({"model": model.state_dict()}, ckpt_path)
+
+                if early_stopper(val_loss):
                     logger.info("Early stopping criteria met, stopping training...")
                     break
+
+        # Load checkpoint
+        ckpt = torch.load(ckpt_path)
+        # print(f"ckpt {ckpt}")
+        # print(f"sfr {[p for p in sfr.parameters()]}")
+        model.load_state_dict(ckpt["model"])
 
     logger.info("Finished training")
 

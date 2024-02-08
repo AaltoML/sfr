@@ -233,7 +233,7 @@ def train(cfg: TrainConfig):
         # Load checkpoint
         ckpt = torch.load(ckpt_path)
         print(f"ckpt {ckpt}")
-        print(f"sfr {[p for p in sfr.parameters()]}")
+        print(f"sfr {[p for p in model.parameters()]}")
         model.load_state_dict(ckpt["model"])
 
     logger.info("Finished training")

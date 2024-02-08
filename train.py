@@ -257,16 +257,19 @@ def train(cfg: TrainConfig):
     nn_metrics = evaluate(model, data_loader=test_loader, sfr_pred=False)
     metric_logger = MetricLogger()
     metric_logger.log(nn_metrics, name="NN")
-    nn_metrics = evaluate(model, data_loader=train_loader, sfr_pred=False)
-    metric_logger.log(nn_metrics, name="NN-train")
+
+    if debug:
+        nn_metrics = evaluate(model, data_loader=train_loader, sfr_pred=False)
+        metric_logger.log(nn_metrics, name="NN-train")
 
     # Calculate posterior (dual parameters etc)
     logger.info("Fitting SFR...")
     model.fit(train_loader=train_loader)
     logger.info("Finished fitting SFR")
 
-    sfr_metrics = evaluate(model, data_loader=train_loader, sfr_pred=True)
-    metric_logger.log(sfr_metrics, name="SFR-train")
+    if debug:
+        sfr_metrics = evaluate(model, data_loader=train_loader, sfr_pred=True)
+        metric_logger.log(sfr_metrics, name="SFR-train")
 
     # Calculate SFR's metrics and log
     sfr_metrics = evaluate(model, data_loader=test_loader, sfr_pred=True)

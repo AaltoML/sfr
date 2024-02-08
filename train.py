@@ -259,7 +259,7 @@ def train(cfg: TrainConfig):
     metric_logger = MetricLogger()
     metric_logger.log(nn_metrics, name="NN")
 
-    if debug:
+    if cfg.debug:
         nn_metrics = evaluate(model, data_loader=train_loader, sfr_pred=False)
         metric_logger.log(nn_metrics, name="NN-train")
 
@@ -268,7 +268,7 @@ def train(cfg: TrainConfig):
     model.fit(train_loader=train_loader)
     logger.info("Finished fitting SFR")
 
-    if debug:
+    if cfg.debug:
         sfr_metrics = evaluate(model, data_loader=train_loader, sfr_pred=True)
         metric_logger.log(sfr_metrics, name="SFR-train")
 

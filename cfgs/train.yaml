@@ -20,7 +20,7 @@ batch_size: 128
 lr: 1e-4
 n_epochs: 10000
 # Early stopping on validation loss
-early_stop_patience: 15
+early_stop_patience: 4
 early_stop_min_delta: 0.0
 
 # Experiment config

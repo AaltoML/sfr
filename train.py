@@ -18,10 +18,10 @@ from torch.utils.data import DataLoader, Subset
 from torchvision import transforms
 from tqdm import tqdm
 
+import helper as h
 import likelihoods
 import priors
 import sfr
-import utils
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

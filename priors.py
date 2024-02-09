@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
+from typing import Callable, Iterator
+
 import torch
 import torch.nn as nn
-from typing import Iterator, Callable
 from torch.nn import Parameter
 
 ParamFn = Callable[[bool], Iterator[Parameter]]

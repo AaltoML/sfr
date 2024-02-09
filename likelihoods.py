@@ -4,9 +4,9 @@ from typing import Optional, Union
 
 import numpy as np
 import torch
-from custom_types import FuncData, FuncMean, FuncVar, OutputData
 from torch.distributions import Bernoulli, Categorical, Normal
 
+from custom_types import FuncData, FuncMean, FuncVar, OutputData
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

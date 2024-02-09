@@ -6,6 +6,11 @@ import numpy as np
 import torch
 import torch.distributions as dists
 import torch.nn as nn
+from torch.func import functional_call, jacrev, vmap
+from torch.utils.data import DataLoader, TensorDataset
+
+import likelihoods
+import priors
 from custom_types import (
     NTK,
     Alpha,
@@ -13,19 +18,15 @@ from custom_types import (
     Beta,
     BetaDiag,
     BetaInducing,
+    Data,
     FuncData,
     FuncMean,
     FuncVar,
     InputData,
     Lambda,
     OutputData,
-    Data,
     TestInput,
 )
-import priors
-import likelihoods
-from torch.func import functional_call, jacrev, vmap
-from torch.utils.data import DataLoader, TensorDataset
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)

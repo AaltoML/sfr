@@ -4,6 +4,7 @@
 
 # layout: home
 layout: post
+# title:  "Function-space Prameterization of Neural Networks for Sequential Learning"
 title:  "SFR: Sparse Function-space Representation of Neural Networks"
 date:   2023-11-04 14:36:41 +0200
 categories: jekyll update
@@ -12,6 +13,30 @@ author: "<a href='https://www.aidanscannell.com/'>Aidan Scannell</a><sup>*</sup>
 <a href="https://arxiv.org/abs/2309.02195"><img alt="Workshop Paper" src="https://img.shields.io/badge/-Paper-gray?logo=arxiv"></a>
 <a href="https://github.com/AaltoML/sfr"><img alt="Code" src="https://img.shields.io/badge/-Code-gray?logo=github" ></a>
 <a href="https://scholar.google.fi/citations?view_op=view_citation&hl=en&user=piA0zS4AAAAJ&citation_for_view=piA0zS4AAAAJ:zYLM7Y9cAGgC"><img alt="Google Scholar" src="https://img.shields.io/badge/-Scholar-gray?logo=googlescholar" ></a>
+<table>
+    <tr>
+        <td>
+            <a href="https://arxiv.org/abs/2309.02195">
+              <strong >Function-space Parameterization of Neural Networks for Sequential Learning</strong><br>
+            </a>
+            Aidan Scannell*, Riccardo Mereu*, Paul Chang, Ella Tamir, Joni Pajarinen, Arno Solin<br>
+            <strong>International Conference on Learning Representations (ICLR 2024)</strong><br>
+            <!-- <a href="https://arxiv.org/abs/2309.02195"><img alt="Paper" src="https://img.shields.io/badge/-Paper-gray"></a> -->
+            <!-- <a href="https://github.com/aidanscannell/sfr"><img alt="Code" src="https://img.shields.io/badge/-Code-gray" ></a> -->
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <a href="https://arxiv.org/abs/2309.02195">
+              <strong>Sparse Function-space Representation of Neural Networks</strong><br>
+            </a>
+            Aidan Scannell*, Riccardo Mereu*, Paul Chang, Ella Tamir, Joni Pajarinen, Arno Solin<br>
+            <strong>ICML 2023 Workshop on Duality Principles for Modern Machine Learning</strong><br>
+            <!-- <a href="https://arxiv.org/abs/2309.02195"><img alt="Paper" src="https://img.shields.io/badge/-Paper-gray"></a> -->
+            <!-- <a href="https://github.com/aidanscannell/sfr"><img alt="Code" src="https://img.shields.io/badge/-Code-gray" ></a> -->
+        </td>
+    </tr>
+</table>
 
 
 <!-- <sup>*</sup> == Equal Contribution  -->

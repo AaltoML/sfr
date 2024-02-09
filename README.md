@@ -50,8 +50,8 @@ source activate sfr
 See the [notebooks](./notebooks) for how to use our code for both regression and classification.
 
 ### Image Classification
-We provide a minimal training script in [train.py](train.py) which can be used to train a CNN on MNIST/Fashion-MNIST/CIFAR-10.
-It is advised to run this on GPU.
+We provide a minimal training script in [train.py](train.py) which can be used to train a CNN and fit `SFR` 
+on MNIST/Fashion-MNIST/CIFAR-10. It is advised to run this on GPU.
 
 ### Example
 Here's a short example:

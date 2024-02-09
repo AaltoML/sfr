@@ -119,6 +119,13 @@ f_mean, f_var = sfr.predict_f(X_test)
 y_mean, y_var = sfr.predict(X_test)
 ```
 
+## Development
+Set up [pre-commit](https://pre-commit.com/) by running:
+``` sh
+pre-commit install
+```
+Now when you commit the formatter/linter etc will automatically be run.
+
 ## Citation
 Please consider citing our conference paper
 ```bibtex

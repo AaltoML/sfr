@@ -10,6 +10,7 @@ dependencies:
   - hydra-submitit-launcher=1.2
   - ax-platform=0.3 # Used to tune prior precision with Bayesian Optimization
   - jupyter
+  - pre-commit # Only needed for development
   - pip
   - pip:
       - jaxtyping==0.2.23  # Types with shapes for tensors

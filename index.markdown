@@ -59,9 +59,9 @@ author: "<a href='https://www.aidanscannell.com/'>Aidan Scannell</a><sup>*</sup>
 - `SFR` can be viewed as a function-space Laplace approximation for NNs
 - `SFR` has several benefits over [weight-space Laplace approximation for NNs](https://arxiv.org/abs/2106.14806):
     - Its function-space representation is effective for regularization in continual learning (CL)
-    - It can incorporate new data without retraining the NN
     - It has good uncertainty estimates
         - We use them to guide exploration in model-based reinforcement learning (RL)
+    - It can incorporate new data without retraining the NN
     <!-- - It learns expressive covariance structures from data -->
         <!-- - Not limited by stat -->
 

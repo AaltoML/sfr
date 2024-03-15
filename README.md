@@ -1,7 +1,7 @@
 # SFR - Sparse Function-space Representation of Neural Networks
 This repository contains a clean and minimal PyTorch implementation of Sparse Function-space Representation (SFR) of Neural Networks.
 If you'd like to use SFR we recommend using this repo.
-Please see [this repo](https://github.com/AaltoML/sfr-experiments) for reproducing the experiments in the ICLR 2024 paper.
+Please see [sfr-experiments](https://github.com/AaltoML/sfr-experiments) for reproducing the experiments in the ICLR 2024 paper.
 
 
 <table>

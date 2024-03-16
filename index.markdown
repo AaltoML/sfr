@@ -147,20 +147,20 @@ y_mean, y_var = sfr.predict(X_test)
 ## Citation
 Please consider citing our conference paper:
 {% highlight bibtex %}
-@inproceedings{scannellFunction2024,
-  title           = {Function-space Prameterization of Neural Networks for Sequential Learning},
-  booktitle       = {Proceedings of The Twelth International Conference on Learning Representations (ICLR 2024)},
-  author          = {Aidan Scannell and Riccardo Mereu and Paul Chang and Ella Tami and Joni Pajarinen and Arno Solin},
-  year            = {2024},
-  month           = {5},
+@inproceedings{scannell2024functionspace,
+    title       = {Function-space Parameterization of Neural Networks for Sequential Learning},
+    author      = {Aidan Scannell and Riccardo Mereu and Paul Edmund Chang and Ella Tamir and Joni Pajarinen and Arno Solin},
+    booktitle   = {The Twelfth International Conference on Learning Representations},
+    year        = {2024},
+    url         = {https://openreview.net/forum?id=2dhxxIKhqz}
 }
 {% endhighlight %}
 Or our workshop paper:
 {% highlight bibtex %}
 @inproceedings{scannellSparse2023,
   title           = {Sparse Function-space Representation of Neural Networks},
-  booktitle       = {ICML 2023 Workshop on Duality Principles for Modern Machine Learning},
   author          = {Aidan Scannell and Riccardo Mereu and Paul Chang and Ella Tami and Joni Pajarinen and Arno Solin},
+  booktitle       = {ICML 2023 Workshop on Duality Principles for Modern Machine Learning},
   year            = {2023},
   month           = {7},
 }

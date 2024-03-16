@@ -53,7 +53,7 @@ author: "<a href='https://www.aidanscannell.com/'>Aidan Scannell</a><sup>*</sup>
 
 ## TL;DR
 - `SFR` is a "posthoc" Bayesian deep learning method
-    - equip any trained NN with uncertainty estimates
+    - Equip any trained NN with uncertainty estimates
  <!-- which equips trained neural networks (NNs) with uncertainty estimates. -->
 <!-- - `SFR` converts trained NNs to sparse GPs. -->
     <!-- - Unlike GPs, `SFR` scales to complex inputs (e.g. images)  -->

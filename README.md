@@ -10,7 +10,7 @@ Please see [sfr-experiments](https://github.com/AaltoML/sfr-experiments) for rep
             <strong>Function-space Parameterization of Neural Networks for Sequential Learning</strong><br>
             Aidan Scannell*, Riccardo Mereu*, Paul Chang, Ella Tamir, Joni Pajarinen, Arno Solin<br>
             <strong>International Conference on Learning Representations (ICLR 2024)</strong><br>
-            <a href="https://arxiv.org/abs/2309.02195"><img alt="Paper" src="https://img.shields.io/badge/-Paper-gray"></a>
+            <a href="https://openreview.net/forum?id=2dhxxIKhqz&noteId=1udlCkoTob"><img alt="Paper" src="https://img.shields.io/badge/-Paper-gray"></a>
             <a href="https://github.com/aidanscannell/sfr"><img alt="Code" src="https://img.shields.io/badge/-Code-gray" ></a>
             <a href="https://aaltoml.github.io/sfr"><img alt="Website" src="https://img.shields.io/badge/-Website-gray" ></a>
         </td>
